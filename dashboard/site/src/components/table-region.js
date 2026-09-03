@@ -22,6 +22,7 @@ const DEFAULT_PAGE_SIZE = 25;
  *   emptyMessage: string,
  *   colSpan: number,
  *   headCells: string[],
+ *   unsortableColumns?: number[],
  *   summaryColumns?: import('./table-summary.js').TableSummaryColumn[],
  *   bodyRows: unknown,
  *   filterLabel?: string,
@@ -42,6 +43,7 @@ export function renderTableRegion(options) {
     emptyMessage,
     colSpan,
     headCells,
+    unsortableColumns = [],
     summaryColumns = [],
     bodyRows,
     filterLabel,
@@ -109,7 +111,7 @@ export function renderTableRegion(options) {
           h(
             'tr',
             null,
-            ...headCells.map((cell, columnIndex) => (hasRows && sortable
+            ...headCells.map((cell, columnIndex) => (hasRows && sortable && !unsortableColumns.includes(columnIndex)
               ? h(
                 'th',
                 { scope: 'col', 'aria-sort': 'none' },

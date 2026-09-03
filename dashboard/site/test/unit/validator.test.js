@@ -104,12 +104,46 @@ describe('dashboard document validation', () => {
       presentation: 'copy-prompt',
       icon: 'search',
       label: 'Investigate',
+      context: [
+        'run',
+        'run-title',
+        'repository',
+        'workflow',
+        'run-conclusion',
+        'failure-job',
+        'failure-message',
+        'failure-step',
+        'run-link'
+      ],
       when: { field: 'run-conclusion', equals: 'failure' }
     }]);
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
 
     runsView.encoding.actions[0].presentation = 'copy-command';
-    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(false);
+    runsView.encoding.actions[0].presentation = 'copy-prompt';
+
+    runsView.encoding.actions[0].context.push('not-a-run-field');
+    const invalidContext = validateDashboardDocument(JSON.stringify(document));
+    expect(invalidContext.ok).toBe(false);
+    if (!invalidContext.ok) {
+      expect(invalidContext.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: '$.dashboard.pages[7].views[2].encoding.actions[0].context[9]'
+      }));
+    }
+    runsView.encoding.actions[0].context.pop();
+
+    runsView.encoding.actions[0].context.push('run');
+    const duplicateContext = validateDashboardDocument(JSON.stringify(document));
+    expect(duplicateContext.ok).toBe(false);
+    if (!duplicateContext.ok) {
+      expect(duplicateContext.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[7].views[2].encoding.actions[0].context[9]'
+      }));
+    }
+    runsView.encoding.actions[0].context.pop();
 
     runsView.encoding.actions[0].when.field = 'not-a-run-field';
     const rejected = validateDashboardDocument(JSON.stringify(document));
