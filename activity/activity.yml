@@ -1,0 +1,32 @@
+name: Central Agentic Ops Activity
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: central-agentic-ops-activity
+  cancel-in-progress: true
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout trusted activity source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+
+      - name: Refresh shared activity cache
+        uses: ./.github/actions/cao-activity
+        with:
+          mode: refresh

@@ -20,11 +20,17 @@ function focusedPackageSource(slug, source = packageSource) {
   return `${source.slice(0, separator)}/${slug}${source.slice(separator)}`;
 }
 const advisoryPackageSource = focusedPackageSource("advisory");
+const activityPackageSource = focusedPackageSource("activity");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
 const selfCarePackageSource = focusedPackageSource("self-care");
 const softwareDevelopmentPracticesPackageSource = focusedPackageSource("software-development-practices");
+const activityExpectedFiles = [
+  ".github/actions/cao-activity/action.yml",
+  ".github/aw/activity/index.mjs",
+  ".github/workflows/activity.yml",
+];
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/aw/dashboards/advisory.json",
@@ -129,6 +135,9 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
   const consumer = installPackage(packageSource);
   try {
     assert.ok(existsSync(join(consumer, ".github", "aw", "default-AGENTS.md")));
+    for (const relativePath of activityExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `root package omitted activity file ${relativePath}`);
+    }
     for (const relativePath of dashboardExpectedFiles) {
       assert.ok(existsSync(join(consumer, relativePath)), `root package omitted dashboard file ${relativePath}`);
     }
@@ -144,6 +153,28 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
       assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
       assert.doesNotMatch(lock, /secrets\.COPILOT_GITHUB_TOKEN/);
     }
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused activity package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(activityPackageSource);
+  try {
+    for (const relativePath of activityExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `activity package omitted ${relativePath}`);
+    }
+    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
+    assert.equal(packageManifests.length, 1, "expected one installed activity package manifest");
+    const installedManifest = JSON.parse(readFileSync(
+      join(consumer, ".github", "aw", "packages", packageManifests[0]),
+      "utf8",
+    ));
+    assert.deepEqual(
+      installedManifest.files.map(({ destination }) => destination).sort(),
+      activityExpectedFiles.toSorted(),
+      "activity package manifest must own its workflow, action, and indexer",
+    );
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }

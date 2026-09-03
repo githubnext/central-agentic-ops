@@ -15,6 +15,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 - `.github/workflows/dashboard-build.yml`: reusable, path-aware report build that uploads a mergeable Actions artifact.
 - `.github/workflows/dashboard.yml`: manual standalone GitHub Pages deployment.
+- `.github/actions/cao-activity`: shared activity-cache consumer and refresher installed by the core activity package.
 - `.github/cao/src/policy.mjs`: dependency-free checked-in policy parser and resolver.
 - `.github/cao/src/control.mjs`: deterministic policy command adapter used by the build workflow.
 - `.github/aw/dashboard/report`: deterministic collectors, durable-record production, and Dashboard Language source adaptation.
@@ -26,9 +27,10 @@ If authoritative control policy resolution fails, the build remains fail-closed 
 
 ## Install
 
-The root Central Agentic Ops package installs the dashboard by default. For a focused dashboard-only installation, use a reviewed release tag or full commit SHA:
+The root Central Agentic Ops package installs the dashboard by default. For a focused installation, install the core activity package and dashboard from the same reviewed release tag or full commit SHA:
 
 ```bash
+gh aw add githubnext/central-agentic-ops/activity@<catalog-release>
 gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release>
 ```
 
@@ -52,7 +54,7 @@ Before running the standalone deployment, configure the private control-plane or
 
 The workflow passes `enablement: false` to `actions/configure-pages`, so a run validates existing Pages configuration but never enables Pages for the repository.
 
-Use **Refresh** in the dashboard header to open **Central Agentic Ops Dashboard** on the repository's **Actions** page, then click **Run workflow**. The standalone workflow is deliberately not scheduled, so installing the package cannot replace an existing Pages deployment without an explicit run. Operational-value collection bootstraps adoption-to-current history through the gh-aw report contract and then reuses digest-scoped weekly replay shards. The Actions cache accelerates refreshes but is evictable and is not historical authority.
+Use **Refresh** in the dashboard header to open **Central Agentic Ops Dashboard** on the repository's **Actions** page, then click **Run workflow**. The standalone workflow is deliberately not scheduled, so installing the package cannot replace an existing Pages deployment without an explicit run. Operational-value collection bootstraps adoption-to-current history through the gh-aw report contract and then reuses digest-scoped weekly replay shards. Workflow inventory and recent runs come from the core activity package's schema-versioned Actions cache. Actions caches accelerate refreshes but are evictable and are not historical authority.
 
 The catalog contains only collector, adapter, and presenter code. Installed control repositories hold runtime aggregation and the current access-controlled Pages view. Live organization-specific JSON, Markdown, and SVG snapshots are generated data and are not committed to this catalog.
 

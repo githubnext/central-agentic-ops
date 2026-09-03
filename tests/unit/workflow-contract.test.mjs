@@ -585,6 +585,8 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
+    join("activity", "activity.yml"),
+    join("activity", "action.yml"),
     join(".github", "workflows", "dashboard-build.yml"),
     join("dashboard", "dashboard.yml"),
   ]) {
@@ -1982,7 +1984,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     rmSync(temporaryRoot, { recursive: true, force: true });
   }
 });
-test("Agent customizations preserve the deterministic dashboard exception", () => {
+test("Agent customizations preserve deterministic core package boundaries", () => {
   const agent = readFileSync(join(root, ".github", "agents", "agentic-workflows.md"), "utf8");
   const agenticWorkflowsSkill = readFileSync(join(root, ".github", "skills", "agentic-workflows", "SKILL.md"), "utf8");
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
@@ -1991,10 +1993,12 @@ test("Agent customizations preserve the deterministic dashboard exception", () =
   assert.match(agent, /\.github\/aw\/instructions\.md/);
   assert.match(agenticWorkflowsSkill, /\.github\/aw\/instructions\.md/);
   assert.match(packageSkill, /## Deterministic Add-on Exception/);
+  assert.match(packageSkill, /core activity cache/);
   assert.match(packageSkill, /site-path/);
   assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` reusable through `workflow_call` and package it through both dashboard manifests/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
+  assert.match(repositoryInstructions, /Keep workflow-run indexing out of operational packages and the dashboard/);
 });
 
 test("README routes zero-to-CAO requests to the setup skill", () => {
@@ -2091,9 +2095,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const buildWorkflow = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
-  const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
+  const deployedWorkflows = readFileSync(join(root, "activity", "index.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
-  const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
+  const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
   const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
   const normalizeInclude = (entry, sourcePrefix = "") => typeof entry === "string"
     ? { source: entry, destination: entry, kind: "action-workflow" }
@@ -2115,18 +2119,19 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
-  assert.match(deployedWorkflows, /dashboardHorizonHours\(resolveDashboardHorizon\(dashboardDocument\.dashboard\)\)/);
-  assert.doesNotMatch(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
+  assert.match(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?mode:[\s\S]*?default: live/);
   assert.match(buildWorkflow, /Require cached dashboard data[\s\S]*?if: inputs\.mode == 'cache'/);
-  assert.match(buildWorkflow, /Discover deployed agentic workflows\n\s+if: inputs\.mode == 'live'/);
+  assert.match(buildWorkflow, /Restore or refresh workflow activity[\s\S]*?uses: \.\/\.github\/actions\/cao-activity/);
+  assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
   assert.match(buildWorkflow, /Save dashboard data cache[\s\S]*?actions\/cache\/save@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /control-settings\.mjs[\s\S]*?\.github\/cao\/src\/control\.mjs[\s\S]*?\.github\/workflows\/cao\.json[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /configure-site\.mjs[\s\S]*?"\$REPORT_OUTPUT\/index\.html"[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /bundle-dashboards\.mjs[\s\S]*?"\$REPORT_OUTPUT\/dashboard\.json"[\s\S]*?\.github\/aw\/dashboards/);
   assert.match(buildWorkflow, /REPORT_RECORDS: \$\{\{ runner\.temp \}\}\/dashboard-data\/dashboard-records\.json/);
+  assert.match(buildWorkflow, /REPORT_DEPLOYED_WORKFLOWS: \$\{\{ runner\.temp \}\}\/cao-activity\/deployed-workflows\.json/);
   assert.match(buildWorkflow, /REPORT_DASHBOARD_SOURCES: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
   assert.doesNotMatch(dashboardManifest, /redirects\.mjs/);
   assert.doesNotMatch(buildWorkflow, /legacy dashboard redirects|redirects\.mjs/);
@@ -2178,6 +2183,35 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     }
     execFileSync(process.execPath, ["--check", assetPath]);
   }
+});
+
+test("Activity package owns the shared workflow-run cache contract", () => {
+  const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
+  const activityManifest = parse(readFileSync(join(root, "activity", "aw.yml"), "utf8"));
+  const workflow = readFileSync(join(root, "activity", "activity.yml"), "utf8");
+  const action = readFileSync(join(root, "activity", "action.yml"), "utf8");
+  const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
+
+  assert.equal(activityManifest.name, "Central Agentic Ops Activity");
+  assert.deepEqual(activityManifest.includes, [{
+    source: "activity.yml",
+    destination: ".github/workflows/activity.yml",
+    kind: "action-workflow",
+  }]);
+  assert.deepEqual(activityManifest.resources, [
+    { source: "action.yml", destination: ".github/actions/cao-activity/action.yml" },
+    { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
+  ]);
+  assert.ok(rootManifest.includes.some((entry) => entry.destination === ".github/workflows/activity.yml"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/actions/cao-activity/action.yml"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
+  assert.match(workflow, /schedule:[\s\S]*?cron:/);
+  assert.match(workflow, /uses: \.\/\.github\/actions\/cao-activity/);
+  assert.match(action, /actions\/cache\/restore@[0-9a-f]{40}/);
+  assert.match(action, /actions\/cache\/save@[0-9a-f]{40}/);
+  assert.match(action, /cao-activity-v1-\$\{\{ github\.repository \}\}-/);
+  assert.match(readme, /schemaVersion: 1/);
+  assert.match(readme, /Consumers must use the top-level completeness fields/);
 });
 
 test("Documentation Pages deploys docs with the packaged dashboard builder", () => {

@@ -92,6 +92,12 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
         run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
 
+      - name: Restore or refresh workflow activity
+        uses: ./.github/actions/cao-activity
+        with:
+          mode: ${{ inputs.mode == 'live' && 'refresh' || 'cache' }}
+          control-settings: ${{ runner.temp }}/control-settings.json
+
       - name: Restore dashboard data cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -105,20 +111,12 @@ jobs:
         env:
           DASHBOARD_DATA_ROOT: ${{ runner.temp }}/dashboard-data
         run: |
-          for file in deployed-workflows.json aic-usage.json operational-values.json dashboard-records.json; do
+          for file in aic-usage.json operational-values.json dashboard-records.json; do
             if [[ ! -f "$DASHBOARD_DATA_ROOT/$file" ]]; then
               echo "Cached dashboard data is unavailable: $file" >&2
               exit 1
             fi
           done
-
-      - name: Discover deployed agentic workflows
-        if: inputs.mode == 'live'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
-        run: node "$DASHBOARD_REPORT_ROOT/deployed-workflows.mjs"
 
       - name: Install gh-aw CLI
         if: inputs.mode == 'live'
@@ -166,14 +164,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPORT_AIC_CONCURRENCY: "3"
           REPORT_AIC_USAGE: ${{ runner.temp }}/dashboard-data/aic-usage.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
         run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
 
       - name: Collect operational-value observations
         if: inputs.mode == 'live'
         env:
           GH_TOKEN: ${{ github.token }}
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/dashboard-data/operational-values.json
           REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
@@ -194,7 +192,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_RECORDS: ${{ runner.temp }}/dashboard-data/dashboard-records.json
         run: node "$DASHBOARD_REPORT_ROOT/records.mjs"
 
@@ -229,7 +227,7 @@ jobs:
           REPORT_AIC_USAGE: ${{ runner.temp }}/dashboard-data/aic-usage.json
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}/sources.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/dashboard-data/operational-values.json
           REPORT_RECORDS: ${{ runner.temp }}/dashboard-data/dashboard-records.json

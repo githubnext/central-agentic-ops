@@ -1,7 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { dashboardHorizonHours, resolveDashboardHorizon } from "../site/src/horizon.js";
 
 (async () => {
 
@@ -9,18 +8,30 @@ const repository = process.env.GITHUB_REPOSITORY || "";
 const organization = process.env.REPORT_ORGANIZATION || repository.split("/")[0];
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 const pagesToken = process.env.REPORT_PAGES_TOKEN || token;
-const outputPath = path.resolve(process.env.REPORT_DEPLOYED_WORKFLOWS || "_inventory/deployed-workflows.json");
+const outputPath = path.resolve(process.env.REPORT_DEPLOYED_WORKFLOWS || "_activity/deployed-workflows.json");
 const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
+const policyPath = process.env.REPORT_CONTROL_POLICY;
 const includePrivate = process.env.REPORT_INCLUDE_PRIVATE === "true";
-const dashboardDocument = JSON.parse(readFileSync(new URL("../site/dashboard.json", import.meta.url), "utf8"));
-const runWindowHours = dashboardHorizonHours(resolveDashboardHorizon(dashboardDocument.dashboard));
+const runWindowHours = Number(process.env.REPORT_RUN_WINDOW_HOURS || 7 * 24);
 const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
 const API_LIMITED_STEP_PREFIX = "CAO admission blocked: GitHub API limited until ";
 const API_UNAVAILABLE_STEP = "CAO admission blocked: GitHub API capacity unavailable";
-if (!controlSettingsPath) throw new Error("REPORT_CONTROL_SETTINGS is required");
-const controlSettings = JSON.parse(readFileSync(controlSettingsPath, "utf8"));
+if (!Number.isInteger(runWindowHours) || runWindowHours < 1 || runWindowHours > 24 * 31) {
+  throw new Error("REPORT_RUN_WINDOW_HOURS must be an integer from 1 through 744");
+}
+const controlSettings = controlSettingsPath
+  ? JSON.parse(readFileSync(controlSettingsPath, "utf8"))
+  : {};
+const controlPolicy = !controlSettingsPath && policyPath
+  ? JSON.parse(readFileSync(policyPath, "utf8"))
+  : {};
 const policyRepositories = [...new Set((controlSettings.allowed_repositories || []).map((value) => value.toLowerCase()))];
+const checkedInRepositories = controlPolicy["control-plane"]?.scope?.["allowed-repositories"] || [];
+if (!Array.isArray(checkedInRepositories)) {
+  throw new Error("control-plane.scope.allowed-repositories must be an array");
+}
+policyRepositories.push(...checkedInRepositories.map((value) => String(value).toLowerCase()));
 const requestedRepositories = [...new Set((process.env.REPORT_ALLOWED_REPOS || "").split(",")
   .map((value) => value.trim().toLowerCase()).filter(Boolean))];
 if (policyRepositories.length > 0 && requestedRepositories.some((value) => !policyRepositories.includes(value))) {

@@ -2,6 +2,9 @@ name: Central Agentic Ops
 description: Central agentic workflow control plane for reusable packages at the organization level
 min-version: v0.88.0
 includes:
+  - source: activity/activity.yml
+    destination: .github/workflows/activity.yml
+    kind: action-workflow
   - .github/workflows/ambient-context-agents-md-curator.md
   - .github/workflows/ambient-context-skills-curator.md
   - .github/workflows/ambient-context.md
@@ -22,14 +25,16 @@ resources:
     destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
+  - source: activity/action.yml
+    destination: .github/actions/cao-activity/action.yml
+  - source: activity/index.mjs
+    destination: .github/aw/activity/index.mjs
   - source: dashboard/report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: dashboard/report/text-utils.mjs
     destination: .github/aw/dashboard/report/text-utils.mjs
   - source: dashboard/report/control-settings.mjs
     destination: .github/aw/dashboard/report/control-settings.mjs
-  - source: dashboard/report/deployed-workflows.mjs
-    destination: .github/aw/dashboard/report/deployed-workflows.mjs
   - source: dashboard/report/inventory.mjs
     destination: .github/aw/dashboard/report/inventory.mjs
   - source: dashboard/report/operational-values.mjs
