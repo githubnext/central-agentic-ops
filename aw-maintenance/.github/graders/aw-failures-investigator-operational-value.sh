@@ -16,7 +16,7 @@ definition() {
   "schemaVersion": 4,
   "grader": "operational-value",
   "repository": "githubnext/gh-aw-cao",
-  "workflowName": "AW Failures / Investigator",
+  "workflowName": "AW Maintenance / Failures",
   "sourcePath": ".github/workflows/aw-failures-investigator.md",
   "adoption": {
     "commit": "478d356df17de4f9a0e34f879872ea428e7fe274",
