@@ -1325,8 +1325,9 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const packageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr');
   await expect(packageReportRows).toHaveCount(2);
   await page.getByRole('searchbox', { name: 'Filter Reports' }).fill('Reconcile');
-  await expect(packageReportRows.filter({ visible: true })).toHaveCount(1);
-  await expect(packageReportRows.filter({ visible: true })).toContainText('Reconcile ambient context');
+  const visiblePackageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr:visible');
+  await expect(visiblePackageReportRows).toHaveCount(1);
+  await expect(visiblePackageReportRows).toContainText('Reconcile ambient context');
 
   await page.locator('[data-nav-page-id="packages"]').click();
   await page.getByRole('tab', { name: 'All' }).focus();
