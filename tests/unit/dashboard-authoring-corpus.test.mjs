@@ -32,9 +32,10 @@ test("every production dashboard page starts with an executive summary", () => {
       assert.ok(summary, `${path}: page "${page.id}" must contain a view`);
       const isSummaryTable = summary.mark === "table"
         && summary.encoding?.columns?.some((column) => typeof column.aggregate === "string");
+      const isSummaryGrid = summary.mark === "element" && summary.element === "summary-grid";
       assert.ok(
-        (summary.mark === "chart" && executiveSummaryCharts.has(summary.chart)) || isSummaryTable,
-        `${path}: page "${page.id}" must start with an executive-summary chart or aggregated table`,
+        (summary.mark === "chart" && executiveSummaryCharts.has(summary.chart)) || isSummaryTable || isSummaryGrid,
+        `${path}: page "${page.id}" must start with an executive-summary chart, aggregated table, or summary grid`,
       );
     }
   }
