@@ -287,7 +287,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .pie-chart-card > .view-description { align-self: start; }
 .pie-chart-card > .view-source, .pie-chart-card > .view-metadata, .pie-chart-card > .view-context { grid-column: 1; margin: 0; font-size: .6875rem; }
 .pie-chart-layout { min-width: 0; display: grid; grid-column: 2; grid-row: 1 / span 6; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); align-items: center; gap: 20px; }
-.pie-chart-layout .chart-widget { min-width: 0; min-height: 180px; margin: 0; }
+.pie-chart-layout .chart-widget { min-width: 0; min-height: 180px; margin: 0; border: 1px solid var(--border); background: var(--canvas-subtle); }
 .pie-chart-layout .chart-widget svg { width: 100%; max-width: 180px; height: auto; max-height: none; }
 .pie-chart-layout .chart-legend-pie { min-width: 0; width: 100%; display: block; margin: 0; }
 .pie-chart-layout .chart-legend-pie li { min-height: 30px; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 54px; gap: 9px; border-bottom: 1px solid var(--border-muted); }
