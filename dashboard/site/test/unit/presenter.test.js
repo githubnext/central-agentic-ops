@@ -878,6 +878,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const page = activatePage(rendered, 'performance');
+    expect(page?.querySelectorAll('.custom-view-grid > [data-view-layout="half"]')).toHaveLength(4);
     expect(page?.querySelector('[data-chart-widget="histogram"]')).not.toBeNull();
     expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(2);
     expect(page?.querySelectorAll('[data-chart-widget="bar"]')).toHaveLength(3);
