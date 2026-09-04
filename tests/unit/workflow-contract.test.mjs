@@ -776,30 +776,45 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(packageLifecycle, /exit "\$status"/);
 });
 
-test("release drafts reviewed notes for an explicit semantic version before publishing", () => {
+test("release computes an authorized semantic version bump and creates a draft for manual publication", () => {
   const source = workflow("release.yml");
   const config = parse(source);
   const jobs = generatedJobs(source);
-  const version = jobs.get("validate-version")?.block ?? "";
+  const version = jobs.get("resolve-version")?.block ?? "";
   const validation = jobs.get("validate-package")?.block ?? "";
   const prepare = jobs.get("prepare-release")?.block ?? "";
-  const publish = jobs.get("publish-release")?.block ?? "";
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
 
-  assert.equal(config.on.workflow_dispatch.inputs.operation.default, "prepare");
-  assert.deepEqual(config.on.workflow_dispatch.inputs.operation.options, ["prepare", "publish"]);
-  assert.equal(config.on.workflow_dispatch.inputs.version.default, "0.0.1");
-  assert.match(version, /RELEASE_VERSION: \$\{\{ inputs\.version \}\}/);
-  assert.match(version, /stable semantic version/);
+  assert.equal(config.on.workflow_dispatch.inputs.operation, undefined);
+  assert.equal(config.on.workflow_dispatch.inputs.bump.required, false);
+  assert.equal(config.on.workflow_dispatch.inputs.bump.default, "patch");
+  assert.deepEqual(config.on.workflow_dispatch.inputs.bump.options, ["patch", "minor", "major"]);
+  assert.match(version, /RELEASE_BUMP: \$\{\{ inputs\.bump \}\}/);
+  assert.match(version, /TRIGGERING_ACTOR: \$\{\{ github\.triggering_actor \}\}/);
+  assert.match(version, /const bump = \['patch', 'minor', 'major'\]\.includes\(requestedBump\) \? requestedBump : 'patch'/);
+  assert.match(version, /Unknown release bump.*defaulting to patch/);
+  assert.match(version, /context\.payload\.repository\.fork/);
+  assert.match(version, /getCollaboratorPermissionLevel/);
+  assert.match(version, /const role = access\.role_name \|\| access\.permission/);
+  assert.match(version, /\['maintain', 'admin'\]\.includes\(role\)/);
+  assert.match(version, /listReleases/);
+  assert.match(version, /listTags/);
+  assert.match(version, /\.filter\(\(release\) => !release\.draft\)/);
+  assert.match(version, /const versionNames = new Set\(\[\.\.\.releaseTags, \.\.\.tags\.map/);
+  assert.match(version, /const versions = \[\.\.\.versionNames\]\.flatMap\(toVersion\)/);
+  assert.match(version, /No stable semantic version releases or tags found/);
+  assert.match(version, /const latest = versions\[0\] \|\| \[0, 0, 0\]/);
+  assert.match(version, /if \(bump === 'major'\)/);
+  assert.match(version, /else if \(bump === 'minor'\)/);
+  assert.match(version, /Resolved \$\{bump\} bump from/);
   assert.match(validation, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: \$\{\{ github\.repository \}\}@\$\{\{ github\.sha \}\}/);
   assert.match(validation, /npm run test:package-lifecycle/);
-  assert.deepEqual(jobs.get("prepare-release")?.needs, ["validate-version", "validate-package"]);
+  assert.deepEqual(jobs.get("prepare-release")?.needs, ["resolve-version", "validate-package"]);
   assert.match(prepare, /draft: true/);
   assert.match(prepare, /generate_release_notes: true/);
-  assert.match(publish, /release\.tag_name === releaseTag \|\| release\.name === releaseTag/);
-  assert.match(publish, /Multiple draft releases match/);
-  assert.match(publish, /tag_name: releaseTag/);
-  assert.match(publish, /draft: false/);
+  assert.match(prepare, /publish the draft, and mark it as the latest release from the GitHub website/);
+  assert.equal(jobs.has("publish-release"), false);
+  assert.doesNotMatch(source, /updateRelease|draft: false|make_latest/);
   assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/release\.yml/);
 });
