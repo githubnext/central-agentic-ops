@@ -114,6 +114,7 @@ export const FILTER_DIMENSION_VALUES = [
   'resource',
   'run-status',
   'run-conclusion',
+  'outcome-category',
   'outcome-state',
   'rollout-mode',
   'engine',
