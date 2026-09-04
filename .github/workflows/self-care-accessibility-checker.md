@@ -97,7 +97,6 @@ tools:
     min-integrity: approved
     toolsets: [repos, actions]
   playwright:
-    mode: cli
     version: "0.1.18"
   bash:
     - "*"
@@ -115,13 +114,13 @@ safe-outputs:
 
 pre-agent-steps:
   - name: Install documentation dependencies
-    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: timeout 10m npm ci --ignore-scripts
   - name: Build documentation
-    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: timeout 10m npm run docs:build
   - name: Fetch the axe-core accessibility engine
-    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
@@ -133,7 +132,7 @@ pre-agent-steps:
       mv package/axe.min.js axe.min.js
       rm -rf package axe-core-4.13.0.tgz
   - name: Configure Playwright CLI launch options
-    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
@@ -149,7 +148,7 @@ pre-agent-steps:
       }
       EOF
   - name: Playwright browser launch preflight
-    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
