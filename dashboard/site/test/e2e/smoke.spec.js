@@ -131,6 +131,7 @@ function buildPresenterModuleUrl() {
   const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../debounce.js'", JSON.stringify(debounceModuleUrl))
+    .replace("'../horizon.js'", JSON.stringify(horizonModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
   const filterBarModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(filterBarSource)}`;
 
@@ -356,6 +357,9 @@ test('production pages expose a responsive executive chart', async ({ page }) =>
 });
 
 test('control-plane readiness surfaces blocking regressions', async ({ page }) => {
+  /** @type {Error[]} */
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
   await page.setContent(`
@@ -384,7 +388,9 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
           source: 'runs',
           rows: [
             { organization: 'githubnext', repository: 'gh-aw-cao', run: '42', 'run-title': 'Readiness smoke', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Smoke regression', 'run-link': 'https://example.com/runs/42' },
-            { organization: 'githubnext', repository: 'gh-aw-cao', run: '43', 'run-title': 'Worker smoke', workflow: '.github/workflows/daily-worker.md', 'started-at': '2026-09-03T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Worker regression', 'run-link': 'https://example.com/runs/43' }
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '43', 'run-title': 'Worker smoke', workflow: '.github/workflows/daily-worker.md', 'started-at': '2026-09-03T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Worker regression', 'run-link': 'https://example.com/runs/43' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '44', 'run-title': 'Current readiness', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T11:50:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'run-link': 'https://example.com/runs/44' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '45', 'run-title': 'Pending readiness', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T11:55:00Z', 'run-status': 'in_progress', 'run-conclusion': null, 'run-link': 'https://example.com/runs/45' }
           ],
           metadata
         },
@@ -404,22 +410,50 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
       document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
     </script>
   `);
+  expect(pageErrors).toEqual([]);
 
   const readinessPage = page.locator('[data-page-id="readiness"]');
   await expect(readinessPage).toBeVisible();
+  await expect(readinessPage.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('');
+  await expect(readinessPage.locator('.filter-bar .count-badge')).toHaveText('0');
   const readinessNavigation = page.locator('[data-nav-page-id="readiness"]');
   await expect(readinessNavigation).toHaveAttribute('aria-current', 'page');
   await expect(readinessNavigation.locator('svg')).toHaveCount(1);
   await expect(page.locator('.nav-section-label').filter({ hasText: 'Control plane' })).toBeVisible();
   await expect(readinessPage.locator('.custom-view').first().locator('[data-chart-widget="line"]')).toBeVisible();
   await expect(readinessPage).toContainText('Not ready');
-  await expect(readinessPage).toContainText('2 runs observed');
+  await expect(readinessPage).toContainText('3 completed runs observed');
   await expect(readinessPage).toContainText('Worker failures');
   await expect(readinessPage).toContainText('Worker warnings');
   await expect(readinessPage).toContainText('No-op reports');
   await expect(readinessPage).toContainText('Runtime regression');
   await expect(readinessPage).toContainText('Output warning');
   await expect(readinessPage).toContainText('Smoke regression');
+
+  const windowStart = readinessPage.locator('[aria-label="Window start time"]');
+  const windowStop = readinessPage.locator('[aria-label="Window stop time"]');
+  const [localStart, localStop] = await page.evaluate((values) => values.map((value) => {
+    const instant = new Date(value);
+    return new Date(instant.getTime() - instant.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  }), ['2026-09-03T11:40:00Z', '2026-09-03T12:00:00Z']);
+  await windowStart.fill(localStart);
+  await windowStop.fill(localStop);
+  await expect(windowStart).toHaveValue(localStart);
+  await expect(windowStop).toHaveValue(localStop);
+  await readinessPage.getByRole('button', { name: 'Apply' }).click();
+  await expect(readinessPage.locator('[aria-label="Time window"]')).toHaveValue('custom');
+  await expect(readinessPage).toContainText('Ready to ship');
+  await expect(readinessPage).toContainText('1 completed runs observed');
+  await expect(readinessPage).not.toContainText('Smoke regression');
+  await expect(readinessPage).not.toContainText('No failures observed');
+  await expect(readinessPage).not.toContainText('No warnings observed');
+  await expect(readinessPage).not.toContainText('No no-op reports observed');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(readinessPage.locator('.time-window-control')).toBeVisible();
+  await expect(readinessPage.locator('[aria-label="Window start time"]')).toBeVisible();
+  await expect(readinessPage.locator('[aria-label="Window stop time"]')).toBeVisible();
+  expect(await readinessPage.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
 
 test('performance page leads with a workflow duration histogram', async ({ page }) => {
