@@ -795,6 +795,7 @@ test("release computes an authorized semantic version bump before drafting and p
   assert.match(version, /getCollaboratorPermissionLevel/);
   assert.match(version, /const role = access\.role_name \|\| access\.permission/);
   assert.match(version, /\['maintain', 'admin'\]\.includes\(role\)/);
+  assert.match(version, /No stable semantic version tags found/);
   assert.match(version, /const latest = versions\[0\] \|\| \[0, 0, 0\]/);
   assert.match(version, /if \(bump === 'major'\)/);
   assert.match(version, /else if \(bump === 'minor'\)/);

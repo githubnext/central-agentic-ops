@@ -75,6 +75,9 @@ jobs:
               return match ? [[Number(match[1]), Number(match[2]), Number(match[3])]] : [];
             });
             versions.sort((left, right) => compareVersions(right, left));
+            if (versions.length === 0) {
+              core.warning('No stable semantic version tags found; using v0.0.0 as the bump baseline.');
+            }
             const latest = versions[0] || [0, 0, 0];
             const next = [...latest];
             if (bump === 'major') {
