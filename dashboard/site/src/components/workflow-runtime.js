@@ -277,6 +277,24 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
   );
 }
 
+/**
+ * Renders one titled, headed `value-history-panel` section shared by the
+ * outcome-diagnostics and weekly-attainment history views.
+ * @param {{ className: string, headingId: string, heading: string, description: string, body: Node[] }} options
+ * @returns {HTMLElement}
+ */
+function renderValueHistoryPanel({ className, headingId, heading, description, body }) {
+  return h(
+    'section',
+    { className: `value-history-panel ${className}`, 'aria-labelledby': headingId },
+    h('header', null,
+      h('h3', { id: headingId }, heading),
+      h('p', null, description)
+    ),
+    ...body
+  );
+}
+
 /** @param {Array<Record<string, unknown>>} observations */
 function renderValueHistory(observations) {
   const diagnostics = diagnosticSeries(observations);
@@ -284,28 +302,28 @@ function renderValueHistory(observations) {
   const outcomeSeries = diagnostics.length > 0 ? diagnostics : primaryChangeSeries(weekly);
   const sections = [];
   if (outcomeSeries.length > 0) {
-    sections.push(h(
-      'section',
-      { className: 'value-history-panel value-outcomes', 'aria-labelledby': 'value-outcomes-heading' },
-      h('header', null,
-        h('h3', { id: 'value-outcomes-heading' }, 'Outcome change from first observation'),
-        h('p', null, diagnostics.length > 0
-          ? 'Positive values mean improvement according to each diagnostic direction.'
-          : 'Positive values mean higher primary operational attainment.')
-      ),
-      renderOutcomeChangeChart(outcomeSeries),
-      h(
-        'ul',
-        { className: 'chart-legend value-diagnostic-legend' },
-        outcomeSeries.map((series, index) => h(
-          'li',
-          null,
-          h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
-          h('span', null, series.name),
-          h('strong', { className: series.latestChange > 0 ? 'value-gain' : series.latestChange < 0 ? 'value-loss' : '' }, formatPointChange(series.latestChange))
-        ))
-      )
-    ));
+    sections.push(renderValueHistoryPanel({
+      className: 'value-outcomes',
+      headingId: 'value-outcomes-heading',
+      heading: 'Outcome change from first observation',
+      description: diagnostics.length > 0
+        ? 'Positive values mean improvement according to each diagnostic direction.'
+        : 'Positive values mean higher primary operational attainment.',
+      body: [
+        renderOutcomeChangeChart(outcomeSeries),
+        h(
+          'ul',
+          { className: 'chart-legend value-diagnostic-legend' },
+          outcomeSeries.map((series, index) => h(
+            'li',
+            null,
+            h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+            h('span', null, series.name),
+            h('strong', { className: series.latestChange > 0 ? 'value-gain' : series.latestChange < 0 ? 'value-loss' : '' }, formatPointChange(series.latestChange))
+          ))
+        )
+      ]
+    }));
   }
   if (weekly.length > 0) {
     const primaryPoints = weekly.flatMap((week, index) => [
@@ -316,16 +334,16 @@ function renderValueHistory(observations) {
       { name: 'Weekly value', className: 'primary-weekly' },
       { name: '4-week rolling mean', className: 'primary-rolling' }
     ];
-    sections.push(h(
-      'section',
-      { className: 'value-history-panel value-attainment', 'aria-labelledby': 'value-attainment-heading' },
-      h('header', null,
-        h('h3', { id: 'value-attainment-heading' }, 'Weekly operational attainment'),
-        h('p', null, 'Weekly opportunity-adjusted values and their 4-week rolling mean; separate from outcome diagnostics.')
-      ),
-      renderChartWidget('line', primaryPoints, primarySeries),
-      renderChartLegend(primarySeries, 'line')
-    ));
+    sections.push(renderValueHistoryPanel({
+      className: 'value-attainment',
+      headingId: 'value-attainment-heading',
+      heading: 'Weekly operational attainment',
+      description: 'Weekly opportunity-adjusted values and their 4-week rolling mean; separate from outcome diagnostics.',
+      body: [
+        renderChartWidget('line', primaryPoints, primarySeries),
+        renderChartLegend(primarySeries, 'line')
+      ]
+    }));
   }
   return h('div', { className: 'value-history' }, sections);
 }
