@@ -436,9 +436,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     assert.match(source, /concurrency:\n\s+group:.*\n\s+job-discriminator: \$\{\{ github\.run_id \}\}\n\s+cancel-in-progress: true/, name);
     assert.doesNotMatch(source, /^\s+(contents|actions|issues|pull-requests): write$/m, name);
     if (limits.dispatchMax) {
-      assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);
+      assert.match(source, new RegExp(`dispatch_max: ${limits.dispatchMax}`), name);
       assert.match(source, new RegExp(`dispatch-workflow:[\\s\\S]*?max: ${limits.dispatchMax}`), name);
-      assert.match(source, new RegExp(`orchestrator_credits: "${limits.credits}"`), name);
+      assert.match(source, new RegExp(`orchestrator_credits: ${limits.credits}`), name);
     }
   }
 
@@ -483,7 +483,7 @@ test("control workflows deny before activation through one shared admission cont
   const controlled = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && !name.endsWith(".lock.md"))
     .map((name) => [name, workflow(name)])
-    .filter(([, source]) => /^\s+- uses: shared\/cao\.md$/m.test(source));
+    .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
 
   assert.equal(controlled.length, 33, "unexpected shared control workflow count");
   assert.equal(
@@ -1662,7 +1662,7 @@ test("EU CRA workflows preserve advisory and human-review boundaries", () => {
   assert.match(orchestrator, /plus at most two alternates per available slot/);
   assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
   assert.match(orchestrator, /Keep that total at or below 48/);
-  assert.match(orchestrator, /worker_credits_per_target: "600"/);
+  assert.match(orchestrator, /worker_credits_per_target: 600/);
 
   for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Maintenance"]]) {
     const source = workflow(name);
