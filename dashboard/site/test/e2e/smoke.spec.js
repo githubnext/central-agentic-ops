@@ -168,17 +168,19 @@ test('GitHub API rate-limit dashboard remains operable at desktop and narrow wid
     </script>
   `);
 
+  await page.locator('.nav-section').filter({ hasText: 'Control plane' }).locator('summary').click();
   await page.locator('[data-nav-page-id="github-api"]').click();
   const apiPage = page.locator('[data-page-id="github-api"]');
   const capacity = apiPage.locator('[aria-labelledby="github-api-remaining-capacity-heading"]');
-  await expect(capacity.locator('[data-chart-widget="bar"]')).toBeVisible();
+  const capacityChart = capacity.locator('[data-chart-widget="bar"]');
+  await expect(capacityChart).toBeVisible();
   await expect(apiPage.getByText('critical', { exact: true }).first()).toBeVisible();
-  let box = await capacity.boundingBox();
+  let box = await capacityChart.boundingBox();
   expect(box?.width).toBeLessThanOrEqual(1200);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(capacity.locator('[data-chart-widget="bar"]')).toBeVisible();
-  box = await capacity.boundingBox();
+  await expect(capacityChart).toBeVisible();
+  box = await capacityChart.boundingBox();
   expect(box?.x).toBeGreaterThanOrEqual(0);
   expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
   await expect(apiPage.locator('details[data-disclosure="supplemental"]')).toHaveCount(4);
