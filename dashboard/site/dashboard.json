@@ -135,20 +135,6 @@
               "mark": "element",
               "element": "domain-attention",
               "layout": "full"
-            },
-            {
-              "id": "overview-package-status",
-              "locked": true,
-              "title": "Packages",
-              "description": "Managed package readiness across rollout mode, worker workflows, and inventory state.",
-              "data": {
-                "sources": [
-                  "overview-managed-packages"
-                ]
-              },
-              "mark": "element",
-              "element": "package-status-grid",
-              "layout": "full"
             }
           ]
         }

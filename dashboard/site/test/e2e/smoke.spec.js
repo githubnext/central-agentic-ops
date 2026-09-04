@@ -685,7 +685,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveCount(1);
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(3);
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(2);
   await expect(page.locator('.overview-page .custom-view').first().locator('[data-chart-widget="swimlane"]')).toBeVisible();
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Attention by domain', level: 2 })).toBeVisible();
@@ -713,20 +713,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
     '#page-cost'
   ]);
   await expect(page.locator('.overview-method-note')).toContainText('State key:');
-  await expect(page.getByRole('heading', { name: 'Packages', level: 2 })).toBeVisible();
-  const packageCards = page.locator('.package-status-card');
-  await expect(packageCards).toHaveCount(1);
-  await expect(packageCards.locator('header strong')).toHaveText(['Daily Ops']);
-  await expect(packageCards.first()).toHaveClass(/package-status-attention/);
-  await expect(packageCards.first()).toContainText('Needs attention');
-  await expect(packageCards.locator('.package-status-live-coverage')).toHaveText('Rollout1 live · 5 review17% live');
-  await expect(packageCards.locator('progress')).toHaveAttribute('value', '17');
-  await expect(packageCards.locator('.package-status-repository-heading')).toHaveText('Target repositoriesMode');
-  await expect(packageCards.locator('.package-status-repositories li')).toHaveCount(6);
-  await expect(packageCards.locator('.package-status-activity')).toContainText('2 dispatches');
-  await expect(packageCards.locator('.package-status-activity')).toContainText('1/2 produced output');
-  await expect(packageCards.locator('.package-status-identity')).toHaveAttribute('href', '#page-package-insights?package=daily-ops');
-  await expect(packageCards.locator('.package-status-activity')).toHaveAttribute('href', '#page-package-dispatches?package=daily-ops');
+  await expect(page.locator('.overview-page .overview-package-status')).toHaveCount(0);
   await expect(page.locator('[data-page-id="overview"] .data-state-summary')).toBeHidden();
 
   await page.setViewportSize({ width: 400, height: 900 });
@@ -741,10 +728,6 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('[data-page-id="runtime"]')).toBeVisible();
   await expect(page.locator('#runtime-observed-root-episodes-heading')).toBeInViewport();
 
-  await page.evaluate(() => { window.location.hash = '#page-overview'; });
-  await expect(page.locator('[data-page-id="overview"]')).toBeVisible();
-  await packageCards.locator('.package-status-activity').click();
-  await expect(page).toHaveURL(/#page-package-dispatches\?package=daily-ops$/);
 });
 
 test('built-in repositories page keeps repository scope above the run metadata', async ({ page }) => {
