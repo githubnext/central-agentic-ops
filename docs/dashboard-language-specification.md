@@ -564,7 +564,7 @@ The optional page `filter-bar` is an editable presentation widget shared by buil
 
 ### 11.1 Syntax and View Classes
 
-A custom page contains a non-empty `views` sequence. Each view has one `data` mapping and one mark. Data marks use an `encoding`; named UI elements use `element`.
+A custom page contains a non-empty `views` sequence. Each view has one `data` mapping and one mark. Data marks use an `encoding`; named UI elements use `element`. A named UI element may include a non-empty `intent` that records the operator outcome the element is designed to support. This authoring metadata is retained as a hint for future agentic mutation and is not rendered as visible or accessible content.
 
 A table encoding may declare `actions` to materialize an intent as a `copy-prompt` icon-and-label button in the table's leading columns. Each action has non-empty `intent`, `presentation`, `icon`, and `label` values plus a non-empty `context` sequence of unique source fields. An action may use `when` with a source field and scalar `equals` value to limit the action to rows whose field has the same scalar type and value. Activating the row action opens a modal preview containing the complete prompt and a separate copy control; opening the preview does not write to the clipboard. The prompt contains the intent followed by only the available scalar values selected by `context`, serialized as an ordered JSON object and explicitly identified as untrusted data. Link objects contribute only their HTTPS `href`. Authors do not interpolate row values into the intent, and undeclared row fields are not copied.
 
@@ -678,6 +678,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-031:** An `element` view **MAY** declare `title-link` with exactly one `href-field` and one `identifier-field` declared by the same selected source. `href-field` **MUST** name a relation-specific link field and `identifier-field` **MUST** name a scalar field. When a route-aware element allocates a title with both runtime values present, the presenter **MUST** render a sibling link labeled `#<identifier>` using the link object's safe HTTPS target; absent or invalid values **MUST** leave the title-link hidden. Other marks **MUST NOT** declare `title-link`.
 - **DLS-VIEW-032:** A `chart` view **MAY** declare Boolean `table`; `true` **MUST** include the companion data table and `false` **MUST** omit it. When `table` is omitted, line, dot, pie, histogram, and swimlane charts **MUST** omit the table and bar charts **MUST** include it. Other marks **MUST NOT** declare `table`.
 - **DLS-VIEW-033:** A swimlane presenter **MUST** expose persistent text labels for every lane and readable time labels on its primary axis. Each isolated observation or contiguous observation range **MUST** be focusable and have an accessible name containing its category, observation count, and exact timestamp or timestamp range. It **MUST NOT** rely on color alone.
+- **DLS-VIEW-034:** An `element` view **MAY** declare a non-empty `intent` describing the operator outcome it is designed to support. Other marks **MUST NOT** declare `intent`. A presenter **MUST** treat `intent` as inert authoring metadata and **MUST NOT** render it as visible or accessible content.
 
 ---
 
@@ -768,7 +769,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–003 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
-| DLS-VIEW-022–024, DLS-VIEW-026–031 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, title links, and optional chart data tables. |
+| DLS-VIEW-022–024, DLS-VIEW-026–034 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, title links, optional chart data tables, swimlane accessibility, and inert element intent. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
 | DLS-SAFE-001–006, DLS-SAFE-012, DLS-SAFE-015 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, outcome-HTML allowlisting, prompt-context serialization, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |

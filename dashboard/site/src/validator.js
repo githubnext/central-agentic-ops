@@ -1395,6 +1395,16 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   validateOptionalStringField(view.title, `${path}.title`, errors);
   validateOptionalStringField(view.description, `${path}.description`, errors);
+  if (view.intent !== undefined) {
+    validateStringField(view.intent, `${path}.intent`, true, errors);
+    if (view.mark !== 'element') {
+      errors.push(createError(
+        ERROR_CODES.incompatibleMarkChannelTypeOrTimeUnit,
+        'intent is allowed only when mark is "element".',
+        `${path}.intent`
+      ));
+    }
+  }
   validateCallout(
     view.callout,
     getValueNodeByKey(viewNode, 'callout'),

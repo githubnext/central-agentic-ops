@@ -2834,6 +2834,61 @@ dashboard:
     expect(result.ok).toBe(true);
   });
 
+  it('DLS-VIEW-034 accepts inert element intent and rejects empty or non-element intent', () => {
+    const elementDocument = `language-version: "0.1.0"
+dashboard:
+  id: element-intent
+  title: Element Intent
+  pages:
+    - id: operations
+      kind: custom
+      views:
+        - id: summary
+          intent: Help operators identify workflow states that require attention.
+          data:
+            sources: [workflows]
+          mark: element
+          element: summary-grid
+`;
+    expect(validateDashboardDocument(elementDocument).ok).toBe(true);
+
+    const emptyIntent = validateDashboardDocument(
+      elementDocument.replace(
+        'intent: Help operators identify workflow states that require attention.',
+        'intent: ""'
+      )
+    );
+    expect(emptyIntent.ok).toBe(false);
+    if (!emptyIntent.ok) {
+      expect(emptyIntent.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[0].views[0].intent'
+      }));
+    }
+
+    const nonElementIntent = validateDashboardDocument(
+      elementDocument.replace(
+        `          data:
+            sources: [workflows]
+          mark: element
+          element: summary-grid`,
+        `          data:
+            source: runs
+          mark: table
+          encoding:
+            columns:
+              - field: run-conclusion`
+      )
+    );
+    expect(nonElementIntent.ok).toBe(false);
+    if (!nonElementIntent.ok) {
+      expect(nonElementIntent.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E007',
+        path: '$.dashboard.pages[0].views[0].intent'
+      }));
+    }
+  });
+
   it('DLS-VIEW-002 DLS-VIEW-008 DLS-VIEW-022 DLS-VIEW-023 rejects inferred or unknown UI declarations', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
