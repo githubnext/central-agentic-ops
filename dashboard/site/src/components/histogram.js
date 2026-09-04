@@ -61,6 +61,7 @@ export function renderHistogramBins(options) {
     ...bins.map((bin, index) => {
       const barHeight = maximumCount > 0 ? (bin.count / maximumCount) * height : 0;
       return h('rect', {
+        style: `--chart-entry-index: ${index}`,
         x: (index * barWidth) + gap / 2,
         y: height - barHeight,
         width: Math.max(0, barWidth - gap),
