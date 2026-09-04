@@ -1643,7 +1643,9 @@ test("EU CRA workflows preserve advisory and human-review boundaries", () => {
     assert.match(source, /Write concise technical English/);
     assert.match(source, /small moment of delight/);
     assert.match(source, /shared progressive-disclosure contract/);
-    assert.match(source, /Keep context bounded/);
+    assert.match(source, /at most 18 evidence-gathering tool calls/);
+    assert.match(source, /Do not repeat an equivalent search or fetch with another tool/);
+    assert.match(source, /keep the issue body at or below 1,500 words/);
   }
 
   assert.match(maintainer, /schedule: daily/);
