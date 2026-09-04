@@ -12,6 +12,7 @@ import { renderEmptyMessage } from './ui-primitives.js';
 const MAX_LINE_POINT_RADIUS = 2.5;
 const MIN_LINE_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
+const CHART_SERIES_COLOR_COUNT = 12;
 
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
@@ -43,7 +44,7 @@ export function groupChartSeries(points) {
 export function listChartSeries(points) {
   return groupChartSeries(points).map(([name], index) => ({
     name,
-    className: `chart-series-${(index % 6) + 1}`
+    className: `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`
   }));
 }
 
@@ -96,7 +97,7 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
       return h(
         'li',
         null,
-        h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+        h('i', { className: `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`, 'aria-hidden': 'true' }),
         h('span', null, renderSafeLink(label, link)),
         h('strong', null, formatNumber(value, unit)),
         h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
@@ -135,7 +136,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       h(
         'svg',
         { viewBox: '0 0 42 42', role: 'img', 'aria-label': `Pie chart: ${entries.map(([label, value]) => `${label} ${formatNumber(value, unit)}`).join(', ') || 'no data'}` },
-        h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 8 }),
+        h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 10 }),
         ...entries.map(([label, value], index) => {
           const percent = total > 0 ? (value / total) * 100 : 0;
           const segmentLabel = `${label}: ${formatNumber(value, unit)}`;
@@ -152,12 +153,12 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           },
           h('title', null, segmentLabel),
           h('circle', {
-            className: `pie-chart-segment chart-series-${(index % 6) + 1}`,
+            className: `pie-chart-segment chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`,
             cx: 21,
             cy: 21,
             r: 15.9155,
             fill: 'none',
-            'stroke-width': 8,
+            'stroke-width': 10,
             'stroke-dasharray': `${percent} ${100 - percent}`,
             'stroke-dashoffset': String(-offset),
             'data-chart-category': label
@@ -204,13 +205,14 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram with ${bins.length} automatically calculated bins` },
+        ...[4, 21, 38].map((y) => h('line', { className: 'histogram-chart-grid', x1: 0, y1: y, x2: 100, y2: y })),
         h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...bins.map((bin, index) => {
           const height = Math.max(1, (bin.count / maximum) * 34);
           const label = `${binLabel(bin)}: ${bin.count} observation${pluralSuffix(bin.count)}`;
           const x = index * barWidth;
           const tooltipX = Math.min(Math.max(x + ((barWidth - 1) / 2) - 21, 1), 57);
-          return h('g', {
+          const mark = h('g', {
             className: 'chart-point histogram-chart-mark',
             style: `--chart-entry-index: ${index}`,
             tabIndex: 0,
@@ -223,7 +225,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             x,
             y: 38 - height,
             width: Math.max(0, barWidth - 1),
-            height
+            height,
+            rx: 0.75
           }),
           h(
             'g',
@@ -239,6 +242,10 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               ...(label.length > 22 ? { textLength: 36, lengthAdjust: 'spacingAndGlyphs' } : {})
             }, label)
           ));
+          const bringTooltipToFront = () => mark.parentNode?.append(mark);
+          mark.addEventListener('pointerenter', bringTooltipToFront);
+          mark.addEventListener('focus', bringTooltipToFront);
+          return mark;
         })
       ),
       bins.length > 0
