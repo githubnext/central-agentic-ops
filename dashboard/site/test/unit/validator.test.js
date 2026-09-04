@@ -327,7 +327,9 @@ describe('dashboard document validation', () => {
       callout: { label: 'Evaluation boundary', icon: 'meter' }
     });
     expect(callout.description).toContain('partial telemetry');
-    const valuePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'value');
+    const valuePage = document.dashboard.pages.find(
+      (/** @type {{ id: string }} */ page) => page.id === 'operational-value'
+    );
     const valueCallout = valuePage.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'experiment-evidence-boundary'
     );
