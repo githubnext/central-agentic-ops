@@ -313,18 +313,17 @@
           {
             "id": "github-api-remaining-trend",
             "title": "Remaining requests",
-            "description": "Remaining request capacity before and after each instrumented operation.",
+            "description": "Remaining request capacity over time, with each resource limit shown as a horizontal line.",
             "data": {
               "source": "github-api-rate-limits"
             },
             "mark": "chart",
-            "chart": "line",
+            "chart": "dot",
             "layout": "full",
             "encoding": {
               "x": {
                 "field": "observed-at",
                 "type": "temporal",
-                "time-unit": "hour",
                 "title": "Observed"
               },
               "y": {
@@ -335,6 +334,11 @@
               "color": {
                 "field": "resource",
                 "type": "nominal"
+              },
+              "reference": {
+                "field": "limit",
+                "type": "quantitative",
+                "title": "Request limit"
               }
             }
           },

@@ -138,9 +138,10 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
  * @param {string} [totalLabel]
  * @param {{ name: string, symbol: string, significant: number } | null} [unit]
  * @param {Record<string, unknown> | null} [timeRange]
+ * @param {string | null} [referenceField]
  * @returns {HTMLElement}
  */
-export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null, timeRange = null) {
+export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null, timeRange = null, referenceField = null) {
   const pieData = chartType === 'pie' ? pieSummary ?? pieChartEntries(points) : null;
   const entryCount = pieData ? pieData.entries.length : points.length;
   if (entryCount < 2 && chartType !== 'swimlane') {
@@ -283,7 +284,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     );
   }
 
-  if (chartType === 'line') {
+  if (chartType === 'line' || chartType === 'dot') {
+    const isDotChart = chartType === 'dot';
     const groupedSeries = groupChartSeries(points);
     const hasWindowHighlight = points.some((point) => typeof point.highlighted === 'boolean');
     const showInteractivePoints = points.length <= MAX_INTERACTIVE_LINE_POINTS;
@@ -296,6 +298,13 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       const value = toNumber(point.y);
       if (Number.isFinite(value)) maximum = Math.max(maximum, value);
     }
+    const referenceLines = isDotChart && referenceField
+      ? groupedSeries.flatMap(([seriesName, seriesPoints]) => [...new Set(seriesPoints
+        .map((point) => toNumber(point.source?.[referenceField]))
+        .filter(Number.isFinite))]
+        .map((value) => ({ seriesName, value })))
+      : [];
+    for (const { value } of referenceLines) maximum = Math.max(maximum, value);
     const pointRadius = lineChartPointRadius(points.length);
     const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
     const highlightedIndexes = [...new Set(points.flatMap((point) => {
@@ -312,13 +321,19 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     return h(
       'div',
       {
-        className: 'chart-widget line-chart-widget',
-        'data-chart-widget': 'line',
+        className: `chart-widget ${chartType}-chart-widget`,
+        'data-chart-widget': chartType,
         'data-line-rendering': showInteractivePoints ? 'rich' : 'compact'
       },
       h(
         'svg',
-        { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
+        {
+          viewBox: '0 0 100 42',
+          role: 'img',
+          'aria-label': isDotChart
+            ? `Dot chart with ${points.length} points and ${referenceLines.length} reference lines`
+            : `Line chart with ${points.length} points`
+        },
         windowBand ? h('rect', {
           className: 'line-chart-window-band',
           x: windowBand.start,
@@ -329,6 +344,16 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         }) : null,
         ...gridLines,
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
+        ...referenceLines.map(({ seriesName, value }) => h('line', {
+          className: `dot-chart-reference ${seriesClassNames.get(seriesName) ?? 'chart-series-1'}`,
+          x1: 0,
+          y1: 38 - (Math.max(0, value) / maximum) * 34,
+          x2: 100,
+          y2: 38 - (Math.max(0, value) / maximum) * 34,
+          'data-chart-reference': seriesName,
+          'data-chart-reference-value': String(value),
+          'aria-hidden': 'true'
+        })),
         ...groupedSeries.flatMap(([seriesName, seriesPoints], seriesIndex) => {
           const seriesClassName = seriesClassNames.get(seriesName) ?? 'chart-series-1';
           const coordinates = seriesPoints.map((point) => {
@@ -342,15 +367,15 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             ? sampleLineCoordinates(coordinates.filter(({ point }) => point.highlighted), MAX_RENDERED_LINE_POINTS)
             : [];
           return [
-            h('polyline', {
+            ...(!isDotChart ? [h('polyline', {
               className: `line-chart-series ${seriesClassName}${hasWindowHighlight ? ' line-chart-context' : ''}`,
               style: `--chart-entry-index: ${seriesIndex}`,
               pathLength: 1,
               points: renderedCoordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
-            }),
-            ...(highlightedCoordinates.length > 1
+            })] : []),
+            ...(!isDotChart && highlightedCoordinates.length > 1
               ? [h('polyline', {
                 className: `line-chart-series line-chart-current ${seriesClassName}`,
                 style: `--chart-entry-index: ${seriesIndex}`,
@@ -359,6 +384,14 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
                 fill: 'none',
                 'data-chart-window': 'current'
               })]
+              : []),
+            ...(isDotChart && !showInteractivePoints
+              ? renderedCoordinates.map(({ x, y }) => h('circle', {
+                className: `dot-chart-point ${seriesClassName}`,
+                cx: x,
+                cy: y,
+                r: pointRadius
+              }))
               : []),
             ...(showInteractivePoints ? coordinates.map(({ point, x, y }, pointIndex) => h('g', {
               className: `chart-point${point.highlighted === false ? ' chart-point-context' : point.highlighted ? ' chart-point-current' : ''}`,
@@ -369,7 +402,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             },
             h('title', null, chartPointLabel(point, unit)),
             h('circle', {
-              className: `line-chart-point ${seriesClassName}`,
+              className: `${isDotChart ? 'dot-chart-point' : 'line-chart-point'} ${seriesClassName}`,
               cx: x,
               cy: y,
               r: hasWindowHighlight ? 0.65 : pointRadius
@@ -395,7 +428,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       xValues.length > 0
         ? h(
           'div',
-          { className: 'chart-axis timeline-chart-axis', 'data-chart-axis': 'line' },
+          { className: 'chart-axis timeline-chart-axis', 'data-chart-axis': chartType },
           ...timelineTicks.map((value) => h('span', { title: value }, formatTimelineTick(value)))
         )
         : null
