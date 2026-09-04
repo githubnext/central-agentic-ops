@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderIdentityLink, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderIdentityLink, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -94,6 +94,17 @@ describe('ui primitives', () => {
     expect(rendered.tagName).toBe('SPAN');
     expect(rendered.className).toBe('table-summary-empty');
     expect(rendered.textContent).toBe('No timestamps');
+  });
+
+  it('renders the shared list-with-fallback pattern for populated and empty item sets', () => {
+    const populated = renderListWithFallback('my-list', [1, 2], (value) => `item ${value}`, 'No items.');
+    expect(populated.tagName).toBe('UL');
+    expect(populated.className).toBe('my-list');
+    expect([...populated.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['item 1', 'item 2']);
+
+    const empty = renderListWithFallback('my-list', [], (value) => `item ${value}`, 'No items.');
+    expect(empty.querySelectorAll('li')).toHaveLength(1);
+    expect(empty.textContent).toBe('No items.');
   });
 
   it('renders the shared close/dismiss icon button with matching title and aria-label text', () => {
