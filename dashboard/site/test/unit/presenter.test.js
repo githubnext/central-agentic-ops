@@ -556,14 +556,15 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
+    const controlPlaneNavigation = authoritativeDashboardDocument.dashboard.navigation?.find(
+      /** @param {{ label?: string }} section */
+      (section) => section.label === 'Control plane'
+    );
     expect(labels).toEqual(['Attention', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
-    expect(authoritativeDashboardDocument.dashboard.navigation?.[2]).toEqual(expect.objectContaining({
-      label: 'Control plane',
-      pages: expect.arrayContaining(['github-api'])
-    }));
+    expect(controlPlaneNavigation?.pages).toEqual(expect.arrayContaining(['github-api']));
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
       'Preview',
