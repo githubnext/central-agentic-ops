@@ -165,6 +165,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           const tooltipY = Math.min(Math.max(21 + (Math.sin(midpoint) * 14) - 9, 1), 34);
           const segment = h('g', {
             className: 'chart-point pie-chart-mark',
+            style: `--chart-entry-index: ${index}`,
             tabIndex: 0,
             role: 'img',
             'aria-label': segmentLabel
@@ -232,6 +233,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           const tooltipX = Math.min(Math.max(x + ((barWidth - 1) / 2) - 21, 1), 57);
           const mark = h('g', {
             className: 'chart-point histogram-chart-mark',
+            style: `--chart-entry-index: ${index}`,
             tabIndex: 0,
             role: 'img',
             'aria-label': label
@@ -313,7 +315,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         }) : null,
         ...gridLines,
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
-        ...groupedSeries.flatMap(([seriesName, seriesPoints]) => {
+        ...groupedSeries.flatMap(([seriesName, seriesPoints], seriesIndex) => {
           const seriesClassName = seriesClassNames.get(seriesName) ?? 'chart-series-1';
           const coordinates = seriesPoints.map((point) => {
             const xIndex = xValues.indexOf(point.x);
@@ -324,6 +326,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           return [
             h('polyline', {
               className: `line-chart-series ${seriesClassName}${hasWindowHighlight ? ' line-chart-context' : ''}`,
+              style: `--chart-entry-index: ${seriesIndex}`,
+              pathLength: 1,
               points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
@@ -331,13 +335,16 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             ...(hasWindowHighlight && coordinates.filter(({ point }) => point.highlighted).length > 1
               ? [h('polyline', {
                 className: `line-chart-series line-chart-current ${seriesClassName}`,
+                style: `--chart-entry-index: ${seriesIndex}`,
+                pathLength: 1,
                 points: coordinates.filter(({ point }) => point.highlighted).map(({ x, y }) => `${x},${y}`).join(' '),
                 fill: 'none',
                 'data-chart-window': 'current'
               })]
               : []),
-            ...coordinates.map(({ point, x, y }) => h('g', {
+            ...coordinates.map(({ point, x, y }, pointIndex) => h('g', {
               className: `chart-point${point.highlighted === false ? ' chart-point-context' : point.highlighted ? ' chart-point-current' : ''}`,
+              style: `--chart-entry-index: ${pointIndex}`,
               tabIndex: 0,
               role: 'img',
               'aria-label': `${chartPointLabel(point, unit)}${point.highlighted === false ? ' (context)' : point.highlighted ? ' (selected window)' : ''}`
