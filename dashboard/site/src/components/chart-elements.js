@@ -171,6 +171,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               ...(tooltipWidth === 40 ? { textLength: 35, lengthAdjust: 'spacingAndGlyphs' } : {})
             }, segmentLabel)
           ));
+          const bringTooltipToFront = () => segment.parentNode?.append(segment);
+          segment.addEventListener('pointerenter', bringTooltipToFront);
+          segment.addEventListener('focus', bringTooltipToFront);
           offset += percent;
           return segment;
         }),

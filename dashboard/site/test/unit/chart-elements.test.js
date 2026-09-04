@@ -126,6 +126,9 @@ describe('chart element helpers', () => {
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3');
     expect(pie.querySelector('.pie-chart-tooltip rect')?.getAttribute('width')).toBe('21.25');
+    const firstPieMark = pie.querySelector('.pie-chart-mark');
+    firstPieMark?.dispatchEvent(new Event('pointerenter'));
+    expect(pie.querySelector('.pie-chart-mark:last-of-type')).toBe(firstPieMark);
     expect(histogram.getAttribute('data-chart-widget')).toBe('histogram');
     expect(histogram.querySelectorAll('.histogram-chart-bar')).toHaveLength(3);
     expect(histogram.querySelectorAll('.histogram-chart-mark .point-tooltip')).toHaveLength(3);
