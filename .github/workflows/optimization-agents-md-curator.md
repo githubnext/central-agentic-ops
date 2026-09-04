@@ -78,7 +78,7 @@ network:
     - defaults
     - github
 
-run-name: "Ambient context AGENTS.md · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
+run-name: "AW Optimization / AGENTS.md · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
