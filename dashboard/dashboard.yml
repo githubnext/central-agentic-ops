@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 120
     outputs:
       run-id: ${{ steps.dispatch.outputs.run-id }}
+      skipped: ${{ steps.dispatch.outputs.skipped }}
     permissions:
       actions: write
       contents: read
@@ -38,6 +39,7 @@ jobs:
 
   pages:
     needs: build
+    if: needs.build.outputs.skipped != 'true'
     runs-on: ubuntu-latest
     permissions:
       actions: read

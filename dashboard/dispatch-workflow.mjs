@@ -3,6 +3,13 @@ import { appendFile } from "node:fs/promises";
 const pollIntervalMs = Number(process.env.DISPATCH_POLL_INTERVAL_MS || "5000");
 const dispatchDiscoveryLookbackMs = 60_000;
 
+class GitHubApiError extends Error {
+  constructor(status, statusText, detail) {
+    super(`GitHub API ${status} ${statusText}: ${detail}`);
+    this.status = status;
+  }
+}
+
 function requiredEnvironment(name) {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`${name} is required`);
@@ -30,9 +37,21 @@ async function api(path, options = {}) {
   });
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(`GitHub API ${response.status} ${response.statusText}: ${text}`);
+    throw new GitHubApiError(response.status, response.statusText, text);
   }
   return text ? JSON.parse(text) : null;
+}
+
+async function markSkipped(message) {
+  console.warn(`Warning: ${message}`);
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY?.trim();
+  if (summaryPath) {
+    await appendFile(summaryPath, `> **Warning:** ${message}\n\n`);
+  }
+  const outputPath = process.env.GITHUB_OUTPUT?.trim();
+  if (outputPath) {
+    await appendFile(outputPath, "skipped=true\n");
+  }
 }
 
 function wait(milliseconds) {
@@ -108,7 +127,11 @@ async function main() {
   ].join("\n"));
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
+  if (error instanceof GitHubApiError && error.status === 403 && /rate limit/i.test(error.message)) {
+    await markSkipped("GitHub API rate limit exceeded; dashboard dispatch was skipped.");
+    return;
+  }
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
 });
