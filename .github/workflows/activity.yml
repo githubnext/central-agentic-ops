@@ -67,9 +67,6 @@ jobs:
           restore-keys: |
             cao-activity-
 
-      - name: Remove prior-run GitHub API telemetry
-        run: rm -f "$RUNNER_TEMP/cao-activity/cao-gh.jsonl"
-
       - name: Resolve activity indexer
         run: |
           if [[ -f .github/aw/activity/index.mjs ]]; then
@@ -82,6 +79,9 @@ jobs:
             echo "Activity indexer is unavailable" >&2
             exit 1
           fi
+
+      - name: Restore recent GitHub API telemetry
+        run: node "$GITHUB_TELEMETRY" prepare "$RUNNER_TEMP/cao-activity/cao-gh.jsonl"
 
       - name: Resolve dashboard collectors
         run: |

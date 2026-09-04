@@ -34,6 +34,7 @@ export const GITHUB_RATE_LIMIT_THRESHOLDS = Object.freeze({
   warningRunwayRatio: 1.25,
   minimumBurnIntervals: 2,
 });
+const EMPTY_RATE_LIMIT_ERROR = "GitHub API returned no valid rate-limit resources.";
 
 function repositoryParts(repository = "") {
   const [organization = "", name = ""] = repository.split("/");
@@ -134,15 +135,29 @@ function riskStatus(row, sourceComplete, sourceFreshness) {
   return row["burn-rate-per-minute"] === null ? "unknown" : "healthy";
 }
 
+function hasValidRateLimitResources(entry) {
+  if (!Number.isFinite(Date.parse(entry?.observedAt))) return false;
+  return Object.values(entry?.rateLimit || {}).some((rate) => {
+    const reset = Date.parse(rate?.resetAt);
+    const limit = finite(rate?.limit);
+    const remaining = finite(rate?.remaining);
+    return Number.isFinite(reset) && limit !== null && limit > 0 && remaining !== null;
+  });
+}
+
+function rateLimitDiagnostic(entry) {
+  return entry?.rateLimitError || (hasValidRateLimitResources(entry) ? "" : EMPTY_RATE_LIMIT_ERROR);
+}
+
 export function githubTelemetryRows(entries = [], generatedAt = new Date().toISOString()) {
-  const complete = entries.length > 0 && entries.every((entry) => !entry.rateLimitError);
+  const complete = entries.length > 0 && entries.every((entry) => !rateLimitDiagnostic(entry));
   const freshness = telemetryFreshness(entries, generatedAt);
   const segments = new Map();
   const sortedEntries = [...entries].sort((left, right) => Date.parse(left?.observedAt) - Date.parse(right?.observedAt));
   const rows = sortedEntries.flatMap((entry) => {
     const credentialName = credential(entry);
     const segment = segments.get(credentialName) || 1;
-    if (entry.rateLimitError) segments.set(credentialName, segment + 1);
+    if (rateLimitDiagnostic(entry)) segments.set(credentialName, segment + 1);
     return Object.entries(entry?.rateLimit || {}).flatMap(([resource, rate]) => {
     const observed = Date.parse(entry.observedAt);
     const reset = Date.parse(rate?.resetAt);
@@ -258,7 +273,7 @@ export function githubCollectorRows(entries = []) {
     "cache-bytes": entry.activityCache?.bytes ?? 0,
     "cache-entries": entry.activityCache?.entryCount ?? 0,
     "cache-folders": entry.activityCache?.folderCount ?? 0,
-    "rate-limit-error": entry.rateLimitError || "",
+    "rate-limit-error": rateLimitDiagnostic(entry),
   }));
 }
 
@@ -1046,12 +1061,13 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
   const githubAsOf = telemetryAsOf(githubTelemetry, generatedAt);
   const githubFreshness = telemetryFreshness(githubTelemetry, generatedAt);
-  const githubComplete = githubTelemetry.length > 0 && githubTelemetry.every((entry) => !entry.rateLimitError);
+  const githubRateLimitRows = githubTelemetryRows(githubTelemetry, generatedAt);
+  const githubComplete = githubTelemetry.length > 0 && githubTelemetry.every((entry) => !rateLimitDiagnostic(entry));
   sources["github-api-rate-limits"] = source(
     "github-api-rate-limits",
-    githubTelemetryRows(githubTelemetry, generatedAt),
+    githubRateLimitRows,
     generatedAt,
-    githubTelemetry.length > 0,
+    githubRateLimitRows.length > 0,
     githubComplete,
     githubFreshness,
     githubAsOf,

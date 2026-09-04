@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { appendFile, mkdir, readdir } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_CACHE_ROOT = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-activity");
 const DEFAULT_LEDGER_PATH = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-gh", "cao-gh.jsonl");
+export const GITHUB_TELEMETRY_RETENTION_HOURS = 24;
+const EMPTY_RATE_LIMIT_ERROR = "GitHub API returned no valid rate-limit resources.";
 
 export async function collectActivityCacheState(root = DEFAULT_CACHE_ROOT, execute = spawnSync) {
   const entries = await readdir(root, { withFileTypes: true }).catch((error) => {
@@ -47,7 +49,36 @@ function queryRateLimit(token, execute = spawnSync) {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(result.stderr?.trim() || `gh api rate_limit exited with status ${result.status}`);
-  return normalizeRateLimit(JSON.parse(result.stdout));
+  const rateLimit = normalizeRateLimit(JSON.parse(result.stdout));
+  if (Object.keys(rateLimit).length === 0) throw new Error(EMPTY_RATE_LIMIT_ERROR);
+  return rateLimit;
+}
+
+export async function prepareGithubTelemetryHistory({
+  sourcePath,
+  ledgerPath = DEFAULT_LEDGER_PATH,
+  now = () => new Date(),
+  retentionHours = GITHUB_TELEMETRY_RETENTION_HOURS,
+}) {
+  const content = sourcePath
+    ? await readFile(sourcePath, "utf8").catch((error) => {
+      if (error?.code === "ENOENT") return "";
+      throw error;
+    })
+    : "";
+  const cutoff = now().getTime() - retentionHours * 60 * 60 * 1000;
+  const retained = content.split(/\r?\n/).filter(Boolean).flatMap((line) => {
+    try {
+      const entry = JSON.parse(line);
+      const observedAt = Date.parse(entry?.observedAt);
+      return entry?.schemaVersion === 1 && Number.isFinite(observedAt) && observedAt >= cutoff ? [entry] : [];
+    } catch {
+      return [];
+    }
+  });
+  await mkdir(path.dirname(ledgerPath), { recursive: true });
+  await writeFile(ledgerPath, retained.map((entry) => JSON.stringify(entry)).join("\n") + (retained.length > 0 ? "\n" : ""), { mode: 0o600 });
+  return retained.length;
 }
 
 export async function recordGithubTelemetry({
@@ -102,8 +133,12 @@ export async function recordGithubTelemetry({
 
 async function main() {
   const [phase, operation] = process.argv.slice(2);
+  if (phase === "prepare") {
+    await prepareGithubTelemetryHistory({ sourcePath: operation });
+    return;
+  }
   if (!["before", "after"].includes(phase) || !operation) {
-    throw new Error("usage: github-telemetry.mjs <before|after> <operation>");
+    throw new Error("usage: github-telemetry.mjs prepare [prior-ledger] | <before|after> <operation>");
   }
   await recordGithubTelemetry({
     phase,

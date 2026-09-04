@@ -7,7 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatAggregateValue, formatNumber, formatRelativeTime } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
-import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
+import { hasRenderableChartData, listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderOutcomeLink, renderWorkflowRunLink } from './link-content.js';
 import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.js';
 import { renderTableRegion } from './table-region.js';
@@ -247,6 +247,7 @@ function renderChartView(context) {
   );
   const chartSeries = listChartSeries(points);
   const pieSummary = chartType === 'pie' ? pieChartEntries(points) : null;
+  const chartDataAvailable = hasRenderableChartData(chartType, points, pieSummary);
   const description = typeof view.description === 'string' && view.description.length > 0
     ? h('p', { className: 'view-description' }, view.description)
     : null;
@@ -278,7 +279,7 @@ function renderChartView(context) {
   const chartContent = [
     ...(description ? [description] : []),
     ...renderViewSectionChrome(metadata, contextDetails),
-    ...(color && !['pie', 'swimlane'].includes(chartType) ? [renderChartLegend(chartSeries, chartType)] : []),
+    ...(chartDataAvailable && color && !['pie', 'swimlane'].includes(chartType) ? [renderChartLegend(chartSeries, chartType)] : []),
     ...(pieSummary
       ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(
           pieSummary.entries,

@@ -141,6 +141,21 @@ export function renderChartLegend(series, chartType) {
 }
 
 /**
+ * @param {string} chartType
+ * @param {ChartPointLike[]} points
+ * @param {{ entries: Array<[string, number]>, total: number } | null} [pieSummary]
+ * @returns {boolean}
+ */
+export function hasRenderableChartData(chartType, points, pieSummary = null) {
+  if (chartType === 'swimlane') return true;
+  if (chartType === 'line') {
+    return groupChartSeries(points).some(([, seriesPoints]) => new Set(seriesPoints.map((point) => point.x)).size >= 2);
+  }
+  const pieData = chartType === 'pie' ? pieSummary ?? pieChartEntries(points) : null;
+  return (pieData ? pieData.entries.length : points.length) >= 2;
+}
+
+/**
  * @param {ChartPointLike[]} points
  * @returns {{ entries: Array<[string, number]>, total: number }}
  */
@@ -194,12 +209,16 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
  */
 export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null, timeRange = null, referenceField = null) {
   const pieData = chartType === 'pie' ? pieSummary ?? pieChartEntries(points) : null;
-  const entryCount = pieData ? pieData.entries.length : points.length;
-  if (entryCount < 2 && chartType !== 'swimlane') {
+  if (!hasRenderableChartData(chartType, points, pieData)) {
     return h(
       'div',
       { className: `chart-widget ${chartType}-chart-widget`, 'data-chart-widget': chartType },
-      renderEmptyMessage('Not enough data to show this visualization.', { role: 'status' })
+      renderEmptyMessage(
+        chartType === 'line'
+          ? 'No trend is available yet. At least two observations in one series are required.'
+          : 'Not enough data to show this visualization.',
+        { role: 'status' }
+      )
     );
   }
 

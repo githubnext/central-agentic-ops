@@ -216,4 +216,28 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(page?.textContent).toContain('stale');
     expect(page?.textContent).not.toContain('0.0 %');
   });
+
+  it('shows sparse quota history as unavailable instead of drawing overlapping single-point series', () => {
+    const observedAt = '2026-09-04T12:00:00Z';
+    const { page } = renderApiPage({
+      source: 'github-api-rate-limits',
+      metadata,
+      rows: [
+        rateLimitRow({ 'observed-at': observedAt, 'history-series': 'core · reader' }),
+        rateLimitRow({
+          'observation-id': 'run-1:after:reader:search:2026-09-04T12:00:00Z',
+          'observed-at': observedAt,
+          resource: 'search',
+          bucket: 'search · reader',
+          'history-series': 'search · reader'
+        })
+      ]
+    });
+    const history = page?.querySelector('[aria-labelledby="github-api-remaining-trend-heading"]');
+
+    expect(history?.textContent).toContain('No trend is available yet.');
+    expect(history?.querySelector('.chart-legend')).toBeNull();
+    expect(history?.querySelector('.line-chart-series')).toBeNull();
+    expect(history?.textContent).toContain('core · reader');
+  });
 });

@@ -166,6 +166,32 @@ test("dashboard source bridge exposes stale and partial rate-limit evidence as u
   assert.equal(sources["github-api-collector-health"].rows[1]["rate-limit-error"], "unavailable");
 });
 
+test("dashboard source bridge diagnoses telemetry without valid rate-limit data", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+    usage: {},
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-04T12:00:00Z", records: [] },
+    githubTelemetry: [{
+      schemaVersion: 1,
+      observedAt: "2026-09-04T11:59:00Z",
+      phase: "after",
+      operation: "refresh-activity",
+      rateLimit: {},
+      rateLimitError: null,
+      activityCache: {},
+    }],
+  });
+
+  assert.deepEqual(sources["github-api-rate-limits"].rows, []);
+  assert.equal(sources["github-api-rate-limits"].metadata.availability, "unavailable");
+  assert.equal(sources["github-api-rate-limits"].metadata.completeness, "partial");
+  assert.equal(
+    sources["github-api-collector-health"].rows[0]["rate-limit-error"],
+    "GitHub API returned no valid rate-limit resources.",
+  );
+});
+
 test("dashboard source bridge carries API capacity admission blocks into run rows", () => {
   const workflowPath = ".github/workflows/self-care.lock.yml";
   const sources = buildDashboardLanguageSources({
