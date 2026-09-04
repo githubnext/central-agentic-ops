@@ -28,6 +28,7 @@ function rateLimitRow(overrides = {}) {
     resource: 'core',
     bucket: 'core · reader',
     'history-series': 'core · reader',
+    'has-history': true,
     remaining: 4_875,
     limit: 5_000,
     used: 125,
@@ -215,5 +216,31 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(page?.textContent).toContain('partial');
     expect(page?.textContent).toContain('stale');
     expect(page?.textContent).not.toContain('0.0 %');
+  });
+
+  it('shows sparse quota history as unavailable instead of drawing overlapping single-point series', () => {
+    const observedAt = '2026-09-04T12:00:00Z';
+    const { page } = renderApiPage({
+      source: 'github-api-rate-limits',
+      metadata,
+      rows: [
+        rateLimitRow({ 'observed-at': observedAt, 'history-series': 'core · reader', 'has-history': false }),
+        rateLimitRow({
+          'observation-id': 'run-1:after:reader:search:2026-09-04T12:00:00Z',
+          'observed-at': observedAt,
+          resource: 'search',
+          bucket: 'search · reader',
+          'history-series': 'search · reader',
+          'has-history': false
+        })
+      ]
+    });
+    const historyHeading = [...(page?.querySelectorAll('h3, h4') ?? [])]
+      .find((heading) => heading.textContent === 'Quota history');
+    const history = historyHeading?.closest('section');
+
+    expect(history?.textContent).toContain('Quota history is unavailable until at least two observations exist');
+    expect(history?.querySelector('.chart-legend')).toBeNull();
+    expect(history?.querySelector('.line-chart-series')).toBeNull();
   });
 });

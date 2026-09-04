@@ -190,3 +190,11 @@ export function renderCloseButton({ className, label, onClick }) {
     octicon('x')
   ));
 }
+
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, any>}
+ */
+export function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
