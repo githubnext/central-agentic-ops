@@ -191,7 +191,7 @@ Begin directly with a concise executive summary naming the target, compiler resu
 
 Immediately after the summary, keep one action visible:
 
-**Action:** Assign this issue to Copilot and instruct it to follow **Fix with an agent** below; review its pull request and merge only after the full compiler and security scan passes.
+**Action:** Assign this issue to Copilot using **Agent prompt** below; review its pull request and merge only after the full compiler and security scan passes.
 
 Put everything else behind these progressive-disclosure sections, in this order:
 
@@ -207,7 +207,7 @@ Use a compact findings table with tool, workflow or image, tool-reported severit
 
 </details>
 
-<details><summary><b>Fix with an agent</b></summary>
+<details><summary><b>Agent prompt</b></summary>
 
 1. Assign this issue to Copilot.
 2. Configure its MCP client to launch `gh aw mcp-server` over stdio from the target repository, then give it the prompt below. Require the server's `fix` and `compile` tools; never allow direct edits to generated `.lock.yml` files.
