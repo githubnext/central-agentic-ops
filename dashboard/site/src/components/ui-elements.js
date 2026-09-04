@@ -8,12 +8,11 @@ import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
-import { renderSectionHeading } from './ui-primitives.js';
+import { renderSectionHeading, isPlainObject } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
 import { modeBadgeClassName } from './badge.js';
-
 /**
  * @typedef {{
  *   pageId: string,
@@ -49,13 +48,10 @@ const ELEMENT_RENDERERS = new Map([
   ['package-dispatches', (context) => renderPackageNavigation(context, 'dispatches')],
   ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
   ['workflow-route', renderWorkflowRouteView],
-  ['workflow-detail', renderWorkflowRouteView],
-  ['workflow-runs', renderWorkflowRouteView],
-  ['workflow-runtime', renderWorkflowRouteView],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'workflow-detail', 'workflow-runs', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'outcome-detail']);
 
 /**
  * @param {string} name
@@ -538,12 +534,4 @@ function capitalize(value) {
  */
 function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'element';
-}
-
-/**
- * @param {unknown} value
- * @returns {value is Record<string, unknown>}
- */
-function isPlainObject(value) {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
