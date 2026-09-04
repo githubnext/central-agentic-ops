@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { pluralSuffix, titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage, renderIdentityLink } from './ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage, renderIdentityLink, renderPanelHeader } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 import { rowsFor } from './source-rows.js';
 
@@ -87,12 +87,7 @@ export function renderPackageSummary(sources, mode = 'all') {
   return h(
     'section',
     { className: 'package-summary', 'aria-labelledby': headingId },
-    h(
-      'header',
-      { className: 'package-summary-heading' },
-      h('h3', { id: headingId }, `${modeLabel} output by package`),
-      h('p', null, 'Durable outputs and inventory health for each control-plane package.')
-    ),
+    renderPanelHeader(headingId, `${modeLabel} output by package`, 'Durable outputs and inventory health for each control-plane package.', { className: 'package-summary-heading' }),
     h(
       'div',
       { className: 'table-region', role: 'region', 'aria-labelledby': `${headingId}-caption`, tabIndex: 0 },
@@ -366,17 +361,13 @@ export function renderPackageUtilization(sources, mode = 'all') {
   return h(
     'section',
     { className: 'package-utilization', 'aria-labelledby': headingId },
-    h(
-      'header',
-      { className: 'package-utilization-heading' },
-      h('h3', { id: headingId }, 'Package AIC utilization'),
-      h(
-        'p',
-        null,
-        available
-          ? `Actual AI Credits against summed per-run limits for ${modeLabel} package runs retained from ${windowLabel}.`
-          : 'AI Credit usage artifacts are unavailable.'
-      )
+    renderPanelHeader(
+      headingId,
+      'Package AIC utilization',
+      available
+        ? `Actual AI Credits against summed per-run limits for ${modeLabel} package runs retained from ${windowLabel}.`
+        : 'AI Credit usage artifacts are unavailable.',
+      { className: 'package-utilization-heading' }
     ),
     h(
       'div',
@@ -559,7 +550,7 @@ function renderUnavailableRunTrend(heading, headingId, message) {
   return h(
     'section',
     { className: 'package-trend-panel', 'aria-labelledby': headingId },
-    h('header', null, h('div', null, h('h3', { id: headingId }, heading))),
+    renderPanelHeader(headingId, heading),
     renderEmptyMessage(message)
   );
 }

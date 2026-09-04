@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderPanelHeader, renderVitalStat } from './ui-primitives.js';
 import { text } from './count-formatters.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -263,10 +263,7 @@ function renderValueHistoryPanel({ className, headingId, heading, description, b
   return h(
     'section',
     { className: `value-history-panel ${className}`, 'aria-labelledby': headingId },
-    h('header', null,
-      h('h3', { id: headingId }, heading),
-      h('p', null, description)
-    ),
+    renderPanelHeader(headingId, heading, description),
     ...body
   );
 }

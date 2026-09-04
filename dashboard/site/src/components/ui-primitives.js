@@ -43,6 +43,26 @@ export function renderSectionHeading({
 }
 
 /**
+ * Renders a panel `<header>` containing an id-anchored heading and an
+ * optional descriptive paragraph. Shared by the package summary,
+ * package utilization, unavailable-trend, and value-history panels, which
+ * all pair one `aria-labelledby` heading with plain descriptive copy.
+ * @param {string} headingId
+ * @param {string} heading
+ * @param {string} [description]
+ * @param {{ className?: string }} [options]
+ * @returns {HTMLElement}
+ */
+export function renderPanelHeader(headingId, heading, description, options = {}) {
+  return h(
+    'header',
+    options.className ? { className: options.className } : null,
+    h('h3', { id: headingId }, heading),
+    description ? h('p', null, description) : null
+  );
+}
+
+/**
  * @param {string} label
  * @param {unknown} value
  * @param {string} [detail]
