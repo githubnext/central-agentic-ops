@@ -3,7 +3,7 @@ emoji: ":shield:"
 
 description: "Compiles every agentic workflow in one target repository with full validation and security scanning, then reports actionable findings"
 
-name: "AW Maintenance / Compiler Security"
+name: "AW Doctor / Compiler Security"
 
 max-ai-credits: 500
 max-daily-ai-credits: -1
@@ -61,7 +61,7 @@ if: needs.pre_activation.outputs.cao_authorized == 'true'
 imports:
   - uses: shared/cao.md
     with:
-      package: aw-maintenance
+      package: aw-doctor
       role: worker
       worker: compiler-security
 
@@ -94,8 +94,8 @@ tracker-id: aw-maintenance-compiler-security
 safe-outputs:
   create-issue:
     expires: 14d
-    title-prefix: "[aw-maintenance:compiler-security] "
-    labels: [aw-maintenance, aw-maintenance:compiler-security]
+    title-prefix: "[aw-doctor:compiler-security] "
+    labels: [aw-doctor, aw-doctor:compiler-security]
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
@@ -164,9 +164,9 @@ steps:
       } >"$report_dir/summary.txt"
 ---
 
-{{#runtime-import? .github/cao/aw-maintenance.md}}
+{{#runtime-import? .github/cao/aw-doctor.md}}
 
-You are the AW Maintenance / Compiler Security worker. Compile every GitHub Agentic Workflow in exactly one target repository with the gh-aw compiler's complete validation, linting, container, and security-scanner suite, then publish one concise security findings report when remediation is required.
+You are the AW Doctor / Compiler Security worker. Compile every GitHub Agentic Workflow in exactly one target repository with the gh-aw compiler's complete validation, linting, container, and security-scanner suite, then publish one concise security findings report when remediation is required.
 
 ## Workspace Layout
 

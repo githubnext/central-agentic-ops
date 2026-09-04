@@ -79,7 +79,7 @@ The target must contain matching authority on its default branch:
   "version": 1,
   "target-authority": {
     "packages": {
-      "aw-maintenance": {
+      "aw-doctor": {
         "authority": "acme/central-agentic-ops"
       }
     }

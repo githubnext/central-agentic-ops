@@ -1,11 +1,11 @@
-name: AW Maintenance
+name: AW Doctor
 description: Organization-wide workflow for maintaining installed GitHub Agentic Workflows (gh-aw), triaging failures, and filing actionable issues assignable to Copilot.
 min-version: v0.88.4
 experimental: true
 includes:
-  - .github/workflows/aw-maintenance.md
+  - .github/workflows/aw-doctor.md
   - .github/workflows/aw-failures-investigator.md
   - .github/workflows/aw-maintenance-compiler-security.md
 resources:
   - source: dashboard.json
-    destination: .github/aw/dashboards/aw-maintenance.json
+    destination: .github/aw/dashboards/aw-doctor.json

@@ -7,7 +7,6 @@ export const PUBLISH_LABEL = "ops:publish-to-target";
 const API_TIMEOUT_MS = 30_000;
 
 const repositoryPattern = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
-
 export function configuredWorkerPackages(packages) {
   return new Map(Object.entries(packages || {}).flatMap(([packageName, policy]) => (
     Object.keys(policy.worker_policies || {}).map((workflow) => [`${workflow}.lock.yml`, packageName])

@@ -20,7 +20,7 @@ import {
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scriptPath = join(root, "ops-publish", "ops-publish.mjs");
-const sourceBody = "Finding\n\nGenerated from [AW Maintenance / Failures](https://github.com/acme/control/actions/runs/123)";
+const sourceBody = "Finding\n\nGenerated from [AW Doctor / Failures](https://github.com/acme/control/actions/runs/123)";
 
 function sourceIssue(overrides = {}) {
   return {
@@ -112,7 +112,7 @@ function runCommand(command, {
     allowed_owners: ["acme"],
     allowed_repositories: ["acme/service"],
     packages: {
-      "aw-maintenance": {
+      "aw-doctor": {
         worker_policies: {
           "aw-failures-investigator": {
             worker: "failures-investigator",
@@ -147,7 +147,7 @@ function runCommand(command, {
     targetCommit: { sha: "0123456789abcdef0123456789abcdef01234567" },
     authoritySource: JSON.stringify({
       version: 1,
-      "target-authority": { packages: { "aw-maintenance": { authority: "acme/control" } } },
+      "target-authority": { packages: { "aw-doctor": { authority: "acme/control" } } },
     }),
     targetIssue,
     commentBody: `Published\n\n${publicationCommentMarker("acme/service", 84)}`,
@@ -185,7 +185,7 @@ function runCommand(command, {
         GITHUB_SERVER_URL: "https://github.com",
         MOCK_CONFIG: JSON.stringify(completeConfig),
         MOCK_LOG: logPath,
-        PACKAGE: "aw-maintenance",
+        PACKAGE: "aw-doctor",
         REVIEWER: "octocat",
         SOURCE_CONTENT_DIGEST: issueContentDigest(approvedSourceIssue.title, approvedSourceIssue.body),
         SOURCE_ISSUE: "42",
@@ -229,7 +229,7 @@ test("inspect and validate-run emit trusted publication inputs", () => {
 
   const validation = runCommand("validate-run");
   assert.equal(validation.status, 0, validation.stderr);
-  assert.match(validation.output, /package=aw-maintenance/);
+  assert.match(validation.output, /package=aw-doctor/);
   assert.match(validation.output, /target_repository=acme\/service/);
   assert.equal(validation.requests[0].authorization, "Bearer control-token");
 });
@@ -295,7 +295,7 @@ test("publish fails closed for missing, malformed, or mismatched authority", () 
   for (const [config, message] of [
     [{ authorityMissing: true }, /GitHub API 404/],
     [{ authoritySource: "version: [" }, /not valid control policy JSON/],
-    [{ authoritySource: JSON.stringify({ version: 1, "target-authority": { packages: { "aw-maintenance": { authority: "acme/other" } } } }) }, /different control repository/],
+    [{ authoritySource: JSON.stringify({ version: 1, "target-authority": { packages: { "aw-doctor": { authority: "acme/other" } } } }) }, /different control repository/],
   ]) {
     const result = runCommand("publish", { config });
     assert.notEqual(result.status, 0);

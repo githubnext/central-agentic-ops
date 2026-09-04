@@ -21,7 +21,7 @@ function focusedPackageSource(slug, source = packageSource) {
 }
 const ukAiAdvisoryPackageSource = focusedPackageSource("uk-ai-advisory");
 const activityPackageSource = focusedPackageSource("activity");
-const awMaintenancePackageSource = focusedPackageSource("aw-maintenance");
+const awDoctorPackageSource = focusedPackageSource("aw-doctor");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
@@ -37,14 +37,14 @@ const activityExpectedFiles = [
   ".github/workflows/activity.yml",
   ".github/workflows/cao-maintenance.yml",
 ];
-const awMaintenanceExpectedFiles = [
-  ".github/aw/dashboards/aw-maintenance.json",
+const awDoctorExpectedFiles = [
+  ".github/aw/dashboards/aw-doctor.json",
   ".github/graders/aw-failures-investigator-operational-value.sh",
   ".github/graders/aw-maintenance-compiler-security-operational-value.sh",
   ".github/workflows/aw-failures-investigator.md",
   ".github/workflows/aw-maintenance-compiler-security.md",
   ".github/workflows/aw-maintenance-upgrade.md",
-  ".github/workflows/aw-maintenance.md",
+  ".github/workflows/aw-doctor.md",
   ".github/workflows/shared/cao.md",
   ".github/workflows/shared/control.md",
 ];
@@ -167,7 +167,7 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
     }
     for (const workflowId of [
       "ambient-context",
-      "aw-maintenance",
+      "aw-doctor",
       "dependabot",
       "optimization",
     ]) {
@@ -298,12 +298,11 @@ test("gh aw add installs the focused SelfCare package contract", { timeout: 180_
   }
 });
 
-test("gh aw add installs the focused AW Maintenance package contract", { timeout: 180_000 }, () => {
-  const consumer = installPackage(awMaintenancePackageSource);
-
+test("gh aw add installs the focused AW Doctor package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(awDoctorPackageSource);
   try {
-    for (const relativePath of awMaintenanceExpectedFiles) {
-      assert.ok(existsSync(join(consumer, relativePath)), `focused AW Maintenance package omitted ${relativePath}`);
+    for (const relativePath of awDoctorExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused AW Doctor package omitted ${relativePath}`);
     }
   } finally {
     rmSync(consumer, { recursive: true, force: true });
