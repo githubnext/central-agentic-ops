@@ -192,6 +192,9 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend-pie small { color: var(--muted); }
 .chart-axis { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
 .line-chart-widget .chart-axis { width: 100%; }
+.histogram-chart-widget { grid-template-rows: minmax(0, 1fr) auto; align-content: center; padding: 16px 18px 12px; background: linear-gradient(180deg, var(--canvas) 0%, var(--canvas-subtle) 100%); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--fg) 4%, transparent); }
+.histogram-chart-widget svg, .histogram-chart-widget .chart-axis { width: min(100%, 420px); }
+.histogram-chart-widget .chart-axis { margin-top: 0; padding-top: 6px; border-top: 1px solid var(--border-muted); }
 .chart-series-1 { stroke: var(--success); }
 .chart-series-2 { stroke: var(--attention); }
 .chart-series-3 { stroke: var(--danger); }
@@ -200,12 +203,14 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-series-6 { stroke: var(--purple); }
 .line-chart-axis { stroke: var(--border); stroke-width: 1; }
 .line-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 2 2; }
+.histogram-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 1.5 2; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .chart-point { cursor: crosshair; }
 .pie-chart-mark, .histogram-chart-mark { animation: chart-mark-enter 240ms ease-out both; }
 .pie-chart-segment, .histogram-chart-bar { transition: opacity 120ms ease, filter 120ms ease; }
-.pie-chart-mark:hover .pie-chart-segment, .pie-chart-mark:focus-visible .pie-chart-segment, .histogram-chart-mark:hover .histogram-chart-bar, .histogram-chart-mark:focus-visible .histogram-chart-bar { filter: brightness(1.08); opacity: .82; }
+.pie-chart-mark:hover .pie-chart-segment, .pie-chart-mark:focus-visible .pie-chart-segment { filter: brightness(1.08); opacity: .82; }
+.histogram-chart-mark:hover .histogram-chart-bar, .histogram-chart-mark:focus-visible .histogram-chart-bar { filter: brightness(1.08) drop-shadow(0 1px 1px color-mix(in srgb, var(--canvas-inset) 30%, transparent)); }
 .point-tooltip { opacity: 0; pointer-events: none; transition: opacity 80ms linear; }
 .point-tooltip rect { fill: var(--canvas-subtle); stroke: var(--border); vector-effect: non-scaling-stroke; }
 .point-tooltip text { fill: var(--fg); font-size: 3px; font-weight: 600; }
@@ -214,7 +219,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: 1; }
 .bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
-.histogram-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
+.histogram-chart-bar { fill: var(--accent); stroke: color-mix(in srgb, var(--success) 72%, var(--canvas)); stroke-width: .65; vector-effect: non-scaling-stroke; }
 .chart-widget [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; stroke: var(--focus); stroke-width: 3; }
 .chart-widget .chart-series-1 { stroke: var(--success); }
 .chart-widget .chart-series-2 { stroke: var(--attention); }
