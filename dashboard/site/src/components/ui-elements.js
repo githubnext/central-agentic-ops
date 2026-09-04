@@ -362,10 +362,12 @@ function renderReadinessVerdictElement(context) {
   );
 }
 
+/** @param {string} title @param {Array<HTMLElement|string|null>} content */
 function readinessBlock(title, content) {
   return h('section', { className: 'readiness-block' }, h('h3', null, title), h('div', { className: 'readiness-block-content' }, ...content));
 }
 
+/** @param {import('../presenter.js').SourceMetadata | undefined} metadata */
 function snapshotAge(metadata) {
   const value = metadata?.['as-of'] || metadata?.['retrieved-at'];
   if (!value) return 'Unavailable';
@@ -373,11 +375,13 @@ function snapshotAge(metadata) {
   return Number.isNaN(date.getTime()) ? String(value) : `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC · ${elapsedSince(date)}`;
 }
 
+/** @param {Date} date */
 function elapsedSince(date) {
   const minutes = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
   return minutes < 60 ? `${minutes}m ago` : `${Math.floor(minutes / 60)}h ${minutes % 60}m ago`;
 }
 
+/** @param {import('../presenter.js').SourceMetadata | undefined} metadata */
 function evidenceState(metadata) {
   if (!metadata || metadata.availability === 'unavailable') return 'Unavailable';
   if (metadata.completeness !== 'complete' || metadata.freshness !== 'fresh') return 'Incomplete';
