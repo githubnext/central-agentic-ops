@@ -24,6 +24,7 @@ const sourceNames = [
   "outcomes",
   "findings",
   "operational-values",
+  "github-api-rate-limits",
 ];
 const AIC_TO_USD = 0.01;
 
@@ -85,6 +86,33 @@ function source(name, rows, generatedAt, available = true, complete = true) {
     rows,
     metadata: sourceMetadata(name, generatedAt, available, complete),
   };
+}
+
+export function githubTelemetryRows(entries = []) {
+  return entries.flatMap((entry) => {
+    const resources = Object.entries(entry?.rateLimit || {});
+    const rows = resources.length > 0 ? resources : [["unavailable", {}]];
+    return rows.map(([resource, rate]) => ({
+      "observed-at": entry.observedAt,
+      phase: entry.phase,
+      operation: entry.operation,
+      outcome: entry.outcome,
+      "token-type": entry.tokenType,
+      resource,
+      limit: rate.limit ?? null,
+      used: rate.used ?? null,
+      remaining: rate.remaining ?? null,
+      "remaining-percent": Number.isFinite(rate.limit) && rate.limit > 0 && Number.isFinite(rate.remaining)
+        ? Math.round((rate.remaining / rate.limit) * 1000) / 10
+        : null,
+      "reset-at": rate.resetAt ?? null,
+      "cache-hydrated": entry.activityCache?.hydrated === true,
+      "cache-bytes": entry.activityCache?.bytes ?? 0,
+      "cache-entries": entry.activityCache?.entryCount ?? 0,
+      "cache-folders": entry.activityCache?.folderCount ?? 0,
+      "rate-limit-error": entry.rateLimitError || "",
+    }));
+  });
 }
 
 function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
@@ -769,7 +797,7 @@ function operationalValueGraderRows(values) {
   });
 }
 
-export function buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory = {}, controlSettings = {} }) {
+export function buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory = {}, controlSettings = {}, githubTelemetry = [] }) {
   const generatedAt = report.generatedAt || deployed.generatedAt || new Date().toISOString();
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed, usage);
@@ -869,7 +897,24 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   }
   sources["grader-observations"] = operationalValueSource("grader-observations", graderObservations, operationalValues, generatedAt, valueAvailable);
   sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
+  sources["github-api-rate-limits"] = source(
+    "github-api-rate-limits",
+    githubTelemetryRows(githubTelemetry),
+    generatedAt,
+    githubTelemetry.length > 0,
+    githubTelemetry.length > 0 && githubTelemetry.every((entry) => !entry.rateLimitError),
+  );
   return sources;
+}
+
+async function readJsonLines(filePath) {
+  if (!filePath) return [];
+  try {
+    return (await readFile(filePath, "utf8")).split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+  } catch (error) {
+    if (error?.code === "ENOENT") return [];
+    throw error;
+  }
 }
 
 async function main() {
@@ -879,17 +924,19 @@ async function main() {
   const reportPath = process.env.REPORT_RECORDS;
   const inventoryPath = process.env.REPORT_INVENTORY;
   const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
+  const githubTelemetryPath = process.env.REPORT_GITHUB_TELEMETRY;
   const outputPath = process.env.REPORT_DASHBOARD_SOURCES;
   if (!deployedPath || !usagePath || !operationalValuesPath || !reportPath || !inventoryPath || !controlSettingsPath || !outputPath) {
     throw new Error("REPORT_DEPLOYED_WORKFLOWS, REPORT_AIC_USAGE, REPORT_OPERATIONAL_VALUES, REPORT_RECORDS, REPORT_INVENTORY, REPORT_CONTROL_SETTINGS, and REPORT_DASHBOARD_SOURCES are required");
   }
   log.group`Build Dashboard Language sources`;
   try {
-    const [deployed, usage, operationalValues, report, inventory, controlSettings] = await Promise.all(
+    const [deployed, usage, operationalValues, report, inventory, controlSettings, githubTelemetry] = await Promise.all(
       [deployedPath, usagePath, operationalValuesPath, reportPath, inventoryPath, controlSettingsPath]
-        .map(async (file) => JSON.parse(await readFile(file, "utf8"))),
+        .map(async (file) => JSON.parse(await readFile(file, "utf8")))
+        .concat(readJsonLines(githubTelemetryPath)),
     );
-    const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory, controlSettings });
+    const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory, controlSettings, githubTelemetry });
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, `${JSON.stringify(sources, null, 2)}\n`);
     log.info`Wrote ${Object.keys(sources).length} dashboard sources to ${outputPath}`;
