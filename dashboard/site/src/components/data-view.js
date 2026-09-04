@@ -31,6 +31,19 @@ const RUN_LINK_FIELD = 'run-link';
 
 /**
  * @typedef {{
+ *   key: string,
+ *   x: string,
+ *   y: number,
+ *   category?: string,
+ *   color: string | null,
+ *   highlighted?: boolean | null,
+ *   link: { href: string, label: string } | null,
+ *   source?: Record<string, unknown>
+ * }} ChartPoint
+ */
+
+/**
+ * @typedef {{
  *   pageId: string,
  *   title: string,
  *   view: Record<string, any>,
@@ -41,8 +54,8 @@ const RUN_LINK_FIELD = 'run-link';
  *   headingTag: 'h3'|'h4',
  *   units?: Record<string, { name: string, symbol: string, significant: number }>,
  *   prepareTableRows: (rows: Array<Record<string, unknown>>, columns: TableField[], data: unknown) => Array<Record<string, unknown>>,
- *   buildChartPoints: (pageId: string, title: string, rows: Array<Record<string, unknown>>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, hrefField: string | null) => Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>,
- *   prepareChartPoints: (points: Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, data: unknown) => Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>,
+ *   buildChartPoints: (pageId: string, title: string, rows: Array<Record<string, unknown>>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, hrefField: string | null) => ChartPoint[],
+ *   prepareChartPoints: (points: ChartPoint[], x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, data: unknown) => ChartPoint[],
  *   toText: (value: unknown) => string
  * }} DataViewContext
  */
@@ -242,7 +255,8 @@ function renderChartView(context) {
     chartSeries,
     pieSummary,
     y ? fieldTitle(y) : 'Total',
-    y ? fieldUnit(y, context.units ?? {}) : null
+    y ? fieldUnit(y, context.units ?? {}) : null,
+    isPlainObject(view.data) && isPlainObject(view.data.time) ? view.data.time : null
   );
   const showTable = typeof view.table === 'boolean' ? view.table : chartType === 'bar';
   const table = showTable ? renderTableRegion({
@@ -262,7 +276,7 @@ function renderChartView(context) {
   const chartContent = [
     ...(description ? [description] : []),
     ...renderViewSectionChrome(metadata, contextDetails),
-    ...(color && chartType !== 'pie' ? [renderChartLegend(chartSeries, chartType)] : []),
+    ...(color && !['pie', 'swimlane'].includes(chartType) ? [renderChartLegend(chartSeries, chartType)] : []),
     ...(pieSummary
       ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(
           pieSummary.entries,
