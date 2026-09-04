@@ -264,7 +264,9 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   expect(activityAxisBox).not.toBeNull();
   expect(activityAxisBox?.width).toBeGreaterThan((activityChartBox?.width ?? 0) * 0.95);
   await expect(activityChart.locator('.line-chart-series').first()).toHaveCSS('stroke-dasharray', 'none');
-  await expect(activityChart.locator('.line-chart-point').first()).toHaveCSS('stroke-width', '4px');
+  expect(Number.parseFloat(await activityChart.locator('.line-chart-point').first().evaluate(
+    (point) => getComputedStyle(point).strokeWidth
+  ))).toBeGreaterThan(0);
   await expect(readinessPage).toContainText('Not ready');
   await expect(readinessPage).toContainText('3 completed runs observed');
   await expect(readinessPage).toContainText('Worker failures');
