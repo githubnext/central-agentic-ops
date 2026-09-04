@@ -12,6 +12,7 @@ import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderO
 import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.js';
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
+import { renderCloseButton } from './ui-primitives.js';
 
 /** @type {Record<string, 'organization-link'|'repository-link'|'workflow-link'>} */
 const ENTITY_LINK_FIELDS = {
@@ -380,17 +381,11 @@ function renderIntentAction(action, row) {
       'header',
       { className: 'table-intent-dialog-header' },
       h('h2', null, 'Prompt preview'),
-      h(
-        'button',
-        {
-          className: 'table-intent-dialog-close',
-          type: 'button',
-          title: 'Close prompt preview',
-          'aria-label': 'Close prompt preview',
-          onClick: closePreview
-        },
-        octicon('x')
-      )
+      renderCloseButton({
+        className: 'table-intent-dialog-close',
+        label: 'Close prompt preview',
+        onClick: closePreview
+      })
     ),
     h('pre', { className: 'table-intent-preview' }, content),
     h(

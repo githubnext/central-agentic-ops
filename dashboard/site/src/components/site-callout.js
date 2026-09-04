@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
+import { renderCloseButton } from './ui-primitives.js';
 
 const dismissedCalloutIds = new Set();
 
@@ -60,20 +61,14 @@ export function renderSiteCallout(callout) {
       h('strong', { id: headingId }, callout.title),
       h('span', { id: descriptionId }, callout.description)
     ),
-    h(
-      'button',
-      {
-        type: 'button',
-        className: 'site-callout-dismiss',
-        title: `Dismiss ${callout.title}`,
-        'aria-label': `Dismiss ${callout.title}`,
-        onclick: () => {
-          dismissedCalloutIds.add(callout.id);
-          element.remove();
-        }
-      },
-      octicon('x')
-    )
+    renderCloseButton({
+      className: 'site-callout-dismiss',
+      label: `Dismiss ${callout.title}`,
+      onClick: () => {
+        dismissedCalloutIds.add(callout.id);
+        element.remove();
+      }
+    })
   );
   return element;
 }

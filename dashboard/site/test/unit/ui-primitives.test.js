@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderCloseButton, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -87,5 +87,21 @@ describe('ui primitives', () => {
     expect(rendered.tagName).toBe('SPAN');
     expect(rendered.className).toBe('table-summary-empty');
     expect(rendered.textContent).toBe('No timestamps');
+  });
+
+  it('renders the shared close/dismiss icon button with matching title and aria-label text', () => {
+    const onClick = () => {};
+    const rendered = renderCloseButton({
+      className: 'site-callout-dismiss',
+      label: 'Dismiss Notice',
+      onClick
+    });
+
+    expect(rendered.tagName).toBe('BUTTON');
+    expect(rendered.getAttribute('type')).toBe('button');
+    expect(rendered.className).toBe('site-callout-dismiss');
+    expect(rendered.getAttribute('title')).toBe('Dismiss Notice');
+    expect(rendered.getAttribute('aria-label')).toBe('Dismiss Notice');
+    expect(rendered.querySelector('svg use')?.getAttribute('href')).toContain('#octicon-x');
   });
 });
