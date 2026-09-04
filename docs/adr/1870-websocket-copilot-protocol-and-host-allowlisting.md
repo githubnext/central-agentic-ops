@@ -1,3 +1,8 @@
+---
+title: Replace HTTP Copilot endpoint with WebSocket streaming protocol and broaden host allowlisting
+description: Record the local dashboard server's WebSocket Copilot protocol and host allowlisting decision.
+---
+
 # ADR 1870: Replace HTTP Copilot endpoint with WebSocket streaming protocol and broaden host allowlisting
 
 ## Status
