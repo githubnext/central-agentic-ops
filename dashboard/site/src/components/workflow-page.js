@@ -17,7 +17,7 @@ import { workflowRouteComposition } from './workflow-route-composition.js';
  */
 export function renderWorkflowPage(context) {
   const workflows = rowsFor(context.sources, 'workflows');
-  const composition = workflowRouteComposition(context.viewId);
+  const composition = workflowRouteComposition(context.elementConfig?.variant);
   const root = createRouteView({
     rootClassName: composition.rootClassName,
     routeParameter: context.routeParameter,

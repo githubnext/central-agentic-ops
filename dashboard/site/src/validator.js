@@ -67,11 +67,13 @@ import {
   VIEW_CONTROL_VALUES,
   VIEW_DISCLOSURE_VALUES,
   VIEW_ENCODING_KEYS,
+  VIEW_ELEMENT_CONFIG_KEYS,
   VIEW_ELEMENT_VALUES,
   VIEW_KEYS,
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
   VIEW_TITLE_LINK_KEYS,
+  WORKFLOW_ROUTE_VARIANT_VALUES,
   WORKFLOW_ACTIVE_VALUES,
   WORKFLOW_ROLE_VALUES
 } from './specification.js';
@@ -1524,6 +1526,41 @@ function validateView(view, viewNode, path, viewIds, errors) {
       'element views must name one canonical UI element.',
       `${path}.element`
     ));
+  }
+
+  if (view.config !== undefined) {
+    if (!isPlainObject(view.config)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'config must be a mapping.',
+        `${path}.config`
+      ));
+    } else if (view.mark !== 'element') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'config is allowed only when mark is "element".',
+        `${path}.config`
+      ));
+    } else {
+      const configNode = getValueNodeByKey(viewNode, 'config');
+      validateObjectKeys(configNode, VIEW_ELEMENT_CONFIG_KEYS, `${path}.config`, errors);
+      if (view.element === 'workflow-route' && view.config.variant !== undefined) {
+        validateStringField(view.config.variant, `${path}.config.variant`, true, errors);
+        if (typeof view.config.variant === 'string' && !WORKFLOW_ROUTE_VARIANT_VALUES.includes(view.config.variant)) {
+          errors.push(createError(
+            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+            'workflow-route config.variant must use one canonical route composition value.',
+            `${path}.config.variant`
+          ));
+        }
+      } else if (view.config.variant !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'config.variant is supported only for the workflow-route element.',
+          `${path}.config.variant`
+        ));
+      }
+    }
   }
 
   if (view.chart !== undefined) {
