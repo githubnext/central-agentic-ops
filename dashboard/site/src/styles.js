@@ -261,10 +261,9 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .pie-chart-segment { animation: pie-chart-entry 420ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 45ms); }
 .line-chart-series { animation: line-chart-entry 600ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 70ms); }
 .line-chart-point, .dot-chart-point { transform-box: fill-box; transform-origin: center; animation: line-chart-point-entry 280ms ease-out both; animation-delay: calc(180ms + var(--chart-entry-index, 0) * 35ms); }
-.histogram-chart-bar, .table-summary-histogram rect { transform-box: fill-box; transform-origin: center bottom; animation: histogram-chart-entry 360ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 35ms); }
-.pie-chart-segment, .histogram-chart-bar { transition: opacity 120ms ease, filter 120ms ease; }
+.bar-chart-bar, .histogram-chart-bar, .table-summary-histogram rect { transform-box: fill-box; transform-origin: center bottom; animation: histogram-chart-entry 360ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 35ms); }
+.pie-chart-segment { transition: opacity 120ms ease, filter 120ms ease; }
 .pie-chart-mark:hover .pie-chart-segment, .pie-chart-mark:focus-visible .pie-chart-segment { filter: brightness(1.08); opacity: .82; }
-.histogram-chart-mark:hover .histogram-chart-bar, .histogram-chart-mark:focus-visible .histogram-chart-bar { filter: brightness(1.08) drop-shadow(0 1px 1px color-mix(in srgb, var(--canvas-inset) 30%, transparent)); }
 .point-tooltip { opacity: 0; pointer-events: none; transition: opacity 80ms linear; }
 .point-tooltip rect { fill: var(--canvas-subtle); stroke: var(--border); vector-effect: non-scaling-stroke; }
 .point-tooltip text { fill: var(--fg); font-size: 3px; font-weight: 600; }
@@ -356,8 +355,8 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
   from { opacity: 0; transform: scaleY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pie-chart-segment, .line-chart-series, .line-chart-point, .dot-chart-point, .histogram-chart-bar, .table-summary-histogram rect { animation: none; }
-  .pie-chart-segment, .histogram-chart-bar, .point-tooltip, .swimlane-run-mark { transition: none; }
+  .pie-chart-segment, .line-chart-series, .line-chart-point, .dot-chart-point, .bar-chart-bar, .histogram-chart-bar, .table-summary-histogram rect { animation: none; }
+  .pie-chart-segment, .point-tooltip, .swimlane-run-mark { transition: none; }
 }
 .view-description { margin: 3px 0 0; color: var(--muted); }
 .chart-view-pie { display: grid; gap: 16px; }

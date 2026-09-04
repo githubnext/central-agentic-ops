@@ -263,6 +263,8 @@ describe('chart element helpers', () => {
     expect(bar.getAttribute('data-chart-widget')).toBe('bar');
     expect(bar.querySelectorAll('.bar-chart-bar')).toHaveLength(3);
     expect(bar.querySelector('.bar-chart-bar')?.getAttribute('height')).toBe(chartHeight);
+    expect(bar.querySelector('.bar-chart-bar')?.getAttribute('rx')).toBe('0.75');
+    expect(bar.querySelector('.bar-chart-bar')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(bar.querySelector('.bar-chart-bar:last-child')?.getAttribute('height')).toBe('1');
     expect(line.getAttribute('data-chart-widget')).toBe('line');
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);

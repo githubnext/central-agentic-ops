@@ -507,10 +507,12 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         const height = Math.max(1, (Math.max(0, toNumber(point.y)) / maximum) * 34);
         return h('rect', {
           className: `bar-chart-bar ${seriesClassNames.get(point.color ?? 'value') ?? 'chart-series-1'}`,
+          style: `--chart-entry-index: ${index}`,
           x,
           y: 38 - height,
           width: barWidth,
           height,
+          rx: 0.75,
           tabIndex: 0,
           role: 'img',
           'aria-label': chartPointLabel(point, unit)
