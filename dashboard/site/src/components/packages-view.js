@@ -3,11 +3,10 @@
  */
 
 import { h } from '../dom.js';
-import { octicon } from '../octicons.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { pluralSuffix, titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage } from './ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage, renderIdentityLink } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 import { rowsFor } from './source-rows.js';
 
@@ -679,7 +678,7 @@ function packageInsightsHref(packageId) {
  * @returns {HTMLElement}
  */
 function renderPackageIdentityLink(entry, nameTag) {
-  return h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h(nameTag, null, entry.name));
+  return renderIdentityLink({ href: packageInsightsHref(entry.id), icon: entry.icon, label: entry.name, labelTag: nameTag });
 }
 
 /**
