@@ -4124,6 +4124,7 @@
               },
               "mark": "chart",
               "chart": "pie",
+              "empty-message": "No model usage data is available.",
               "layout": "half",
               "encoding": {
                 "x": {
@@ -4154,6 +4155,7 @@
               },
               "mark": "chart",
               "chart": "pie",
+              "empty-message": "No agentic engine usage data is available.",
               "layout": "half",
               "encoding": {
                 "x": {
