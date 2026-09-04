@@ -83,17 +83,12 @@ jobs:
           CAO_REQUESTED_MODE: ${{ github.event.inputs.safe_output_mode || '' }}
           CAO_REQUESTED_MAX_REPOSITORIES: ${{ github.event.inputs.max_repos || '' }}
           CAO_REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.cao_pre_activation_app_token.outputs.token != '' && 'github-app-installation' || secrets.GH_AW_GITHUB_TOKEN != '' && 'pat' || 'actions-builtin' }}
-          CAO_GITHUB_CREDENTIAL_ROLE: control
         run: |
           set -uo pipefail
           cao_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src"
-          node "$cao_dir/github-telemetry.mjs" before admission || true
           if node "$cao_dir/control.mjs" admit; then
-            CAO_OPERATION_OUTCOME=success node "$cao_dir/github-telemetry.mjs" after admission || true
             exit 0
           fi
-          CAO_OPERATION_OUTCOME=failure node "$cao_dir/github-telemetry.mjs" after admission || true
           reason="cannot read or execute the CAO control modules at github.workflow_sha"
           echo "authorized=false" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
@@ -176,16 +171,9 @@ jobs:
           CAO_CONTROL_PLANE_RUN_URL: ${{ github.event.inputs.control_plane_run_url || '' }}
           CAO_ORCHESTRATOR_CREDITS: "${{ github.aw.import-inputs.orchestrator_credits }}"
           CAO_WORKER_CREDITS_PER_TARGET: "${{ github.aw.import-inputs.worker_credits_per_target }}"
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.cao_pre_activation_app_token.outputs.token != '' && 'github-app-installation' || secrets.GH_AW_GITHUB_TOKEN != '' && 'pat' || 'actions-builtin' }}
-          CAO_GITHUB_CREDENTIAL_ROLE: control
         run: |
           set -euo pipefail
-          telemetry="${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/github-telemetry.mjs"
-          outcome=failure
-          trap 'CAO_OPERATION_OUTCOME="$outcome" node "$telemetry" after precompute || true' EXIT
-          node "$telemetry" before precompute || true
           node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/control.mjs" precompute
-          outcome=success
 
       - name: "CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}"
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' }}
@@ -224,24 +212,12 @@ jobs:
             '.policy_source == {repository:$repository,path:".github/workflows/cao.json",sha:$sha}' \
             "$out" >/dev/null
 
-      - name: Prepare CAO control precompute artifact
-        if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
-        env:
-          CAO_CONTROL_SOURCE: ${{ github.workspace }}/.cao/.github/cao/src/github-telemetry.mjs
-        run: |
-          cp "$CAO_CONTROL_SOURCE" /tmp/gh-aw/agent/github-telemetry.mjs
-          if [[ -f /tmp/cao-gh/cao-gh.jsonl ]]; then
-            cp /tmp/cao-gh/cao-gh.jsonl /tmp/gh-aw/agent/cao-gh.jsonl
-          else
-            install -m 600 /dev/null /tmp/gh-aw/agent/cao-gh.jsonl
-          fi
-
       - name: Upload CAO control precompute artifact
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
         uses: actions/upload-artifact@v7.0.1
         with:
           name: cao-control-precompute
-          path: /tmp/gh-aw/agent
+          path: /tmp/gh-aw/agent/control-precompute.json
           if-no-files-found: error
           retention-days: 1
 
@@ -253,34 +229,7 @@ jobs:
           name: cao-control-precompute
           path: /tmp/gh-aw/agent
 
-      - name: Record GitHub API state before agent operation
-        continue-on-error: true
-        env:
-          CAO_GH_LEDGER: /tmp/gh-aw/agent/cao-gh.jsonl
-          CAO_GITHUB_TOKEN_TYPE: github-app-installation
-          CAO_GITHUB_CREDENTIAL_ROLE: read
-        run: node /tmp/gh-aw/agent/github-telemetry.mjs before agent
-
 post-steps:
-  - name: Record GitHub API state after agent operation
-    if: ${{ always() }}
-    continue-on-error: true
-    env:
-      CAO_GH_LEDGER: /tmp/gh-aw/agent/cao-gh.jsonl
-      CAO_GITHUB_TOKEN_TYPE: github-app-installation
-      CAO_GITHUB_CREDENTIAL_ROLE: read
-      CAO_OPERATION_OUTCOME: ${{ job.status }}
-    run: node /tmp/gh-aw/agent/github-telemetry.mjs after agent
-
-  - name: Upload GitHub API telemetry
-    if: ${{ always() }}
-    uses: actions/upload-artifact@v7.0.1
-    with:
-      name: cao-gh
-      path: /tmp/gh-aw/agent/cao-gh.jsonl
-      if-no-files-found: warn
-      retention-days: 30
-
   - name: Emit control-plane dispatcher telemetry
     if: ${{ always() && github.aw.import-inputs.role == 'orchestrator' }}
     continue-on-error: true
