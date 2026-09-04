@@ -591,6 +591,20 @@ describe('presenter built-in and custom pages', () => {
       'EU CRA',
       'Optimization'
     ]);
+    expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
+    expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();
+    expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
+    expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
+    expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.textContent).toBe('Overview');
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(true);
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Overview');
+
+    /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="cost"]'))?.click();
+
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(false);
+    expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.textContent).toBe('Overview');
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Cost & efficiency');
+    window.history.replaceState(null, '', '/');
   });
 
   it('expands the menu section containing the current view', () => {
@@ -607,20 +621,6 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-nav-page-id="security"]')?.getAttribute('aria-current')).toBe('page');
 
     rendered.remove();
-    window.history.replaceState(null, '', '/');
-    expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
-    expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();
-    expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
-    expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
-    expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.textContent).toBe('Overview');
-    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(true);
-    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Overview');
-
-    /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="cost"]'))?.click();
-
-    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(false);
-    expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.textContent).toBe('Overview');
-    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Cost & efficiency');
     window.history.replaceState(null, '', '/');
   });
 
