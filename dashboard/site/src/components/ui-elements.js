@@ -49,13 +49,10 @@ const ELEMENT_RENDERERS = new Map([
   ['package-dispatches', (context) => renderPackageNavigation(context, 'dispatches')],
   ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
   ['workflow-route', renderWorkflowRouteView],
-  ['workflow-detail', renderWorkflowRouteView],
-  ['workflow-runs', renderWorkflowRouteView],
-  ['workflow-runtime', renderWorkflowRouteView],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'workflow-detail', 'workflow-runs', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'outcome-detail']);
 
 /**
  * @param {string} name
