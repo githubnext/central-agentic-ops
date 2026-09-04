@@ -248,13 +248,14 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .pie-chart-card > h3, .pie-chart-card > h4 { align-self: end; margin: 0; font-size: 1.25rem; }
 .pie-chart-card > .view-description { align-self: start; }
 .pie-chart-card > .view-source, .pie-chart-card > .view-metadata, .pie-chart-card > .view-context { grid-column: 1; margin: 0; font-size: .6875rem; }
-.pie-chart-layout { min-width: 0; display: grid; grid-column: 2; grid-row: 1 / span 6; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 20px; }
-.pie-chart-layout .chart-widget { min-height: 180px; margin: 0; border: 0; background: transparent; }
-.pie-chart-layout .chart-widget svg { width: 180px; height: 180px; max-height: none; }
-.pie-chart-layout .chart-legend-pie { display: block; margin: 0; }
+.pie-chart-layout { min-width: 0; display: grid; grid-column: 2; grid-row: 1 / span 6; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); align-items: center; gap: 20px; }
+.pie-chart-layout .chart-widget { min-width: 0; min-height: 180px; margin: 0; border: 0; background: transparent; }
+.pie-chart-layout .chart-widget svg { width: 100%; max-width: 180px; height: auto; max-height: none; }
+.pie-chart-layout .chart-legend-pie { min-width: 0; width: 100%; display: block; margin: 0; }
 .pie-chart-layout .chart-legend-pie li { min-height: 30px; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 54px; gap: 9px; border-bottom: 1px solid var(--border-muted); }
 .pie-chart-layout .chart-legend-pie li:last-child { border-bottom: 0; }
 .pie-chart-layout .chart-legend-pie i { width: 9px; height: 9px; border-radius: 2px; }
+.pie-chart-layout .chart-legend-pie span { min-width: 0; overflow-wrap: anywhere; }
 .pie-chart-layout .chart-legend-pie strong, .pie-chart-layout .chart-legend-pie small { font-variant-numeric: tabular-nums; text-align: right; }
 .chart-view-pie > .table-region { margin: 0; }
 .metric-link a, .custom-table a { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; transition: background-color 120ms ease, color 120ms ease; }
