@@ -333,6 +333,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
   const sources = buildDashboardLanguageSources({
     deployed: {
       generatedAt: "2026-08-30T12:00:00Z",
+      latestGhAwVersion: "v0.88.0",
       discovery: { complete: true },
       runHealth: { available: true, complete: true },
       bundles: [{
@@ -404,6 +405,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       inventoryReady: sources.workflows.rows[0]["inventory-ready"],
       rolloutMode: sources.workflows.rows[0]["rollout-mode"],
       ghAwVersion: sources.workflows.rows[0]["gh-aw-version"],
+      currentGhAwVersion: sources.workflows.rows[0]["gh-aw-current-version"],
+      ghAwVersionLabel: sources.workflows.rows[0]["gh-aw-version-label"],
       updateState: sources.workflows.rows[0]["gh-aw-update-state"],
       metadata: sources.workflows.rows[0]["gh-aw-metadata"],
       manifest: sources.workflows.rows[0]["gh-aw-manifest"],
@@ -421,6 +424,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       inventoryReady: true,
       rolloutMode: "review",
       ghAwVersion: "v0.88.0",
+      currentGhAwVersion: "v0.88.0",
+      ghAwVersionLabel: "v0.88.0 (current)",
       updateState: "up-to-date",
       metadata: { compiler_version: "v0.88.0", strict: true },
       manifest: { version: 1, actions: [] },

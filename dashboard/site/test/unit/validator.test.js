@@ -45,25 +45,19 @@ describe('dashboard document validation', () => {
       kind: 'custom',
       views: [
         {
-          id: 'workflow-update-state',
-          mark: 'chart',
-          chart: 'pie',
-          data: { source: 'workflows' }
-        },
-        {
-          id: 'workflow-updates',
-          mark: 'table',
-          data: { source: 'workflows' }
-        },
-        {
           id: 'workflow-versions',
           mark: 'chart',
           chart: 'pie',
           data: { source: 'workflows' },
           encoding: {
-            x: { field: 'gh-aw-version' },
+            x: { field: 'gh-aw-version-label' },
             y: { field: 'workflow', aggregate: 'count' }
           }
+        },
+        {
+          id: 'workflow-updates',
+          mark: 'table',
+          data: { source: 'workflows' }
         }
       ]
     });
@@ -72,6 +66,7 @@ describe('dashboard document validation', () => {
       'workflow',
       'repository',
       'gh-aw-version',
+      'gh-aw-current-version',
       'gh-aw-update-state'
     ]);
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);

@@ -4451,20 +4451,20 @@
         "description": "Installed gh-aw compiler versions and whether a newer gh-aw release is available.",
         "views": [
           {
-            "id": "workflow-update-state",
-            "title": "Workflow update state",
-            "description": "The current update-state distribution highlights upgrade exposure across discovered workflows.",
+            "id": "workflow-versions",
+            "title": "Workflow versions",
+            "description": "Distribution of discovered workflows by compiled gh-aw version. The latest published release is marked current.",
             "data": {
               "source": "workflows"
             },
             "mark": "chart",
             "chart": "pie",
-            "layout": "full",
+            "table": false,
             "encoding": {
               "x": {
-                "field": "gh-aw-update-state",
+                "field": "gh-aw-version-label",
                 "type": "nominal",
-                "title": "Update state"
+                "title": "gh-aw version"
               },
               "y": {
                 "field": "workflow",
@@ -4472,7 +4472,8 @@
                 "aggregate": "count",
                 "title": "Workflows"
               }
-            }
+            },
+            "layout": "full"
           },
           {
             "id": "workflow-updates",
@@ -4502,7 +4503,12 @@
                 {
                   "field": "gh-aw-version",
                   "type": "nominal",
-                  "title": "gh-aw version"
+                  "title": "Installed version"
+                },
+                {
+                  "field": "gh-aw-current-version",
+                  "type": "nominal",
+                  "title": "Current version"
                 },
                 {
                   "field": "gh-aw-update-state",
@@ -4511,31 +4517,6 @@
                   "display": "status"
                 }
               ]
-            },
-            "layout": "full"
-          },
-          {
-            "id": "workflow-versions",
-            "title": "Workflow versions",
-            "description": "Distribution of discovered workflows by their compiled gh-aw version.",
-            "data": {
-              "source": "workflows"
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "table": false,
-            "encoding": {
-              "x": {
-                "field": "gh-aw-version",
-                "type": "nominal",
-                "title": "gh-aw version"
-              },
-              "y": {
-                "field": "workflow",
-                "type": "quantitative",
-                "aggregate": "count",
-                "title": "Workflows"
-              }
             },
             "layout": "full"
           }
