@@ -191,6 +191,24 @@ export function renderEmptyMessage(message, extraAttrs) {
 }
 
 /**
+ * Renders the shared "`<ul>` of items, or a single fallback `<li>`" pattern
+ * used by summary and provenance lists when there is no data to display.
+ * @template T
+ * @param {string} className
+ * @param {T[]} items
+ * @param {(item: T) => Node | string} renderItem
+ * @param {string} fallbackMessage
+ * @returns {HTMLElement}
+ */
+export function renderListWithFallback(className, items, renderItem, fallbackMessage) {
+  return h(
+    'ul',
+    { className },
+    items.length > 0 ? items.map((item) => h('li', null, renderItem(item))) : [h('li', null, fallbackMessage)]
+  );
+}
+
+/**
  * Renders the shared "icon plus name" identity link used for package/entity
  * references (package summary rows, utilization cards, package status
  * cards), wrapping the label text in the caller-selected inline element.
