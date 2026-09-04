@@ -54,6 +54,8 @@ describe('data health sources', () => {
       { label: 'Sources needing attention', value: '1' },
       { label: 'Retained rows', value: '1' }
     ]));
+    expect(sources['data-health-summary'].metadata.availability).toBe('available');
+    expect(sources['data-health-sources'].metadata.availability).toBe('available');
   });
 
   it('does not report empty or unknown-state sources as healthy', () => {
