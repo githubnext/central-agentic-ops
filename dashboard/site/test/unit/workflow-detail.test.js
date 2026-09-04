@@ -158,11 +158,14 @@ describe('renderWorkflowDetail', () => {
     });
   });
 
-  it('renders Runs as the current workflow tab with run-specific route chrome', () => {
+  it('renders Runs as the current workflow tab with declarative route composition', () => {
     const host = document.createElement('div');
     const allocation = vi.fn();
     host.addEventListener('dashboard-route-allocation', allocation);
-    const rendered = renderWorkflowDetail(context('workflow-runs'));
+    const rendered = renderWorkflowDetail({
+      ...context('workflow-runs'),
+      viewId: 'workflow-runs-route'
+    });
     host.append(rendered);
 
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
