@@ -4,6 +4,7 @@ name: "UK AI Advisory"
 run-name: "${{ github.event_name == 'schedule' && 'UK AI Advisory · scheduled' || format('UK AI Advisory · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
 
 max-ai-credits: 250
+max-daily-ai-credits: -1
 timeout-minutes: 15
 
 concurrency:

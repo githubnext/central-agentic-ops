@@ -7,6 +7,7 @@ name: "Dev Practices"
 run-name: "${{ github.event_name == 'schedule' && 'Dev Practices · scheduled' || format('Dev Practices · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
 
 max-ai-credits: 250
+max-daily-ai-credits: -1
 timeout-minutes: 15
 
 concurrency:
