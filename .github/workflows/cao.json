@@ -136,6 +136,9 @@
           "data-acquisition-audit": {
             "workflow": "self-care-data-acquisition-audit"
           },
+          "dashboard-language-refactor": {
+            "workflow": "self-care-dashboard-language-refactor"
+          },
           "dashboard-review": {
             "workflow": "self-care-dashboard-review"
           },

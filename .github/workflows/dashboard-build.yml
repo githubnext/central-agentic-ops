@@ -33,6 +33,7 @@ jobs:
     outputs:
       run-id: ${{ steps.dispatch.outputs.run-id }}
       run-attempt: ${{ steps.dispatch.outputs.run-attempt }}
+      skipped: ${{ steps.dispatch.outputs.skipped }}
     permissions:
       actions: write
       contents: read
@@ -72,7 +73,7 @@ jobs:
 
   build:
     needs: activity
-    if: always() && needs.activity.result == 'success'
+    if: always() && needs.activity.result == 'success' && needs.activity.outputs.skipped != 'true'
     runs-on: ubuntu-latest
     permissions:
       actions: read
