@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title description" data-visual-kind="diagram" data-visual-id="fail-closed-check">
+  <title id="title">Fail-closed check before acting</title>
+  <desc id="description">The system checks whether a required fact is available. If yes, it continues within declared limits. If no, it fails, skips, or reports incomplete, and never infers broader authority.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0 0L10 4L0 8Z" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="420" fill="#101411"/>
+  <text x="600" y="52" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="24" font-weight="700" fill="#f2f5f3">Fail-closed check before acting</text>
+  <text x="600" y="82" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="16" fill="#b6bfb8">A missing fact must stop or narrow the run, never widen its authority.</text>
+
+  <g data-node="required-fact-check">
+    <rect x="440" y="120" width="320" height="96" rx="12" fill="#0a241b" stroke="#909692" stroke-width="2"/>
+    <text x="600" y="158" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="18" font-weight="700" fill="#f2f5f3">Required fact available?</text>
+    <text x="600" y="188" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="16" fill="#b6bfb8">policy, authority, credentials, evidence</text>
+  </g>
+
+  <path d="M760 148 H1000" fill="none" stroke="#58a6ff" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="880" y="132" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="16" font-weight="700" fill="#5fed83">YES</text>
+
+  <g data-node="continue-within-limits">
+    <rect x="1000" y="100" width="160" height="96" rx="12" fill="#0a241b" stroke="#5fed83" stroke-width="2"/>
+    <text x="1080" y="138" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="17" font-weight="700" fill="#5fed83">Continue</text>
+    <text x="1080" y="164" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="16" fill="#b6bfb8">within declared</text>
+    <text x="1080" y="184" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="16" fill="#b6bfb8">limits</text>
+  </g>
+
+  <path d="M600 216 V280" fill="none" stroke="#58a6ff" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="624" y="252" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="16" font-weight="700" fill="#f85149">NO</text>
+
+  <g data-node="fail-skip-report-incomplete">
+    <rect x="380" y="296" width="440" height="96" rx="12" fill="#0a241b" stroke="#f85149" stroke-width="2"/>
+    <text x="600" y="334" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="18" font-weight="700" fill="#f85149">Fail, skip, or report incomplete</text>
+    <text x="600" y="364" text-anchor="middle" font-family="Mona Sans, system-ui, sans-serif" font-size="16" fill="#b6bfb8">never infer broader authority</text>
+  </g>
+</svg>

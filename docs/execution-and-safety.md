@@ -88,13 +88,11 @@ Never add an App key, PAT, installation token, or other secret to this envelope.
 
 The system should stop or reduce scope when it cannot establish a required fact:
 
-```text
-required fact available? -- yes --> continue within declared limits
-		  |
-		  no
-		  v
-fail, skip, or report incomplete -- never infer broader authority
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/gh-aw-cao/assets/fail-closed-check-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="/gh-aw-cao/assets/fail-closed-check-light.svg">
+  <img alt="A required fact check: if the fact is available, the run continues within declared limits; if not, it fails, skips, or reports incomplete, and never infers broader authority." src="/gh-aw-cao/assets/fail-closed-check-light.svg">
+</picture>
 
 - inaccessible review destination in review mode: emit `report_incomplete` rather than writing elsewhere;
 - unavailable or disabled worker: skip that worker;
