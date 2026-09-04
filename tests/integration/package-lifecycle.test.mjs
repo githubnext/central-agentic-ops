@@ -153,6 +153,11 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
   const consumer = installPackage(packageSource);
   try {
     assert.ok(existsSync(join(consumer, ".github", "aw", "default-AGENTS.md")));
+    assert.ok(existsSync(join(consumer, ".github", "aw", "default-aw.jsonl")));
+    assert.deepEqual(
+      JSON.parse(readFileSync(join(consumer, ".github", "workflows", "aw.json"), "utf8")).auto_upgrade.options,
+      ["--pre-releases"],
+    );
     for (const relativePath of activityExpectedFiles) {
       assert.ok(existsSync(join(consumer, relativePath)), `root package omitted activity file ${relativePath}`);
     }

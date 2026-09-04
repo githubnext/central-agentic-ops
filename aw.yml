@@ -13,5 +13,7 @@ includes:
 resources:
   - source: AGENTS.md
     destination: .github/aw/default-AGENTS.md
+  - source: default-aw.jsonl
+    destination: .github/aw/default-aw.jsonl
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
