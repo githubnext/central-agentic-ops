@@ -69,8 +69,14 @@
         dashboardSocket = new WebSocket(dashboardSocketUrl);
         dashboardSocket.addEventListener("message", (event) => {
           const message = JSON.parse(event.data);
-          if (!message?.type) {
-            window.dispatchEvent(new CustomEvent("dashboard-preview-update", { detail: message }));
+          if (message?.type === "dashboard-update" && message.dashboard) {
+            window.dispatchEvent(new CustomEvent("dashboard-preview-update", {
+              detail: { dashboard: message.dashboard, traceId: message.traceId },
+            }));
+          } else if (!message?.type) {
+            window.dispatchEvent(new CustomEvent("dashboard-preview-update", {
+              detail: { dashboard: message },
+            }));
           }
         });
         console.log("Dashboard preview socket initialized.");
@@ -116,12 +122,23 @@
         return dashboard;
       };
       window.addEventListener("dashboard-preview-update", (event) => {
-        const schema = event.detail;
+        const schema = event.detail.dashboard;
         dashboardDocument = {
           languageVersion: schema["language-version"],
           dashboard: schema.dashboard,
         };
         renderSources(renderedSources);
+        if (event.detail.traceId && dashboardSocket?.readyState === WebSocket.OPEN) {
+          dashboardSocket.send(JSON.stringify({
+            type: "browser.trace",
+            traceId: event.detail.traceId,
+            event: "preview.rendered",
+            details: {
+              pageCount: schema.dashboard.pages.length,
+              activeHash: window.location.hash,
+            },
+          }));
+        }
       });
 
       const fixtureSources = {

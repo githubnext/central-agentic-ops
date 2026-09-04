@@ -33,22 +33,34 @@ describe('Copilot dashboard prompt', () => {
     socket.emit({ type: 'assistant-delta', content: 'Adding ' });
     socket.emit({ type: 'assistant-delta', content: 'a trend.' });
     socket.emit({ type: 'assistant-message', content: 'Added a trend.' });
+    socket.emit({ type: 'reloaded' });
     socket.emit({ type: 'done' });
 
     expect(prompt.querySelector('label')?.textContent).toBe('Ask Copilot to update this view');
     expect(prompt.querySelector('dialog')?.hasAttribute('open')).toBe(true);
     expect(prompt.querySelector('.dashboard-copilot-message-user')?.textContent).toContain('Add a trend');
     expect(prompt.querySelector('.dashboard-copilot-dialog-status')?.textContent)
-      .toBe('Saved. Waiting for the preview to reload…');
-    expect(debugMock).toHaveBeenCalledWith(expect.stringContaining(JSON.stringify({
-      role: 'assistant',
-      content: 'Added a trend.'
-    }, null, 2)));
-    expect(debugMock).toHaveBeenCalledWith(expect.stringContaining('Starting dashboard view update.'));
-    expect(socket.sent[0]).toEqual({
+      .toBe('Saved and preview updated.');
+    expect(debugMock).toHaveBeenCalledWith(
+      '[dashboard-copilot]',
+      expect.stringContaining('"content":"Added a trend."')
+    );
+    expect(debugMock).toHaveBeenCalledWith(
+      '[dashboard-copilot]',
+      expect.stringContaining('Starting dashboard view update.')
+    );
+    const start = socket.sent.find((message) => message.type === 'copilot.start');
+    expect(start).toEqual({
       type: 'copilot.start',
+      traceId: expect.any(String),
       view: 'Overview',
       request: 'Add a trend'
+    });
+    expect(socket.sent).toContainEqual({
+      type: 'browser.trace',
+      traceId: start?.traceId,
+      event: 'copilot.request.completed',
+      details: { view: 'Overview' }
     });
     debugMock.mockRestore();
   });
@@ -66,9 +78,19 @@ describe('Copilot dashboard prompt', () => {
     if (!(closeButton instanceof HTMLButtonElement)) throw new Error('Expected dialog close button');
     closeButton.click();
 
-    expect(socket.sent).toEqual([
-      { type: 'copilot.start', view: 'Overview', request: 'Add a trend' },
-      { type: 'copilot.stop' }
-    ]);
+    const start = socket.sent.find((message) => message.type === 'copilot.start');
+    expect(start).toEqual({
+      type: 'copilot.start',
+      traceId: expect.any(String),
+      view: 'Overview',
+      request: 'Add a trend'
+    });
+    expect(socket.sent).toContainEqual({ type: 'copilot.stop', traceId: start?.traceId });
+    expect(socket.sent).toContainEqual({
+      type: 'browser.trace',
+      traceId: start?.traceId,
+      event: 'copilot.stop.sent',
+      details: {}
+    });
   });
 });

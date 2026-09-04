@@ -25,6 +25,7 @@ describe("live Dashboard Language sources", () => {
     expect(preview).toContain("Unable to load live dashboard data:");
     expect(preview).toContain('window.addEventListener("dashboard-preview-update"');
     expect(preview).toContain("renderSources(renderedSources)");
+    expect(preview).toContain('event: "preview.rendered"');
     expect(preview).toContain('get("local-preview")');
     expect(preview).toContain('new URL("./__dashboard_socket", window.location.href)');
     expect(preview).toContain('previewMode === "copilot"');

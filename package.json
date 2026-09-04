@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "setup:github-apps": "node .github/cao/setup-github-apps.mjs",
-    "dev": "node dashboard/local-server.mjs --copilot",
+    "dev": "node dashboard/local-server.mjs --copilot --trace-file .cao-dashboard-traces/latest.jsonl",
     "docs:dev": "astro dev",
     "docs:build": "astro build",
     "docs:preview": "astro preview",
@@ -19,6 +19,7 @@
     "check": "npm run typecheck:cao && npm test && npm run test:load && npm run check:svg && npm run compile && npm run docs:build",
     "update-deps": "npx npm-check-updates -u && npm install",
     "install:copilot": "npm install --global @github/copilot",
+    "test:e2e:copilot-loop": "playwright test --config=playwright.copilot-loop.config.mjs",
     "test:e2e:local-server": "playwright test --config=playwright.local-server.config.mjs"
   },
   "dependencies": {

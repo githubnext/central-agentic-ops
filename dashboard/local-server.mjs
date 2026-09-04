@@ -4,7 +4,9 @@ import { createServer } from "node:http";
 import { execFile } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import {
+  appendFile,
   copyFile,
+  mkdir,
   mkdtemp,
   readFile,
   readdir,
@@ -237,6 +239,30 @@ function errorMetadata(error) {
     code: error && typeof error === "object" && "code" in error
       ? String(error.code)
       : undefined,
+  };
+}
+
+function createTraceRecorder({ traceFile, output = console.log }) {
+  let writes = Promise.resolve();
+  return {
+    record(source, event, { traceId, details = {} } = {}) {
+      const entry = {
+        timestamp: new Date().toISOString(),
+        source,
+        event,
+        ...(traceId ? { traceId } : {}),
+        details: JSON.parse(redactJsonSecrets(JSON.stringify(details))),
+      };
+      const line = JSON.stringify(entry);
+      output(`[dashboard-trace] ${line}`);
+      if (traceFile) {
+        writes = writes.then(() => appendFile(traceFile, `${line}\n`, "utf8"));
+      }
+      return entry;
+    },
+    async flush() {
+      await writes;
+    },
   };
 }
 
@@ -592,6 +618,8 @@ function readWebsocketFrames(buffer) {
  *   copilot?: boolean,
  *   copilotExecutable?: string,
  *   createCopilotRuntime?: typeof startCopilotRuntime,
+ *   traceFile?: string,
+ *   traceOutput?: (message: string) => void,
  *   workingDirectory?: string,
  *   host?: string,
  *   port?: number,
@@ -607,6 +635,8 @@ export async function startDashboardServer({
   copilot = false,
   copilotExecutable,
   createCopilotRuntime = startCopilotRuntime,
+  traceFile,
+  traceOutput = console.log,
   workingDirectory = process.cwd(),
   host = "127.0.0.1",
   port = 4173,
@@ -619,6 +649,15 @@ export async function startDashboardServer({
     throw new Error("Copilot mode requires a loopback --host such as 127.0.0.1 or ::1.");
   }
   const resolvedWorkingDirectory = await realpath(workingDirectory);
+  const resolvedTraceFile = traceFile ? resolve(resolvedWorkingDirectory, traceFile) : null;
+  if (resolvedTraceFile && !isWithin(resolvedWorkingDirectory, resolvedTraceFile)) {
+    throw new Error("Dashboard trace file must remain within the workspace.");
+  }
+  if (resolvedTraceFile) {
+    await mkdir(dirname(resolvedTraceFile), { recursive: true });
+    await writeFile(resolvedTraceFile, "", "utf8");
+  }
+  const trace = createTraceRecorder({ traceFile: resolvedTraceFile, output: traceOutput });
   const resolvedSiteRoot = await realpath(siteRoot);
   const resolvedCatalogRoot = catalogRoot ? await canonicalPath(catalogRoot) : null;
   const resolvedInstalledDashboardsDirectory = await canonicalPath(installedDashboardsDirectory);
@@ -657,10 +696,18 @@ export async function startDashboardServer({
   let copilotRuntime;
   let copilotRequestActive = false;
   let copilotRequest = null;
+  const renderAcknowledgements = new Map();
 
-  const broadcastDashboard = () => {
+  const broadcastDashboard = (traceId) => {
     console.log("Broadcasting dashboard preview update.", { socketCount: sockets.size });
-    const frame = websocketTextFrame(dashboardContent);
+    trace.record("server", "preview.broadcast", {
+      traceId,
+      details: { socketCount: sockets.size },
+    });
+    const message = traceId
+      ? JSON.stringify({ type: "dashboard-update", traceId, dashboard: JSON.parse(dashboardContent) })
+      : dashboardContent;
+    const frame = websocketTextFrame(message);
     for (const socket of sockets) socket.write(frame);
   };
 
@@ -671,14 +718,19 @@ export async function startDashboardServer({
   };
 
   const runCopilotRequest = async (socket, payload) => {
+    const traceId = typeof payload?.traceId === "string"
+      && /^[A-Za-z0-9-]{8,80}$/.test(payload.traceId)
+      ? payload.traceId
+      : randomBytes(16).toString("hex");
     if (!copilotRuntime) {
-      sendSocketEvent(socket, { type: "error", message: "Copilot mode is not available." });
+      sendSocketEvent(socket, { type: "error", traceId, message: "Copilot mode is not available." });
       return;
     }
     if (copilotRequestActive) {
       console.log("Rejected concurrent Copilot dashboard request.");
       sendSocketEvent(socket, {
         type: "error",
+        traceId,
         message: "A Copilot dashboard request is already running.",
       });
       return;
@@ -687,13 +739,17 @@ export async function startDashboardServer({
         || typeof payload?.request !== "string" || payload.request.trim().length < 1
         || payload.request.length > 10000) {
       console.log("Rejected invalid Copilot dashboard request payload.");
-      sendSocketEvent(socket, { type: "error", message: "A valid view and request are required." });
+      sendSocketEvent(socket, {
+        type: "error",
+        traceId,
+        message: "A valid view and request are required.",
+      });
       return;
     }
 
     copilotRequestActive = true;
     const controller = new AbortController();
-    copilotRequest = { socket, controller };
+    copilotRequest = { socket, controller, traceId };
     try {
       const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
         resolvedCatalogRoot,
@@ -705,7 +761,24 @@ export async function startDashboardServer({
         requestLength: payload.request.trim().length,
         viewDashboardPath,
       });
-      const onEvent = (event) => sendSocketEvent(socket, event);
+      trace.record("server", "copilot.request.accepted", {
+        traceId,
+        details: {
+          view: payload.view,
+          requestLength: payload.request.trim().length,
+          viewDashboardPath,
+        },
+      });
+      const onEvent = (event) => {
+        trace.record("server", `copilot.${event.type}`, {
+          traceId,
+          details: {
+            ...(event.message ? { message: event.message } : {}),
+            ...(event.details ? { details: event.details } : {}),
+          },
+        });
+        sendSocketEvent(socket, { ...event, traceId });
+      };
       onEvent({
         type: "debug",
         message: "Starting dashboard view update.",
@@ -713,6 +786,7 @@ export async function startDashboardServer({
       });
       onEvent({ type: "started" });
       const result = await copilotRuntime.prompt({
+        traceId,
         view: payload.view,
         request: payload.request.trim(),
         bundledDashboardPath,
@@ -759,21 +833,66 @@ export async function startDashboardServer({
         view: payload.view,
         viewDashboardPath,
       });
+      trace.record("server", "copilot.source.verified", {
+        traceId,
+        details: {
+          view: payload.view,
+          viewDashboardPath,
+          bytes: Buffer.byteLength(normalizedSource),
+        },
+      });
       onEvent({
         type: "debug",
-        message: "Dashboard view update completed.",
+        message: "Dashboard source saved; rebuilding the preview.",
+        details: { view: payload.view },
+      });
+      const rendered = Promise.withResolvers();
+      const renderTimeout = setTimeout(() => rendered.reject(
+        new Error("The browser did not confirm the dashboard update."),
+      ), 5000);
+      renderAcknowledgements.set(traceId, {
+        socket,
+        resolve: () => {
+          clearTimeout(renderTimeout);
+          rendered.resolve();
+        },
+        reject: (error) => {
+          clearTimeout(renderTimeout);
+          rendered.reject(error);
+        },
+      });
+      try {
+        const packagePaths = await rebuild(true, traceId, true);
+        await refreshWatchers(packagePaths);
+        await rendered.promise;
+      } finally {
+        clearTimeout(renderTimeout);
+        renderAcknowledgements.delete(traceId);
+      }
+      onEvent({
+        type: "reloaded",
+        message: "Saved and preview updated.",
         details: { view: payload.view },
       });
       onEvent({ type: "done" });
     } catch (error) {
       console.log("Copilot request failed.", errorMetadata(error));
+      trace.record("server", "copilot.request.failed", {
+        traceId,
+        details: {
+          view: payload?.view,
+          ...errorMetadata(error),
+        },
+      });
       sendSocketEvent(socket, {
         type: "debug",
+        traceId,
         message: "Dashboard view update failed.",
         details: { view: payload.view, ...errorMetadata(error) },
       });
       sendSocketEvent(socket, {
         type: "error",
+        traceId,
         message: "Copilot could not update the view.",
       });
     } finally {
@@ -790,17 +909,33 @@ export async function startDashboardServer({
         copilotRequest.controller.abort();
         await copilotRuntime?.stop();
       }
+    } else if (command?.type === "browser.trace"
+        && typeof command.traceId === "string"
+        && /^[A-Za-z0-9-]{8,80}$/.test(command.traceId)
+        && typeof command.event === "string"
+        && /^[a-z0-9.-]{1,80}$/.test(command.event)) {
+      trace.record("browser", command.event, {
+        traceId: command.traceId,
+        details: command.details && typeof command.details === "object" ? command.details : {},
+      });
+      if (command.event === "preview.rendered") {
+        const acknowledgement = renderAcknowledgements.get(command.traceId);
+        if (acknowledgement?.socket === socket) acknowledgement.resolve();
+      }
     }
   };
 
-  const rebuild = async (notify = true) => {
+  const rebuild = async (notify = true, traceId, forceNotify = false) => {
     console.log("Checking dashboard sources for updates.");
     const packagePaths = await packageDashboardPaths(
       resolvedCatalogRoot,
       resolvedInstalledDashboardsDirectory,
     );
     const nextSignature = await sourceSignature([baseDashboardPath, ...packagePaths]);
-    if (nextSignature === signature) return packagePaths;
+    if (nextSignature === signature) {
+      if (notify && forceNotify) broadcastDashboard(traceId);
+      return packagePaths;
+    }
 
     await copyFile(baseDashboardPath, bundledDashboardPath);
     await bundleDashboardFiles(bundledDashboardPath, packagePaths);
@@ -811,7 +946,15 @@ export async function startDashboardServer({
       editableDashboardPaths: [baseDashboardPath, ...packagePaths],
       notify,
     });
-    if (notify) broadcastDashboard();
+    trace.record("server", "preview.rebuilt", {
+      traceId,
+      details: {
+        bundledDashboardPath,
+        editableDashboardPaths: [baseDashboardPath, ...packagePaths],
+        notify,
+      },
+    });
+    if (notify) broadcastDashboard(traceId);
     return packagePaths;
   };
 
@@ -1000,6 +1143,12 @@ export async function startDashboardServer({
         copilotRequest.controller.abort();
         void copilotRuntime?.stop();
       }
+      for (const [traceId, acknowledgement] of renderAcknowledgements) {
+        if (acknowledgement.socket === socket) {
+          acknowledgement.reject(new Error("The browser disconnected before rendering the dashboard update."));
+          renderAcknowledgements.delete(traceId);
+        }
+      }
       console.log("Dashboard preview socket disconnected.", { socketCount: sockets.size });
     };
     socket.on("data", (data) => {
@@ -1052,6 +1201,13 @@ export async function startDashboardServer({
           ...(codespaceAuthority ? { codespaceAuthority } : {}),
           copilot,
         });
+        trace.record("server", "server.ready", {
+          details: {
+            authority: expectedAuthority,
+            copilot,
+            traceFile: resolvedTraceFile,
+          },
+        });
         accept();
       });
     });
@@ -1075,6 +1231,8 @@ export async function startDashboardServer({
       await copilotRuntime?.close();
       await refreshPromise;
       await rm(temporaryDirectory, { recursive: true, force: true });
+      trace.record("server", "server.stopped");
+      await trace.flush();
       console.log("Dashboard server stopped.");
     },
   };
@@ -1086,6 +1244,10 @@ function parseArguments(arguments_) {
     const argument = arguments_[index];
     if (argument === "--help") return { help: true };
     if (argument === "--copilot") options.copilot = true;
+    else if (argument === "--trace-file") {
+      options.traceFile = arguments_[index += 1];
+      if (!options.traceFile) throw new Error("--trace-file requires a value");
+    }
     else if (argument === "--host") {
       options.host = arguments_[index += 1];
       if (!options.host) throw new Error("--host requires a value");
@@ -1109,7 +1271,7 @@ function parseArguments(arguments_) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   if (options.help) {
-    console.log("usage: local-server.mjs [--copilot] [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]");
+    console.log("usage: local-server.mjs [--copilot] [--trace-file PATH] [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]");
     return;
   }
   const preview = await startDashboardServer(options);

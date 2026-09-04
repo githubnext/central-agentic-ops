@@ -11,21 +11,43 @@ const debugSecretPatterns = [
 /**
  * @param {'user' | 'assistant'} role
  * @param {string} content
+ * @param {string} traceId
  */
-function debugCopilotMessage(role, content) {
+function debugCopilotMessage(role, content, traceId) {
   const redacted = debugSecretPatterns.reduce(
     (value, pattern) => value.replace(pattern, '[REDACTED]'),
     content
   );
-  console.debug(`Copilot chat message:\n${JSON.stringify({ role, content: redacted }, null, 2)}`);
+  console.debug('[dashboard-copilot]', JSON.stringify({ traceId, role, content: redacted }));
 }
 
 /**
  * @param {string} message
  * @param {unknown} details
+ * @param {string} traceId
  */
-function debugCopilotUpdate(message, details = {}) {
-  console.debug(`Copilot dashboard update:\n${JSON.stringify({ message, details }, null, 2)}`);
+function debugCopilotUpdate(message, details = {}, traceId) {
+  console.debug('[dashboard-copilot]', JSON.stringify({ traceId, message, details }));
+}
+
+/**
+ * @param {WebSocket} socket
+ * @param {string} event
+ * @param {string} traceId
+ * @param {Record<string, unknown>} details
+ */
+function browserTrace(socket, event, traceId, details = {}) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    source: 'browser',
+    event,
+    traceId,
+    details
+  };
+  console.debug('[dashboard-trace]', JSON.stringify(entry));
+  if (socket.readyState === 1) {
+    socket.send(JSON.stringify({ type: 'browser.trace', traceId, event, details }));
+  }
 }
 
 /**
@@ -63,13 +85,17 @@ export function renderCopilotPrompt(socket) {
   let activeViewName = '';
   let assistantResponse = '';
   let assistantMessageLogged = false;
+  let activeTraceId = '';
   /** @type {HTMLElement | null} */
   let assistantContent = null;
 
   const stopSession = () => {
     if (!sessionActive) return;
     sessionActive = false;
-    if (socket.readyState === 1) socket.send(JSON.stringify({ type: 'copilot.stop' }));
+    if (socket.readyState === 1) {
+      socket.send(JSON.stringify({ type: 'copilot.stop', traceId: activeTraceId }));
+      browserTrace(socket, 'copilot.stop.sent', activeTraceId);
+    }
   };
   const closeDialog = () => {
     stopSession();
@@ -121,30 +147,39 @@ export function renderCopilotPrompt(socket) {
     button.disabled = true;
     toolbarStatus.textContent = 'Copilot connection closed.';
     dialogStatus.textContent = 'Copilot connection closed.';
+    if (activeTraceId) browserTrace(socket, 'copilot.socket.closed', activeTraceId);
   });
   socket.addEventListener('message', (event) => {
     const streamEvent = JSON.parse(String(event.data));
     if (!streamEvent?.type || (!sessionActive && streamEvent.type !== 'stopped')) return;
+    if (streamEvent.traceId && activeTraceId && streamEvent.traceId !== activeTraceId) return;
     if (streamEvent.type === 'debug' && typeof streamEvent.message === 'string') {
-      debugCopilotUpdate(streamEvent.message, streamEvent.details);
+      debugCopilotUpdate(streamEvent.message, streamEvent.details, activeTraceId);
     } else if (streamEvent.type === 'assistant-delta' && typeof streamEvent.content === 'string') {
       assistantResponse += streamEvent.content;
       if (assistantContent) assistantContent.textContent += streamEvent.content;
     } else if (streamEvent.type === 'assistant-message' && typeof streamEvent.content === 'string') {
       assistantResponse = streamEvent.content;
       if (assistantContent) assistantContent.textContent = streamEvent.content;
-      debugCopilotMessage('assistant', assistantResponse);
+      debugCopilotMessage('assistant', assistantResponse, activeTraceId);
       assistantMessageLogged = true;
     } else if (streamEvent.type === 'status' && typeof streamEvent.message === 'string') {
       dialogStatus.textContent = streamEvent.message;
+    } else if (streamEvent.type === 'reloaded') {
+      dialogStatus.textContent = 'Saved and preview updated.';
+      toolbarStatus.textContent = 'Updated.';
+      browserTrace(socket, 'copilot.preview.confirmed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'done') {
-      if (!assistantMessageLogged && assistantResponse) debugCopilotMessage('assistant', assistantResponse);
-      dialogStatus.textContent = 'Saved. Waiting for the preview to reload…';
-      toolbarStatus.textContent = 'Saved.';
+      if (!assistantMessageLogged && assistantResponse) {
+        debugCopilotMessage('assistant', assistantResponse, activeTraceId);
+      }
+      dialogStatus.textContent = 'Saved and preview updated.';
+      toolbarStatus.textContent = 'Updated.';
       input.value = '';
       sessionActive = false;
       button.disabled = false;
-      debugCopilotUpdate('Dashboard view update stream completed.', {});
+      debugCopilotUpdate('Dashboard view update stream completed.', {}, activeTraceId);
+      browserTrace(socket, 'copilot.request.completed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'stopped') {
       dialogStatus.textContent = 'Session stopped.';
       sessionActive = false;
@@ -155,6 +190,7 @@ export function renderCopilotPrompt(socket) {
       sessionActive = false;
       button.disabled = false;
       console.error('Copilot dashboard update failed.', {
+        traceId: activeTraceId,
         view: activeViewName,
         error: streamEvent.message
       });
@@ -171,7 +207,9 @@ export function renderCopilotPrompt(socket) {
       || 'overview';
     activeViewName = view;
     const request = input.value;
-    debugCopilotMessage('user', request);
+    activeTraceId = globalThis.crypto?.randomUUID?.()
+      || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    debugCopilotMessage('user', request, activeTraceId);
     assistantResponse = '';
     assistantMessageLogged = false;
     const assistantMessage = h(
@@ -203,8 +241,12 @@ export function renderCopilotPrompt(socket) {
     debugCopilotUpdate('Sending dashboard view update request.', {
       view,
       requestLength: request.length
+    }, activeTraceId);
+    browserTrace(socket, 'copilot.request.sent', activeTraceId, {
+      view,
+      requestLength: request.length
     });
-    socket.send(JSON.stringify({ type: 'copilot.start', view, request }));
+    socket.send(JSON.stringify({ type: 'copilot.start', traceId: activeTraceId, view, request }));
   });
   return form;
 }
