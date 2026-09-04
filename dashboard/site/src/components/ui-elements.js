@@ -302,23 +302,93 @@ function renderReadinessVerdictElement(context) {
   const rows = rowsFor(context, context.sourceNames[0]);
   const verdict = stringValue(rows.find((row) => row.label === 'Control plane')?.value) || 'Evidence incomplete';
   const tone = verdict === 'Ready to ship' ? 'ready' : verdict === 'Not ready' ? 'blocked' : 'unknown';
-  const icon = tone === 'ready' ? 'check-circle' : tone === 'blocked' ? 'x-circle' : 'alert';
+  const checks = rowsFor(context, 'readiness-checks');
+  const signals = rowsFor(context, 'readiness-signals');
+  const observations = rowsFor(context, 'readiness-observations');
+  const metadata = context.sources[context.sourceNames[0]]?.metadata;
+  const blocking = signals.filter((row) => stringValue(row.tone) === 'critical' || Number(row.priority) === 0);
+  const stateLabel = tone === 'ready' ? 'READY' : tone === 'blocked' ? 'BLOCKED' : 'UNKNOWN';
+  const icon = tone === 'ready' ? 'check-circle' : tone === 'blocked' ? 'x-circle' : 'question';
+  const evidenceRows = rows.filter((row) => row.label !== 'Control plane' && row.label !== 'Unblock first');
   return h(
     'section',
-    { className: `readiness-verdict readiness-verdict-${tone}`, role: 'status' },
+    { className: `readiness-verdict readiness-verdict-${tone}`, role: 'status', 'aria-label': 'Control-plane readiness' },
     h(
       'div',
       { className: 'readiness-verdict-primary' },
-      h('span', { className: 'readiness-verdict-icon', 'aria-hidden': 'true' }, octicon(icon)),
-      h('span', { className: 'readiness-verdict-copy' },
-        h('small', null, 'Release decision'),
-        h('strong', null, verdict))
+      h('div', { className: 'readiness-hero' },
+        h('small', null, 'Control-plane readiness'),
+        h('div', { className: 'readiness-state' },
+          h('span', { className: 'readiness-verdict-icon', 'aria-hidden': 'true' }, octicon(icon)),
+          h('strong', null, stateLabel)
+        ),
+        h('p', null, tone === 'ready'
+          ? 'The control plane is ready to execute the next scheduled operation.'
+          : tone === 'blocked'
+            ? 'The control plane should not be treated as ready for the next operation.'
+            : 'Current readiness cannot be determined reliably.'),
+        h('div', { className: 'readiness-snapshot-meta' },
+          h('span', null, h('strong', null, 'Snapshot'), ` ${snapshotAge(metadata)}`),
+          h('span', null, h('strong', null, 'Evidence'), ` ${evidenceState(metadata)}`)
+        ),
+        h('span', { className: 'readiness-verdict-legacy' }, verdict)
+      ),
+      h('div', { className: 'readiness-verdict-summary' },
+        h('strong', null, tone === 'ready' ? 'All required readiness gates passed.' : tone === 'blocked' ? `${blocking.length} blocking gate${blocking.length === 1 ? '' : 's'}` : 'Evidence is stale or incomplete.'),
+        h('span', null, `${signals.filter((row) => stringValue(row.tone) === 'warning').length} warning${signals.filter((row) => stringValue(row.tone) === 'warning').length === 1 ? '' : 's'}`)
+      )
     ),
-    renderDefinitionList('readiness-verdict-details', rows.filter((row) => row.label !== 'Control plane').map((row) => ({
-      label: stringValue(row.label),
-      value: stringValue(row.value)
-    })))
+    h('div', { className: 'readiness-verdict-details' },
+      readinessBlock('Unblock first', blocking.length > 0
+        ? blocking.map((row) => h('article', { className: 'readiness-blocker' },
+          h('strong', null, stringValue(row.title || row.kind)),
+          h('p', null, stringValue(row.detail)),
+          h('small', null, stringValue(row.evidence))
+        ))
+        : rows.find((row) => row.label === 'Unblock first')
+          ? [h('p', { className: 'readiness-clear' }, stringValue(rows.find((row) => row.label === 'Unblock first')?.value))]
+        : [h('p', { className: 'readiness-clear' }, 'No blocking conditions.')]),
+      readinessBlock('Readiness gates', checks.map((row) => h('div', { className: `readiness-gate readiness-gate-${stringValue(row['readiness-state']).toLowerCase()}` },
+        octicon(stringValue(row['readiness-state']) === 'Ready' ? 'check-circle' : stringValue(row['readiness-state']) === 'Blocked' ? 'stop' : 'question'),
+        h('span', null, h('strong', null, stringValue(row.check)), h('small', null, stringValue(row.detail)))
+      ))),
+      readinessBlock(observations.length > 0 ? 'Other observations' : 'Evidence', observations.length > 0
+        ? observations.map((row) => h('div', { className: 'readiness-observation' },
+          h('strong', null, stringValue(row.signal)),
+          h('span', null, stringValue(row.detail))
+        ))
+        : evidenceRows.map((row) => h('div', { className: 'readiness-evidence-row' },
+          h('span', null, stringValue(row.label)),
+          h('strong', null, stringValue(row.value))
+        )))
+    )
   );
+}
+
+/** @param {string} title @param {Array<HTMLElement|string|null>} content */
+function readinessBlock(title, content) {
+  return h('section', { className: 'readiness-block' }, h('h3', null, title), h('div', { className: 'readiness-block-content' }, ...content));
+}
+
+/** @param {import('../presenter.js').SourceMetadata | undefined} metadata */
+function snapshotAge(metadata) {
+  const value = metadata?.['as-of'] || metadata?.['retrieved-at'];
+  if (!value) return 'Unavailable';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC · ${elapsedSince(date)}`;
+}
+
+/** @param {Date} date */
+function elapsedSince(date) {
+  const minutes = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+  return minutes < 60 ? `${minutes}m ago` : `${Math.floor(minutes / 60)}h ${minutes % 60}m ago`;
+}
+
+/** @param {import('../presenter.js').SourceMetadata | undefined} metadata */
+function evidenceState(metadata) {
+  if (!metadata || metadata.availability === 'unavailable') return 'Unavailable';
+  if (metadata.completeness !== 'complete' || metadata.freshness !== 'fresh') return 'Incomplete';
+  return '✓ Complete';
 }
 
 /**

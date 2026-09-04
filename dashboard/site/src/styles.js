@@ -783,22 +783,45 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
 .summary-grid dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
 .summary-grid dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.readiness-verdict { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 2fr); overflow: hidden; border: 1px solid var(--border); border-left-width: 4px; border-radius: 6px; background: var(--canvas-subtle); }
+.readiness-verdict { display: grid; overflow: hidden; border: 1px solid var(--border); border-left-width: 4px; border-radius: 6px; background: var(--canvas-subtle); }
 .readiness-verdict-blocked { border-left-color: var(--danger); }
 .readiness-verdict-ready { border-left-color: var(--success); }
 .readiness-verdict-unknown { border-left-color: var(--attention); }
-.readiness-verdict-primary { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.readiness-verdict-primary { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 22px 24px; }
+.readiness-hero { min-width: 0; display: grid; gap: 8px; }
+.readiness-hero > small, .readiness-block h3 { color: var(--muted); font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.readiness-hero > small { display: block; }
+.readiness-state { display: flex; align-items: center; gap: 10px; }
+.readiness-state strong { font-size: 1.5rem; letter-spacing: .02em; }
+.readiness-hero p { max-width: 58rem; margin: 0; color: var(--muted); }
+.readiness-snapshot-meta { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 8px; color: var(--muted); font-size: .75rem; }
+.readiness-snapshot-meta strong { color: var(--fg); }
+.readiness-verdict-summary { min-width: 180px; display: grid; align-content: center; justify-items: end; gap: 4px; color: var(--muted); text-align: right; }
+.readiness-verdict-summary strong { color: var(--fg); }
+.readiness-verdict-legacy { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .readiness-verdict-icon { display: grid; color: var(--attention); }
-.readiness-verdict-icon .octicon { width: 28px; height: 28px; }
+.readiness-verdict-icon .octicon { width: 24px; height: 24px; }
 .readiness-verdict-blocked .readiness-verdict-icon { color: var(--danger); }
 .readiness-verdict-ready .readiness-verdict-icon { color: var(--success); }
-.readiness-verdict-copy { display: grid; }
-.readiness-verdict-copy small, .readiness-verdict-details dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
-.readiness-verdict-copy strong { font-size: 1.375rem; }
-.readiness-verdict-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-left: 1px solid var(--border); }
-.readiness-verdict-details > div { min-width: 0; padding: 13px 15px; }
-.readiness-verdict-details > div + div { border-left: 1px solid var(--border); }
-.readiness-verdict-details dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: .9375rem; font-weight: 600; }
+.readiness-verdict-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--border); }
+.readiness-block { min-width: 0; padding: 18px 20px 20px; }
+.readiness-block + .readiness-block { border-left: 1px solid var(--border); }
+.readiness-block h3 { margin: 0 0 12px; }
+.readiness-block-content { display: grid; gap: 10px; }
+.readiness-block-content > p { margin: 0; color: var(--muted); }
+.readiness-blocker, .readiness-observation { display: grid; gap: 3px; }
+.readiness-blocker strong, .readiness-observation strong { font-size: .8125rem; }
+.readiness-blocker p, .readiness-observation span { margin: 0; color: var(--muted); font-size: .75rem; }
+.readiness-blocker small { color: var(--muted); font-size: .6875rem; }
+.readiness-gate { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; }
+.readiness-gate > .octicon { margin-top: 2px; color: var(--success); }
+.readiness-gate-blocked > .octicon { color: var(--danger); }
+.readiness-gate-unknown > .octicon { color: var(--attention); }
+.readiness-gate span { display: grid; gap: 2px; }
+.readiness-gate small { color: var(--muted); font-size: .6875rem; }
+.readiness-evidence-row { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .75rem; }
+.readiness-evidence-row strong { color: var(--fg); text-align: right; }
+.readiness-clear { padding: 8px 0; }
 .dashboard-callout { display: grid; grid-template-columns: minmax(240px, .55fr) minmax(0, 1fr); align-items: center; gap: 24px; padding: 16px; overflow: hidden; border: 1px solid var(--border); border-left: 4px solid var(--attention); border-radius: 6px; background: color-mix(in srgb, var(--attention) 5%, var(--canvas)); }
 .dashboard-callout-heading { display: flex; align-items: center; gap: 12px; }
 .dashboard-callout-heading > .octicon { width: 28px; height: 28px; flex: none; color: var(--attention); }
@@ -1007,8 +1030,12 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .control-plane-heading p { font-size: .75rem; }
   .control-plane-vitals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .readiness-verdict { grid-template-columns: 1fr; }
-  .readiness-verdict-details { border-top: 1px solid var(--border); border-left: 0; }
+  .readiness-verdict-primary { display: grid; gap: 16px; padding: 18px 16px; }
+  .readiness-verdict-summary { justify-items: start; text-align: left; }
+  .readiness-verdict-details { grid-template-columns: 1fr; }
+  .readiness-block { padding: 16px; }
+  .readiness-block + .readiness-block { border-top: 1px solid var(--border); border-left: 0; }
+  .readiness-snapshot-meta { gap: 8px 16px; }
   .dashboard-callout { grid-template-columns: 1fr; gap: 10px; }
   .signal-item > :is(a, div) { grid-template-columns: 20px minmax(0, 1fr); }
   .signal-rank { display: none; }
