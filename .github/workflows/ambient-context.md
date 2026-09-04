@@ -56,9 +56,9 @@ imports:
     with:
       package: ambient-context
       role: orchestrator
-      dispatch_max: "20"
-      orchestrator_credits: "250"
-      worker_credits_per_target: "800"
+      dispatch_max: 20
+      orchestrator_credits: 250
+      worker_credits_per_target: 800
 
 permissions:
   contents: read

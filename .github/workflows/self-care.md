@@ -56,9 +56,9 @@ imports:
     with:
       package: self-care
       role: orchestrator
-      dispatch_max: "8"
-      orchestrator_credits: "200"
-      worker_credits_per_target: "2000"
+      dispatch_max: 8
+      orchestrator_credits: 200
+      worker_credits_per_target: 2000
 
 permissions:
   contents: read

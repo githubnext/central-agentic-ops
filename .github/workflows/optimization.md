@@ -56,9 +56,9 @@ imports:
     with:
       package: optimization
       role: orchestrator
-      dispatch_max: "20"
-      orchestrator_credits: "250"
-      worker_credits_per_target: "850"
+      dispatch_max: 20
+      orchestrator_credits: 250
+      worker_credits_per_target: 850
 
 permissions:
   contents: read

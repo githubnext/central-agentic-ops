@@ -60,9 +60,9 @@ imports:
     with:
       package: aw-doctor
       role: orchestrator
-      dispatch_max: "50"
-      orchestrator_credits: "250"
-      worker_credits_per_target: "1000"
+      dispatch_max: 50
+      orchestrator_credits: 250
+      worker_credits_per_target: 1000
 
 permissions:
   contents: read

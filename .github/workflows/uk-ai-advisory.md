@@ -56,9 +56,9 @@ imports:
     with:
       package: uk-ai-advisory
       role: orchestrator
-      dispatch_max: "50"
-      orchestrator_credits: "250"
-      worker_credits_per_target: "600"
+      dispatch_max: 50
+      orchestrator_credits: 250
+      worker_credits_per_target: 600
 
 permissions:
   contents: read
