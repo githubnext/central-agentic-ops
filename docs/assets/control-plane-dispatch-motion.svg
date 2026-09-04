@@ -29,8 +29,7 @@
     }
 
     .report-update {
-      opacity: 0;
-      animation: report-update 5s ease-out infinite;
+      display: none;
     }
 
     @keyframes dispatch {

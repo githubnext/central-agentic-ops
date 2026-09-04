@@ -61,19 +61,24 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
     </figcaption>
 
     <div class="desktop-scene">
-      <picture>
-        <source media="(prefers-color-scheme: light)" srcset={dispatchFallback.src} />
-        <source media="(prefers-color-scheme: dark)" srcset={dispatchFallbackDark.src} />
-        <img
-          src={dispatchFallback.src}
-          width={dispatchFallback.width}
-          height={dispatchFallback.height}
-          alt=""
-          loading="eager"
-          decoding="async"
-          class="pipeline-image"
-        />
-      </picture>
+      <img
+        src={dispatchFallback.src}
+        width={dispatchFallback.width}
+        height={dispatchFallback.height}
+        alt=""
+        loading="eager"
+        decoding="async"
+        class="pipeline-image theme-light"
+      />
+      <img
+        src={dispatchFallbackDark.src}
+        width={dispatchFallbackDark.width}
+        height={dispatchFallbackDark.height}
+        alt=""
+        loading="eager"
+        decoding="async"
+        class="pipeline-image theme-dark"
+      />
       <img
         src={dispatchMotion.src}
         width={dispatchMotion.width}
@@ -86,19 +91,24 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
     </div>
 
     <div class="mobile-scene" aria-hidden="true">
-      <picture>
-        <source media="(prefers-color-scheme: light)" srcset={mobileDispatchFallback.src} />
-        <source media="(prefers-color-scheme: dark)" srcset={mobileDispatchFallbackDark.src} />
-        <img
-          src={mobileDispatchFallback.src}
-          width={mobileDispatchFallback.width}
-          height={mobileDispatchFallback.height}
-          alt=""
-          loading="eager"
-          decoding="async"
-          class="mobile-pipeline-image"
-        />
-      </picture>
+      <img
+        src={mobileDispatchFallback.src}
+        width={mobileDispatchFallback.width}
+        height={mobileDispatchFallback.height}
+        alt=""
+        loading="eager"
+        decoding="async"
+        class="mobile-pipeline-image theme-light"
+      />
+      <img
+        src={mobileDispatchFallbackDark.src}
+        width={mobileDispatchFallbackDark.width}
+        height={mobileDispatchFallbackDark.height}
+        alt=""
+        loading="eager"
+        decoding="async"
+        class="mobile-pipeline-image theme-dark"
+      />
       <img
         src={mobileDispatchMotion.src}
         width={mobileDispatchMotion.width}
@@ -280,6 +290,22 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     .pipeline-image {
       object-fit: contain;
+    }
+
+    .theme-dark {
+      display: block;
+    }
+
+    .theme-light {
+      display: none;
+    }
+
+    :global(:root[data-theme="light"]) .theme-dark {
+      display: none;
+    }
+
+    :global(:root[data-theme="light"]) .theme-light {
+      display: block;
     }
 
     .dispatch-motion {
