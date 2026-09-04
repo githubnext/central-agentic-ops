@@ -6,7 +6,7 @@ editUrl: false
 prev: false
 next: false
 hero:
-  title: Agentic operations. At scale. One control plane.
+  title: Agentic Operations. At Enterprise Scale. One Control Plane.
   tagline: Dispatch trusted workflows across organizations and more than 10,000 remote target repositories, with bounded review, authorized live execution, and traceable outcomes built in.
   actions:
     - text: Get started
