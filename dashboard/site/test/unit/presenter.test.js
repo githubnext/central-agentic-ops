@@ -556,14 +556,16 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
+    const sections = [...rendered.querySelectorAll('.nav-section')];
     const controlPlaneNavigation = authoritativeDashboardDocument.dashboard.navigation?.find(
       /** @param {{ label?: string }} section */
       (section) => section.label === 'Control plane'
     );
     expect(labels).toEqual(['Attention', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
-    expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
-    expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
-    expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
+    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, false, false, false]);
+    expect(rendered.querySelector('[data-nav-page-id="overview"]')?.closest('.nav-section')?.textContent).toContain('Attention');
+    expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.closest('.nav-section')?.textContent).toContain('Investigate');
+    expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
     expect(controlPlaneNavigation?.pages).toEqual(expect.arrayContaining(['github-api']));
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
@@ -589,6 +591,23 @@ describe('presenter built-in and custom pages', () => {
       'EU CRA',
       'Optimization'
     ]);
+  });
+
+  it('expands the menu section containing the current view', () => {
+    window.history.replaceState(null, '', '/#page-security');
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {}
+    });
+    document.body.append(rendered);
+
+    const sections = [...rendered.querySelectorAll('.nav-section')];
+    expect(/** @type {HTMLDetailsElement} */ (sections[0]).open).toBe(true);
+    expect(/** @type {HTMLDetailsElement} */ (sections[1]).open).toBe(true);
+    expect(rendered.querySelector('[data-nav-page-id="security"]')?.getAttribute('aria-current')).toBe('page');
+
+    rendered.remove();
+    window.history.replaceState(null, '', '/');
     expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
     expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();
     expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);

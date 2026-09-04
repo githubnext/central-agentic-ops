@@ -223,6 +223,11 @@ function renderSidebar(pages, title, navigation) {
       }))
       .filter((section) => section.pages.length > 0)
     : [{ label: undefined, pages }];
+  const mainSectionIndex = Math.max(
+    0,
+    navigationSections.findIndex((section) => section.label?.toLowerCase() === 'main')
+  );
+  let navigationPageIndex = 0;
   return h(
     'aside',
     { className: 'org-sidebar', 'aria-label': 'Central Agentic Ops navigation' },
@@ -250,12 +255,29 @@ function renderSidebar(pages, title, navigation) {
     h(
       'nav',
       { className: 'primary-nav', 'aria-label': 'Primary' },
-      navigationSections.flatMap((section) => [
-        ...(typeof section.label === 'string' && section.label.length > 0
-          ? [h('span', { className: 'nav-section-label' }, section.label)]
-          : []),
-        ...section.pages.map((page) => renderNavItem(page, page.id === firstPageId))
-      ]),
+      ...navigationSections.flatMap((section, sectionIndex) => {
+        const items = section.pages.map((page) => renderNavItem(
+          page,
+          page.id === firstPageId,
+          navigationPageIndex++ >= 6
+        ));
+        return typeof section.label === 'string' && section.label.length > 0
+          ? [h(
+              'details',
+              {
+                className: 'nav-section',
+                open: sectionIndex === mainSectionIndex
+              },
+              h(
+                'summary',
+                { className: 'nav-section-toggle', title: `${section.label} menu section` },
+                h('span', { className: 'nav-section-label' }, section.label),
+                octicon('chevron-right')
+              ),
+              h('div', { className: 'nav-section-items' }, ...items)
+            )]
+          : items;
+      }),
       h(
         'details',
         { className: 'mobile-nav-menu' },
@@ -282,9 +304,10 @@ function renderSidebar(pages, title, navigation) {
 /**
  * @param {PresentableBuiltInPage | PresentableCustomPage} page
  * @param {boolean} isActive
+ * @param {boolean} [mobileOverflow]
  * @returns {HTMLElement}
  */
-function renderNavItem(page, isActive) {
+function renderNavItem(page, isActive, mobileOverflow = false) {
   const iconName = getPageIcon(page);
   const title = getPageNavigationTitle(page);
 
@@ -292,7 +315,7 @@ function renderNavItem(page, isActive) {
     'a',
     {
       href: `#page-${page.id}`,
-      className: `nav-item${isActive ? ' active' : ''}`,
+      className: `nav-item${isActive ? ' active' : ''}${mobileOverflow ? ' mobile-nav-overflow' : ''}`,
       'aria-current': isActive ? 'page' : undefined,
       'aria-label': title,
       title,
@@ -1177,7 +1200,11 @@ function updateNavigationLinks(links, pageId) {
   for (const link of links) {
     const isActive = getNavigationPageId(link) === pageId;
     link.classList.toggle('active', isActive);
-    if (isActive) link.setAttribute('aria-current', 'page');
+    if (isActive) {
+      link.setAttribute('aria-current', 'page');
+      const section = link.closest('.nav-section');
+      if (section instanceof HTMLDetailsElement) section.open = true;
+    }
     else link.removeAttribute('aria-current');
   }
 }

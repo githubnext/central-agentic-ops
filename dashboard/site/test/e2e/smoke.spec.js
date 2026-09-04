@@ -202,6 +202,46 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   expect(await readinessPage.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
 
+test('desktop navigation sections collapse and expand around the current view', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      document.querySelector('#root').append(renderDashboard({
+        document: {
+          languageVersion: '0.1.0',
+          dashboard: {
+            id: 'section-navigation-dashboard',
+            title: 'Section Navigation',
+            pages: [
+              { id: 'overview', kind: 'custom', title: 'Overview', icon: 'home', views: [] },
+              { id: 'runs', kind: 'custom', title: 'Runs', icon: 'play', views: [] }
+            ],
+            navigation: [
+              { label: 'Main', pages: ['overview'] },
+              { label: 'Investigate', pages: ['runs'] }
+            ]
+          }
+        },
+        sources: {}
+      }));
+    </script>
+  `);
+
+  const mainSection = page.locator('.nav-section').filter({ hasText: 'Main' });
+  const investigateSection = page.locator('.nav-section').filter({ hasText: 'Investigate' });
+  await expect(mainSection).toHaveAttribute('open', '');
+  await expect(investigateSection).not.toHaveAttribute('open', '');
+
+  await investigateSection.locator('summary').click();
+  await expect(investigateSection.getByRole('link', { name: 'Runs' })).toBeVisible();
+  await investigateSection.getByRole('link', { name: 'Runs' }).click();
+  await expect(investigateSection).toHaveAttribute('open', '');
+  await expect(page.getByRole('heading', { name: 'Runs', level: 1 })).toBeVisible();
+});
+
 test('performance page leads with a workflow duration histogram', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
