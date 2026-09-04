@@ -3466,7 +3466,7 @@ dashboard:
     });
     expect(routeChrome).toMatchObject({
       mark: 'element',
-      element: 'workflow-route'
+      element: 'workflow-runtime'
     });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
 
