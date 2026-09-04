@@ -3431,9 +3431,19 @@ dashboard:
 
   it('accepts unbucketed categorical swimlanes and rejects quantitative or aggregated lanes', () => {
     const document = JSON.parse(authoritativeDashboardSource);
+    const overview = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'overview');
+    const overviewSwimlane = overview.definition.views.find((/** @type {{ id: string }} */ view) => view.id === 'overview-run-health');
     const workflowRuntime = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runtime');
     const swimlane = workflowRuntime.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-health');
 
+    expect(overviewSwimlane).toMatchObject({
+      chart: 'swimlane',
+      encoding: {
+        x: { field: 'started-at', type: 'temporal' },
+        y: { field: 'run-conclusion', type: 'ordinal' },
+        href: { field: 'run-link' }
+      }
+    });
     expect(swimlane).toMatchObject({
       chart: 'swimlane',
       encoding: {
