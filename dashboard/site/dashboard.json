@@ -139,6 +139,10 @@
         "icon": "check-circle",
         "class-name": "readiness-page",
         "description": "Fail-closed release readiness across evidence integrity, package inventory, policy controls, and recent runtime behavior.",
+        "filter-bar": {
+          "filters": [],
+          "time-range": "24h"
+        },
         "sections": [
           {
             "id": "readiness-verdict",

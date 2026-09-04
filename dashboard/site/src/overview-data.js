@@ -11,9 +11,10 @@ const GITHUB_RATE_LIMIT_DOCS = 'https://docs.github.com/en/rest/using-the-rest-a
 
 /**
  * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @param {{ readinessWindow?: { start: string, end: string } }} [options]
  * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
  */
-export function deriveOverviewSources(sources) {
+export function deriveOverviewSources(sources, options = {}) {
   const workflows = rowsFor(sources, 'workflows');
   const repositories = rowsFor(sources, 'repositories');
   const runs = rowsFor(sources, 'runs');
@@ -45,13 +46,26 @@ export function deriveOverviewSources(sources) {
   const valueSignals = buildValueSignals({ sources, graderObservations, operationalValues, outcomes });
   const costSignals = buildCostSignals(sources.usage);
   const roleFor = buildWorkflowRoleResolver(workflows);
-  const readiness = buildReadiness({ sources, workflows, runs, findings, outcomes, packages, health, roleFor });
-  const readinessActivity = buildReadinessActivity(runs, roleFor);
+  const readinessSources = readinessWindowSources(sources, options.readinessWindow);
+  const readinessRuns = rowsFor(readinessSources, 'runs');
+  const readinessFindings = rowsFor(readinessSources, 'findings');
+  const readinessOutcomes = rowsFor(readinessSources, 'outcomes');
+  const readiness = buildReadiness({
+    sources: readinessSources,
+    workflows,
+    runs: readinessRuns,
+    findings: readinessFindings,
+    outcomes: readinessOutcomes,
+    packages,
+    health: summarizeRunHealth(readinessRuns),
+    roleFor
+  });
+  const readinessActivity = buildReadinessActivity(runs.filter(isCompletedRun), roleFor, options.readinessWindow);
   const readinessMetadata = createOverviewMetadata({
     workflows: sources.workflows,
-    runs: sources.runs,
-    findings: sources.findings,
-    outcomes: sources.outcomes,
+    runs: readinessSources.runs,
+    findings: readinessSources.findings,
+    outcomes: readinessSources.outcomes,
     'coverage-diagnostics': sources['coverage-diagnostics']
   });
 
@@ -189,16 +203,58 @@ export function deriveOverviewSources(sources) {
 }
 
 /**
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @param {{ start: string, end: string } | undefined} window
+ * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
+ */
+function readinessWindowSources(sources, window) {
+  const windowStart = window?.start ?? '';
+  const windowEnd = window?.end ?? '';
+  const start = Date.parse(windowStart);
+  const end = Date.parse(windowEnd);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start >= end) return sources;
+
+  const scoped = { ...sources };
+  for (const name of ['runs', 'findings', 'outcomes']) {
+    const source = sources[name];
+    if (!Array.isArray(source?.rows)) continue;
+    scoped[name] = {
+      ...source,
+      rows: source.rows.filter((row) => {
+        const timestamp = Date.parse(String(row['observed-at'] || row['started-at'] || row['published-at'] || ''));
+        return Number.isFinite(timestamp) && timestamp >= start && timestamp < end;
+      }),
+      metadata: {
+        ...source.metadata,
+        'coverage-start': windowStart,
+        'coverage-end': windowEnd
+      }
+    };
+  }
+  return scoped;
+}
+
+/**
  * @param {Array<Record<string, unknown>>} runs
  * @param {(row: Record<string, unknown>) => string} roleFor
+ * @param {{ start: string, end: string } | undefined} [window]
  */
-function buildReadinessActivity(runs, roleFor) {
+function buildReadinessActivity(runs, roleFor, window) {
+  const windowStart = Date.parse(window?.start ?? '');
+  const windowEnd = Date.parse(window?.end ?? '');
+  const hasWindow = Number.isFinite(windowStart) && Number.isFinite(windowEnd) && windowStart < windowEnd;
+  const windowDuration = hasWindow ? windowEnd - windowStart : 0;
+  const contextDuration = Math.min(Math.max(windowDuration, 24 * 3_600_000), 7 * 24 * 3_600_000);
+  const contextStart = hasWindow ? windowStart - contextDuration : Number.NEGATIVE_INFINITY;
   /** @type {Map<string, Record<string, unknown>>} */
   const hourlyActivity = new Map();
   for (const row of runs) {
     const role = roleFor(row);
     const startedAt = Date.parse(String(row['started-at'] || ''));
-    if (!['orchestrator', 'worker'].includes(role) || !Number.isFinite(startedAt)) continue;
+    if (!['orchestrator', 'worker'].includes(role)
+        || !Number.isFinite(startedAt)
+        || startedAt < contextStart
+        || (hasWindow && startedAt >= windowEnd)) continue;
     const hour = new Date(startedAt);
     hour.setUTCMinutes(0, 0, 0);
     const activityHour = hour.toISOString();
@@ -207,7 +263,8 @@ function buildReadinessActivity(runs, roleFor) {
     hourlyActivity.set(key, {
       'activity-hour': activityHour,
       'workflow-role': role,
-      'run-count': Number(existing?.['run-count'] || 0) + 1
+      'run-count': Number(existing?.['run-count'] || 0) + 1,
+      'in-window': !hasWindow || (startedAt >= windowStart && startedAt < windowEnd)
     });
   }
   return [...hourlyActivity.values()].toSorted((left, right) =>
@@ -230,11 +287,11 @@ function buildReadiness(input) {
     .filter((row) => String(row.title) === 'Control policy resolution unavailable');
   const admissionBlocks = input.workflows.filter((row) => String(row['admission-status']) === 'blocked');
   const inventoryGaps = input.packages.filter((entry) => !entry.ready);
-  const controlPlaneRuns = input.runs.filter((row) => ['orchestrator', 'worker'].includes(input.roleFor(row)));
+  const completedRuns = input.runs.filter(isCompletedRun);
+  const controlPlaneRuns = completedRuns.filter((row) => ['orchestrator', 'worker'].includes(input.roleFor(row)));
   const engineHealth = summarizeRunHealth(controlPlaneRuns);
-  const pendingRuns = controlPlaneRuns.filter((row) => String(row['run-status']) !== 'completed');
   const runSourceAvailable = sourceIsAvailable(input.sources.runs);
-  const unresolvedRuns = input.runs.filter((row) => input.roleFor(row) === 'unknown');
+  const unresolvedRuns = completedRuns.filter((row) => input.roleFor(row) === 'unknown');
   const unresolvedWarnings = input.findings.filter((row) => isAuthoredWarning(row) && input.roleFor(row) === 'unknown');
   const unresolvedNoops = input.outcomes.filter((row) => String(row['outcome-category']) === 'noop' && input.roleFor(row) === 'unknown');
   const attributionGapCount = unresolvedRuns.length + unresolvedWarnings.length + unresolvedNoops.length;
@@ -274,12 +331,12 @@ function buildReadiness(input) {
   });
 
   const checks = [
-    readinessCheck('Engine activity', !runSourceAvailable ? 'Unknown' : engineHealth.total === 0 || engineHealth.failed > 0 || engineHealth.approval > 0 || pendingRuns.length > 0 ? 'Blocked' : 'Ready', !runSourceAvailable
+    readinessCheck('Engine activity', !runSourceAvailable ? 'Unknown' : engineHealth.total === 0 || engineHealth.failed > 0 || engineHealth.approval > 0 ? 'Blocked' : 'Ready', !runSourceAvailable
       ? 'Run telemetry is unavailable, so engine activity cannot be established.'
       : engineHealth.total === 0
-        ? 'No control-plane runs were observed in the current window.'
-        : engineHealth.failed > 0 || engineHealth.approval > 0 || pendingRuns.length > 0
-          ? `${formatNumber(engineHealth.total)} run${pluralSuffix(engineHealth.total)} observed: ${formatNumber(engineHealth.failed)} failed, ${formatNumber(engineHealth.approval)} approval-gated, and ${formatNumber(pendingRuns.length)} pending.`
+        ? 'No completed control-plane runs were observed in the current window.'
+        : engineHealth.failed > 0 || engineHealth.approval > 0
+          ? `${formatNumber(engineHealth.total)} completed run${pluralSuffix(engineHealth.total)} observed: ${formatNumber(engineHealth.failed)} failed and ${formatNumber(engineHealth.approval)} approval-gated.`
           : `${formatNumber(engineHealth.successful)} runs completed successfully.`),
     readinessCheck('Evidence', sourceGaps.length > 0 ? 'Unknown' : attributionGapCount > 0 ? 'Blocked' : 'Ready', sourceGaps.length > 0
       ? `${formatNumber(sourceGaps.length)} required source${pluralSuffix(sourceGaps.length)} incomplete, stale, or unavailable`
@@ -411,19 +468,6 @@ function buildReadiness(input) {
       action: 'Review runs',
       'navigation-page': 'runtime'
     }] : []),
-    ...(pendingRuns.length > 0 ? [{
-      priority: 3,
-      urgency: 'P2',
-      count: pendingRuns.length,
-      tone: 'informational',
-      icon: 'clock',
-      kind: 'Run pending',
-      title: `${formatNumber(pendingRuns.length)} run${pluralSuffix(pendingRuns.length)} still in progress`,
-      detail: 'Readiness remains blocked until the current executions complete.',
-      evidence: 'Run status',
-      action: 'Review runs',
-      'navigation-page': 'runtime'
-    }] : [])
   ].sort((left, right) => left.priority - right.priority);
 
   const readyChecks = checks.filter((row) => row['readiness-state'] === 'Ready').length;
@@ -433,18 +477,28 @@ function buildReadiness(input) {
     checks,
     signals,
     observations: [
-      readinessObservation('Orchestrator failures', orchestratorFailures, input.sources.runs, 'failure'),
-      readinessObservation('Orchestrator warnings', orchestratorWarnings, input.sources.findings, 'warning'),
-      readinessObservation('Worker failures', workerFailures, input.sources.runs, 'failure'),
-      readinessObservation('Worker warnings', workerWarnings, input.sources.findings, 'warning'),
-      readinessObservation('No-op reports', noops, input.sources.outcomes, 'noop')
+      ...(orchestratorFailures.length > 0
+        ? [readinessObservation('Orchestrator failures', orchestratorFailures, input.sources.runs, 'failure')]
+        : []),
+      ...(orchestratorWarnings.length > 0
+        ? [readinessObservation('Orchestrator warnings', orchestratorWarnings, input.sources.findings, 'warning')]
+        : []),
+      ...(workerFailures.length > 0
+        ? [readinessObservation('Worker failures', workerFailures, input.sources.runs, 'failure')]
+        : []),
+      ...(workerWarnings.length > 0
+        ? [readinessObservation('Worker warnings', workerWarnings, input.sources.findings, 'warning')]
+        : []),
+      ...(noops.length > 0
+        ? [readinessObservation('No-op reports', noops, input.sources.outcomes, 'noop')]
+        : [])
     ],
     summary: [
       { label: 'Control plane', value: verdict },
       { label: 'Unblock first', value: signals[0]?.title || 'No blockers' },
       { label: 'Engine activity', value: engineHealth.total === 0
-        ? '0 runs observed'
-        : `${formatNumber(engineHealth.total)} runs observed · ${formatNumber(engineHealth.failed)} failed` },
+        ? '0 completed runs observed'
+        : `${formatNumber(engineHealth.total)} completed runs observed · ${formatNumber(engineHealth.failed)} failed` },
       { label: 'Readiness checks', value: `${readyChecks} / ${checks.length} passing` },
     ]
   };
@@ -1371,6 +1425,11 @@ function summarizeRunHealth(rows) {
     approval,
     other: Math.max(0, rows.length - successful - failedRows.length - approval)
   };
+}
+
+/** @param {Record<string, unknown>} row */
+function isCompletedRun(row) {
+  return String(row['run-status']) === 'completed';
 }
 
 /**

@@ -41,8 +41,8 @@ const RUN_LINK_FIELD = 'run-link';
  *   headingTag: 'h3'|'h4',
  *   units?: Record<string, { name: string, symbol: string, significant: number }>,
  *   prepareTableRows: (rows: Array<Record<string, unknown>>, columns: TableField[], data: unknown) => Array<Record<string, unknown>>,
- *   buildChartPoints: (pageId: string, title: string, rows: Array<Record<string, unknown>>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, hrefField: string | null) => Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>,
- *   prepareChartPoints: (points: Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, data: unknown) => Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>,
+ *   buildChartPoints: (pageId: string, title: string, rows: Array<Record<string, unknown>>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, hrefField: string | null) => Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>,
+ *   prepareChartPoints: (points: Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, data: unknown) => Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>,
  *   toText: (value: unknown) => string
  * }} DataViewContext
  */

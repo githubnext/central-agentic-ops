@@ -22,6 +22,65 @@ function source(name, rows = []) {
 }
 
 describe('overview attention', () => {
+  it('recomputes readiness from event evidence inside the selected time window', () => {
+    const workflow = {
+      organization: 'githubnext',
+      repository: 'gh-aw-cao',
+      package: 'daily-ops',
+      'package-name': 'Daily Ops',
+      workflow: '.github/workflows/control.md',
+      'workflow-role': 'orchestrator',
+      'workflow-active': 'true',
+      'inventory-ready': true
+    };
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', [workflow]),
+      repositories: source('repositories'),
+      runs: source('runs', [{
+        ...workflow,
+        run: 'old-failure',
+        'started-at': '2026-09-01T10:00:00Z',
+        'run-status': 'completed',
+        'run-conclusion': 'failure'
+      }, {
+        ...workflow,
+        run: 'recent-success',
+        'started-at': '2026-09-02T10:00:00Z',
+        'run-status': 'completed',
+        'run-conclusion': 'success'
+      }]),
+      usage: source('usage'),
+      outcomes: source('outcomes'),
+      findings: source('findings', [{
+        ...workflow,
+        finding: 'old-warning',
+        'finding-kind': 'authored-warning',
+        'observed-at': '2026-09-01T11:00:00Z'
+      }]),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    }, {
+      readinessWindow: {
+        start: '2026-09-02T00:00:00Z',
+        end: '2026-09-03T00:00:00Z'
+      }
+    });
+
+    expect(sources['readiness-summary'].rows).toContainEqual({ label: 'Control plane', value: 'Ready to ship' });
+    expect(sources['readiness-observations'].rows).toEqual([]);
+    expect(sources['readiness-activity'].rows).toEqual([
+      expect.objectContaining({ 'activity-hour': '2026-09-01T10:00:00.000Z', 'in-window': false }),
+      expect.objectContaining({ 'activity-hour': '2026-09-02T10:00:00.000Z', 'in-window': true })
+    ]);
+    expect(sources['readiness-signals'].rows).not.toContainEqual(expect.objectContaining({
+      kind: 'Runtime regression'
+    }));
+    expect(sources['readiness-signals'].rows).not.toContainEqual(expect.objectContaining({
+      kind: 'Output warning'
+    }));
+  });
+
   it('blocks release readiness and surfaces runtime and evidence regressions', () => {
     const workflows = [{
       organization: 'githubnext',
@@ -150,9 +209,47 @@ describe('overview attention', () => {
     expect(sources['readiness-checks'].rows[0]).toEqual({
       check: 'Engine activity',
       'readiness-state': 'Blocked',
-      detail: 'No control-plane runs were observed in the current window.'
+      detail: 'No completed control-plane runs were observed in the current window.'
     });
-    expect(sources['readiness-summary'].rows).toContainEqual({ label: 'Engine activity', value: '0 runs observed' });
+    expect(sources['readiness-summary'].rows).toContainEqual({ label: 'Engine activity', value: '0 completed runs observed' });
+  });
+
+  it('ignores in-progress runs in readiness activity and release gating', () => {
+    const workflow = {
+      organization: 'githubnext',
+      repository: 'gh-aw-cao',
+      package: 'daily-ops',
+      workflow: '.github/workflows/control.md',
+      'workflow-role': 'orchestrator',
+      'workflow-active': 'true',
+      'inventory-ready': true
+    };
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', [workflow]),
+      repositories: source('repositories'),
+      runs: source('runs', [
+        { ...workflow, run: 'completed', 'run-status': 'completed', 'run-conclusion': 'success', 'started-at': '2026-09-02T10:00:00Z' },
+        { ...workflow, run: 'pending', 'run-status': 'in_progress', 'started-at': '2026-09-02T11:00:00Z' }
+      ]),
+      usage: source('usage'),
+      outcomes: source('outcomes'),
+      findings: source('findings'),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    });
+
+    expect(sources['readiness-checks'].rows[0]).toEqual({
+      check: 'Engine activity',
+      'readiness-state': 'Ready',
+      detail: '1 runs completed successfully.'
+    });
+    expect(sources['readiness-summary'].rows).toContainEqual({
+      label: 'Engine activity',
+      value: '1 completed runs observed · 0 failed'
+    });
+    expect(sources['readiness-signals'].rows).not.toContainEqual(expect.objectContaining({ kind: 'Run pending' }));
+    expect(sources['readiness-activity'].rows).toEqual([expect.objectContaining({ 'run-count': 1 })]);
   });
 
   it('blocks on unresolved role joins without rendering unattributed observations', () => {

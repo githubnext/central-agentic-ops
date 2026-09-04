@@ -766,22 +766,40 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
   let root;
   let filterRevision = 0;
   const filterBar = page['filter-bar']
-    ? renderFilterBar(page['filter-bar'], (filters) => {
+    ? renderFilterBar(page['filter-bar'], (filters, timeWindow) => {
       const revision = ++filterRevision;
-      const result = filterDashboardSources(sources, filters);
+      const result = filterDashboardSources(
+        sources,
+        filters,
+        page.id === 'readiness' ? undefined : timeWindow,
+        page.id === 'readiness'
+          ? new Set(['runs', 'findings', 'outcomes'])
+          : new Set(pageSources.keys())
+      );
       /** @param {Record<string, LogicalSourceInput>} filteredSources */
       const apply = (filteredSources) => {
         if (revision !== filterRevision) return;
+        const pageFilteredSources = page.id === 'readiness'
+          ? completedRunSources(filteredSources)
+          : filteredSources;
+        const effectiveSources = page.id === 'readiness'
+          ? deriveOverviewSources(pageFilteredSources, { readinessWindow: timeWindow })
+          : pageFilteredSources;
         const replacement = renderCustomPage(
           { ...page, 'filter-bar': undefined },
           title,
-          filteredSources,
+          effectiveSources,
           units,
           dashboardDefaults
         );
         if (filterBar) root.replaceChildren(filterBar, ...replacement.children);
       };
       result.then(apply).catch(() => {});
+    }, {
+      id: page.id,
+      referenceEnd: latestSourceCoverageEnd(page.id === 'readiness'
+        ? [sources.runs, sources.findings, sources.outcomes]
+        : [...pageSources.values()])
     })
     : null;
   root = h(
@@ -807,10 +825,27 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
 
 /**
  * @param {Record<string, LogicalSourceInput>} sources
+ * @returns {Record<string, LogicalSourceInput>}
+ */
+function completedRunSources(sources) {
+  if (!Array.isArray(sources.runs?.rows)) return sources;
+  return {
+    ...sources,
+    runs: {
+      ...sources.runs,
+      rows: sources.runs.rows.filter((row) => String(row['run-status']) === 'completed')
+    }
+  };
+}
+
+/**
+ * @param {Record<string, LogicalSourceInput>} sources
  * @param {Map<string, string[]>} filters
+ * @param {{ start: string, end: string } | undefined} [timeWindow]
+ * @param {Set<string>} [timeSourceNames]
  * @returns {Promise<Record<string, LogicalSourceInput>>}
  */
-async function filterDashboardSources(sources, filters) {
+async function filterDashboardSources(sources, filters, timeWindow, timeSourceNames) {
   const entries = await Promise.all(Object.entries(sources).map(async ([name, source]) => {
     if (!Array.isArray(source?.rows) || source.rows.length === 0) return [name, source];
     const predicates = [...filters].flatMap(([configuredField, values]) => {
@@ -819,11 +854,28 @@ async function filterDashboardSources(sources, filters) {
         ? [{ field, in: values }]
         : [];
     });
-    if (predicates.length === 0) return [name, source];
-    const rows = await processRows(source.rows, [{ op: 'filter', predicates }]);
+    let rows = predicates.length === 0
+      ? source.rows
+      : await processRows(source.rows, [{ op: 'filter', predicates }]);
+    if (timeWindow && timeSourceNames?.has(name)) {
+      rows = rows.filter((row) => rowMatchesTime(row, timeWindow));
+    }
+    if (rows === source.rows) return [name, source];
     return [name, { ...source, rows }];
   }));
   return Object.fromEntries(entries);
+}
+
+/**
+ * @param {Array<LogicalSourceInput | undefined>} sources
+ * @returns {string | undefined}
+ */
+function latestSourceCoverageEnd(sources) {
+  return sources
+    .flatMap((source) => [source?.metadata?.['coverage-end'], source?.metadata?.['as-of'], source?.metadata?.['retrieved-at']])
+    .filter((value) => typeof value === 'string' && Number.isFinite(Date.parse(value)))
+    .map(String)
+    .toSorted((left, right) => Date.parse(right) - Date.parse(left))[0];
 }
 
 /**
@@ -1558,7 +1610,7 @@ function compareTableValues(left, right) {
  * @param {Record<string, any> | null} y
  * @param {Record<string, any> | null} color
  * @param {string | null} hrefField
- * @returns {Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>}
+ * @returns {Array<{ key: string, x: string, y: number, color: string | null, highlighted: boolean | null, link: { href: string, label: string } | null }>}
  */
 function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
   const aggregate = typeof y?.aggregate === 'string' ? y.aggregate : null;
@@ -1568,6 +1620,7 @@ function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
       x: x ? toText(row[x.field]) : 'unknown',
       y: y ? toNumber(row[y.field]) : 0,
       color: color ? toText(row[color.field]) : null,
+      highlighted: typeof row['in-window'] === 'boolean' ? row['in-window'] : null,
       link: hrefField ? findLink(row, /** @type {LinkFieldName} */ (hrefField)) : null
     }));
   }
@@ -1608,6 +1661,7 @@ function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
       x: group.x,
       y: value,
       color: group.color,
+      highlighted: null,
       link: distinctLinks.size === 1 ? distinctLinks.values().next().value ?? null : null
     };
   });
@@ -1615,12 +1669,12 @@ function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
 
 /**
  * Applies declarative chart ordering and limiting after aggregation.
- * @param {Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>} points
+ * @param {Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>} points
  * @param {Record<string, any> | null} x
  * @param {Record<string, any> | null} y
  * @param {Record<string, any> | null} color
  * @param {unknown} dataConfig
- * @returns {Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>}
+ * @returns {Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>}
  */
 function prepareChartPoints(points, x, y, color, dataConfig) {
   const prepared = [...points];
