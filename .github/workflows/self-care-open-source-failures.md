@@ -23,9 +23,9 @@ on:
         type: string
       batch_label:
         type: string
-    permissions:
-      actions: read
-      contents: read
+  permissions:
+    actions: read
+    contents: read
 
 env:
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
@@ -253,9 +253,9 @@ Search open issues in `${{ inputs.target_repo }}` with the `[self-care:open-sour
 
 Create at most one concise digest issue and at most two remediation issues for the highest-severity untracked P0 or P1 clusters. File no remediation issue for P2 or insufficient-evidence clusters. If every cluster is already tracked, call `noop` once with the covered cluster count.
 
-Provide only the unprefixed subject for every title. The safe output adds `[self-care:open-source-failures] ` automatically; do not repeat it or add an equivalent category prefix.
+Provide only the unprefixed subject for every title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 
-Begin every issue body directly with a concise, unheaded executive summary. Immediately follow it with the single most important follow-up action with the highest expected return on investment:
+Begin every issue body directly with a concise, unheaded executive summary. Evaluate the potential follow-up actions, select the single most important action with the highest expected return on investment, and immediately expose it:
 
 `**Action:** <owner> should <next step>; accept when <verification>.`
 

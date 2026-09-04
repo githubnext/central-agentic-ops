@@ -2008,7 +2008,7 @@ test("SelfCare open source failures uses complete dashboard activity evidence", 
 
   assert.match(source, /^name: "SelfCare \/ Open Source Failures"$/m);
   assert.match(source, /tracker-id: self-care-open-source-failures/);
-  assert.match(source, /restore-keys:\s*\n\s+cao-activity-/);
+  assert.match(source, /restore-keys: \|[\s\S]*?cao-activity-/);
   assert.match(source, /deployed-workflows\.json/);
   assert.match(source, /snapshot\.schemaVersion !== 1/);
   assert.match(source, /snapshot\.runHealth\?\.available !== true/);
@@ -2021,7 +2021,7 @@ test("SelfCare open source failures uses complete dashboard activity evidence", 
   assert.match(source, /labels: \[self-care, self-care:open-source-failures\]/);
   assert.match(source, /title-prefix: "\[self-care:open-source-failures\] "/);
   assert.match(source, /max: 3/);
-  assert.match(source, /select the single most important follow-up action with the highest expected return on investment/i);
+  assert.match(source, /select the single most important action with the highest expected return on investment/i);
   assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
   assert.doesNotMatch(source, /^evals:/m);
   assert.doesNotMatch(source, /^graders:/m);
