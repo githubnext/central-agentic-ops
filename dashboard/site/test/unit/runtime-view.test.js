@@ -38,13 +38,12 @@ describe('Runtime dashboard view', () => {
           title: 'Needs attention',
           'count-source': 'runtime-signals',
           'count-label': 'signals',
-          views: ['runtime-anomaly-readiness', 'runtime-needs-attention']
+          views: ['runtime-episode-summary', 'runtime-anomaly-readiness', 'runtime-needs-attention']
         },
         {
           id: 'observed-behavior',
           title: 'Execution episodes',
           views: [
-            'runtime-episode-summary',
             'runtime-execution-episodes',
             'runtime-episode-attribution-gap'
           ]

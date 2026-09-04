@@ -2965,6 +2965,7 @@
             "count-source": "runtime-signals",
             "count-label": "signals",
             "views": [
+              "runtime-episode-summary",
               "runtime-anomaly-readiness",
               "runtime-needs-attention"
             ]
@@ -2975,7 +2976,6 @@
             "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
             "layout": "full",
             "views": [
-              "runtime-episode-summary",
               "runtime-execution-episodes",
               "runtime-episode-attribution-gap"
             ]
