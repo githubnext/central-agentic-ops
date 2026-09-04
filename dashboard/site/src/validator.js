@@ -2798,6 +2798,7 @@ function validateAggregateCompatibility(fieldName, aggregate, path, errors) {
 
 /**
  * @param {unknown} data
+ * @param {unknown} encoding
  * @param {Map<string, string>} aggregateOutputIds
  * @param {string | null} sourceName
  * @param {string} viewPath

@@ -14,6 +14,7 @@ const metadata = {
   availability: /** @type {'available'} */ ('available')
 };
 
+/** @param {Record<string, unknown>} [overrides] @returns {Record<string, unknown>} */
 function rateLimitRow(overrides = {}) {
   return {
     'observation-id': 'run-1:after:reader:core:2026-09-04T12:00:00Z',
@@ -47,6 +48,21 @@ function rateLimitRow(overrides = {}) {
   };
 }
 
+/**
+ * @param {{
+ *   source: string,
+ *   metadata: {
+ *     'source-id': string,
+ *     'source-kind': string,
+ *     'as-of': string,
+ *     'retrieved-at': string,
+ *     completeness: 'complete'|'partial'|'unknown',
+ *     freshness: 'fresh'|'stale'|'unknown',
+ *     availability: 'available'|'empty'|'unavailable'
+ *   },
+ *   rows: Array<Record<string, unknown>>
+ * }} [rateLimitSource]
+ */
 function renderApiPage(rateLimitSource = {
   source: 'github-api-rate-limits',
   metadata,
@@ -120,7 +136,7 @@ function renderApiPage(rateLimitSource = {
 describe('GitHub API rate-limit dashboard', () => {
   it('renders four essential operational views with accessible capacity evidence', () => {
     const { link, page } = renderApiPage();
-    const apiPage = dashboard.dashboard.pages.find((candidate) => candidate.id === 'github-api');
+    const apiPage = dashboard.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'github-api');
 
     expect(link).not.toBeNull();
     expect(page).not.toBeNull();
@@ -133,18 +149,18 @@ describe('GitHub API rate-limit dashboard', () => {
         'time-range': '24h'
       }
     });
-    expect(apiPage.views.filter((view) => view.disclosure === 'essential')).toHaveLength(4);
-    expect(apiPage.views.filter((view) => view.disclosure === 'supplemental')).toHaveLength(4);
+    expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential')).toHaveLength(4);
+    expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'supplemental')).toHaveLength(4);
     expect(apiPage.views[0]).toMatchObject({
       id: 'github-api-remaining-capacity',
       chart: 'bar',
       table: true
     });
-    expect(apiPage.views.find((view) => view.id === 'github-api-at-risk')).toMatchObject({
+    expect(apiPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-at-risk')).toMatchObject({
       mark: 'metric',
       encoding: { value: expect.objectContaining({ aggregate: 'count' }) }
     });
-    expect(apiPage.views.find((view) => view.id === 'github-api-remaining-trend')).toMatchObject({
+    expect(apiPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-remaining-trend')).toMatchObject({
       chart: 'line',
       table: true,
       encoding: {

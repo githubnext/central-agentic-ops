@@ -227,7 +227,7 @@ export function githubTelemetryRows(entries = [], generatedAt = new Date().toISO
         const burn = elapsed > 0 ? consumed / elapsed : null;
         if (burn !== null && burn > 0) {
           row["burn-rate-per-minute"] = rounded(burn, 3);
-          row["projected-remaining-at-reset"] = rounded(Math.max(0, row.remaining - burn * row["minutes-to-reset"]));
+          row["projected-remaining-at-reset"] = rounded(row.remaining - burn * row["minutes-to-reset"]);
           const minutesToExhaustion = row.remaining / burn;
           row["projected-exhaustion-at"] = new Date(Date.parse(row["observed-at"]) + minutesToExhaustion * 60_000).toISOString();
           row["runway-ratio"] = row["minutes-to-reset"] > 0
