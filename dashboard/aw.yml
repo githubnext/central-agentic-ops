@@ -3,7 +3,6 @@ description: Deploy an access-controlled, read-only Central Agentic Ops report w
 min-version: v0.88.4
 experimental: true
 includes:
-  - ../activity/aw.yml
   - source: dashboard.yml
     destination: .github/workflows/dashboard.yml
     kind: action-workflow
