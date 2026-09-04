@@ -175,14 +175,17 @@ test('GitHub API rate-limit dashboard remains operable at desktop and narrow wid
   const capacityChart = capacity.locator('[data-chart-widget="bar"]');
   await expect(capacityChart).toBeVisible();
   await expect(apiPage.getByText('critical', { exact: true }).first()).toBeVisible();
-  let box = await capacityChart.boundingBox();
-  expect(box?.width).toBeLessThanOrEqual(1200);
+  await expect.poll(async () => {
+    const box = await capacityChart.boundingBox();
+    return box !== null && box.width <= 1200;
+  }).toBe(true);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(capacityChart).toBeVisible();
-  box = await capacityChart.boundingBox();
-  expect(box?.x).toBeGreaterThanOrEqual(0);
-  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+  await expect.poll(async () => {
+    const box = await capacityChart.boundingBox();
+    return box !== null && box.x >= 0 && box.x + box.width <= 390;
+  }).toBe(true);
   await expect(apiPage.locator('details[data-disclosure="supplemental"]')).toHaveCount(4);
 });
 
@@ -895,6 +898,9 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
     .toBeLessThanOrEqual((cardBox?.x ?? 0) + (cardBox?.width ?? 0));
   expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
     .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
+  expect(await chart.locator('.pie-chart-segment').evaluateAll(
+    (segments) => segments.map((segment) => segment.getAttribute('pathLength'))
+  )).toEqual(['100', '100']);
 
   const firstMark = chart.locator('.pie-chart-mark').first();
   expect(await firstMark.evaluate((mark) => {
@@ -2237,7 +2243,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow runs',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-runs'
+                  element: 'workflow-route'
                 },
                 {
                   id: 'workflow-runs-table',
@@ -2271,7 +2277,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-detail'
+                  element: 'workflow-route'
                 },
                 {
                   id: 'workflow-report-table',

@@ -35,10 +35,20 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install Playwright and Chromium
+      - name: Install Playwright
+        id: playwright
         run: |
           npm install --no-save @playwright/test
-          npx playwright install --with-deps chromium
+          echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Chromium
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright.outputs.version }}-chromium
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
 
       # Only push events narrow the check to changed files, so that failures
       # can be attributed to a specific push for issue filing. Pull requests

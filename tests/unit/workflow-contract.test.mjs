@@ -1984,12 +1984,15 @@ test("SelfCare Primer brand checker audits the dashboard against retrieved guida
   assert.match(source, /cli-proxy: true/);
   assert.match(source, /dashboard\/site\/src\/styles\.js/);
   assert.match(source, /dashboard\/site\/src\/\*\*\/\*\.js/);
+  assert.match(source, /uses: actions\/cache@/);
+  assert.match(source, /path: ~\/\.cache\/ms-playwright/);
+  assert.match(source, /npm exec --prefix dashboard\/site -- playwright install --with-deps chromium/);
   assert.match(source, /npm --prefix dashboard\/site run test:e2e/);
   assert.match(source, /create-pull-request:\n\s+target-repo:.*\n\s+title-prefix: "Primer branding: "\n\s+draft: true/);
   assert.match(source, /Always finish by calling exactly one safe-output tool/);
   assert.match(source, /no improvement is needed for any other reason, call `noop` once with a concise plain-text reason/);
   assert.match(source, /Never finish with only a textual response/);
-  assert.equal(source.split(liveGuard).length - 1, 1);
+  assert.equal(source.split(liveGuard).length - 1, 3);
   assert.match(compiled, /\\"noop\\":\{\\"max\\":1,\\"report-as-issue\\":\\"false\\"\}/);
 });
 
@@ -2071,7 +2074,10 @@ test("SelfCare code improvement preserves its focused dashboard component missio
   assert.match(source, /worker: code-improvement/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /allowed-files:\n\s+- "dashboard\/site\/src\/\*\.js"\n\s+- "dashboard\/site\/src\/\*\*\/\*\.js"\n\s+- "dashboard\/site\/test\/\*\*\/\*\.js"/);
-  assert.equal(source.split(liveGuard).length - 1, 3);
+  assert.match(source, /uses: actions\/cache@/);
+  assert.match(source, /path: ~\/\.cache\/ms-playwright/);
+  assert.match(source, /npm exec --prefix dashboard\/site -- playwright install --with-deps chromium/);
+  assert.equal(source.split(liveGuard).length - 1, 4);
 });
 
 test("SelfCare view reuse worker generalizes one Dashboard Language view", () => {
@@ -2088,9 +2094,12 @@ test("SelfCare view reuse worker generalizes one Dashboard Language view", () =>
   assert.match(source, /at least one additional existing or test-fixture composition/);
   assert.match(source, /Update both `dashboard\/aw\.yml` and root `aw\.yml` only when a new runtime file must be packaged/);
   assert.match(source, /npm --prefix dashboard\/site run validate:corpus/);
+  assert.match(source, /uses: actions\/cache@/);
+  assert.match(source, /path: ~\/\.cache\/ms-playwright/);
+  assert.match(source, /npm exec --prefix dashboard\/site -- playwright install --with-deps chromium/);
   assert.match(source, /labels: \[self-care, self-care:dashboard-language-refactor\]/);
   assert.match(source, /title-prefix: "\[self-care:dashboard-language-refactor\] "/);
-  assert.equal(source.split(liveGuard).length - 1, 2);
+  assert.equal(source.split(liveGuard).length - 1, 4);
 });
 
 test("dashboard authoring corpus workflow generates only validated training examples", () => {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderIdentityLink, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -110,6 +110,31 @@ describe('ui primitives', () => {
     expect(rendered.getAttribute('title')).toBe('Dismiss Notice');
     expect(rendered.getAttribute('aria-label')).toBe('Dismiss Notice');
     expect(rendered.querySelector('svg use')?.getAttribute('href')).toContain('#octicon-x');
+  });
+
+  it('renders the shared identity link with an icon, label element, and optional class name', () => {
+    const withStrong = renderIdentityLink({
+      href: '#page-package-insights?package=self-care',
+      icon: 'package',
+      label: 'SelfCare',
+      className: 'package-status-identity',
+      labelTag: 'strong'
+    });
+
+    expect(withStrong.tagName).toBe('A');
+    expect(withStrong.getAttribute('href')).toBe('#page-package-insights?package=self-care');
+    expect(withStrong.className).toBe('package-status-identity');
+    expect(withStrong.querySelector('svg use')?.getAttribute('href')).toContain('#octicon-package');
+    expect(withStrong.querySelector('strong')?.textContent).toBe('SelfCare');
+
+    const withDefaultLabelTag = renderIdentityLink({
+      href: '#page-package-insights?package=dashboard',
+      icon: 'graph',
+      label: 'Dashboard'
+    });
+
+    expect(withDefaultLabelTag.className).toBe('');
+    expect(withDefaultLabelTag.querySelector('span')?.textContent).toBe('Dashboard');
   });
 
   it('identifies plain objects while rejecting arrays and null', () => {

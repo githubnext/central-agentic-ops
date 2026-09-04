@@ -171,6 +171,17 @@ export function renderEmptyMessage(message, extraAttrs) {
 }
 
 /**
+ * Renders the shared "icon plus name" identity link used for package/entity
+ * references (package summary rows, utilization cards, package status
+ * cards), wrapping the label text in the caller-selected inline element.
+ * @param {{ href: string, icon: string, label: string, className?: string, labelTag?: 'span'|'strong' }} options
+ * @returns {HTMLElement}
+ */
+export function renderIdentityLink({ href, icon, label, className, labelTag = 'span' }) {
+  return h('a', className ? { href, className } : { href }, octicon(icon), h(labelTag, null, label));
+}
+
+/**
  * Renders the shared dismiss/close icon button used by overlay-style
  * components (dialogs, callouts) that need a labelled "x" trigger with
  * matching `title` and `aria-label` text.
