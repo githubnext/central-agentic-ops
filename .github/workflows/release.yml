@@ -48,10 +48,11 @@ jobs:
               repo: context.repo.repo,
               username: context.actor,
             });
-            if (!['maintain', 'admin'].includes(access.permission)) {
-              throw new Error(`Releases require maintain or admin access; ${context.actor} has ${access.permission} access`);
+            const role = access.role_name || access.permission;
+            if (!['maintain', 'admin'].includes(role)) {
+              throw new Error(`Releases require maintain or admin access; ${context.actor} has the ${role} role`);
             }
-            core.info(`Authorized ${context.actor} with ${access.permission} access.`);
+            core.info(`Authorized ${context.actor} with the ${role} role.`);
 
             const defaultRef = `refs/heads/${context.payload.repository.default_branch}`;
             if (context.ref !== defaultRef) {
