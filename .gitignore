@@ -2,6 +2,7 @@
 .astro/
 dist/
 node_modules/
+test-results/
 public/cao/
 
 # Local dashboard preview
