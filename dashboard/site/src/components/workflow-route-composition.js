@@ -75,7 +75,7 @@ const DEFAULT_WORKFLOW_ROUTE_BODY = 'reports';
  * @returns {WorkflowRouteBodyComposition}
  */
 export function workflowRouteComposition(body) {
-  const key = typeof body === 'string' && body in WORKFLOW_ROUTE_BODY_COMPOSITIONS
+  const key = typeof body === 'string' && Object.hasOwn(WORKFLOW_ROUTE_BODY_COMPOSITIONS, body)
     ? /** @type {WorkflowRouteBody} */ (body)
     : DEFAULT_WORKFLOW_ROUTE_BODY;
   return WORKFLOW_ROUTE_BODY_COMPOSITIONS[key];

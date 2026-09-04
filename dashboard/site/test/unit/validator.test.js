@@ -265,7 +265,7 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('accepts workflow-route config.body and rejects unsupported config fields or values', () => {
+  it('accepts workflow-route config.body and rejects unsupported values', () => {
     const accepted = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: workflow-route-config
