@@ -26,11 +26,16 @@ test("landing diagram fallbacks use concrete light and dark palettes", () => {
     assert.match(light, /--surface:#fff;/);
     assert.match(dark, /--surface:#161b22;/);
     assert.match(dark, /--foreground:#f0f6fc;/);
+    for (const label of ["Supply chain", "Compliance", "Security", "Governance"]) {
+      assert.match(light, new RegExp(label.replace(" ", "\\s+")));
+      assert.match(dark, new RegExp(label.replace(" ", "\\s+")));
+    }
     assert.equal(withoutRootPalette(light), withoutRootPalette(dark));
   }
 
-  assert.equal((hero.match(/<source media="\(prefers-color-scheme: light\)"/g) ?? []).length, 2);
-  assert.equal((hero.match(/<source media="\(prefers-color-scheme: dark\)"/g) ?? []).length, 2);
+  assert.equal((hero.match(/class="[^"]*theme-light/g) ?? []).length, 2);
+  assert.equal((hero.match(/class="[^"]*theme-dark/g) ?? []).length, 2);
+  assert.match(hero, /:global\(:root\[data-theme="light"\]\) \.theme-dark/);
 });
 
 test("landing animations use SVG and CSS without a JavaScript player", () => {
@@ -47,6 +52,7 @@ test("landing animations use SVG and CSS without a JavaScript player", () => {
     assert.match(motion, /offset-path: var\(--path\)/);
     assert.match(motion, /prefers-color-scheme: dark/);
     assert.match(motion, /prefers-reduced-motion: reduce/);
+    assert.match(motion, /\.report-update \{\s+display: none;/);
     assert.equal((motion.match(/class="sparkle"/g) ?? []).length, 28);
     assert.equal(motion.split(`d="${sparklePathData}"`).length - 1, 28);
     assert.equal((motion.match(/class="package-status"/g) ?? []).length, 4);
