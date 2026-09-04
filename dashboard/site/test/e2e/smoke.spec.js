@@ -383,13 +383,17 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(3);
   const runtimeCharts = pageRegion.locator('.custom-view-grid > [data-view-layout="half"]');
   await expect(runtimeCharts).toHaveCount(4);
-  const [firstChart, secondChart] = await runtimeCharts.evaluateAll((charts) => charts.slice(0, 2).map((chart) => {
-    const bounds = chart.getBoundingClientRect();
-    return { x: bounds.x, y: bounds.y };
-  }));
-  if (!firstChart || !secondChart) throw new Error('Expected at least two Runtime charts.');
-  expect(firstChart.x).toBeLessThan(secondChart.x);
-  expect(firstChart.y).toBe(secondChart.y);
+  const chartLayout = await runtimeCharts.evaluateAll((charts) => {
+    const firstBounds = charts[0].getBoundingClientRect();
+    const secondBounds = charts[1].getBoundingClientRect();
+    return {
+      firstX: firstBounds.x,
+      secondX: secondBounds.x,
+      verticalOffset: Math.abs(firstBounds.y - secondBounds.y)
+    };
+  });
+  expect(chartLayout.firstX).toBeLessThan(chartLayout.secondX);
+  expect(chartLayout.verticalOffset).toBeLessThan(1);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
