@@ -239,12 +239,12 @@ function writeAdmissionSummary({ authorized, packageName, role, reason, apiCapac
     ? `Authorized package \`${packageName}\` as \`${role}\`.`
     : `Skipped package \`${packageName}\` as \`${role}\`: ${reason}`;
   const failedIndex = authorized ? -1 : failedAdmissionCheckIndex(reason);
-  const disclosures = ADMISSION_CHECKS.map(([title, description], index) => (
-    `<details>\n<summary>${admissionCheckHeading(title, index, authorized, failedIndex)}</summary>\n\n${description}\n\n</details>`
-  )).join("\n\n");
+  const checks = ADMISSION_CHECKS.map(([title, description], index) => (
+    `- ${admissionCheckHeading(title, index, authorized, failedIndex)} — ${description}`
+  )).join("\n");
   writeFileSync(
     summaryPath,
-    `### Central Agentic Ops admission\n\n${status}\n${capacityGuidance(apiCapacity)}${diskGuidance(diskCapacity)}\n${disclosures}\n`,
+    `<details>\n<summary><h3>Central Agentic Ops admission</h3></summary>\n\n${status}\n${capacityGuidance(apiCapacity)}${diskGuidance(diskCapacity)}\n${checks}\n\n</details>\n`,
     { flag: "a" },
   );
 }

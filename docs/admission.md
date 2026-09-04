@@ -75,7 +75,7 @@ The [Configuration Reference](configuration.md) defines every policy field. The 
 
 ## Diagnose a Skipped Run
 
-Open the run summary and find **Central Agentic Ops admission**. An authorized run names its package and role, and every collapsed check below it is marked ✅. A denied run records a reason, marks every check before the failing one ✅, marks the exact failing check ❌, and leaves activation skipped. The ❌ marker identifies which row of the table below to consult; later checks are left unmarked because admission stopped before reaching them.
+Open the run summary and expand **Central Agentic Ops admission**. An authorized run names its package and role, and every check in the list is marked ✅. A denied run records a reason, marks every check before the failing one ✅, marks the exact failing check ❌, and leaves activation skipped. The ❌ marker identifies which row of the table below to consult; later checks are left unmarked because admission stopped before reaching them.
 
 | Reason | Check marked ❌ | Configuration or setup to check |
 | --- | --- | --- |
