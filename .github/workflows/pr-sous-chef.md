@@ -43,13 +43,15 @@ steps:
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/agent
-      gh pr list \
-        --repo "$REPOSITORY" \
-        --state open \
-        --search "is:pr is:open -is:draft sort:updated-asc" \
-        --limit 50 \
-        --json number,title,url,headRefOid,updatedAt,mergeStateStatus,statusCheckRollup \
-        > /tmp/gh-aw/agent/pr-sous-chef-queue.json
+      if ! gh pr list \
+          --repo "$REPOSITORY" \
+          --state open \
+          --search "is:pr is:open -is:draft sort:updated-asc" \
+          --limit 50 \
+          --json number,title,url,headRefOid,updatedAt,mergeStateStatus,statusCheckRollup \
+          > /tmp/gh-aw/agent/pr-sous-chef-queue.json; then
+        printf '[]\n' > /tmp/gh-aw/agent/pr-sous-chef-queue.json
+      fi
 ---
 
 # PR Sous Chef
@@ -59,14 +61,14 @@ Move open pull requests toward a focused maintainer investigation by posting at 
 ## Required process
 
 1. Read `/tmp/gh-aw/agent/pr-sous-chef-queue.json`.
-2. For a `/souschef` invocation, inspect only the pull request that received the command and acknowledge that invocation even when no further nudge is needed.
+2. For a `/souschef` invocation, inspect only the pull request that received the command. Before applying any skip rule, acknowledge the invocation exactly once with the marker and a concise triage message, even when no further nudge is needed.
 3. Otherwise, inspect the oldest updated candidates first and select at most four that have an actionable blocker:
    - merge conflicts;
    - completed failed checks;
    - unresolved review feedback;
    - an out-of-date branch when current policy requires it.
 4. Skip pull requests with a queued or in-progress check less than one hour old.
-5. Skip a pull request when its latest comment contains `<!-- cao-pr-sous-chef-nudge -->`, unless its branch is conflicting.
+5. Skip a pull request when a comment containing `<!-- cao-pr-sous-chef-nudge -->` was posted in the last 30 minutes, unless its branch is conflicting. Older comments do not make a pull request permanently ineligible.
 6. Use bounded, paginated reads. Fetch detailed checks or review threads only for a candidate likely to receive a nudge.
 7. Post one combined comment per selected pull request. It must:
    - begin with `<!-- cao-pr-sous-chef-nudge -->`;
@@ -74,6 +76,7 @@ Move open pull requests toward a focused maintainer investigation by posting at 
    - identify the concrete blocker with links when available;
    - ask Copilot to invoke the repository's `pr-finisher` skill;
    - avoid generic encouragement and duplicate comments.
-8. If no candidate needs action, call `noop` with concise counts for evaluated, pending, recently nudged, and ready pull requests.
+8. Break ties by lower pull request number so repeated runs are deterministic.
+9. If no candidate needs action, call `noop` with concise counts for evaluated, pending, recently nudged, and ready pull requests.
 
 Never target another repository. Never use raw GitHub writes; all comments must use the `add-comment` safe output.

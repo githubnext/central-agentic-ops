@@ -703,6 +703,32 @@ test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
   assert.match(auditor, /billing dashboards remain authoritative/);
 });
 
+test("repository PR automation remains bounded and adapted to CAO", () => {
+  const finisher = readFileSync(join(root, ".github", "skills", "pr-finisher", "SKILL.md"), "utf8");
+  const sousChef = workflow("pr-sous-chef.md");
+  const mattReviewer = workflow("mattpocock-skills-reviewer.md");
+  const decisionGate = workflow("design-decision-gate.md");
+
+  assert.match(finisher, /npm run check/);
+  assert.match(finisher, /npm run compile:locks/);
+  assert.doesNotMatch(finisher, /\bmake (?:fmt|lint|test|recompile)\b/);
+
+  assert.match(sousChef, /advisory: do not edit files, push branches/);
+  assert.doesNotMatch(sousChef, /push-to-pull-request-branch:|update-pull-request:|approve-workflow-run:/);
+  assert.match(sousChef, /last 30 minutes/);
+
+  assert.equal([...mattReviewer.matchAll(/mattpocock\/skills\/[\w-]+@[0-9a-f]{40}/g)].length, 5);
+  assert.match(mattReviewer, /emitted < 3000/);
+  assert.doesNotMatch(mattReviewer, /\|\s*head -n 3000/);
+
+  assert.match(decisionGate, /types: \[opened, reopened, synchronize, labeled, ready_for_review\]/);
+  assert.match(decisionGate, /allowed-files:\n\s+- "docs\/adr\/\*\*"/);
+  for (const section of ["Context", "Decision", "Alternatives Considered", "Consequences"]) {
+    assert.match(decisionGate, new RegExp(`\`${section}\``));
+  }
+  assert.match(decisionGate, /Not inferable from current pull request evidence/);
+});
+
 test("aggregate AI Credit admission reduces target fan-out", () => {
   const base = {
     eventName: "schedule",

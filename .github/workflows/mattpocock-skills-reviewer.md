@@ -50,19 +50,25 @@ steps:
         --repo "$REPOSITORY" \
         --json number,title,body,headRefName,headRefOid,additions,deletions,changedFiles,files \
         > /tmp/gh-aw/agent/pr-meta.json
-      { gh pr diff "$PR_NUMBER" --repo "$REPOSITORY" || true; } \
-        | awk '
+      if gh pr diff "$PR_NUMBER" --repo "$REPOSITORY" > /tmp/gh-aw/agent/pr-diff.raw; then
+        awk '
             /^diff --git / {
               excluded = ($0 ~ /\.lock\.yml/ || $0 ~ /\/dist\// || $0 ~ /\/build\//)
             }
-            !excluded { print }
+            !excluded && emitted < 3000 { print; emitted++ }
           ' \
-        | head -n 3000 \
-        > /tmp/gh-aw/agent/pr-diff.patch
-      gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/comments?per_page=100" \
-        --jq '.[] | {id, path, line: (.line // .original_line), body: .body[:300], user: .user.login}' \
-        | jq -s '.' \
-        > /tmp/gh-aw/agent/pr-review-comments.json
+          /tmp/gh-aw/agent/pr-diff.raw \
+          > /tmp/gh-aw/agent/pr-diff.patch
+      else
+        printf '# Pull request diff could not be prefetched.\n' > /tmp/gh-aw/agent/pr-diff.patch
+      fi
+      rm -f /tmp/gh-aw/agent/pr-diff.raw
+      if ! gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/comments?per_page=100" \
+          --jq '.[] | {id, path, line: (.line // .original_line), body: .body[:300], user: .user.login}' \
+          | jq -s '.' \
+          > /tmp/gh-aw/agent/pr-review-comments.json; then
+        printf '[]\n' > /tmp/gh-aw/agent/pr-review-comments.json
+      fi
 ---
 
 # Matt Pocock Skills Reviewer
@@ -95,6 +101,6 @@ Review the pull request's changed lines with the smallest relevant set of the in
    - `REQUEST_CHANGES` for correctness, security, or authority-boundary defects;
    - `COMMENT` for non-blocking actionable observations;
    - `APPROVE` only when no actionable defect remains.
-9. If there is nothing useful to report, call `noop` instead of posting generic praise.
+9. If the context cannot support a review, call `noop` with the specific missing evidence. Otherwise, approve a pull request with no actionable defect instead of posting generic praise.
 
 Do not fetch the full diff again. If the 3000-line prefetch is insufficient, state the review limitation instead of making unsupported claims.
