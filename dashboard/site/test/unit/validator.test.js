@@ -2889,6 +2889,35 @@ dashboard:
     }
   });
 
+  it('DLS-VIEW-035 accepts Boolean view-lock hints and rejects non-Boolean values', () => {
+    const lockedDocument = `language-version: "0.1.0"
+dashboard:
+  id: locked-view
+  title: Locked View
+  pages:
+    - id: operations
+      kind: custom
+      views:
+        - id: summary
+          locked: true
+          data:
+            sources: [workflows]
+          mark: element
+          element: summary-grid
+`;
+    expect(validateDashboardDocument(lockedDocument).ok).toBe(true);
+    expect(validateDashboardDocument(lockedDocument.replace('locked: true', 'locked: false')).ok).toBe(true);
+
+    const invalid = validateDashboardDocument(lockedDocument.replace('locked: true', 'locked: fixed'));
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[0].views[0].locked'
+      }));
+    }
+  });
+
   it('DLS-VIEW-002 DLS-VIEW-008 DLS-VIEW-022 DLS-VIEW-023 rejects inferred or unknown UI declarations', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:

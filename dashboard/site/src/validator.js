@@ -1395,6 +1395,13 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   validateOptionalStringField(view.title, `${path}.title`, errors);
   validateOptionalStringField(view.description, `${path}.description`, errors);
+  if (view.locked !== undefined && typeof view.locked !== 'boolean') {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'locked must be a boolean.',
+      `${path}.locked`
+    ));
+  }
   if (view.intent !== undefined) {
     validateStringField(view.intent, `${path}.intent`, true, errors);
     if (view.mark !== 'element') {
