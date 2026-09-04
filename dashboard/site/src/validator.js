@@ -2307,7 +2307,7 @@ function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data,
   } else if (markValue === 'table') {
     validateTableEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
   } else if (markValue === 'chart') {
-    validateChartEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
+    validateChartEncoding(encodingNode, encoding, chart, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
     validateChartWidget(encoding, chart, viewPath, errors);
   }
 
@@ -2354,6 +2354,29 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
           `${viewPath}.encoding.${channel}`
         ));
       }
+    }
+  }
+  if (chart === 'swimlane') {
+    if (isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'temporal') {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'swimlane chart x encoding must be temporal when explicitly typed.',
+        `${viewPath}.encoding.x.type`
+      ));
+    }
+    if (isPlainObject(encoding.x) && encoding.x['time-unit'] !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'swimlane chart x encoding must preserve individual timestamps and must not declare time-unit.',
+        `${viewPath}.encoding.x.time-unit`
+      ));
+    }
+    if (isPlainObject(encoding.y) && encoding.y.aggregate !== undefined && encoding.y.aggregate !== 'none') {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'swimlane chart y encoding must preserve individual observations and must not aggregate.',
+        `${viewPath}.encoding.y.aggregate`
+      ));
     }
   }
 }
@@ -2448,12 +2471,13 @@ function validateTableEncoding(encodingNode, encoding, sourceName, path, aggrega
 /**
  * @param {unknown} encodingNode
  * @param {Record<string, unknown>} encoding
+ * @param {unknown} chart
  * @param {string | null} sourceName
  * @param {string} path
  * @param {Map<string, string>} aggregateOutputIds
  * @param {ValidationError[]} errors
  */
-function validateChartEncoding(encodingNode, encoding, sourceName, path, aggregateOutputIds, errors) {
+function validateChartEncoding(encodingNode, encoding, chart, sourceName, path, aggregateOutputIds, errors) {
   validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'x'), encoding.x, sourceName, `${path}.x`, aggregateOutputIds, errors);
   validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'y'), encoding.y, sourceName, `${path}.y`, aggregateOutputIds, errors);
 
@@ -2509,10 +2533,18 @@ function validateChartEncoding(encodingNode, encoding, sourceName, path, aggrega
     ));
   }
 
-  if (isPlainObject(encoding.y) && encoding.y.type !== undefined && encoding.y.type !== 'quantitative') {
+  if (
+    isPlainObject(encoding.y)
+    && encoding.y.type !== undefined
+    && (chart === 'swimlane'
+      ? !['nominal', 'ordinal'].includes(String(encoding.y.type))
+      : encoding.y.type !== 'quantitative')
+  ) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
-      'chart y encoding must be quantitative when explicitly typed.',
+      chart === 'swimlane'
+        ? 'swimlane chart y encoding must be nominal or ordinal when explicitly typed.'
+        : 'chart y encoding must be quantitative when explicitly typed.',
       `${path}.y.type`
     ));
   }
@@ -2523,7 +2555,7 @@ function validateChartEncoding(encodingNode, encoding, sourceName, path, aggrega
   const xHasTimeUnit = isPlainObject(encoding.x) && encoding.x['time-unit'] !== undefined;
   const expectedDefault = xIsTemporal ? 'line' : 'bar';
 
-  if (expectedDefault === 'line' && !xHasTimeUnit) {
+  if (expectedDefault === 'line' && chart !== 'swimlane' && !xHasTimeUnit) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
       'chart views with temporal x must declare a temporal bucket to realize the line time-series default conservatively.',
