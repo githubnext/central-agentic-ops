@@ -2403,7 +2403,6 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
  * @param {Record<string, unknown>} encoding
  * @param {string | null} sourceName
  * @param {string} path
- * @param {unknown} encoding
  * @param {Map<string, string>} aggregateOutputIds
  * @param {ValidationError[]} errors
  */
