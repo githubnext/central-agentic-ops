@@ -73,7 +73,7 @@ import {
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
   VIEW_TITLE_LINK_KEYS,
-  WORKFLOW_ROUTE_VARIANT_VALUES,
+  WORKFLOW_ROUTE_BODY_VALUES,
   WORKFLOW_ACTIVE_VALUES,
   WORKFLOW_ROLE_VALUES
 } from './specification.js';
@@ -1544,20 +1544,20 @@ function validateView(view, viewNode, path, viewIds, errors) {
     } else {
       const configNode = getValueNodeByKey(viewNode, 'config');
       validateObjectKeys(configNode, VIEW_ELEMENT_CONFIG_KEYS, `${path}.config`, errors);
-      if (view.element === 'workflow-route' && view.config.variant !== undefined) {
-        validateStringField(view.config.variant, `${path}.config.variant`, true, errors);
-        if (typeof view.config.variant === 'string' && !WORKFLOW_ROUTE_VARIANT_VALUES.includes(view.config.variant)) {
+      if (view.element === 'workflow-route' && view.config.body !== undefined) {
+        validateStringField(view.config.body, `${path}.config.body`, true, errors);
+        if (typeof view.config.body === 'string' && !WORKFLOW_ROUTE_BODY_VALUES.includes(view.config.body)) {
           errors.push(createError(
             ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
-            'workflow-route config.variant must use one canonical route composition value.',
-            `${path}.config.variant`
+            'workflow-route config.body must use one canonical route body value.',
+            `${path}.config.body`
           ));
         }
-      } else if (view.config.variant !== undefined) {
+      } else if (view.config.body !== undefined) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,
-          'config.variant is supported only for the workflow-route element.',
-          `${path}.config.variant`
+          'config.body is supported only for the workflow-route element.',
+          `${path}.config.body`
         ));
       }
     }
