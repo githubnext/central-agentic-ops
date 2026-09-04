@@ -933,6 +933,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 }
 @media (max-width: 700px) {
   .timeline-chart-axis span:not(:first-child):not(:last-child):nth-child(even) { display: none; }
+  :is(.mode-badge, .mode-indicator) .octicon { display: none; }
   .app-shell { display: block; }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
   .sidebar-header { margin: 0 0 8px; }
