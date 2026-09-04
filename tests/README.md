@@ -129,7 +129,7 @@ Invalid caps, out-of-scope owners, and incomplete control facts stop before work
 | --- | --- | --- |
 | 🟢 Pass | Missing settings | review mode, one target, 1000-repository scan ceiling, control-owner allowlist. |
 | 🟢 Pass | Inventory up to 1,000,000 repositories | Selection remains within absolute, percentage, and dispatch caps. |
-| 🟢 Pass | Optimization with two eligible workers | 20-dispatch budget permits at most 10 targets. |
+| 🟢 Pass | AW Optimization with four eligible workers | 20-dispatch budget permits at most 5 targets. |
 | 🟢 Pass | All workers disabled | Effective target cap is zero; no dispatch. |
 | 🟢 Pass | Duplicate workflow display names | Workers resolve only by exact generated path; analytics group by workflow path. |
 | 🟢 Pass | Enterprise and organization planes target the same repository | Independent provenance, policy, credentials, and kill switches are preserved. |
@@ -150,7 +150,7 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | Test result | Workflow surface | Checked behavior |
 | --- | --- | --- |
 | 🟢 Pass | Dependabot orchestrator workflow | Mode, rollout percentage, and `workflow_dispatch` inputs compile. |
-| 🟢 Pass | Optimization orchestrator workflow | Mode, rollout percentage, and `workflow_dispatch` inputs compile. |
+| 🟢 Pass | AW Optimization orchestrator workflow | Mode, rollout percentage, and `workflow_dispatch` inputs compile. |
 | 🟢 Pass | Release Train Updater | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | AI Credit Auditor | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | AI Credit Optimizer | Standard dispatch envelope and safe output settings compile. |

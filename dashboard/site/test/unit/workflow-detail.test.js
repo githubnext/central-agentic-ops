@@ -164,7 +164,7 @@ describe('renderWorkflowDetail', () => {
     host.addEventListener('dashboard-route-allocation', allocation);
     const rendered = renderWorkflowDetail({
       ...context('workflow-runs'),
-      viewId: 'workflow-runs-route'
+      elementConfig: { body: 'runs' }
     });
     host.append(rendered);
 
@@ -188,7 +188,7 @@ describe('renderWorkflowDetail', () => {
     const rendered = renderWorkflowDetail({
       ...context('custom-workflow-page'),
       element: 'workflow-runs',
-      viewId: 'workflow-runs-route'
+      elementConfig: { body: 'runs' }
     });
 
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
@@ -206,7 +206,7 @@ describe('renderWorkflowDetail', () => {
       ...context('workflow-detail'),
       pageId: 'totally-custom-page',
       element: 'workflow-detail',
-      viewId: 'workflow-runs-route'
+      elementConfig: { body: 'runs' }
     });
 
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {

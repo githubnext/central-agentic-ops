@@ -32,17 +32,6 @@
           }
         }
       },
-      "ambient-context": {
-        "icon": "workflow",
-        "workers": {
-          "agents-md-curator": {
-            "workflow": "ambient-context-agents-md-curator"
-          },
-          "skills-curator": {
-            "workflow": "ambient-context-skills-curator"
-          }
-        }
-      },
       "aw-doctor": {
         "icon": "gear",
         "mode": "live",
@@ -98,6 +87,12 @@
           },
           "ai-credit-optimizer": {
             "workflow": "optimization-ai-credit-optimizer"
+          },
+          "agents-md-curator": {
+            "workflow": "optimization-agents-md-curator"
+          },
+          "skills-curator": {
+            "workflow": "optimization-skills-curator"
           }
         }
       },

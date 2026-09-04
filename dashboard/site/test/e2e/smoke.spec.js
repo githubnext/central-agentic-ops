@@ -390,6 +390,7 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   const chartLayout = await runtimeCharts.evaluateAll((charts) => {
     const bounds = charts.map((chart) => chart.getBoundingClientRect());
     return {
+      widgetHeights: charts.map((chart) => chart.querySelector('.chart-widget')?.getBoundingClientRect().height ?? 0),
       firstRow: {
         leftX: bounds[0].x,
         rightX: bounds[1].x,
@@ -406,6 +407,7 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   expect(chartLayout.firstRow.verticalOffset).toBeLessThan(1);
   expect(chartLayout.secondRow.leftX).toBeLessThan(chartLayout.secondRow.rightX);
   expect(chartLayout.secondRow.verticalOffset).toBeLessThan(1);
+  expect(Math.max(...chartLayout.widgetHeights) - Math.min(...chartLayout.widgetHeights)).toBeLessThan(1);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
@@ -2050,7 +2052,8 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow runs',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-route'
+                  element: 'workflow-route',
+                  config: { body: 'runs' }
                 },
                 {
                   id: 'workflow-runs-table',
@@ -2084,7 +2087,8 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-route'
+                  element: 'workflow-route',
+                  config: { body: 'reports' }
                 },
                 {
                   id: 'workflow-report-table',
@@ -2259,7 +2263,8 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow runs',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-route'
+                  element: 'workflow-route',
+                  config: { body: 'runs' }
                 },
                 {
                   id: 'workflow-runs-table',
@@ -2293,7 +2298,8 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-route'
+                  element: 'workflow-route',
+                  config: { body: 'reports' }
                 },
                 {
                   id: 'workflow-report-table',
@@ -2440,7 +2446,8 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
               title: 'Workflow runtime',
               data: { sources: ['workflows', 'runs', 'usage', 'operational-values'] },
               mark: 'element',
-              element: 'workflow-route'
+              element: 'workflow-route',
+              config: { body: 'insights' }
             }]
           }]
         }
@@ -2809,6 +2816,10 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
               { id: 'value', kind: 'custom', title: 'Value', icon: 'graph', views: [] },
               { id: 'cost', kind: 'custom', title: 'Cost & efficiency', icon: 'meter', views: [] },
               { id: 'packages', kind: 'custom', title: 'Packages', icon: 'package', views: [] }
+            ],
+            navigation: [
+              { label: 'Main', pages: ['overview', 'runs', 'security'] },
+              { label: 'Investigate', pages: ['value', 'cost', 'packages'] }
             ]
           }
         },
@@ -2817,14 +2828,17 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
     </script>
   `);
 
-  const activeItem = page.locator('.primary-nav > a[aria-current="page"]');
+  const shortcuts = page.locator('.nav-section-items > .nav-item');
+  const activeItem = page.locator('.nav-section-items > .nav-item[aria-current="page"]');
   await expect(activeItem).toBeVisible();
   await expect(activeItem.locator('.nav-label')).toBeHidden();
   expect(await activeItem.evaluate((item) => getComputedStyle(item, '::before').content)).toBe('none');
-  await expect(page.locator('.primary-nav > .nav-item')).toHaveCount(6);
-  await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeVisible();
-  await expect(page.locator('.primary-nav > .nav-item').nth(4).locator('.octicon-meter')).toBeVisible();
-  await expect(page.locator('.primary-nav > .nav-item').nth(5)).toBeHidden();
+  await expect(shortcuts).toHaveCount(6);
+  await expect(shortcuts.nth(4)).toBeVisible();
+  await expect(shortcuts.nth(4).locator('.octicon-meter')).toBeVisible();
+  await expect(shortcuts.nth(5)).toBeHidden();
+  await expect(page.locator('.nav-section').first()).toHaveCSS('flex-direction', 'row');
+  await expect(page.locator('.nav-section-items').first()).toHaveCSS('flex-direction', 'row');
   await expect(page.locator('.primary-nav')).not.toHaveCSS('overflow-x', 'auto');
 
   await page.getByRole('button', { name: 'Select view' }).click();

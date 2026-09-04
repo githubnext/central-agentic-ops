@@ -10,7 +10,6 @@ const suites = [
     manifest: "aw.yml",
     testPattern: "root package",
     prefixes: [
-      ".github/graders/ambient-context-",
       ".github/graders/aw-failures-",
       ".github/graders/aw-maintenance-",
       ".github/graders/dependabot-",

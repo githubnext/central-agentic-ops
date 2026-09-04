@@ -1336,13 +1336,21 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   const filteredRows = filterRowsForView(sourceInput.rows, view.data);
   const metadata = sourceInput.metadata;
   const state = sourceInput.metadata?.availability ?? inferAvailability(filteredRows);
+  const emptyMessage = typeof view['empty-message'] === 'string' ? view['empty-message'] : undefined;
 
   if (state !== 'available' && !(state === 'empty' && view.mark === 'table')) {
-    return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
+    return renderCustomViewState(
+      pageId,
+      title,
+      sourceName,
+      state,
+      contextDetails,
+      headingTag,
+      state === 'empty' ? emptyMessage : undefined
+    );
   }
 
   if (filteredRows.length === 0 && view.mark !== 'table') {
-    const emptyMessage = typeof view['empty-message'] === 'string' ? view['empty-message'] : undefined;
     return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag, emptyMessage);
   }
 
@@ -1562,6 +1570,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     titleLink: isPlainObject(view['title-link']) ? view['title-link'] : undefined,
     routeParameter,
     viewId: typeof view.id === 'string' ? view.id : undefined,
+    elementConfig: isPlainObject(view.config) ? view.config : undefined,
     headingTag
   });
   if (!rendered) {
