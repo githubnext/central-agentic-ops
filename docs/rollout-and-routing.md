@@ -40,7 +40,7 @@ Each package under `control-plane.packages` has its own mode and limits. Review 
 | Worker kill switch | `workers.<worker>.enabled` | `true` |
 | Optional worker mode ceiling | `workers.<worker>.max-mode` | Inherit package or exact-target mode |
 
-Changing one operation does not change another. For example, Dependabot may be live while Optimization remains in review.
+Changing one operation does not change another. For example, Dependabot may be live while AW Optimization remains in review.
 
 An exact package target can advance independently while the package remains in review elsewhere:
 

@@ -154,7 +154,7 @@ PAT fallback uses the separate `CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_TOKEN` and `
 
 ## Markdown Steering
 
-Each workflow may load optional repository-specific instructions from `.github/cao/<operation>.md` in the control repository. Supported operation names are `uk-ai-advisory`, `ambient-context`, `aw-maintenance`, `dependabot`, `eu-cra-compliance`, `optimization`, and `software-development-practices`.
+Each workflow may load optional repository-specific instructions from `.github/cao/<operation>.md` in the control repository. Supported operation names are `uk-ai-advisory`, `aw-maintenance`, `dependabot`, `eu-cra-compliance`, `optimization`, and `software-development-practices`.
 
 Steering can refine evidence, priorities, and selection within resolved policy. It cannot grant tools, credentials, permissions, repository reach, or safe-output capabilities. Package updates do not overwrite these files.
 
