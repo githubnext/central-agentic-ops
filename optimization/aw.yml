@@ -1,5 +1,5 @@
-name: Optimization
-description: Organization-wide workflow for auditing, forecasting, and optimizing GitHub Agentic Workflow AI credit usage and cost.
+name: AW Optimization
+description: Organization-wide workflows for optimizing GitHub Agentic Workflow AI credit usage, cost, and ambient context.
 min-version: v0.88.4
 experimental: true
 includes:

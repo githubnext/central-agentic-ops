@@ -586,11 +586,10 @@ describe('presenter built-in and custom pages', () => {
       'Packages',
       'Models & agents',
       'UK AI advisory',
-      'Ambient context',
       'AW Doctor',
       'Dependabot',
       'EU CRA',
-      'Optimization'
+      'AW Optimization'
     ]);
     expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
     expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();
@@ -801,11 +800,10 @@ describe('presenter built-in and custom pages', () => {
       'Packages',
       'Models & agents',
       'UK AI advisory',
-      'Ambient context',
       'AW Doctor',
       'Dependabot',
       'EU CRA',
-      'Optimization'
+      'AW Optimization'
     ]);
 
     menu?.setAttribute('open', '');

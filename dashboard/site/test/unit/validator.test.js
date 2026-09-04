@@ -296,7 +296,6 @@ describe('dashboard document validation', () => {
   it('keeps one focused custom dashboard for every operation package', () => {
     const documents = packageDashboardSources.map((source) => JSON.parse(source));
     const packagePageIds = [
-      'ambient-context-dashboard',
       'aw-doctor-dashboard',
       'dependabot-dashboard',
       'uk-ai-advisory-dashboard',
