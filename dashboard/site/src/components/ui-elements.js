@@ -14,6 +14,7 @@ import { renderDefinitionList } from './view-chrome.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
+import { modeBadgeClassName } from './badge.js';
 
 /**
  * @typedef {{
@@ -208,7 +209,7 @@ function renderPackageStatusGridElement(context) {
                       'li',
                       null,
                       h('span', { className: 'package-status-repository-name' }, octicon('repo'), h('span', null, stringValue(entry.repository))),
-                      h('span', { className: `mode-badge ${repoMode.toLowerCase() === 'live' ? 'mode-live' : 'mode-review'}`.trim() }, octicon('dot-fill'), capitalize(repoMode))
+                      h('span', { className: `mode-badge ${modeBadgeClassName(repoMode.toLowerCase())}`.trim() }, octicon('dot-fill'), capitalize(repoMode))
                     );
                   })
                 )

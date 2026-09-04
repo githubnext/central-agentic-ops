@@ -39,13 +39,23 @@ export function renderGraderStatusBadge(status) {
 }
 
 /**
+ * Computes the shared `mode-badge` class name suffix for a rollout mode
+ * label. Used both by the standalone mode badge and by inline per-repository
+ * mode indicators that render their own markup around the same class.
+ * @param {string} normalizedMode lowercased mode label
+ * @returns {string}
+ */
+export function modeBadgeClassName(normalizedMode) {
+  return normalizedMode === 'live' ? 'mode-live' : normalizedMode === 'review' ? 'mode-review' : '';
+}
+
+/**
  * @param {unknown} mode
  * @returns {HTMLElement}
  */
 export function renderModeBadge(mode) {
   const text = stringOrFallback(mode, 'unknown');
-  const normalized = text.toLowerCase();
-  const modeClass = normalized === 'live' ? 'mode-live' : normalized === 'review' ? 'mode-review' : '';
+  const modeClass = modeBadgeClassName(text.toLowerCase());
 
   return h('span', { className: `mode-badge ${modeClass}`.trim() }, text);
 }
