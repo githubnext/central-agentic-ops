@@ -1,7 +1,7 @@
 ---
 emoji: ":toolbox:"
 
-description: "Weekly ambient-context curation for one repository's agent skills: audits SKILL.md files and oversized AGENTS.md sections and files one issue containing a ready-to-run agentic skills prompt"
+description: "Weekly ambient context curation for one repository's agent skills: audits SKILL.md files and oversized AGENTS.md sections and files one issue containing a ready-to-run agentic skills prompt"
 
 name: "AW Optimization / Skills"
 
@@ -167,7 +167,7 @@ steps:
             agents_md_present: false,
             skip_reason: 'no AGENTS.md at the repository root',
           });
-          core.info('No AGENTS.md at the repository root: this repository is out of scope for ambient-context optimization.');
+          core.info('No AGENTS.md at the repository root: this repository is out of scope for ambient context optimization.');
           return;
         }
 

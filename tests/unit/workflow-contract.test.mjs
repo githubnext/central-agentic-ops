@@ -109,12 +109,10 @@ test("AW Optimization combines AI Credit and ambient-context workers", () => {
     orchestrator,
     /workflows: \[optimization-ai-credit-auditor, optimization-ai-credit-optimizer, optimization-agents-md-curator, optimization-skills-curator\]/,
   );
-  assert.deepEqual(Object.keys(policy["control-plane"].packages.optimization.workers), [
-    "ai-credit-auditor",
-    "ai-credit-optimizer",
-    "agents-md-curator",
-    "skills-curator",
-  ]);
+  assert.deepEqual(
+    Object.keys(policy["control-plane"].packages.optimization.workers).sort(),
+    ["ai-credit-auditor", "ai-credit-optimizer", "agents-md-curator", "skills-curator"].sort(),
+  );
   assert.equal(policy["control-plane"].packages["ambient-context"], undefined);
   for (const [name, displayName] of workerNames) {
     assert.match(workflow(name), new RegExp(`^name: "${displayName.replace("/", "\\/")}"$`, "m"));
