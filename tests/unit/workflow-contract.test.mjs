@@ -1066,7 +1066,6 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
   const packageGraders = readdirSync(packageGradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
   assert.deepEqual([...graders, ...packageGraders].sort(), [
-    "optimization-agents-md-curator-operational-value.sh",
     "aw-failures-investigator-operational-value.sh",
     "aw-maintenance-compiler-security-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
@@ -1077,6 +1076,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "eu-cra-compliance-security-requirements-auditor-operational-value.sh",
     "eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
     "eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
+    "optimization-agents-md-curator-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
     "self-care-docs-build-time-investigator-operational-value.sh",
