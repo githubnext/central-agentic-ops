@@ -97,7 +97,7 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
       return h(
         'li',
         null,
-        h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+        h('i', { className: `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`, 'aria-hidden': 'true' }),
         h('span', null, renderSafeLink(label, link)),
         h('strong', null, formatNumber(value, unit)),
         h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')

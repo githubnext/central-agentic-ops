@@ -90,6 +90,12 @@ describe('chart element helpers', () => {
     expect(populated.querySelector('a')?.getAttribute('href')).toBe('https://github.com/octo-org/open');
     expect(populated.querySelector('a')?.getAttribute('aria-label')).toBe('View octo-org/open on GitHub');
     expect(empty.querySelectorAll('li')).toHaveLength(0);
+
+    const expanded = renderPieLegend(
+      Array.from({ length: 12 }, (_, index) => [`category-${index}`, index + 1]),
+      78
+    );
+    expect(expanded.querySelector('li:last-child i')?.className).toBe('chart-series-12');
   });
 
   it('shows an informative empty state when a chart has fewer than two entries', () => {
