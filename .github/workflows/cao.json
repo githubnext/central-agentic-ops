@@ -60,6 +60,7 @@
       },
       "dependabot": {
         "icon": "dependabot",
+        "mode": "live",
         "targets": {
           "github/gh-aw": {
             "mode": "live"
