@@ -634,6 +634,7 @@ export async function startDashboardServer({
   downloadData = downloadDashboardData,
   copilot = false,
   copilotExecutable,
+  allowMissingOrigin = false,
   createCopilotRuntime = startCopilotRuntime,
   traceFile,
   traceOutput = console.log,
@@ -1112,6 +1113,7 @@ export async function startDashboardServer({
     const key = request.headers["sec-websocket-key"];
     if (!expectedAuthority
         || !isAllowedHost(request.headers.host)
+        || (!request.headers.origin && !allowMissingOrigin)
         || (request.headers.origin && !isAllowedOrigin(request.headers.origin))
         || request.url !== socketPath
         || request.headers.upgrade?.toLowerCase() !== "websocket"

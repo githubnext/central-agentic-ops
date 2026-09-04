@@ -119,6 +119,7 @@ test("local dashboard server composes package dashboards and reloads after updat
     catalogRoot: packageRoot,
     installedDashboardsDirectory: path.join(root, "installed-dashboards"),
     downloadData,
+    allowMissingOrigin: true,
     workingDirectory: root,
     port: 0,
   });
@@ -230,6 +231,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       await writeFile(path.join(destination, "sources.json"), "{}");
     },
     copilot: true,
+    allowMissingOrigin: true,
     createCopilotRuntime: async () => ({
       prompt: async (payload) => {
         prompts.push(payload);
