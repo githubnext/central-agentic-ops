@@ -259,11 +259,15 @@ function renderSidebar(pages, title, navigation) {
       'nav',
       { className: 'primary-nav', 'aria-label': 'Primary' },
       ...navigationSections.flatMap((section, sectionIndex) => {
-        const items = section.pages.map((page) => renderNavItem(
-          page,
-          page.id === firstPageId,
-          navigationPageIndex++ >= 6
-        ));
+        const items = section.pages.map((page) => {
+          const pageIndex = navigationPageIndex++;
+          return renderNavItem(
+            page,
+            page.id === firstPageId,
+            pageIndex >= 6,
+            pageIndex >= 5
+          );
+        });
         return typeof section.label === 'string' && section.label.length > 0
           ? [h(
               'details',
@@ -308,9 +312,10 @@ function renderSidebar(pages, title, navigation) {
  * @param {PresentableBuiltInPage | PresentableCustomPage} page
  * @param {boolean} isActive
  * @param {boolean} [mobileOverflow]
+ * @param {boolean} [narrowMobileOverflow]
  * @returns {HTMLElement}
  */
-function renderNavItem(page, isActive, mobileOverflow = false) {
+function renderNavItem(page, isActive, mobileOverflow = false, narrowMobileOverflow = false) {
   const iconName = getPageIcon(page);
   const title = getPageNavigationTitle(page);
 
@@ -318,7 +323,7 @@ function renderNavItem(page, isActive, mobileOverflow = false) {
     'a',
     {
       href: `#page-${page.id}`,
-      className: `nav-item${isActive ? ' active' : ''}${mobileOverflow ? ' mobile-nav-overflow' : ''}`,
+      className: `nav-item${isActive ? ' active' : ''}${mobileOverflow ? ' mobile-nav-overflow' : ''}${narrowMobileOverflow ? ' narrow-mobile-nav-overflow' : ''}`,
       'aria-current': isActive ? 'page' : undefined,
       'aria-label': title,
       title,

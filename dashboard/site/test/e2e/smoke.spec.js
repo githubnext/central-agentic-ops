@@ -38,7 +38,7 @@ function buildPresenterModuleUrl() {
 test('production pages expose a responsive executive chart', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 320, height: 844 });
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -2807,13 +2807,13 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
   await expect(page.locator('.primary-nav > .nav-item')).toHaveCount(6);
   await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeVisible();
   await expect(page.locator('.primary-nav > .nav-item').nth(4).locator('.octicon-meter')).toBeVisible();
-  await expect(page.locator('.primary-nav > .nav-item').nth(5)).toBeVisible();
-  await expect(page.locator('.primary-nav > .nav-item').nth(5).locator('.octicon-package')).toBeVisible();
+  await expect(page.locator('.primary-nav > .nav-item').nth(5)).toBeHidden();
   await expect(page.locator('.primary-nav')).not.toHaveCSS('overflow-x', 'auto');
 
   await page.getByRole('button', { name: 'Select view' }).click();
   const menu = page.locator('.mobile-nav-menu-list');
   await expect(menu).toBeVisible();
+  await expect(menu.locator('.octicon-package')).toBeVisible();
   await expect(menu.getByText('Cost & efficiency', { exact: true })).toBeVisible();
   await menu.getByText('Cost & efficiency', { exact: true }).click();
   await expect(menu).toBeHidden();

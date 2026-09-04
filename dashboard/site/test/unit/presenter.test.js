@@ -782,6 +782,7 @@ describe('presenter built-in and custom pages', () => {
     const menuLinks = [...rendered.querySelectorAll('.mobile-nav-menu-list [data-mobile-nav-page-id]')];
 
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
+    expect(menuLinks.every((link) => link.querySelector('.octicon') !== null)).toBe(true);
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
       'Runtime',
