@@ -381,10 +381,14 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   await expect(pageRegion).toBeVisible();
   await expect(pageRegion.locator('.custom-view').first().locator('[data-chart-widget="histogram"]')).toBeVisible();
   await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(3);
-  const firstChart = await pageRegion.locator('.custom-view').nth(0).boundingBox();
-  const secondChart = await pageRegion.locator('.custom-view').nth(1).boundingBox();
-  expect(firstChart?.y).toBe(secondChart?.y);
+  const runtimeCharts = pageRegion.locator('.custom-view-grid > [data-view-layout="half"]');
+  await expect(runtimeCharts).toHaveCount(4);
+  const [firstChart, secondChart] = await runtimeCharts.evaluateAll((charts) => charts.slice(0, 2).map((chart) => {
+    const bounds = chart.getBoundingClientRect();
+    return { x: bounds.x, y: bounds.y };
+  }));
   expect(firstChart?.x).toBeLessThan(secondChart?.x ?? 0);
+  expect(firstChart?.y).toBe(secondChart?.y);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
