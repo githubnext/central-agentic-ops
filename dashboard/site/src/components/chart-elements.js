@@ -14,6 +14,7 @@ const MIN_LINE_POINT_SIZE = 2;
 const MAX_DOT_POINT_RADIUS = 2.5;
 const MIN_DOT_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
+// Some SVG engines collapse zero-length lines before painting their round caps.
 const NON_SCALING_POINT_LENGTH = 0.001;
 const MAX_INTERACTIVE_LINE_POINTS = 500;
 const MAX_RENDERED_LINE_POINTS = 2_000;
