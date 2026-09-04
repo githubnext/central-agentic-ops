@@ -875,6 +875,16 @@ export async function startDashboardServer({
       host === expectedAuthority
       || (localhostAuthority && host === localhostAuthority)
       || (codespaceAuthority && host === codespaceAuthority);
+  const isAllowedOrigin = (origin) => {
+    if (typeof origin !== "string") return false;
+    try {
+      const parsed = new URL(origin);
+      return (parsed.protocol === "http:" || parsed.protocol === "https:")
+        && isAllowedHost(parsed.host);
+    } catch {
+      return false;
+    }
+  };
   const server = createServer(async (request, response) => {
     try {
       if (!expectedAuthority || !request.headers.host || !isAllowedHost(request.headers.host)
@@ -959,6 +969,7 @@ export async function startDashboardServer({
     const key = request.headers["sec-websocket-key"];
     if (!expectedAuthority
         || !isAllowedHost(request.headers.host)
+        || (request.headers.origin && !isAllowedOrigin(request.headers.origin))
         || request.url !== socketPath
         || request.headers.upgrade?.toLowerCase() !== "websocket"
         || request.headers["sec-websocket-version"] !== "13"

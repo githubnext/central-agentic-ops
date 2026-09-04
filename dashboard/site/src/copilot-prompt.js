@@ -124,7 +124,7 @@ export function renderCopilotPrompt(socket) {
   });
   socket.addEventListener('message', (event) => {
     const streamEvent = JSON.parse(String(event.data));
-    if (!streamEvent?.type || !sessionActive) return;
+    if (!streamEvent?.type || (!sessionActive && streamEvent.type !== 'stopped')) return;
     if (streamEvent.type === 'debug' && typeof streamEvent.message === 'string') {
       debugCopilotUpdate(streamEvent.message, streamEvent.details);
     } else if (streamEvent.type === 'assistant-delta' && typeof streamEvent.content === 'string') {
