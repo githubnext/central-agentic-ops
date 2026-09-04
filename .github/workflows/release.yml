@@ -9,11 +9,12 @@ on:
         type: choice
         default: prepare
         options: [prepare, publish]
-      version:
-        description: Exact semantic version without a leading v
+      bump:
+        description: Semantic version component to increment
         required: true
-        type: string
-        default: 0.0.1
+        type: choice
+        default: patch
+        options: [patch, minor, major]
 
 permissions:
   contents: read
@@ -23,32 +24,75 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate-version:
-    name: Validate release version
+  resolve-version:
+    name: Authorize and resolve release version
     runs-on: ubuntu-latest
     outputs:
       release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
-      - name: Validate requested version
+      - name: Authorize request and compute version
         id: version
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_BUMP: ${{ inputs.bump }}
         with:
           script: |
-            const version = process.env.RELEASE_VERSION;
+            const bump = process.env.RELEASE_BUMP;
+            core.info(`Processing ${context.payload.inputs.operation} release request from ${context.actor} with a ${bump} bump.`);
+            if (context.payload.repository.fork) {
+              throw new Error('Releases cannot run from forks');
+            }
+
+            const { data: access } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.actor,
+            });
+            if (!['maintain', 'admin'].includes(access.permission)) {
+              throw new Error(`Releases require maintain or admin access; ${context.actor} has ${access.permission} access`);
+            }
+            core.info(`Authorized ${context.actor} with ${access.permission} access.`);
+
             const defaultRef = `refs/heads/${context.payload.repository.default_branch}`;
             if (context.ref !== defaultRef) {
               throw new Error(`Releases must run from ${defaultRef}, not ${context.ref}`);
             }
-            if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version)) {
-              throw new Error(`Version ${version} is not a stable semantic version`);
+
+            const compareVersions = (left, right) => {
+              for (let index = 0; index < 3; index += 1) {
+                if (left[index] !== right[index]) return left[index] - right[index];
+              }
+              return 0;
+            };
+            const tags = await github.paginate(github.rest.repos.listTags, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            const versions = tags.flatMap(({ name }) => {
+              const match = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(name);
+              return match ? [[Number(match[1]), Number(match[2]), Number(match[3])]] : [];
+            });
+            versions.sort((left, right) => compareVersions(right, left));
+            const latest = versions[0] || [0, 0, 0];
+            const next = [...latest];
+            if (bump === 'major') {
+              next[0] += 1;
+              next[1] = 0;
+              next[2] = 0;
+            } else if (bump === 'minor') {
+              next[1] += 1;
+              next[2] = 0;
+            } else {
+              next[2] += 1;
             }
-            core.setOutput('release_tag', `v${version}`);
+            const releaseTag = `v${next.join('.')}`;
+            core.info(`Resolved ${bump} bump from v${latest.join('.')} to ${releaseTag}.`);
+            core.setOutput('release_tag', releaseTag);
 
   validate-package:
     name: Validate gh-aw package
-    needs: validate-version
+    needs: resolve-version
     if: inputs.operation == 'prepare'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -70,7 +114,7 @@ jobs:
   prepare-release:
     name: Prepare draft release
     needs:
-      - validate-version
+      - resolve-version
       - validate-package
     if: inputs.operation == 'prepare'
     runs-on: ubuntu-latest
@@ -80,31 +124,11 @@ jobs:
       - name: Generate draft release notes without assets
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          RELEASE_TAG: ${{ needs.validate-version.outputs.release_tag }}
+          RELEASE_TAG: ${{ needs.resolve-version.outputs.release_tag }}
         with:
           script: |
             const releaseTag = process.env.RELEASE_TAG;
-            const candidate = releaseTag.slice(1).split('.').map(Number);
-            const compareVersions = (left, right) => {
-              for (let index = 0; index < 3; index += 1) {
-                if (left[index] !== right[index]) return left[index] - right[index];
-              }
-              return 0;
-            };
-            const tags = await github.paginate(github.rest.repos.listTags, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100,
-            });
-            const versions = tags.flatMap(({ name }) => {
-              const match = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(name);
-              return match ? [[Number(match[1]), Number(match[2]), Number(match[3])]] : [];
-            });
-            versions.sort((left, right) => compareVersions(right, left));
-            if (versions[0] && compareVersions(candidate, versions[0]) <= 0) {
-              throw new Error(`${releaseTag} must be newer than v${versions[0].join('.')}`);
-            }
-
+            core.info(`Creating draft release ${releaseTag}.`);
             const { data: release } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -123,7 +147,7 @@ jobs:
 
   publish-release:
     name: Publish reviewed release
-    needs: validate-version
+    needs: resolve-version
     if: inputs.operation == 'publish'
     runs-on: ubuntu-latest
     permissions:
@@ -132,10 +156,11 @@ jobs:
       - name: Publish matching draft without assets
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          RELEASE_TAG: ${{ needs.validate-version.outputs.release_tag }}
+          RELEASE_TAG: ${{ needs.resolve-version.outputs.release_tag }}
         with:
           script: |
             const releaseTag = process.env.RELEASE_TAG;
+            core.info(`Looking for draft release ${releaseTag}.`);
             const releases = await github.paginate(github.rest.repos.listReleases, {
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -153,6 +178,7 @@ jobs:
               throw new Error(`No draft release exists for ${releaseTag}`);
             }
 
+            core.info(`Publishing draft release ${releaseTag} (release ID ${draft.id}).`);
             const { data: release } = await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
