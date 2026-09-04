@@ -41,3 +41,13 @@ export function formatCountNoun(value, singular, plural) {
 export function pluralSuffix(value) {
   return Number(value) === 1 ? '' : 's';
 }
+
+/**
+ * Coerces an arbitrary value to a display string, treating `null`/`undefined`
+ * as an empty string.
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function text(value) {
+  return value == null ? '' : String(value);
+}

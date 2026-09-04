@@ -3,7 +3,7 @@
  */
 
 import { h } from '../dom.js';
-import { titleCase } from './count-formatters.js';
+import { text, titleCase } from './count-formatters.js';
 
 /**
  * @typedef {{
@@ -66,10 +66,5 @@ export function workflowPackageMemberships(workflow) {
     if (id && name) unique.set(id, { id, name });
   }
   return [...unique.values()].sort((left, right) => left.name.localeCompare(right.name));
-}
-
-/** @param {unknown} value */
-function text(value) {
-  return value == null ? '' : String(value);
 }
 

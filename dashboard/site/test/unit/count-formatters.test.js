@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatCount, formatCountNoun, pluralSuffix, titleCase } from '../../src/components/count-formatters.js';
+import { formatCount, formatCountNoun, pluralSuffix, text, titleCase } from '../../src/components/count-formatters.js';
 
 describe('count formatters', () => {
   it('formats counts for UI text', () => {
@@ -33,5 +33,13 @@ describe('count formatters', () => {
     expect(pluralSuffix(2)).toBe('s');
     expect(pluralSuffix('1')).toBe('');
     expect(pluralSuffix(undefined)).toBe('s');
+  });
+
+  it('coerces values to display strings, treating null/undefined as empty', () => {
+    expect(text('hello')).toBe('hello');
+    expect(text(42)).toBe('42');
+    expect(text(null)).toBe('');
+    expect(text(undefined)).toBe('');
+    expect(text(false)).toBe('false');
   });
 });
