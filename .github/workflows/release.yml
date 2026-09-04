@@ -201,23 +201,18 @@ jobs:
             }
 
             const targetSha = draft.target_commitish;
-            if (!/^[0-9a-f]{40}$/.test(targetSha)) {
+            if (!/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/.test(targetSha)) {
               throw new Error(`Draft ${releaseTag} does not identify an immutable commit`);
             }
             const ref = `tags/${releaseTag}`;
             core.info(`Reserving ${releaseTag} at its reviewed commit ${targetSha}.`);
-            await github.rest.git.createRef({
+            const { data: createdRef } = await github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: `refs/${ref}`,
               sha: targetSha,
             });
             try {
-              const { data: createdRef } = await github.rest.git.getRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref,
-              });
               if (createdRef.object.sha !== targetSha) {
                 throw new Error(`${releaseTag} does not point to the reviewed commit`);
               }
