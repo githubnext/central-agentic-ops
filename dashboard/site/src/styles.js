@@ -245,14 +245,14 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .line-chart-axis { stroke: var(--border); stroke-width: 1; }
 .line-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 2 2; }
 .histogram-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 1.5 2; }
-.line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.line-chart-series { --line-chart-opacity: 1; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .line-chart-point { stroke-width: var(--chart-point-size, 4px); stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .dot-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .dot-chart-reference { stroke-width: 1; stroke-dasharray: 4 3; opacity: .72; vector-effect: non-scaling-stroke; }
 .line-chart-window-band { fill: var(--accent); opacity: .055; }
-.line-chart-context { opacity: .3; stroke-width: 1.1; }
+.line-chart-context { --line-chart-opacity: .3; opacity: var(--line-chart-opacity); stroke-width: 1.1; }
 .chart-point-context { opacity: .35; }
-.line-chart-current { opacity: 1; stroke-width: 2; }
+.line-chart-current { --line-chart-opacity: 1; opacity: var(--line-chart-opacity); stroke-width: 2; }
 .chart-window-key { display: flex; justify-content: flex-end; gap: 14px; margin-top: 5px; color: var(--fg); font-size: .6875rem; }
 .chart-window-key span, .chart-window-key strong { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
 .chart-window-key span::before, .chart-window-key strong::before { width: 14px; border-top: 2px solid var(--accent); content: ''; }
@@ -350,6 +350,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 }
 @keyframes line-chart-entry {
   from { opacity: 0; }
+  to { opacity: var(--line-chart-opacity); }
 }
 @keyframes line-chart-point-entry {
   from { opacity: 0; transform: scale(0); }
