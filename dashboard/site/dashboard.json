@@ -209,6 +209,7 @@
           {
             "id": "readiness-verdict-summary",
             "title": "Readiness verdict",
+            "description": "Answers whether retained evidence supports releasing the control plane.",
             "data": {
               "sources": [
                 "readiness-summary"
@@ -373,6 +374,7 @@
           {
             "id": "cost-summary",
             "title": "Usage summary",
+            "description": "Answers how much measured AI Credit usage is retained for the current decision window.",
             "data": {
               "sources": [
                 "cost-summary"
@@ -516,6 +518,7 @@
           {
             "id": "security-summary",
             "title": "Assurance summary",
+            "description": "Answers which operational assurance gates and API capacity controls are represented in retained evidence.",
             "data": {
               "sources": [
                 "security-summary"
@@ -1216,6 +1219,52 @@
           {
             "id": "workflow-runs-table",
             "title": "Runs",
+            "description": "Answers which recent workflow runs succeeded, failed, or remain in progress.",
+            "data": {
+              "source": "workflow-runs",
+              "route-field": "workflow-route"
+            },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No runs have been observed for this workflow.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "run-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "run-conclusion",
+                  "type": "nominal",
+                  "title": "Conclusion",
+                  "display": "status"
+                },
+                {
+                  "field": "rollout-mode",
+                  "type": "nominal",
+                  "title": "Mode",
+                  "display": "mode"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "full"
+          },
+          {
+            "id": "workflow-run-details",
+            "title": "Run details",
+            "description": "Exposes filters, investigation controls, execution metadata, models, and timestamps for deeper evidence review.",
+            "disclosure": "supplemental",
             "data": {
               "source": "workflow-runs",
               "route-field": "workflow-route"

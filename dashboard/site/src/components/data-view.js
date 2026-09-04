@@ -84,7 +84,7 @@ function renderMetricView(context) {
   if (link) {
     content.push(h('p', { className: 'metric-link' }, renderExternalLink(link)));
   }
-  return renderPageSection(pageId, title, content, headingTag);
+  return renderPageSection(pageId, title, content, headingTag, view.description);
 }
 
 /** @param {DataViewContext} context */
@@ -191,7 +191,7 @@ function renderTableView(context) {
       bodyRows,
       sortable: interactive
     })
-  ], headingTag);
+  ], headingTag, view.description);
 }
 
 /**
