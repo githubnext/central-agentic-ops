@@ -11,68 +11,36 @@ import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours, formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
-import { renderWorkflowIdentity } from './workflow-identity.js';
-import { renderLinkTabs } from './tab-nav.js';
-import { createRouteView } from './route-empty-state.js';
-import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
-import { rowsFor } from './source-rows.js';
+import { renderWorkflowPage } from './workflow-page.js';
+import { workflowRouteValue } from './workflow-route.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @returns {HTMLElement}
  */
 export function renderWorkflowRuntime(context) {
-  const root = createRouteView({
-    rootClassName: 'workflow-runtime',
-    routeParameter: context.routeParameter,
-    datasetKey: 'workflow',
-    selectMessage: 'Select a workflow to inspect its runtime.',
-    notFoundMessage: 'Workflow not found.',
-    hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
-    renderMatched: (routeValue) => {
-      const identity = parseWorkflowRoute(routeValue);
-      const workflow = rowsFor(context.sources, 'workflows')
-        .find((candidate) => identity && matchesWorkflow(candidate, identity.repository, identity.workflow));
-      if (!workflow || !identity) {
-        return null;
-      }
-      const repository = qualifiedRepository(workflow);
-      const workflowName = text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
-      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-        bubbles: true,
-        detail: {
-          title: workflowName,
-          description: `Run health, AI Credit usage, and operational value for ${text(workflow.workflow)} in ${repository}.`,
-          mode: ['review', 'live'].includes(text(workflow['rollout-mode'])) ? text(workflow['rollout-mode']) : '',
-          navigationPage: workflow.package ? 'packages' : 'repositories'
-        }
-      }));
-      return renderWorkflowRuntimeContent(context, workflow);
-    }
-  });
-  return root;
+  return renderWorkflowPage(context, 'insights', ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow));
 }
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @param {Record<string, unknown>} workflow
  */
-function renderWorkflowRuntimeContent(context, workflow) {
+function renderWorkflowRuntimeBody(context, workflow) {
   const repository = qualifiedRepository(workflow);
   const workflowPath = text(workflow.workflow);
-  const workflowName = text(workflow['workflow-name']) || workflowPath || 'Unknown workflow';
   const runs = matchingRows(context, 'runs', repository, workflowPath);
   const usage = matchingRows(context, 'usage', repository, workflowPath);
 
   return h(
     'div',
-    { className: 'workflow-runtime-content' },
-    renderWorkflowTabs(context.pageId, repository, workflowPath, workflowName),
-    renderWorkflowIdentity(workflow),
+    null,
     renderRuntimeMetrics(context, workflow, runs, usage),
     renderWorkflowValueReport(context, workflow)
   );
 }
+
+export { renderWorkflowRuntimeBody };
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -86,25 +54,6 @@ export function renderWorkflowValueReport(context, workflow) {
     matchingRows(context, 'operational-values', repository, workflowPath)
   );
   return renderValueReport(workflowName, repository, workflowPath, observations, context.sources['operational-values']?.metadata);
-}
-
-/**
- * @param {string} pageId
- * @param {string} repository
- * @param {string} workflow
- * @param {string} workflowName
- */
-function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
-  const route = workflowRouteValue(repository, workflow);
-  return renderLinkTabs({
-    className: 'repository-tabs',
-    ariaLabel: `${workflowName} views`,
-    tabs: [
-      { label: 'Insights', icon: 'graph', href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, current: true },
-      { label: 'Reports', icon: 'issue', href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
-      { label: 'Runs', icon: 'play', href: `#page-workflow-runs?workflow=${encodeURIComponent(route)}` }
-    ]
-  });
 }
 
 /**
