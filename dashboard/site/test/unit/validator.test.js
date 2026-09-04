@@ -305,8 +305,17 @@ describe('dashboard document validation', () => {
     expect(runView).toMatchObject({
       mark: 'table',
       controls: 'interactive',
-      encoding: builtInRunView.encoding
+      encoding: {
+        href: builtInRunView.encoding.href,
+        columns: builtInRunView.encoding.columns.filter(
+          (/** @type {{ field: string }} */ column) => column.field !== 'engine-version'
+        )
+      }
     });
+    expect(runView.description).toContain('which AW Maintenance failures need attention first');
+    expect(runView.encoding.columns.some(
+      (/** @type {{ field: string }} */ column) => column.field === 'engine-version'
+    )).toBe(false);
   });
 
   it('validates source-free JSON callouts with canonical icons', () => {
@@ -317,6 +326,12 @@ describe('dashboard document validation', () => {
       mark: 'callout',
       callout: { label: 'Evaluation boundary', icon: 'meter' }
     });
+    expect(callout.description).toContain('partial telemetry');
+    const valuePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'value');
+    const valueCallout = valuePage.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'experiment-evidence-boundary'
+    );
+    expect(valueCallout.description).toContain('partial AI Credit telemetry');
     expect(callout.data).toBeUndefined();
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
 

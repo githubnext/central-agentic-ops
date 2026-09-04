@@ -52,6 +52,7 @@
           {
             "id": "aw-maintenance-runs",
             "title": "Maintenance workflow runs",
+            "description": "Answers which AW Maintenance failures need attention first; use the run link for detailed evidence.",
             "disclosure": "essential",
             "data": {
               "source": "runs",
@@ -118,11 +119,6 @@
                   "field": "engine",
                   "type": "nominal",
                   "title": "Engine"
-                },
-                {
-                  "field": "engine-version",
-                  "type": "nominal",
-                  "title": "Engine version"
                 },
                 {
                   "field": "requested-model",
