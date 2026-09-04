@@ -113,12 +113,9 @@ test("configured wizard operations exclude the repository-local self-care packag
 
 test("wizard policy keeps the checked-in package configuration", () => {
   const policy = buildWizardPolicy(controlPolicy, "acme", "dependabot");
+  const { icon, ...expectedPackage } = controlPolicy["control-plane"].packages.dependabot;
 
   assert.deepEqual(policy["control-plane"].scope["allowed-owners"], ["acme"]);
-  assert.equal(policy["control-plane"].packages.dependabot.targets["github/gh-aw"].mode, "live");
-  assert.equal(
-    policy["control-plane"].packages.dependabot.workers["release-train-updater"].workflow,
-    "dependabot-release-train-updater",
-  );
-  assert.equal("icon" in policy["control-plane"].packages.dependabot, false);
+  assert.deepEqual(policy["control-plane"].packages.dependabot, expectedPackage);
+  assert.equal(icon, "dependabot");
 });
