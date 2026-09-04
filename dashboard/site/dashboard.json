@@ -290,6 +290,127 @@
         ]
       },
       {
+        "id": "github-api",
+        "kind": "custom",
+        "title": "GitHub API capacity",
+        "navigation-label": "GitHub API",
+        "icon": "meter",
+        "class-name": "github-api-page",
+        "description": "Observed GitHub API capacity and activity-cache hydration before and after control-plane collection operations.",
+        "sections": [
+          {
+            "id": "github-api-capacity",
+            "title": "Rate-limit capacity",
+            "description": "Primary rate-limit resources observed with the exact credential used by each operation.",
+            "layout": "full",
+            "views": [
+              "github-api-remaining-trend",
+              "github-api-observations"
+            ]
+          }
+        ],
+        "views": [
+          {
+            "id": "github-api-remaining-trend",
+            "title": "Remaining requests",
+            "description": "Remaining request capacity before and after each instrumented operation.",
+            "data": {
+              "source": "github-api-rate-limits"
+            },
+            "mark": "chart",
+            "chart": "line",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "hour",
+                "title": "Observed"
+              },
+              "y": {
+                "field": "remaining",
+                "type": "quantitative",
+                "title": "Requests remaining"
+              },
+              "color": {
+                "field": "resource",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "github-api-observations",
+            "title": "API and cache observations",
+            "description": "Credential class and cache state are recorded without retaining credential values.",
+            "data": {
+              "source": "github-api-rate-limits"
+            },
+            "mark": "table",
+            "layout": "full",
+            "empty-message": "No GitHub API telemetry has been collected yet.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                },
+                {
+                  "field": "operation",
+                  "type": "nominal",
+                  "title": "Operation"
+                },
+                {
+                  "field": "phase",
+                  "type": "nominal",
+                  "title": "Phase"
+                },
+                {
+                  "field": "resource",
+                  "type": "nominal",
+                  "title": "Resource"
+                },
+                {
+                  "field": "remaining",
+                  "type": "quantitative",
+                  "title": "Remaining"
+                },
+                {
+                  "field": "limit",
+                  "type": "quantitative",
+                  "title": "Limit"
+                },
+                {
+                  "field": "reset-at",
+                  "type": "temporal",
+                  "title": "Reset"
+                },
+                {
+                  "field": "token-type",
+                  "type": "nominal",
+                  "title": "Credential"
+                },
+                {
+                  "field": "cache-hydrated",
+                  "type": "nominal",
+                  "title": "Cache hydrated"
+                },
+                {
+                  "field": "cache-entries",
+                  "type": "quantitative",
+                  "title": "Cache entries"
+                },
+                {
+                  "field": "cache-folders",
+                  "type": "quantitative",
+                  "title": "Top-level folders"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
         "id": "cost",
         "kind": "custom",
         "title": "Cost & efficiency",
@@ -4676,6 +4797,7 @@
           "performance",
           "security",
           "operational-value",
+          "github-api",
           "cost"
         ]
       },

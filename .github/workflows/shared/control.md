@@ -74,6 +74,7 @@ jobs:
         id: cao_admission
         env:
           CAO_API_TOKEN: ${{ steps.cao_pre_activation_app_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || github.token }}
+          CAO_GITHUB_API_GATE: ${{ vars.CAO_GITHUB_API_GATE }}
           GH_TOKEN: ${{ github.token }}
           GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
           CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
@@ -112,6 +113,27 @@ jobs:
 
           </details>
           EOF
+
+      - name: Generate CAO admission gate writer token
+        id: cao_admission_gate_writer_token
+        if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-insufficient' && steps.cao_admission.outputs.github_api_gate_active != 'true' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: ${{ vars.GH_AW_GITHUB_WRITE_APP_ID }}
+          private-key: ${{ secrets.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY }}
+          github-api-url: ${{ github.api_url }}
+          permission-actions: write
+
+      - name: Persist CAO admission GitHub API gate
+        if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-insufficient' && steps.cao_admission.outputs.github_api_gate_active != 'true' }}
+        continue-on-error: true
+        env:
+          CAO_GATE_WRITE_TOKEN: ${{ steps.cao_admission_gate_writer_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN }}
+          CAO_GITHUB_API_LIMIT: ${{ steps.cao_admission.outputs.github_api_limit }}
+          CAO_GITHUB_API_REMAINING: ${{ steps.cao_admission.outputs.github_api_remaining }}
+          CAO_GITHUB_API_RESET_AT: ${{ steps.cao_admission.outputs.github_api_reset_at }}
+        run: node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/control.mjs" persist-api-gate
 
       - name: "CAO admission blocked: GitHub API limited until ${{ steps.cao_admission.outputs.github_api_reset_at }}"
         if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-insufficient' }}
@@ -174,6 +196,27 @@ jobs:
         run: |
           set -euo pipefail
           node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/control.mjs" precompute
+
+      - name: Generate CAO precompute gate writer token
+        id: cao_precompute_gate_writer_token
+        if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' && steps.cao_precompute.outputs.github_api_gate_active != 'true' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: ${{ vars.GH_AW_GITHUB_WRITE_APP_ID }}
+          private-key: ${{ secrets.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY }}
+          github-api-url: ${{ github.api_url }}
+          permission-actions: write
+
+      - name: Persist CAO precompute GitHub API gate
+        if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' && steps.cao_precompute.outputs.github_api_gate_active != 'true' }}
+        continue-on-error: true
+        env:
+          CAO_GATE_WRITE_TOKEN: ${{ steps.cao_precompute_gate_writer_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN }}
+          CAO_GITHUB_API_LIMIT: ${{ steps.cao_precompute.outputs.github_api_limit }}
+          CAO_GITHUB_API_REMAINING: ${{ steps.cao_precompute.outputs.github_api_remaining }}
+          CAO_GITHUB_API_RESET_AT: ${{ steps.cao_precompute.outputs.github_api_reset_at }}
+        run: node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/control.mjs" persist-api-gate
 
       - name: "CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}"
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' }}

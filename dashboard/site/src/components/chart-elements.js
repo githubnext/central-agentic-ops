@@ -12,7 +12,12 @@ import { renderEmptyMessage } from './ui-primitives.js';
 const MAX_LINE_POINT_RADIUS = 2.5;
 const MIN_LINE_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
+const MAX_INTERACTIVE_LINE_POINTS = 500;
+const MAX_RENDERED_LINE_POINTS = 2_000;
 const MAX_TIMELINE_TICKS = 5;
+const SWIMLANE_START_X = 25;
+const SWIMLANE_END_X = 117;
+const SWIMLANE_SECTION_WIDTH = 0.8;
 const SWIMLANE_DEFINITIONS = [
   ['action-required', 'Action required'],
   ['failure', 'Failure'],
@@ -281,17 +286,22 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
   if (chartType === 'line') {
     const groupedSeries = groupChartSeries(points);
     const hasWindowHighlight = points.some((point) => typeof point.highlighted === 'boolean');
+    const showInteractivePoints = points.length <= MAX_INTERACTIVE_LINE_POINTS;
     const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
     const xValues = [...new Set(points.map((point) => point.x))];
+    const xIndexes = new Map(xValues.map((value, index) => [value, index]));
     const timelineTicks = lineChartTimelineTicks(xValues);
-    const values = points.map((point) => toNumber(point.y));
-    const finiteValues = values.filter(Number.isFinite);
-    const maximum = Math.max(...finiteValues, 1);
+    let maximum = 1;
+    for (const point of points) {
+      const value = toNumber(point.y);
+      if (Number.isFinite(value)) maximum = Math.max(maximum, value);
+    }
     const pointRadius = lineChartPointRadius(points.length);
     const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
-    const highlightedIndexes = xValues
-      .map((value, index) => points.some((point) => point.x === value && point.highlighted) ? index : -1)
-      .filter((index) => index >= 0);
+    const highlightedIndexes = [...new Set(points.flatMap((point) => {
+      const index = point.highlighted ? xIndexes.get(point.x) : undefined;
+      return index === undefined ? [] : [index];
+    }))];
     const xStep = xValues.length > 1 ? 100 / (xValues.length - 1) : 100;
     const windowBand = highlightedIndexes.length > 0
       ? {
@@ -301,7 +311,11 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       : null;
     return h(
       'div',
-      { className: 'chart-widget line-chart-widget', 'data-chart-widget': 'line' },
+      {
+        className: 'chart-widget line-chart-widget',
+        'data-chart-widget': 'line',
+        'data-line-rendering': showInteractivePoints ? 'rich' : 'compact'
+      },
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
@@ -318,31 +332,35 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         ...groupedSeries.flatMap(([seriesName, seriesPoints], seriesIndex) => {
           const seriesClassName = seriesClassNames.get(seriesName) ?? 'chart-series-1';
           const coordinates = seriesPoints.map((point) => {
-            const xIndex = xValues.indexOf(point.x);
+            const xIndex = xIndexes.get(point.x) ?? 0;
             const x = xValues.length < 2 ? 50 : (xIndex / (xValues.length - 1)) * 100;
-            const y = 38 - (Math.max(0, point.y) / maximum) * 34;
+            const y = 38 - (Math.max(0, toNumber(point.y)) / maximum) * 34;
             return { point, x, y };
           });
+          const renderedCoordinates = sampleLineCoordinates(coordinates, MAX_RENDERED_LINE_POINTS);
+          const highlightedCoordinates = hasWindowHighlight
+            ? sampleLineCoordinates(coordinates.filter(({ point }) => point.highlighted), MAX_RENDERED_LINE_POINTS)
+            : [];
           return [
             h('polyline', {
               className: `line-chart-series ${seriesClassName}${hasWindowHighlight ? ' line-chart-context' : ''}`,
               style: `--chart-entry-index: ${seriesIndex}`,
               pathLength: 1,
-              points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
+              points: renderedCoordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
             }),
-            ...(hasWindowHighlight && coordinates.filter(({ point }) => point.highlighted).length > 1
+            ...(highlightedCoordinates.length > 1
               ? [h('polyline', {
                 className: `line-chart-series line-chart-current ${seriesClassName}`,
                 style: `--chart-entry-index: ${seriesIndex}`,
                 pathLength: 1,
-                points: coordinates.filter(({ point }) => point.highlighted).map(({ x, y }) => `${x},${y}`).join(' '),
+                points: highlightedCoordinates.map(({ x, y }) => `${x},${y}`).join(' '),
                 fill: 'none',
                 'data-chart-window': 'current'
               })]
               : []),
-            ...coordinates.map(({ point, x, y }, pointIndex) => h('g', {
+            ...(showInteractivePoints ? coordinates.map(({ point, x, y }, pointIndex) => h('g', {
               className: `chart-point${point.highlighted === false ? ' chart-point-context' : point.highlighted ? ' chart-point-current' : ''}`,
               style: `--chart-entry-index: ${pointIndex}`,
               tabIndex: 0,
@@ -365,7 +383,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               },
               h('rect', { width: 42, height: 9, rx: 2 }),
               h('text', { x: 3, y: 6 }, chartPointLabel(point, unit))
-            )))
+            ))) : [])
           ];
         })
       ),
@@ -418,6 +436,35 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 }
 
 /**
+ * Keeps line-series SVG output bounded while retaining the first, last, and
+ * visual extrema (minimum and maximum SVG y-coordinates) in each bucket.
+ * @template T
+ * @param {Array<T & { y: number }>} coordinates
+ * @param {number} limit
+ * @returns {Array<T & { y: number }>}
+ */
+function sampleLineCoordinates(coordinates, limit) {
+  if (coordinates.length <= limit) return coordinates;
+  const bucketCount = Math.max(1, Math.floor((limit - 2) / 2));
+  const bucketSize = (coordinates.length - 2) / bucketCount;
+  const sampled = [coordinates[0]];
+  for (let bucket = 0; bucket < bucketCount; bucket += 1) {
+    const start = 1 + Math.floor(bucket * bucketSize);
+    const end = Math.min(coordinates.length - 1, 1 + Math.floor((bucket + 1) * bucketSize));
+    let minimumIndex = start;
+    let maximumIndex = start;
+    for (let index = start + 1; index < end; index += 1) {
+      if (coordinates[index].y < coordinates[minimumIndex].y) minimumIndex = index;
+      if (coordinates[index].y > coordinates[maximumIndex].y) maximumIndex = index;
+    }
+    sampled.push(coordinates[Math.min(minimumIndex, maximumIndex)]);
+    if (minimumIndex !== maximumIndex) sampled.push(coordinates[Math.max(minimumIndex, maximumIndex)]);
+  }
+  sampled.push(coordinates[coordinates.length - 1]);
+  return sampled;
+}
+
+/**
  * @param {ChartPointLike[]} points
  * @param {Record<string, unknown> | null} timeRange
  * @returns {HTMLElement}
@@ -438,11 +485,16 @@ function renderSwimlaneChart(points, timeRange) {
       renderEmptyMessage('No workflow runs to show.', { role: 'status' })
     );
   }
-  const observedTimes = plotted.map((point) => point.timestamp);
+  let firstObserved = Number.POSITIVE_INFINITY;
+  let lastObserved = Number.NEGATIVE_INFINITY;
+  for (const point of plotted) {
+    firstObserved = Math.min(firstObserved, point.timestamp);
+    lastObserved = Math.max(lastObserved, point.timestamp);
+  }
   let start = Date.parse(String(timeRange?.start ?? ''));
   let end = Date.parse(String(timeRange?.end ?? ''));
-  if (!Number.isFinite(start)) start = Math.min(...observedTimes);
-  if (!Number.isFinite(end)) end = Math.max(...observedTimes);
+  if (!Number.isFinite(start)) start = firstObserved;
+  if (!Number.isFinite(end)) end = lastObserved;
   if (start === end) {
     start -= 43_200_000;
     end += 43_200_000;
@@ -460,21 +512,9 @@ function renderSwimlaneChart(points, timeRange) {
   ];
   const ticks = Array.from({ length: 4 }, (_, index) => start + ((span * index) / 3));
   /** @param {number} timestamp */
-  const xCoordinate = (timestamp) => 25 + (Math.min(1, Math.max(0, (timestamp - start) / span)) * 92);
-  const positioned = plotted.map((point) => ({ point, x: xCoordinate(point.timestamp) }));
-  /** @type {Map<string, Array<{ point: ChartPointLike & { lane: string, timestamp: number }, x: number }>>} */
-  const collisionGroups = new Map();
-  for (const position of positioned) {
-    const key = `${position.point.lane}:${position.x.toFixed(1)}`;
-    const group = collisionGroups.get(key) ?? [];
-    group.push(position);
-    collisionGroups.set(key, group);
-  }
-  for (const group of collisionGroups.values()) {
-    group.forEach((position, index) => {
-      position.x = Math.min(117, Math.max(25, position.x + ((index - ((group.length - 1) / 2)) * 0.8)));
-    });
-  }
+  const xCoordinate = (timestamp) => SWIMLANE_START_X
+    + (Math.min(1, Math.max(0, (timestamp - start) / span)) * (SWIMLANE_END_X - SWIMLANE_START_X));
+  const sectionsByLane = buildSwimlaneSections(plotted, xCoordinate);
 
   return h(
     'div',
@@ -496,9 +536,7 @@ function renderSwimlaneChart(points, timeRange) {
         return [
           h('text', { className: 'swimlane-label', x: 23, y: y + 1, 'text-anchor': 'end' }, label),
           h('line', { className: 'swimlane-separator', x1: 25, y1: y, x2: 117, y2: y }),
-          ...positioned
-            .filter(({ point }) => point.lane === lane)
-            .map(({ point, x }) => renderSwimlaneMark(point, x, y))
+          ...(sectionsByLane.get(lane) ?? []).map((section) => renderSwimlaneSection(section, y))
         ];
       }),
       h('line', { className: 'swimlane-axis', x1: 25, y1: 54, x2: 117, y2: 54 }),
@@ -518,45 +556,72 @@ function renderSwimlaneChart(points, timeRange) {
   );
 }
 
-/** @param {Record<string, any>} point @param {number} x @param {number} y */
-function renderSwimlaneMark(point, x, y) {
-  const lines = swimlaneTooltipLines(point);
-  const tooltipWidth = 48;
-  const tooltipHeight = 3 + (lines.length * 4);
-  const tooltipX = Math.min(Math.max(x - (tooltipWidth / 2), 25), 117 - tooltipWidth);
-  const tooltipY = y < 27 ? y + 3 : y - tooltipHeight - 3;
-  const label = lines.join(', ');
-  const mark = h(
-    'g',
-    {
-      className: `chart-point swimlane-mark swimlane-mark-${point.lane}`,
-      tabIndex: 0,
-      role: 'img',
-      'aria-label': label,
-      'data-swimlane-lane': point.lane
-    },
-    h('title', null, lines.join('\n')),
-    h('rect', { className: 'swimlane-hit-target', x: x - 1.75, y: y - 3.5, width: 3.5, height: 7 }),
-    h('line', { className: 'swimlane-run-mark', x1: x, y1: y - 2.25, x2: x, y2: y + 2.25 }),
-    h(
-      'g',
-      {
-        className: 'point-tooltip swimlane-tooltip',
-        transform: `translate(${tooltipX} ${tooltipY})`,
-        'aria-hidden': 'true'
-      },
-      h('rect', { width: tooltipWidth, height: tooltipHeight, rx: 1.5 }),
-      h('text', { x: 2.5, y: 4 }, lines.map((line, index) => h(
-        'tspan',
-        { x: 2.5, dy: index === 0 ? 0 : 4 },
-        line
-      )))
-    )
-  );
-  const bringTooltipToFront = () => mark.parentNode?.append(mark);
-  mark.addEventListener('pointerenter', bringTooltipToFront);
-  mark.addEventListener('focus', bringTooltipToFront);
-  return mark;
+/**
+ * Coalesces observations into a fixed number of visual buckets per lane, then
+ * combines neighboring occupied buckets into contiguous sections.
+ * @param {Array<ChartPointLike & { lane: string, timestamp: number }>} points
+ * @param {(timestamp: number) => number} xCoordinate
+ */
+function buildSwimlaneSections(points, xCoordinate) {
+  const binCount = Math.ceil((SWIMLANE_END_X - SWIMLANE_START_X) / SWIMLANE_SECTION_WIDTH);
+  /** @type {Map<string, Array<{ count: number, first: number, last: number, point: ChartPointLike & { lane: string, timestamp: number } } | null>>} */
+  const binsByLane = new Map(SWIMLANE_DEFINITIONS.map(([lane]) => [lane, Array(binCount).fill(null)]));
+  for (const point of points) {
+    const x = xCoordinate(point.timestamp);
+    const index = Math.min(binCount - 1, Math.max(0, Math.floor((x - SWIMLANE_START_X) / SWIMLANE_SECTION_WIDTH)));
+    const bins = /** @type {NonNullable<ReturnType<typeof binsByLane.get>>} */ (binsByLane.get(point.lane));
+    const bin = bins[index];
+    if (bin) {
+      bin.count += 1;
+      bin.first = Math.min(bin.first, point.timestamp);
+      bin.last = Math.max(bin.last, point.timestamp);
+    } else {
+      bins[index] = { count: 1, first: point.timestamp, last: point.timestamp, point };
+    }
+  }
+
+  /** @type {Map<string, Array<{ lane: string, x1: number, x2: number, count: number, first: number, last: number, point: ChartPointLike & { lane: string, timestamp: number } }>>} */
+  const sectionsByLane = new Map();
+  for (const [lane, bins] of binsByLane) {
+    /** @type {Array<{ lane: string, x1: number, x2: number, count: number, first: number, last: number, point: ChartPointLike & { lane: string, timestamp: number } }>} */
+    const sections = [];
+    for (let index = 0; index < bins.length; index += 1) {
+      const bin = bins[index];
+      if (!bin) continue;
+      const previous = sections.at(-1);
+      const x1 = SWIMLANE_START_X + (index * SWIMLANE_SECTION_WIDTH);
+      const x2 = Math.min(SWIMLANE_END_X, x1 + SWIMLANE_SECTION_WIDTH);
+      if (previous && Math.abs(previous.x2 - x1) < 1e-9) {
+        previous.x2 = x2;
+        previous.count += bin.count;
+        previous.first = Math.min(previous.first, bin.first);
+        previous.last = Math.max(previous.last, bin.last);
+      } else {
+        sections.push({ lane, x1, x2, ...bin });
+      }
+    }
+    sectionsByLane.set(lane, sections);
+  }
+  return sectionsByLane;
+}
+
+/** @param {{ lane: string, x1: number, x2: number, count: number, first: number, last: number, point: Record<string, any> }} section @param {number} y */
+function renderSwimlaneSection(section, y) {
+  const label = section.count === 1
+    ? swimlaneTooltipLines(section.point).join(', ')
+    : `${section.count.toLocaleString('en')} ${section.lane} runs, ${formatSwimlaneTooltipTime(section.first)} to ${formatSwimlaneTooltipTime(section.last)}`;
+  return h('line', {
+    className: `chart-point swimlane-mark swimlane-run-mark swimlane-mark-${section.lane}`,
+    x1: section.x1,
+    y1: y,
+    x2: section.x2,
+    y2: y,
+    tabIndex: 0,
+    role: 'img',
+    'aria-label': label,
+    'data-swimlane-lane': section.lane,
+    'data-swimlane-count': section.count
+  });
 }
 
 /** @param {Record<string, any>} point @returns {string[]} */

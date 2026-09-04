@@ -163,8 +163,33 @@ describe('chart element helpers', () => {
     expect(chart.querySelector('.swimlane-mark-failure')?.getAttribute('aria-label')).toContain('Run #1842');
     expect(chart.querySelector('.swimlane-mark-failure')?.getAttribute('aria-label')).toContain('Branch: main');
     expect(chart.querySelector('.swimlane-mark-failure')?.getAttribute('aria-label')).toContain('Duration: 3m 18s');
+    expect(chart.querySelectorAll('.swimlane-mark > *')).toHaveLength(0);
     expect(chart.querySelector('[data-chart-axis="swimlane"]')).toBeNull();
     expect(chart.textContent).toContain('Aug 28');
+  });
+
+  it('coalesces dense swimlane observations into bounded contiguous sections', () => {
+    const start = Date.parse('2026-08-01T00:00:00Z');
+    const points = Array.from({ length: 20_000 }, (_, index) => {
+      const lane = ['success', 'failure', 'skipped', 'cancelled', 'action-required'][index % 5];
+      return {
+        x: new Date(start + index).toISOString(),
+        y: Number.NaN,
+        category: lane,
+        color: lane,
+        source: { run: String(index) }
+      };
+    });
+    const chart = renderChartWidget('swimlane', points, [], null, 'Total', null, {
+      start: new Date(start).toISOString(),
+      end: new Date(start + points.length).toISOString()
+    });
+    const marks = chart.querySelectorAll('.swimlane-mark');
+
+    expect(marks).toHaveLength(5);
+    expect(chart.querySelectorAll('svg *').length).toBeLessThan(30);
+    expect(marks[0].getAttribute('data-swimlane-count')).toBe('4000');
+    expect(marks[0].getAttribute('aria-label')).toContain('4,000 action-required runs');
   });
 
   it('renders one swimlane observation without applying the multi-point chart empty state', () => {
@@ -288,6 +313,24 @@ describe('chart element helpers', () => {
     expect(renderPoints(51).querySelector('.line-chart-point')?.getAttribute('r')).toBe('1.5');
     expect(renderPoints(100).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
     expect(renderPoints(150).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
+  });
+
+  it('renders 100,000 line-chart points in bounded time and SVG size', () => {
+    const points = Array.from({ length: 100_000 }, (_, index) => ({
+      x: new Date(index * 60_000).toISOString(),
+      y: index % 1_000,
+      color: null
+    }));
+    const startedAt = performance.now();
+    const chart = renderChartWidget('line', points, listChartSeries(points));
+    const elapsedMilliseconds = performance.now() - startedAt;
+    const renderedPoints = chart.querySelector('.line-chart-series')?.getAttribute('points')?.split(' ') ?? [];
+
+    expect(elapsedMilliseconds).toBeLessThan(1_000);
+    expect(chart.getAttribute('data-line-rendering')).toBe('compact');
+    expect(renderedPoints.length).toBeLessThanOrEqual(2_000);
+    expect(chart.querySelectorAll('.chart-point')).toHaveLength(0);
+    expect(chart.querySelectorAll('svg *').length).toBeLessThan(25);
   });
 
   it('renders a concise, evenly sampled timeline axis while preserving exact values', () => {

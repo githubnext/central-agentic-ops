@@ -125,12 +125,12 @@ For private or internal targets, alternate review repositories, or live writes, 
 | --- | --- | --- |
 | `GH_AW_GITHUB_READ_APP_ID` | With App authentication | Repository variable containing the read-only GitHub App client ID. |
 | `GH_AW_GITHUB_READ_APP_PRIVATE_KEY` | With App authentication | Repository secret containing the read-only App private key. |
-| `GH_AW_GITHUB_WRITE_APP_ID` | With write-capable App authentication | Repository variable containing the safe-output GitHub App client ID. |
-| `GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY` | With write-capable App authentication | Repository secret containing the safe-output App private key. |
+| `GH_AW_GITHUB_WRITE_APP_ID` | With write-capable App authentication | Repository variable containing the safe-output and API-gate GitHub App client ID. |
+| `GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY` | With write-capable App authentication | Repository secret containing the safe-output and API-gate App private key. |
 | `GH_AW_GITHUB_TOKEN` | PAT fallback | Fine-grained token for cross-repository access. |
 | `GH_AW_CI_TOKEN` | Optional Dependabot path | Additional token used only when an empty CI commit is required. |
 
-The root package manifest remains free of interactive setup so `gh aw add` works non-interactively. Follow [Configure Authentication](authentication.md#optional-setup-wizard) to create and install both Apps with an explicitly temporary `aw.yml` block, or configure the four values manually. Shared control uses the read-only App for GitHub tools and admission, and exposes the write-capable App only to safe outputs. Each path falls back to `GH_AW_GITHUB_TOKEN`, then the run-scoped `GITHUB_TOKEN`, when its reach is sufficient.
+The root package manifest remains free of interactive setup so `gh aw add` works non-interactively. Follow [Configure Authentication](authentication.md#optional-setup-wizard) to create and install both Apps with an explicitly temporary `aw.yml` block, or configure the four values manually. Shared control uses the read-only App for GitHub tools and admission. It exposes the write-capable App to safe outputs and, with only `Actions: write`, to best-effort API-gate persistence after a fresh capacity denial. Each path uses only its documented credential fallback when that credential's reach is sufficient.
 
 ## Manual Inputs
 

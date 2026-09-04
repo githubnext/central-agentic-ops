@@ -497,6 +497,7 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /actions\/create-github-app-token@v3\.2\.0/);
   assert.match(sharedControl, /permission-actions: read[\s\S]*?permission-contents: read/);
   assert.match(sharedControl, /CAO_API_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
+  assert.match(sharedControl, /CAO_GITHUB_API_GATE: \$\{\{ vars\.CAO_GITHUB_API_GATE \}\}/);
   assert.match(sharedControl, /name: Checkout CAO control modules/);
   assert.match(sharedControl, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
   assert.match(sharedControl, /ref: \$\{\{ github\.workflow_sha \}\}/);
@@ -507,6 +508,12 @@ test("control workflows deny before activation through one shared admission cont
   assert.doesNotMatch(sharedControl, /gh api --method GET "repos\/\$\{GITHUB_REPOSITORY\}\/contents\/\.github\/cao\/src/);
   assert.doesNotMatch(sharedControl, /base64\s+(?:-d|--decode)/);
   assert.match(sharedControl, /node "\$cao_dir\/control\.mjs" admit/);
+  assert.equal([...sharedControl.matchAll(/permission-actions: write/g)].length, 2);
+  assert.equal([...sharedControl.matchAll(/control\.mjs" persist-api-gate/g)].length, 2);
+  assert.match(sharedControl, /steps\.cao_admission\.outputs\.github_api_gate_active != 'true'/);
+  assert.match(sharedControl, /steps\.cao_precompute\.outputs\.github_api_gate_active != 'true'/);
+  assert.match(sharedControl, /CAO_GATE_WRITE_TOKEN: \$\{\{ steps\.cao_admission_gate_writer_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \}\}/);
+  assert.match(sharedControl, /CAO_GATE_WRITE_TOKEN: \$\{\{ steps\.cao_precompute_gate_writer_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \}\}/);
   assert.match(sharedControl, /CAO admission blocked: GitHub API limited until \$\{\{ steps\.cao_admission\.outputs\.github_api_reset_at \}\}/);
   assert.match(sharedControl, /reason == 'github-api-capacity-insufficient'/);
   assert.match(sharedControl, /^\s+id: cao_precompute$/m);
@@ -776,30 +783,45 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(packageLifecycle, /exit "\$status"/);
 });
 
-test("release drafts reviewed notes for an explicit semantic version before publishing", () => {
+test("release computes an authorized semantic version bump and creates a draft for manual publication", () => {
   const source = workflow("release.yml");
   const config = parse(source);
   const jobs = generatedJobs(source);
-  const version = jobs.get("validate-version")?.block ?? "";
+  const version = jobs.get("resolve-version")?.block ?? "";
   const validation = jobs.get("validate-package")?.block ?? "";
   const prepare = jobs.get("prepare-release")?.block ?? "";
-  const publish = jobs.get("publish-release")?.block ?? "";
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
 
-  assert.equal(config.on.workflow_dispatch.inputs.operation.default, "prepare");
-  assert.deepEqual(config.on.workflow_dispatch.inputs.operation.options, ["prepare", "publish"]);
-  assert.equal(config.on.workflow_dispatch.inputs.version.default, "0.0.1");
-  assert.match(version, /RELEASE_VERSION: \$\{\{ inputs\.version \}\}/);
-  assert.match(version, /stable semantic version/);
+  assert.equal(config.on.workflow_dispatch.inputs.operation, undefined);
+  assert.equal(config.on.workflow_dispatch.inputs.bump.required, false);
+  assert.equal(config.on.workflow_dispatch.inputs.bump.default, "patch");
+  assert.deepEqual(config.on.workflow_dispatch.inputs.bump.options, ["patch", "minor", "major"]);
+  assert.match(version, /RELEASE_BUMP: \$\{\{ inputs\.bump \}\}/);
+  assert.match(version, /TRIGGERING_ACTOR: \$\{\{ github\.triggering_actor \}\}/);
+  assert.match(version, /const bump = \['patch', 'minor', 'major'\]\.includes\(requestedBump\) \? requestedBump : 'patch'/);
+  assert.match(version, /Unknown release bump.*defaulting to patch/);
+  assert.match(version, /context\.payload\.repository\.fork/);
+  assert.match(version, /getCollaboratorPermissionLevel/);
+  assert.match(version, /const role = access\.role_name \|\| access\.permission/);
+  assert.match(version, /\['maintain', 'admin'\]\.includes\(role\)/);
+  assert.match(version, /listReleases/);
+  assert.match(version, /listTags/);
+  assert.match(version, /\.filter\(\(release\) => !release\.draft\)/);
+  assert.match(version, /const versionNames = new Set\(\[\.\.\.releaseTags, \.\.\.tags\.map/);
+  assert.match(version, /const versions = \[\.\.\.versionNames\]\.flatMap\(toVersion\)/);
+  assert.match(version, /No stable semantic version releases or tags found/);
+  assert.match(version, /const latest = versions\[0\] \|\| \[0, 0, 0\]/);
+  assert.match(version, /if \(bump === 'major'\)/);
+  assert.match(version, /else if \(bump === 'minor'\)/);
+  assert.match(version, /Resolved \$\{bump\} bump from/);
   assert.match(validation, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: \$\{\{ github\.repository \}\}@\$\{\{ github\.sha \}\}/);
   assert.match(validation, /npm run test:package-lifecycle/);
-  assert.deepEqual(jobs.get("prepare-release")?.needs, ["validate-version", "validate-package"]);
+  assert.deepEqual(jobs.get("prepare-release")?.needs, ["resolve-version", "validate-package"]);
   assert.match(prepare, /draft: true/);
   assert.match(prepare, /generate_release_notes: true/);
-  assert.match(publish, /release\.tag_name === releaseTag \|\| release\.name === releaseTag/);
-  assert.match(publish, /Multiple draft releases match/);
-  assert.match(publish, /tag_name: releaseTag/);
-  assert.match(publish, /draft: false/);
+  assert.match(prepare, /publish the draft, and mark it as the latest release from the GitHub website/);
+  assert.equal(jobs.has("publish-release"), false);
+  assert.doesNotMatch(source, /updateRelease|draft: false|make_latest/);
   assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/release\.yml/);
 });
@@ -2606,6 +2628,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
     { source: "failure-evidence.mjs", destination: ".github/aw/activity/failure-evidence.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
+    { source: "github-telemetry.mjs", destination: ".github/aw/activity/github-telemetry.mjs" },
     { source: "version.mjs", destination: ".github/aw/activity/version.mjs" },
   ]);
   assert.ok(rootManifest.includes.includes("activity/aw.yml"));
@@ -2619,7 +2642,8 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.match(workflow, /pull-requests: read/);
   assert.match(workflow, /Generate GitHub App token for activity[\s\S]*?GH_AW_GITHUB_READ_APP_ID[\s\S]*?GH_AW_GITHUB_READ_APP_PRIVATE_KEY/);
   assert.match(workflow, /actions\/create-github-app-token@[0-9a-f]{40}/);
-  assert.equal((workflow.match(/steps\.activity-app-token\.outputs\.token \|\| github\.token/g) || []).length, 5);
+  assert.equal((workflow.match(/steps\.activity-app-token\.outputs\.token \|\| github\.token/g) || []).length, 9);
+  assert.match(workflow, /name: cao-gh[\s\S]*?cao-gh\.jsonl/);
   assert.match(workflow, /DASHBOARD_COLLECTION=false/);
   assert.match(workflow, /if: env\.DASHBOARD_COLLECTION == 'true'/);
   assert.match(workflow, /Collect AI Credit usage/);

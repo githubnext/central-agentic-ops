@@ -280,15 +280,13 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .swimlane-label { font-weight: 600; }
 .swimlane-separator { stroke: var(--border-muted); stroke-width: .45; }
 .swimlane-axis, .swimlane-tick { stroke: var(--border); stroke-width: .55; }
-.swimlane-hit-target { fill: transparent; }
 .swimlane-run-mark { stroke-width: 2.5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.swimlane-mark-action-required .swimlane-run-mark { stroke: var(--success); }
-.swimlane-mark-failure .swimlane-run-mark { stroke: var(--danger); }
-.swimlane-mark-cancelled .swimlane-run-mark { stroke: var(--attention); }
-.swimlane-mark-skipped .swimlane-run-mark { stroke: var(--accent); }
-.swimlane-mark-success .swimlane-run-mark { stroke: var(--muted); }
-.swimlane-mark:hover .swimlane-run-mark, .swimlane-mark:focus-visible .swimlane-run-mark { filter: brightness(1.2); stroke-width: 3.5; }
-.swimlane-tooltip text { font-size: 2.25px; }
+.swimlane-mark-action-required { stroke: var(--success); }
+.swimlane-mark-failure { stroke: var(--danger); }
+.swimlane-mark-cancelled { stroke: var(--attention); }
+.swimlane-mark-skipped { stroke: var(--accent); }
+.swimlane-mark-success { stroke: var(--muted); }
+.swimlane-mark:hover, .swimlane-mark:focus-visible { filter: brightness(1.2); stroke-width: 3.5; }
 .swimlane-mark:focus-visible { outline: none; }
 .chart-widget .chart-series-7 { stroke: var(--pink); }
 .chart-widget .chart-series-8 { stroke: var(--coral); }
