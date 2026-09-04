@@ -183,17 +183,15 @@ jobs:
           CAO_API_REQUIRED: ${{ steps.cao_precompute.outputs.github_api_required }}
           CAO_API_RESET_AT: ${{ steps.cao_precompute.outputs.github_api_reset_at }}
         run: |
-          echo "::error title=CAO precompute blocked by GitHub API capacity::${CAO_API_REMAINING} of ${CAO_API_LIMIT} core requests remain; ${CAO_API_REQUIRED} required. Retry after ${CAO_API_RESET_AT}. See the admission summary for next steps."
-          exit 1
+          echo "::warning title=CAO precompute blocked by GitHub API capacity::${CAO_API_REMAINING} of ${CAO_API_LIMIT} core requests remain; ${CAO_API_REQUIRED} required. Retry after ${CAO_API_RESET_AT}. See the admission summary for next steps."
 
       - name: "CAO precompute blocked: GitHub API capacity unavailable"
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-unavailable' }}
         run: |
-          echo "::error title=CAO precompute could not verify GitHub API capacity::Check authentication and GitHub API status. See the admission summary for next steps."
-          exit 1
+          echo "::warning title=CAO precompute could not verify GitHub API capacity::Check authentication and GitHub API status. See the admission summary for next steps."
 
       - name: Validate CAO control precompute artifact
-        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
         env:
           GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
           CONTROL_REPOSITORY: ${{ github.repository }}
@@ -215,7 +213,7 @@ jobs:
             "$out" >/dev/null
 
       - name: Upload CAO control precompute artifact
-        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
         uses: actions/upload-artifact@v7.0.1
         with:
           name: cao-control-precompute

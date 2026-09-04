@@ -186,7 +186,12 @@ function renderTableView(context) {
       filterId: typeof view.id === 'string' ? view.id : `${pageId}-table`,
       filterFields: columns.flatMap((column, columnIndex) => (
         ['nominal', 'ordinal'].includes(String(column.type))
-          ? [{ key: typeof column.as === 'string' ? column.as : column.field, label: fieldTitle(column), columnIndex: actions.length + columnIndex }]
+          ? [{
+              key: typeof column.as === 'string' ? column.as : column.field,
+              label: fieldTitle(column),
+              columnIndex: actions.length + columnIndex,
+              always: column.display === 'status'
+            }]
           : []
       )),
       bodyRows,
