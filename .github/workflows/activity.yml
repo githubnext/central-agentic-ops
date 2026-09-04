@@ -70,8 +70,10 @@ jobs:
         run: |
           if [[ -f .github/aw/activity/index.mjs ]]; then
             echo "ACTIVITY_INDEXER=.github/aw/activity/index.mjs" >> "$GITHUB_ENV"
+            echo "GITHUB_TELEMETRY=.github/aw/activity/github-telemetry.mjs" >> "$GITHUB_ENV"
           elif [[ -f activity/index.mjs ]]; then
             echo "ACTIVITY_INDEXER=activity/index.mjs" >> "$GITHUB_ENV"
+            echo "GITHUB_TELEMETRY=activity/github-telemetry.mjs" >> "$GITHUB_ENV"
           else
             echo "Activity indexer is unavailable" >&2
             exit 1
@@ -106,12 +108,24 @@ jobs:
         run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
 
       - name: Refresh activity index
+        id: refresh-activity
         env:
           GITHUB_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
           REPORT_CONTROL_POLICY: .github/workflows/cao.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_RUN_WINDOW_HOURS: "168"
-        run: node "$ACTIVITY_INDEXER"
+        run: |
+          node "$GITHUB_TELEMETRY" before refresh-activity
+          node "$ACTIVITY_INDEXER"
+
+      - name: Record activity refresh GitHub API state
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
+          CAO_OPERATION_OUTCOME: ${{ steps.refresh-activity.outcome }}
+        run: node "$GITHUB_TELEMETRY" after refresh-activity
 
       - name: Install gh-aw CLI
         if: env.DASHBOARD_COLLECTION == 'true'
@@ -131,23 +145,47 @@ jobs:
             ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-
 
       - name: Collect AI Credit usage
+        id: collect-aic-usage
         if: env.DASHBOARD_COLLECTION == 'true'
         env:
           GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
           REPORT_AIC_USAGE: ${{ runner.temp }}/cao-activity/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
-        run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
+        run: |
+          node "$GITHUB_TELEMETRY" before collect-aic-usage
+          node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
+
+      - name: Record AI Credit collection GitHub API state
+        if: always() && env.DASHBOARD_COLLECTION == 'true'
+        env:
+          GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
+          CAO_OPERATION_OUTCOME: ${{ steps.collect-aic-usage.outcome }}
+        run: node "$GITHUB_TELEMETRY" after collect-aic-usage
 
       - name: Collect operational-value observations
+        id: collect-operational-values
         if: env.DASHBOARD_COLLECTION == 'true'
         env:
           GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-activity/operational-values.json
           REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
           REPORT_VALUE_REPLAY_CACHE: .cache/dashboard-operational-values/replay
-        run: node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
+        run: |
+          node "$GITHUB_TELEMETRY" before collect-operational-values
+          node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
+
+      - name: Record operational-value collection GitHub API state
+        if: always() && env.DASHBOARD_COLLECTION == 'true'
+        env:
+          GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
+          CAO_OPERATION_OUTCOME: ${{ steps.collect-operational-values.outcome }}
+        run: node "$GITHUB_TELEMETRY" after collect-operational-values
 
       - name: Save operational-value observation cache
         if: always() && env.DASHBOARD_COLLECTION == 'true'
@@ -157,14 +195,35 @@ jobs:
           key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Collect durable dashboard records
+        id: collect-dashboard-records
         if: env.DASHBOARD_COLLECTION == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
           REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_RECORDS: ${{ runner.temp }}/cao-activity/dashboard-records.json
-        run: node "$DASHBOARD_REPORT_ROOT/records.mjs"
+        run: |
+          node "$GITHUB_TELEMETRY" before collect-dashboard-records
+          node "$DASHBOARD_REPORT_ROOT/records.mjs"
+
+      - name: Record dashboard record collection GitHub API state
+        if: always() && env.DASHBOARD_COLLECTION == 'true'
+        env:
+          GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
+          CAO_GITHUB_TOKEN_TYPE: ${{ steps.activity-app-token.outputs.token != '' && 'app' || 'builtin' }}
+          CAO_OPERATION_OUTCOME: ${{ steps.collect-dashboard-records.outcome }}
+        run: node "$GITHUB_TELEMETRY" after collect-dashboard-records
+
+      - name: Upload GitHub API telemetry
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cao-gh
+          path: ${{ runner.temp }}/cao-activity/cao-gh.jsonl
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Save activity cache
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
