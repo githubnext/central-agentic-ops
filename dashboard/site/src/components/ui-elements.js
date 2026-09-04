@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { findLink } from './link-content.js';
-import { renderPackagesView } from './packages-view.js';
+import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
@@ -42,6 +42,9 @@ const ELEMENT_RENDERERS = new Map([
   ['anomaly-readiness', renderAnomalyReadinessElement],
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
+  ['package-utilization', ({ sources }) => renderPackageUtilization(sources)],
+  ['package-run-trend', ({ sources }) => renderRunTrend(sources)],
+  ['package-summary-table', ({ sources }) => renderPackageSummary(sources)],
   ['package-insights', (context) => renderPackageNavigation(context, 'insights')],
   ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
   ['package-dispatches', (context) => renderPackageNavigation(context, 'dispatches')],
