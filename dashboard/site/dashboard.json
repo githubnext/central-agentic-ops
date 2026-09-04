@@ -51,6 +51,16 @@
         "name": "Seconds",
         "symbol": "s",
         "significant": 1
+      },
+      "minutes": {
+        "name": "Minutes",
+        "symbol": "min",
+        "significant": 0.1
+      },
+      "requests-per-minute": {
+        "name": "Requests per minute",
+        "symbol": "req/min",
+        "significant": 0.001
       }
     },
     "pages": [
@@ -297,40 +307,74 @@
       {
         "id": "github-api",
         "kind": "custom",
-        "title": "GitHub API capacity",
+        "title": "GitHub API Rate Limits",
         "navigation-label": "GitHub API",
         "icon": "meter",
         "class-name": "github-api-page",
-        "description": "Observed GitHub API capacity and activity-cache hydration before and after control-plane collection operations.",
+        "description": "GitHub quota health by resource and credential, with reset-safe burn forecasts and explicit observation quality.",
+        "filter-bar": {
+          "filters": [
+            "phase:after"
+          ],
+          "time-range": "24h"
+        },
         "sections": [
           {
-            "id": "github-api-capacity",
-            "title": "Rate-limit capacity by API type",
-            "description": "Every reported API rate-limit bucket is normalized to remaining capacity so resources with different limits can be compared.",
+            "id": "github-api-quota-health",
+            "title": "GitHub quota health",
+            "description": "Current capacity and reset-safe forecasts are kept separate for each credential and quota resource.",
             "layout": "full",
             "views": [
+              "github-api-remaining-capacity",
+              "github-api-at-risk",
               "github-api-remaining-trend",
-              "github-api-observations"
+              "github-api-health"
+            ]
+          },
+          {
+            "id": "github-api-diagnostics",
+            "title": "Diagnostics",
+            "description": "Reset, attribution, raw observation, and collector details are available on demand.",
+            "layout": "full",
+            "views": [
+              "github-api-reset-horizon",
+              "github-api-operation-consumption",
+              "github-api-observations",
+              "github-api-collector-health"
             ]
           }
         ],
         "views": [
           {
-            "id": "github-api-remaining-trend",
-            "title": "Remaining capacity by API type",
-            "description": "Percentage of each API type's limit remaining before and after every instrumented operation.",
+            "id": "github-api-remaining-capacity",
+            "title": "Remaining capacity",
+            "description": "Current quota buckets ordered from least capacity remaining. The companion table and health inventory preserve absolute remaining and limit values.",
             "data": {
-              "source": "github-api-rate-limits"
+              "source": "github-api-rate-limits",
+              "filters": {
+                "is-current": "true"
+              },
+              "order-by": [
+                {
+                  "field": "remaining-percent",
+                  "direction": "asc"
+                },
+                {
+                  "field": "bucket",
+                  "direction": "asc"
+                }
+              ]
             },
             "mark": "chart",
-            "chart": "line",
+            "chart": "bar",
+            "table": true,
             "layout": "full",
+            "disclosure": "essential",
             "encoding": {
               "x": {
-                "field": "observed-at",
-                "type": "temporal",
-                "time-unit": "hour",
-                "title": "Observed"
+                "field": "bucket",
+                "type": "nominal",
+                "title": "Resource and credential"
               },
               "y": {
                 "field": "remaining-percent",
@@ -339,22 +383,330 @@
                 "unit": "percent"
               },
               "color": {
-                "field": "resource",
-                "type": "nominal",
-                "title": "API type"
+                "field": "risk-status",
+                "type": "ordinal",
+                "title": "Risk"
               }
             }
           },
           {
-            "id": "github-api-observations",
-            "title": "API and cache observations",
-            "description": "Credential class and cache state are recorded without retaining credential values.",
+            "id": "github-api-at-risk",
+            "title": "At-risk buckets",
+            "description": "Current credential and resource buckets classified critical or warning. The source status below supplies the as-of, freshness, and completeness context.",
+            "data": {
+              "source": "github-api-rate-limits",
+              "filters": {
+                "is-current": "true",
+                "risk-status": [
+                  "critical",
+                  "warning"
+                ]
+              }
+            },
+            "mark": "metric",
+            "layout": "third",
+            "disclosure": "essential",
+            "encoding": {
+              "value": {
+                "field": "observation-id",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Critical or warning buckets"
+              }
+            }
+          },
+          {
+            "id": "github-api-remaining-trend",
+            "title": "Quota history",
+            "description": "Remaining capacity over the selected UTC time range. Resource and credential series remain independent so reset sawtooths are not combined across credentials.",
             "data": {
               "source": "github-api-rate-limits"
             },
-            "mark": "table",
+            "mark": "chart",
+            "chart": "line",
+            "table": true,
             "layout": "full",
-            "empty-message": "No GitHub API telemetry has been collected yet.",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "hour",
+                "title": "Observed (UTC)"
+              },
+              "y": {
+                "field": "remaining-percent",
+                "type": "quantitative",
+                "title": "Remaining capacity",
+                "unit": "percent"
+              },
+              "color": {
+                "field": "history-series",
+                "type": "nominal",
+                "title": "Resource and credential"
+              }
+            }
+          },
+          {
+            "id": "github-api-health",
+            "title": "Rate-limit health",
+            "description": "Current quota state ordered by risk, runway, and remaining capacity. Unknown means the forecast lacks fresh, complete, or sufficient history.",
+            "data": {
+              "source": "github-api-rate-limits",
+              "filters": {
+                "is-current": "true"
+              },
+              "order-by": [
+                {
+                  "field": "risk-order",
+                  "direction": "asc"
+                },
+                {
+                  "field": "runway-ratio",
+                  "direction": "asc"
+                },
+                {
+                  "field": "remaining-percent",
+                  "direction": "asc"
+                },
+                {
+                  "field": "resource",
+                  "direction": "asc"
+                },
+                {
+                  "field": "credential",
+                  "direction": "asc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "layout": "full",
+            "disclosure": "essential",
+            "empty-message": "No rate-limit observations match the selected credential, resource, and time range.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "risk-order",
+                  "type": "quantitative",
+                  "title": "Risk priority"
+                },
+                {
+                  "field": "risk-status",
+                  "type": "ordinal",
+                  "title": "Risk",
+                  "display": "status"
+                },
+                {
+                  "field": "resource",
+                  "type": "nominal",
+                  "title": "Resource"
+                },
+                {
+                  "field": "remaining",
+                  "type": "quantitative",
+                  "title": "Remaining"
+                },
+                {
+                  "field": "limit",
+                  "type": "quantitative",
+                  "title": "Limit"
+                },
+                {
+                  "field": "remaining-percent",
+                  "type": "quantitative",
+                  "title": "Remaining",
+                  "unit": "percent"
+                },
+                {
+                  "field": "burn-rate-per-minute",
+                  "type": "quantitative",
+                  "title": "Burn",
+                  "unit": "requests-per-minute"
+                },
+                {
+                  "field": "runway-ratio",
+                  "type": "quantitative",
+                  "title": "Runway ratio"
+                },
+                {
+                  "field": "reset-at",
+                  "type": "temporal",
+                  "title": "Reset (UTC)"
+                },
+                {
+                  "field": "minutes-to-reset",
+                  "type": "quantitative",
+                  "title": "Time to reset",
+                  "unit": "minutes"
+                },
+                {
+                  "field": "projected-remaining-at-reset",
+                  "type": "quantitative",
+                  "title": "Projected at reset"
+                },
+                {
+                  "field": "projected-exhaustion-at",
+                  "type": "temporal",
+                  "title": "Projected exhaustion (UTC)"
+                },
+                {
+                  "field": "credential",
+                  "type": "nominal",
+                  "title": "Credential"
+                },
+                {
+                  "field": "operation",
+                  "type": "nominal",
+                  "title": "Last operation"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Last observed (UTC)"
+                }
+              ]
+            }
+          },
+          {
+            "id": "github-api-reset-horizon",
+            "title": "Reset horizon",
+            "description": "Current buckets ordered by relative reset time; exact reset timestamps remain available in rate-limit health.",
+            "data": {
+              "source": "github-api-rate-limits",
+              "filters": {
+                "is-current": "true"
+              },
+              "order-by": [
+                {
+                  "field": "minutes-to-reset",
+                  "direction": "asc"
+                },
+                {
+                  "field": "bucket",
+                  "direction": "asc"
+                }
+              ]
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": true,
+            "layout": "full",
+            "disclosure": "supplemental",
+            "encoding": {
+              "x": {
+                "field": "bucket",
+                "type": "nominal",
+                "title": "Resource and credential"
+              },
+              "y": {
+                "field": "minutes-to-reset",
+                "type": "quantitative",
+                "title": "Time to reset",
+                "unit": "minutes"
+              },
+              "color": {
+                "field": "risk-status",
+                "type": "ordinal",
+                "title": "Risk"
+              }
+            }
+          },
+          {
+            "id": "github-api-operation-consumption",
+            "title": "Consumption by operation",
+            "description": "Requests consumed only for reliably paired before/after checkpoints sharing one execution, credential, resource, and reset window.",
+            "data": {
+              "source": "github-api-rate-limits",
+              "filters": {
+                "phase": "after",
+                "attribution-status": "available"
+              },
+              "order-by": [
+                {
+                  "field": "operation-consumed",
+                  "direction": "desc"
+                },
+                {
+                  "field": "operation-execution-id",
+                  "direction": "asc"
+                },
+                {
+                  "field": "resource",
+                  "direction": "asc"
+                },
+                {
+                  "field": "credential",
+                  "direction": "asc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "layout": "full",
+            "disclosure": "supplemental",
+            "empty-message": "Operation attribution is unavailable because no reliable paired checkpoints match the selected filters.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "operation",
+                  "type": "nominal",
+                  "title": "Operation"
+                },
+                {
+                  "field": "resource",
+                  "type": "nominal",
+                  "title": "Resource"
+                },
+                {
+                  "field": "credential",
+                  "type": "nominal",
+                  "title": "Credential"
+                },
+                {
+                  "field": "operation-consumed",
+                  "type": "quantitative",
+                  "title": "Requests consumed"
+                },
+                {
+                  "field": "operation-execution-id",
+                  "type": "nominal",
+                  "title": "Execution"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed (UTC)"
+                }
+              ]
+            }
+          },
+          {
+            "id": "github-api-observations",
+            "title": "Raw quota observations",
+            "description": "Detailed GitHub quota checkpoints retain calculation inputs and correlation state for diagnostics.",
+            "data": {
+              "source": "github-api-rate-limits",
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                },
+                {
+                  "field": "resource",
+                  "direction": "asc"
+                },
+                {
+                  "field": "credential",
+                  "direction": "asc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "layout": "full",
+            "disclosure": "supplemental",
+            "empty-message": "No rate-limit observations match the selected credential, resource, and time range.",
             "encoding": {
               "columns": [
                 {
@@ -375,7 +727,7 @@
                 {
                   "field": "resource",
                   "type": "nominal",
-                  "title": "API type"
+                  "title": "Resource"
                 },
                 {
                   "field": "remaining-percent",
@@ -401,12 +753,84 @@
                 {
                   "field": "reset-at",
                   "type": "temporal",
-                  "title": "Reset"
+                  "title": "Reset (UTC)"
                 },
                 {
-                  "field": "token-type",
+                  "field": "credential",
                   "type": "nominal",
                   "title": "Credential"
+                },
+                {
+                  "field": "operation-execution-id",
+                  "type": "nominal",
+                  "title": "Execution"
+                },
+                {
+                  "field": "consumed-since-previous",
+                  "type": "quantitative",
+                  "title": "Consumed since previous"
+                },
+                {
+                  "field": "attribution-status",
+                  "type": "nominal",
+                  "title": "Attribution"
+                }
+              ]
+            }
+          },
+          {
+            "id": "github-api-collector-health",
+            "title": "Collector and cache health",
+            "description": "Collection completeness, retrieval failures, and activity-cache state are operational diagnostics, not GitHub quota health.",
+            "data": {
+              "source": "github-api-collector-health",
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                },
+                {
+                  "field": "operation-execution-id",
+                  "direction": "asc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "layout": "full",
+            "disclosure": "supplemental",
+            "empty-message": "Collector and cache observations are unavailable for the selected time range.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Last retrieval (UTC)"
+                },
+                {
+                  "field": "operation",
+                  "type": "nominal",
+                  "title": "Operation"
+                },
+                {
+                  "field": "phase",
+                  "type": "nominal",
+                  "title": "Phase"
+                },
+                {
+                  "field": "outcome",
+                  "type": "nominal",
+                  "title": "Outcome"
+                },
+                {
+                  "field": "credential",
+                  "type": "nominal",
+                  "title": "Credential"
+                },
+                {
+                  "field": "operation-execution-id",
+                  "type": "nominal",
+                  "title": "Execution"
                 },
                 {
                   "field": "cache-hydrated",
@@ -422,6 +846,11 @@
                   "field": "cache-folders",
                   "type": "quantitative",
                   "title": "Top-level folders"
+                },
+                {
+                  "field": "rate-limit-error",
+                  "type": "nominal",
+                  "title": "Retrieval error"
                 }
               ]
             }

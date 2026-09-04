@@ -2321,7 +2321,7 @@ function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data,
     validateChartWidget(encoding, chart, viewPath, errors);
   }
 
-  validateOrderByReferences(data, aggregateOutputIds, sourceName, viewPath, errors);
+  validateOrderByReferences(data, encoding, aggregateOutputIds, sourceName, viewPath, errors);
 }
 
 /**
@@ -2403,6 +2403,7 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
  * @param {Record<string, unknown>} encoding
  * @param {string | null} sourceName
  * @param {string} path
+ * @param {unknown} encoding
  * @param {Map<string, string>} aggregateOutputIds
  * @param {ValidationError[]} errors
  */
@@ -2802,13 +2803,31 @@ function validateAggregateCompatibility(fieldName, aggregate, path, errors) {
  * @param {string} viewPath
  * @param {ValidationError[]} errors
  */
-function validateOrderByReferences(data, aggregateOutputIds, sourceName, viewPath, errors) {
+function validateOrderByReferences(data, encoding, aggregateOutputIds, sourceName, viewPath, errors) {
   if (!isPlainObject(data) || !Array.isArray(data['order-by']) || !sourceName) {
     return;
   }
 
   const sourceFieldSet = new Set(SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)]);
   const entityIdSet = new Set(SOURCE_ENTITY_IDENTIFIER_FIELDS[/** @type {keyof typeof SOURCE_ENTITY_IDENTIFIER_FIELDS} */ (sourceName)] ?? []);
+  const unaggregatedOutputFields = new Set();
+  if (isPlainObject(encoding)) {
+    const definitions = [
+      encoding.x,
+      encoding.y,
+      encoding.color,
+      ...(Array.isArray(encoding.columns) ? encoding.columns : []),
+    ];
+    for (const definition of definitions) {
+      if (
+        isPlainObject(definition)
+        && typeof definition.field === 'string'
+        && (definition.aggregate === undefined || definition.aggregate === 'none')
+      ) {
+        unaggregatedOutputFields.add(definition.field);
+      }
+    }
+  }
 
   for (const [index, clause] of data['order-by'].entries()) {
     if (!isPlainObject(clause) || typeof clause.field !== 'string') {
@@ -2833,7 +2852,7 @@ function validateOrderByReferences(data, aggregateOutputIds, sourceName, viewPat
       continue;
     }
 
-    if (!matchesSourceField || !entityIdSet.has(fieldName)) {
+    if (!matchesSourceField || (!unaggregatedOutputFields.has(fieldName) && !entityIdSet.has(fieldName))) {
       errors.push(createError(
         ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
         'order-by.field must reference one unique aggregate output identifier or one source field valid at the output grain.',

@@ -25,8 +25,15 @@ const sourceNames = [
   "findings",
   "operational-values",
   "github-api-rate-limits",
+  "github-api-collector-health",
 ];
 const AIC_TO_USD = 0.01;
+export const GITHUB_RATE_LIMIT_THRESHOLDS = Object.freeze({
+  staleAfterMinutes: 60,
+  warningRemainingPercent: 20,
+  warningRunwayRatio: 1.25,
+  minimumBurnIntervals: 2,
+});
 
 function repositoryParts(repository = "") {
   const [organization = "", name = ""] = repository.split("/");
@@ -68,51 +75,191 @@ function workflowRunUrl(repository, runId) {
     : undefined;
 }
 
-function sourceMetadata(name, generatedAt, available, complete) {
+function sourceMetadata(name, generatedAt, available, complete, freshness = available ? "fresh" : "unknown", asOf = generatedAt) {
   return {
     "source-id": `central-agentic-ops-${name}`,
     "source-kind": "github",
-    "as-of": generatedAt,
+    "as-of": asOf,
     "retrieved-at": generatedAt,
     completeness: complete ? "complete" : "partial",
-    freshness: available ? "fresh" : "unknown",
+    freshness,
     availability: available ? "available" : "unavailable",
   };
 }
 
-function source(name, rows, generatedAt, available = true, complete = true) {
+function source(name, rows, generatedAt, available = true, complete = true, freshness, asOf) {
   return {
     source: name,
     rows,
-    metadata: sourceMetadata(name, generatedAt, available, complete),
+    metadata: sourceMetadata(name, generatedAt, available, complete, freshness, asOf),
   };
 }
 
-export function githubTelemetryRows(entries = []) {
-  return entries.flatMap((entry) => {
-    const resources = Object.entries(entry?.rateLimit || {});
-    const rows = resources.length > 0 ? resources : [["unavailable", {}]];
-    return rows.map(([resource, rate]) => ({
+function finite(value) {
+  return Number.isFinite(value) ? Number(value) : null;
+}
+
+function rounded(value, places = 2) {
+  if (!Number.isFinite(value)) return null;
+  const factor = 10 ** places;
+  return Math.round(Number(value) * factor) / factor;
+}
+
+function credential(entry) {
+  if (entry?.credentialId) return entry.credentialId;
+  const parts = [entry?.credentialRole, entry?.tokenType].filter((value) => value && value !== "unknown");
+  return parts.join(":") || "unknown";
+}
+
+function telemetryAsOf(entries, fallback) {
+  const timestamps = entries.map((entry) => Date.parse(entry?.observedAt)).filter(Number.isFinite);
+  return timestamps.length > 0 ? new Date(Math.max(...timestamps)).toISOString() : fallback;
+}
+
+function telemetryFreshness(entries, generatedAt) {
+  const asOf = Date.parse(telemetryAsOf(entries, generatedAt));
+  const generated = Date.parse(generatedAt);
+  if (!Number.isFinite(asOf) || !Number.isFinite(generated)) return "unknown";
+  return generated - asOf > GITHUB_RATE_LIMIT_THRESHOLDS.staleAfterMinutes * 60_000 ? "stale" : "fresh";
+}
+
+function riskStatus(row, sourceComplete, sourceFreshness) {
+  if (!sourceComplete || sourceFreshness !== "fresh") return "unknown";
+  if (row.remaining === 0) return "critical";
+  if (row["projected-remaining-at-reset"] !== null && row["projected-remaining-at-reset"] <= 0) return "critical";
+  if (
+    row["remaining-percent"] <= GITHUB_RATE_LIMIT_THRESHOLDS.warningRemainingPercent
+    || (row["runway-ratio"] !== null && row["runway-ratio"] <= GITHUB_RATE_LIMIT_THRESHOLDS.warningRunwayRatio)
+  ) return "warning";
+  return row["burn-rate-per-minute"] === null ? "unknown" : "healthy";
+}
+
+export function githubTelemetryRows(entries = [], generatedAt = new Date().toISOString()) {
+  const complete = entries.length > 0 && entries.every((entry) => !entry.rateLimitError);
+  const freshness = telemetryFreshness(entries, generatedAt);
+  const segments = new Map();
+  const sortedEntries = [...entries].sort((left, right) => Date.parse(left?.observedAt) - Date.parse(right?.observedAt));
+  const rows = sortedEntries.flatMap((entry) => {
+    const credentialName = credential(entry);
+    const segment = segments.get(credentialName) || 1;
+    if (entry.rateLimitError) segments.set(credentialName, segment + 1);
+    return Object.entries(entry?.rateLimit || {}).flatMap(([resource, rate]) => {
+    const observed = Date.parse(entry.observedAt);
+    const reset = Date.parse(rate?.resetAt);
+    const limit = finite(rate?.limit);
+    const remaining = finite(rate?.remaining);
+    if (!Number.isFinite(observed) || !Number.isFinite(reset) || limit === null || limit <= 0 || remaining === null) return [];
+    const executionId = entry.pairId || "unknown";
+    const bucket = `${resource} · ${credentialName}`;
+    return [{
+      "observation-id": `${executionId}:${entry.phase || "unknown"}:${credentialName}:${resource}:${entry.observedAt}`,
+      "operation-execution-id": executionId,
       "observed-at": entry.observedAt,
-      phase: entry.phase,
-      operation: entry.operation,
-      outcome: entry.outcome,
-      "token-type": entry.tokenType,
+      phase: entry.phase || "unknown",
+      operation: entry.operation || "unknown",
+      outcome: entry.outcome || "unknown",
+      credential: credentialName,
+      "credential-type": entry.tokenType || "unknown",
       resource,
-      limit: rate.limit ?? null,
-      used: rate.used ?? null,
-      remaining: rate.remaining ?? null,
-      "remaining-percent": Number.isFinite(rate.limit) && rate.limit > 0 && Number.isFinite(rate.remaining)
-        ? Math.round((rate.remaining / rate.limit) * 1000) / 10
-        : null,
-      "reset-at": rate.resetAt ?? null,
-      "cache-hydrated": entry.activityCache?.hydrated === true,
-      "cache-bytes": entry.activityCache?.bytes ?? 0,
-      "cache-entries": entry.activityCache?.entryCount ?? 0,
-      "cache-folders": entry.activityCache?.folderCount ?? 0,
-      "rate-limit-error": entry.rateLimitError || "",
-    }));
+      bucket,
+      "history-series": segment === 1 ? bucket : `${bucket} · segment ${segment}`,
+      limit,
+      used: finite(rate?.used) ?? Math.max(0, limit - remaining),
+      remaining,
+      "remaining-percent": rounded((remaining / limit) * 100, 1),
+      "reset-at": rate.resetAt,
+      "minutes-to-reset": rounded(Math.max(0, (reset - observed) / 60_000)),
+      "consumed-since-previous": null,
+      "burn-rate-per-minute": null,
+      "projected-remaining-at-reset": null,
+      "projected-exhaustion-at": null,
+      "runway-ratio": null,
+      "risk-status": "unknown",
+      "risk-order": 3,
+      "is-current": false,
+      "attribution-status": "unavailable",
+      "operation-consumed": null,
+    }];
+    });
   });
+
+  rows.sort((left, right) => Date.parse(left["observed-at"]) - Date.parse(right["observed-at"]));
+  const windows = new Map();
+  for (const row of rows) {
+    const key = `${row.credential}\u0000${row.resource}\u0000${row["reset-at"]}`;
+    const history = windows.get(key) || [];
+    const previous = history.at(-1);
+    if (previous) {
+      const elapsed = (Date.parse(row["observed-at"]) - Date.parse(previous["observed-at"])) / 60_000;
+      const consumed = previous.remaining - row.remaining;
+      if (elapsed > 0 && consumed >= 0) row["consumed-since-previous"] = consumed;
+    }
+    history.push(row);
+    windows.set(key, history);
+  }
+
+  const pairs = new Map();
+  for (const row of rows) {
+    if (row["operation-execution-id"] === "unknown") continue;
+    const key = `${row["operation-execution-id"]}\u0000${row.credential}\u0000${row.resource}\u0000${row["reset-at"]}`;
+    const pair = pairs.get(key) || {};
+    pair[row.phase] = row;
+    pairs.set(key, pair);
+  }
+  for (const pair of pairs.values()) {
+    const before = pair.before;
+    const after = pair.after;
+    if (!before || !after || Date.parse(before["observed-at"]) > Date.parse(after["observed-at"])) continue;
+    const consumed = before.remaining - after.remaining;
+    if (consumed < 0) continue;
+    after["operation-consumed"] = consumed;
+    after["attribution-status"] = "available";
+  }
+
+  for (const history of windows.values()) {
+    for (let index = 0; index < history.length; index += 1) {
+      const row = history[index];
+      const intervals = history.slice(1, index + 1).filter((candidate) => candidate["consumed-since-previous"] !== null);
+      if (complete && freshness === "fresh" && intervals.length >= GITHUB_RATE_LIMIT_THRESHOLDS.minimumBurnIntervals) {
+        const first = history[0];
+        const elapsed = (Date.parse(row["observed-at"]) - Date.parse(first["observed-at"])) / 60_000;
+        const consumed = intervals.reduce((total, candidate) => total + candidate["consumed-since-previous"], 0);
+        const burn = elapsed > 0 ? consumed / elapsed : null;
+        if (burn !== null && burn > 0) {
+          row["burn-rate-per-minute"] = rounded(burn, 3);
+          row["projected-remaining-at-reset"] = rounded(Math.max(0, row.remaining - burn * row["minutes-to-reset"]));
+          const minutesToExhaustion = row.remaining / burn;
+          row["projected-exhaustion-at"] = new Date(Date.parse(row["observed-at"]) + minutesToExhaustion * 60_000).toISOString();
+          row["runway-ratio"] = row["minutes-to-reset"] > 0
+            ? rounded(minutesToExhaustion / row["minutes-to-reset"])
+            : null;
+        }
+      }
+      row["risk-status"] = riskStatus(row, complete, freshness);
+      row["risk-order"] = { critical: 0, warning: 1, healthy: 2, unknown: 3 }[row["risk-status"]];
+    }
+  }
+
+  const latest = new Map();
+  for (const row of rows) latest.set(`${row.credential}\u0000${row.resource}`, row);
+  for (const row of latest.values()) row["is-current"] = true;
+  return rows;
+}
+
+export function githubCollectorRows(entries = []) {
+  return entries.map((entry) => ({
+    "observed-at": entry.observedAt,
+    "operation-execution-id": entry.pairId || "unknown",
+    phase: entry.phase || "unknown",
+    operation: entry.operation || "unknown",
+    outcome: entry.outcome || "unknown",
+    credential: credential(entry),
+    "cache-hydrated": entry.activityCache?.hydrated === true,
+    "cache-bytes": entry.activityCache?.bytes ?? 0,
+    "cache-entries": entry.activityCache?.entryCount ?? 0,
+    "cache-folders": entry.activityCache?.folderCount ?? 0,
+    "rate-limit-error": entry.rateLimitError || "",
+  }));
 }
 
 function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
@@ -897,12 +1044,26 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   }
   sources["grader-observations"] = operationalValueSource("grader-observations", graderObservations, operationalValues, generatedAt, valueAvailable);
   sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
+  const githubAsOf = telemetryAsOf(githubTelemetry, generatedAt);
+  const githubFreshness = telemetryFreshness(githubTelemetry, generatedAt);
+  const githubComplete = githubTelemetry.length > 0 && githubTelemetry.every((entry) => !entry.rateLimitError);
   sources["github-api-rate-limits"] = source(
     "github-api-rate-limits",
-    githubTelemetryRows(githubTelemetry),
+    githubTelemetryRows(githubTelemetry, generatedAt),
     generatedAt,
     githubTelemetry.length > 0,
-    githubTelemetry.length > 0 && githubTelemetry.every((entry) => !entry.rateLimitError),
+    githubComplete,
+    githubFreshness,
+    githubAsOf,
+  );
+  sources["github-api-collector-health"] = source(
+    "github-api-collector-health",
+    githubCollectorRows(githubTelemetry),
+    generatedAt,
+    githubTelemetry.length > 0,
+    githubComplete,
+    githubFreshness,
+    githubAsOf,
   );
   return sources;
 }
