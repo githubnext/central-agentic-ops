@@ -240,7 +240,8 @@
             },
             "mark": "element",
             "element": "signal-list",
-            "layout": "full"
+            "layout": "full",
+            "description": "Ranks release-readiness blockers and explains which evidence remains trustworthy when run, findings, or output sources are partial."
           },
           {
             "id": "readiness-operational-observations",
@@ -405,7 +406,8 @@
             },
             "mark": "element",
             "element": "signal-list",
-            "layout": "full"
+            "layout": "full",
+            "description": "Summarizes usage, budget, and anomaly evidence boundaries so unavailable verdicts are understood as collection limits."
           },
           {
             "id": "cost-by-repository",
@@ -1271,14 +1273,14 @@
           {
             "id": "workflow-run-details",
             "title": "Run details",
-            "description": "Exposes filters, investigation controls, execution metadata, models, and timestamps for deeper evidence review.",
+            "description": "Supplemental metadata for deeper evidence review after the run-status table answers the current state.",
             "disclosure": "supplemental",
             "data": {
               "source": "workflow-runs",
               "route-field": "workflow-route"
             },
             "mark": "table",
-            "controls": "interactive",
+            "controls": "static",
             "empty-message": "No runs have been observed for this workflow.",
             "encoding": {
               "columns": [
@@ -1293,27 +1295,9 @@
                   "title": "Title"
                 },
                 {
-                  "field": "run-status",
-                  "type": "nominal",
-                  "title": "Status",
-                  "display": "status"
-                },
-                {
-                  "field": "run-conclusion",
-                  "type": "nominal",
-                  "title": "Conclusion",
-                  "display": "status"
-                },
-                {
                   "field": "event",
                   "type": "nominal",
                   "title": "Trigger"
-                },
-                {
-                  "field": "rollout-mode",
-                  "type": "nominal",
-                  "title": "Mode",
-                  "display": "mode"
                 },
                 {
                   "field": "engine",
@@ -2055,7 +2039,8 @@
                 "workflow-topology-summary",
                 "packaged-workflows",
                 "standalone-workflows"
-              ]
+              ],
+              "description": "Starts with registered workflows and their evidence state; source tables remain available for deeper inspection."
             },
             {
               "id": "workflow-aic",
@@ -3961,7 +3946,8 @@
             },
             "mark": "element",
             "element": "summary-grid",
-            "layout": "full"
+            "layout": "full",
+            "description": "Summarizes retained grader observations, matured evidence, measured value, and open outputs without inferring ROI from partial data."
           },
           {
             "id": "value-signals",
@@ -4314,7 +4300,8 @@
             },
             "mark": "element",
             "element": "summary-grid",
-            "layout": "full"
+            "layout": "full",
+            "description": "Counts retained logical sources and rows, highlighting source-level attention without implying missing feeds are healthy."
           },
           {
             "id": "data-health-sources",
@@ -4431,7 +4418,7 @@
           {
             "id": "coverage-diagnostics",
             "title": "Coverage diagnostics",
-            "description": "Signals that limit what this dashboard can claim about the configured scope.",
+            "description": "Concise user-facing effects explain what dashboard claims are limited; technical payloads are disclosed separately.",
             "data": {
               "source": "coverage-diagnostics"
             },
@@ -4449,6 +4436,48 @@
                   "field": "effect",
                   "type": "nominal",
                   "title": "Effect"
+                }
+              ]
+            },
+            "layout": "full"
+          },
+          {
+            "id": "coverage-technical-details",
+            "title": "Technical collection details",
+            "description": "Raw collection diagnostics for operators who need endpoint, retry, and snapshot context.",
+            "disclosure": "supplemental",
+            "data": {
+              "source": "coverage-diagnostics"
+            },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No technical coverage details retained.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "title",
+                  "type": "nominal",
+                  "title": "Signal"
+                },
+                {
+                  "field": "technical-detail",
+                  "type": "nominal",
+                  "title": "Technical detail"
+                },
+                {
+                  "field": "endpoint",
+                  "type": "nominal",
+                  "title": "Endpoint"
+                },
+                {
+                  "field": "rate-limit-reset",
+                  "type": "temporal",
+                  "title": "Rate-limit reset"
+                },
+                {
+                  "field": "snapshot-age-seconds",
+                  "type": "quantitative",
+                  "title": "Snapshot age (seconds)"
                 }
               ]
             },

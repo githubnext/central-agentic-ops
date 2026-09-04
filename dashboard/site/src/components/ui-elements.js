@@ -140,13 +140,17 @@ function renderPackageStatusGridElement(context) {
         const coveragePercent = coverageKnown ? Math.min(100, Math.max(0, liveCoveragePercent)) : null;
         const reviewRepositories = coverageKnown ? rolloutRepositories - rolloutLiveRepositories : null;
         const dispatchCount = row['dispatch-count'] == null ? null : Number(row['dispatch-count']);
-        const dispatchStatus = packageDispatchStatus(row, dispatchCount);
+        const runTelemetryUnavailable = context.sources.runs?.metadata?.availability === 'unavailable' || !context.sources.runs;
+        const outputCollectionUnavailable = context.sources.outcomes?.metadata?.availability === 'unavailable' || !context.sources.outcomes;
+        const dispatchStatus = packageDispatchStatus(row, dispatchCount, runTelemetryUnavailable);
         const outputDispatchCount = row['dispatches-with-safe-output'] == null ? null : Number(row['dispatches-with-safe-output']);
-        const dispatchText = Number.isFinite(dispatchCount) ? `${dispatchCount} dispatch${dispatchCount === 1 ? '' : 'es'}` : 'Dispatches unavailable';
+        const dispatchText = Number.isFinite(dispatchCount)
+          ? `${dispatchCount} dispatch${dispatchCount === 1 ? '' : 'es'}`
+          : runTelemetryUnavailable ? 'Run telemetry unavailable' : 'Dispatches unavailable';
         const outputCountsKnown = dispatchCount !== null && outputDispatchCount !== null && Number.isFinite(dispatchCount) && Number.isFinite(outputDispatchCount);
         const outputText = outputCountsKnown
           ? (dispatchCount ?? 0) > 0 ? `${outputDispatchCount}/${dispatchCount} produced output` : 'No output opportunity'
-          : 'Outputs unavailable';
+          : outputCollectionUnavailable ? 'Output collection unavailable' : 'Outputs unavailable';
         const noOutputWarning = outputCountsKnown && (dispatchCount ?? 0) > 0 && outputDispatchCount === 0;
         const repoModes = Array.isArray(row['repository-modes']) ? row['repository-modes'].filter(isPlainObject) : [];
         const repoEntries = repoModes.length > 0 ? repoModes.filter((entry) => typeof entry.repository === 'string' && entry.repository) : [];
@@ -241,14 +245,22 @@ function renderPackageStatusGridElement(context) {
 /**
  * @param {Record<string, unknown>} row
  * @param {number | null} dispatchCount
+ * @param {boolean} runTelemetryUnavailable
  */
-function packageDispatchStatus(row, dispatchCount) {
+function packageDispatchStatus(row, dispatchCount, runTelemetryUnavailable = false) {
   const successful = row['dispatch-success-count'] == null ? null : Number(row['dispatch-success-count']);
   const failed = row['dispatch-failure-count'] == null ? null : Number(row['dispatch-failure-count']);
   const approval = row['dispatch-approval-count'] == null ? null : Number(row['dispatch-approval-count']);
   const pending = row['dispatch-pending-count'] == null ? null : Number(row['dispatch-pending-count']);
   if (![dispatchCount, successful, failed, approval, pending].every(Number.isFinite)) {
-    return { tone: 'unknown', icon: 'circle', label: 'Unknown', detail: 'Recent dispatch status unavailable' };
+    return {
+      tone: 'unknown',
+      icon: 'circle',
+      label: 'Unknown',
+      detail: runTelemetryUnavailable
+        ? 'Recent dispatch status is unavailable because run telemetry was not collected.'
+        : 'Recent dispatch status unavailable'
+    };
   }
 
   const other = Math.max(0, Number(dispatchCount) - Number(successful) - Number(failed) - Number(approval) - Number(pending));

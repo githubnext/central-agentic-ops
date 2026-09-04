@@ -1614,8 +1614,16 @@ describe('presenter built-in and custom pages', () => {
     const evidenceCard = cards.find((card) => card.textContent?.includes('Evidence quality'));
     expect(runtimeCard?.textContent).toContain('Unavailable');
     expect(runtimeCard?.textContent).toContain('Not observed');
+    expect(runtimeCard?.textContent).toContain('workflow registrations may still be current');
     expect(valueCard?.textContent).toContain('Threshold unavailable');
+    expect(valueCard?.textContent).toContain('no ROI is inferred');
     expect(evidenceCard?.textContent).toContain('2 gaps');
+    const packageCard = overviewPage?.querySelector('.package-status-card');
+    expect(packageCard?.querySelector('.package-status-activity')?.textContent).toContain('Run telemetry unavailable');
+    expect(packageCard?.querySelector('.package-status-activity')?.textContent).toContain('Output collection unavailable');
+    expect(packageCard?.querySelector('.package-status-activity')?.getAttribute('aria-label')).toContain(
+      'Recent dispatch status is unavailable because run telemetry was not collected.'
+    );
   });
 
   it('DLS-PAGE-014 DLS-PAGE-015 renders mode-filtered package AIC utilization and package-run trends', () => {
@@ -2749,11 +2757,15 @@ describe('presenter built-in and custom pages', () => {
           rows: [
             {
               title: 'Private repository discovery is off',
-              effect: 'Private repositories are excluded from workflow inventory and run-health totals.'
+              effect: 'Private repositories are excluded from workflow inventory and run-health totals.',
+              'technical-detail': 'Raw private repository collection detail.'
             },
             {
-              title: 'AIC telemetry is partial',
-              effect: 'AI Credit totals exclude runs whose usage artifacts could not be collected.'
+              kind: 'github-api-rate-limit-403',
+              title: 'Durable output collection unavailable',
+              effect: 'Durable output evidence is partial because GitHub rate-limited collection.',
+              'technical-detail': 'GitHub API rate limit exceeded for /repos/githubnext/gh-aw-cao/actions/runs.',
+              endpoint: '/repos/githubnext/gh-aw-cao/actions/runs'
             }
           ],
           metadata: {
@@ -2799,7 +2811,21 @@ describe('presenter built-in and custom pages', () => {
       data: { source: 'coverage-diagnostics' }
     });
     expect(coveragePage.views[2]).not.toHaveProperty('element');
-    expect(rendered.querySelectorAll('#page-coverage .custom-table tbody tr')).toHaveLength(2);
+    expect(coveragePage.views[3]).toMatchObject({
+      mark: 'table',
+      controls: 'static',
+      disclosure: 'supplemental',
+      data: { source: 'coverage-diagnostics' }
+    });
+    const essentialRows = rendered.querySelectorAll('#page-coverage [data-disclosure="essential"] .custom-table tbody tr');
+    expect(essentialRows).toHaveLength(2);
+    expect(essentialRows[1]?.textContent).toContain('Durable output evidence is partial because GitHub rate-limited collection.');
+    expect(essentialRows[1]?.textContent).not.toContain('GitHub API rate limit exceeded');
+    const technicalDetails = /** @type {HTMLDetailsElement | null} */ (
+      rendered.querySelector('#page-coverage .view-disclosure[data-disclosure="supplemental"]')
+    );
+    expect(technicalDetails?.open).toBe(false);
+    expect(technicalDetails?.textContent).toContain('GitHub API rate limit exceeded');
 
     window?.history.replaceState(null, '', '/');
   });

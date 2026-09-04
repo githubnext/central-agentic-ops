@@ -860,6 +860,7 @@ function isFiniteNumber(value) {
  */
 function buildDomainAttentionRows(input) {
       const runTelemetryAvailable = input.sources.runs?.metadata?.availability === 'available';
+      const runTelemetryComplete = input.sources.runs?.metadata?.completeness === 'complete';
   const controlPolicyDiagnostics = rowsFor(input.sources, 'coverage-diagnostics')
     .filter((row) => String(row.title) === 'Control policy resolution unavailable');
   const controlPolicyBlocks = controlPolicyDiagnostics.length;
@@ -907,8 +908,8 @@ function buildDomainAttentionRows(input) {
           domain: 'Runtime health',
           value: runTelemetryAvailable ? `${formatCount(input.health.failed)} failed` : 'Not observed',
           detail: runTelemetryAvailable
-            ? `${formatCount(input.health.successful)} of ${formatCount(input.health.total)} runs succeeded · ${formatCount(input.health.approval)} approval gates`
-            : 'Actions run telemetry is unavailable.',
+            ? `${formatCount(input.health.successful)} of ${formatCount(input.health.total)} runs succeeded · ${formatCount(input.health.approval)} approval gates${runTelemetryComplete ? '' : ' · run coverage is partial'}`
+            : 'Actions run telemetry is unavailable; workflow registrations may still be current.',
           href: '#page-runtime'
         }),
         domainRow({
@@ -938,7 +939,7 @@ function buildDomainAttentionRows(input) {
           icon: 'beaker',
           domain: 'Value & outcomes',
           value: 'Threshold unavailable',
-          detail: `${formatCount(input.operationalValues.length)} of ${formatCount(selectedValueRuns)} grader observations · ${formatCount(openOutputs)} open outputs`,
+          detail: `${formatCount(input.operationalValues.length)} of ${formatCount(selectedValueRuns)} grader observations · ${formatCount(openOutputs)} open outputs · no ROI is inferred`,
           href: '#page-operational-value'
         }),
         domainRow({
@@ -949,8 +950,8 @@ function buildDomainAttentionRows(input) {
           domain: 'Cost & efficiency',
           value: usageAvailable ? `${formatAic(usageTotal)} AIC` : 'Not observed',
           detail: usageAvailable
-            ? `${formatCount(measuredRuns)} measured runs · monthly budget verdict unavailable`
-            : 'AI Credit usage telemetry is unavailable.',
+            ? `${formatCount(measuredRuns)} measured runs · ${usageComplete ? 'monthly budget verdict unavailable' : 'usage coverage is partial; monthly budget verdict unavailable'}`
+            : 'AI Credit usage telemetry is unavailable; this does not change workflow registration evidence.',
           href: '#page-cost'
         }),
         domainRow({
