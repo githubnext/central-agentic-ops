@@ -18,7 +18,6 @@
     "compile:locks": "gh aw compile --no-check-update --schedule-seed githubnext/gh-aw-cao",
     "check": "npm run typecheck:cao && npm test && npm run test:load && npm run check:svg && npm run compile && npm run docs:build",
     "update-deps": "npx npm-check-updates -u && npm install",
-    "install:copilot": "npm install --global @github/copilot",
     "test:e2e:local-server": "playwright test --config=playwright.local-server.config.mjs"
   },
   "dependencies": {
