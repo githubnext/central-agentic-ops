@@ -33,7 +33,8 @@ function buildPresenterModuleUrl() {
   const badgeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(badgeSource)}`;
 
   const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
   const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
 
   const viewChromeSource = readFileSync(new URL('../../src/components/view-chrome.js', import.meta.url), 'utf8')
@@ -241,7 +242,8 @@ function buildPresenterModuleUrl() {
 
   const siteCalloutSource = readFileSync(new URL('../../src/components/site-callout.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const siteCalloutModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(siteCalloutSource)}`;
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
@@ -254,7 +256,8 @@ function buildPresenterModuleUrl() {
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
     .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const dataViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataViewSource)}`;
 
   const overviewDataSource = readFileSync(new URL('../../src/overview-data.js', import.meta.url), 'utf8')

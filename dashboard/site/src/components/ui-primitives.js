@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { octicon } from '../octicons.js';
 
 /**
  * @typedef {{
@@ -152,4 +153,25 @@ export function renderTableSummaryEmpty(message) {
  */
 export function renderEmptyMessage(message, extraAttrs) {
   return h('p', { className: 'empty', ...extraAttrs }, message);
+}
+
+/**
+ * Renders the shared dismiss/close icon button used by overlay-style
+ * components (dialogs, callouts) that need a labelled "x" trigger with
+ * matching `title` and `aria-label` text.
+ * @param {{ className: string, label: string, onClick: (event: MouseEvent) => void }} options
+ * @returns {HTMLButtonElement}
+ */
+export function renderCloseButton({ className, label, onClick }) {
+  return /** @type {HTMLButtonElement} */ (h(
+    'button',
+    {
+      type: 'button',
+      className,
+      title: label,
+      'aria-label': label,
+      onClick
+    },
+    octicon('x')
+  ));
 }
