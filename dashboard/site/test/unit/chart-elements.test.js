@@ -267,7 +267,7 @@ describe('chart element helpers', () => {
     expect(bar.querySelector('.bar-chart-bar')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect([...bar.querySelectorAll('.bar-chart-bar')].at(-1)?.getAttribute('height')).toBe('1');
     expect([...bar.querySelectorAll('.bar-chart-y-axis text')].map((tick) => tick.textContent)).toEqual(['3', '1.50', '0']);
-    expect([...bar.querySelectorAll('.bar-chart-x-axis text')].map((tick) => tick.textContent)).toEqual([
+    expect([...bar.querySelectorAll('.bar-chart-x-axis text')].map((tick) => tick.lastChild?.textContent)).toEqual([
       'Aug 29',
       'Aug 30',
       'invalid'
@@ -421,7 +421,7 @@ describe('chart element helpers', () => {
     const xTicks = [...chart.querySelectorAll('.bar-chart-x-axis text')];
 
     expect(xTicks).toHaveLength(5);
-    expect(xTicks.map((tick) => tick.textContent)).toEqual([
+    expect(xTicks.map((tick) => tick.lastChild?.textContent)).toEqual([
       'category-wi…',
       'category-wi…',
       'category-wi…',
@@ -429,6 +429,13 @@ describe('chart element helpers', () => {
       'category-wi…'
     ]);
     expect(xTicks.map((tick) => tick.getAttribute('title'))).toEqual([
+      points[0].x,
+      points[2].x,
+      points[4].x,
+      points[6].x,
+      points[8].x
+    ]);
+    expect([...chart.querySelectorAll('.bar-chart-x-axis text > title')].map((title) => title.textContent)).toEqual([
       points[0].x,
       points[2].x,
       points[4].x,

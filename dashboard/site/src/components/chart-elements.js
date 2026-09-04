@@ -560,6 +560,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           return h(
             'text',
             { x, y: 41.5, 'text-anchor': 'middle', title: point.x },
+            h('title', null, point.x),
             compactAxisLabel(point.x)
           );
         })
