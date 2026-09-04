@@ -124,7 +124,14 @@ export function renderCopilotPrompt(socket) {
   });
   socket.addEventListener('message', (event) => {
     const streamEvent = JSON.parse(String(event.data));
-    if (!streamEvent?.type || (!sessionActive && streamEvent.type !== 'stopped')) return;
+    if (!streamEvent?.type) return;
+    if (streamEvent.type === 'stopped') {
+      dialogStatus.textContent = 'Session stopped.';
+      sessionActive = false;
+      button.disabled = false;
+      return;
+    }
+    if (!sessionActive) return;
     if (streamEvent.type === 'debug' && typeof streamEvent.message === 'string') {
       debugCopilotUpdate(streamEvent.message, streamEvent.details);
     } else if (streamEvent.type === 'assistant-delta' && typeof streamEvent.content === 'string') {
@@ -145,10 +152,6 @@ export function renderCopilotPrompt(socket) {
       sessionActive = false;
       button.disabled = false;
       debugCopilotUpdate('Dashboard view update stream completed.', {});
-    } else if (streamEvent.type === 'stopped') {
-      dialogStatus.textContent = 'Session stopped.';
-      sessionActive = false;
-      button.disabled = false;
     } else if (streamEvent.type === 'error' && typeof streamEvent.message === 'string') {
       toolbarStatus.textContent = streamEvent.message;
       dialogStatus.textContent = streamEvent.message;
