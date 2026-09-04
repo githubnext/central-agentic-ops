@@ -31,6 +31,7 @@ tools:
 safe-outputs:
   add-comment:
     max: 4
+    target: "*"
   mentions:
     allowed: ["@copilot"]
   noop:

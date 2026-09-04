@@ -25,6 +25,10 @@ permissions:
 strict: true
 max-ai-credits: 500
 timeout-minutes: 20
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.run_id }}"
+  cancel-in-progress: true
+  job-discriminator: "${{ github.run_id }}"
 tools:
   github:
     mode: gh-proxy

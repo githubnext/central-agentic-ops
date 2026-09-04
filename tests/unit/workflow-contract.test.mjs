@@ -2220,10 +2220,13 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ...packageLockNames,
       "uk-ai-advisory-package-maintainer.lock.yml",
       "dashboard-authoring-corpus.lock.yml",
+      "design-decision-gate.lock.yml",
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
+      "mattpocock-skills-reviewer.lock.yml",
       "pr-reviewer.lock.yml",
+      "pr-sous-chef.lock.yml",
       "svg-visual-audit.lock.yml",
     ].sort();
 
