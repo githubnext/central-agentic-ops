@@ -776,18 +776,16 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(packageLifecycle, /exit "\$status"/);
 });
 
-test("release computes an authorized semantic version bump before drafting and publishing", () => {
+test("release computes an authorized semantic version bump and creates a draft for manual publication", () => {
   const source = workflow("release.yml");
   const config = parse(source);
   const jobs = generatedJobs(source);
   const version = jobs.get("resolve-version")?.block ?? "";
   const validation = jobs.get("validate-package")?.block ?? "";
   const prepare = jobs.get("prepare-release")?.block ?? "";
-  const publish = jobs.get("publish-release")?.block ?? "";
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
 
-  assert.equal(config.on.workflow_dispatch.inputs.operation.default, "prepare");
-  assert.deepEqual(config.on.workflow_dispatch.inputs.operation.options, ["prepare", "publish"]);
+  assert.equal(config.on.workflow_dispatch.inputs.operation, undefined);
   assert.equal(config.on.workflow_dispatch.inputs.bump.required, false);
   assert.equal(config.on.workflow_dispatch.inputs.bump.default, "patch");
   assert.deepEqual(config.on.workflow_dispatch.inputs.bump.options, ["patch", "minor", "major"]);
@@ -814,18 +812,9 @@ test("release computes an authorized semantic version bump before drafting and p
   assert.deepEqual(jobs.get("prepare-release")?.needs, ["resolve-version", "validate-package"]);
   assert.match(prepare, /draft: true/);
   assert.match(prepare, /generate_release_notes: true/);
-  assert.match(publish, /release\.tag_name === releaseTag \|\| release\.name === releaseTag/);
-  assert.match(publish, /Multiple draft releases match/);
-  assert.match(publish, /const targetSha = draft\.target_commitish/);
-  assert.match(publish, /does not identify an immutable commit/);
-  assert.match(publish, /git\.createRef/);
-  assert.match(publish, /sha: targetSha/);
-  assert.match(publish, /createdRef\.object\.sha !== targetSha/);
-  assert.match(publish, /git\.deleteRef/);
-  assert.match(publish, /catch \(cleanupError\)/);
-  assert.match(publish, /throw error/);
-  assert.doesNotMatch(publish, /release_id: draft\.id,[\s\S]*?tag_name:/);
-  assert.match(publish, /draft: false/);
+  assert.match(prepare, /publish the draft, and mark it as the latest release from the GitHub website/);
+  assert.equal(jobs.has("publish-release"), false);
+  assert.doesNotMatch(source, /updateRelease|draft: false|make_latest/);
   assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/release\.yml/);
 });

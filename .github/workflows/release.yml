@@ -3,12 +3,6 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      operation:
-        description: Prepare notes for review or publish an approved draft
-        required: true
-        type: choice
-        default: prepare
-        options: [prepare, publish]
       bump:
         description: Semantic version component to increment
         required: false
@@ -44,7 +38,7 @@ jobs:
             if (bump !== requestedBump) {
               core.warning(`Unknown release bump "${requestedBump}"; defaulting to patch.`);
             }
-            core.info(`Processing ${context.payload.inputs.operation} release request from ${triggeringActor} with a ${bump} bump.`);
+            core.info(`Processing draft release request from ${triggeringActor} with a ${bump} bump.`);
             if (context.payload.repository.fork) {
               throw new Error('Releases cannot run from forks');
             }
@@ -115,7 +109,6 @@ jobs:
   validate-package:
     name: Validate gh-aw package
     needs: resolve-version
-    if: inputs.operation == 'prepare'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -138,7 +131,6 @@ jobs:
     needs:
       - resolve-version
       - validate-package
-    if: inputs.operation == 'prepare'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -162,92 +154,7 @@ jobs:
             });
             core.summary
               .addHeading(`Prepared ${releaseTag}`)
-              .addRaw('Review and edit the generated notes, then dispatch the publish operation for the same version.')
+              .addRaw('A maintainer must review the generated notes, publish the draft, and mark it as the latest release from the GitHub website.')
               .addEOL()
               .addLink('Review draft release', release.html_url);
             await core.summary.write();
-
-  publish-release:
-    name: Publish reviewed release
-    needs: resolve-version
-    if: inputs.operation == 'publish'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Publish matching draft without assets
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        env:
-          RELEASE_TAG: ${{ needs.resolve-version.outputs.release_tag }}
-        with:
-          script: |
-            const releaseTag = process.env.RELEASE_TAG;
-            core.info(`Looking for draft release ${releaseTag}.`);
-            const releases = await github.paginate(github.rest.repos.listReleases, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100,
-            });
-            const matchingDrafts = releases.filter((release) => (
-              release.draft
-              && (release.tag_name === releaseTag || release.name === releaseTag)
-            ));
-            if (matchingDrafts.length > 1) {
-              throw new Error(`Multiple draft releases match ${releaseTag}`);
-            }
-            const [draft] = matchingDrafts;
-            if (!draft) {
-              throw new Error(`No draft release exists for ${releaseTag}`);
-            }
-
-            const targetSha = draft.target_commitish;
-            if (!/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/.test(targetSha)) {
-              throw new Error(`Draft ${releaseTag} does not identify an immutable commit`);
-            }
-            const ref = `tags/${releaseTag}`;
-            core.info(`Reserving ${releaseTag} at its reviewed commit ${targetSha}.`);
-            const { data: createdRef } = await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/${ref}`,
-              sha: targetSha,
-            });
-            try {
-              if (createdRef.object.sha !== targetSha) {
-                throw new Error(`${releaseTag} does not point to the reviewed commit`);
-              }
-
-              core.info(`Publishing draft release ${releaseTag} (release ID ${draft.id}).`);
-              const { data: release } = await github.rest.repos.updateRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: draft.id,
-                name: releaseTag,
-                draft: false,
-                make_latest: 'true',
-              });
-              core.summary
-                .addHeading(`Published ${releaseTag}`)
-                .addRaw('The release contains no uploaded assets; gh aw add resolves package files from aw.yml.')
-                .addEOL()
-                .addLink('View release', release.html_url);
-              await core.summary.write();
-            } catch (error) {
-              try {
-                const { data: currentRef } = await github.rest.git.getRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref,
-                });
-                if (currentRef.object.sha === targetSha) {
-                  await github.rest.git.deleteRef({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    ref,
-                  });
-                }
-              } catch (cleanupError) {
-                core.warning(`Could not clean up ${releaseTag}: ${cleanupError.message}`);
-              }
-              throw error;
-            }
