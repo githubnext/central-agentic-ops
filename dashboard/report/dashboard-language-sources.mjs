@@ -797,7 +797,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   }));
   const discoveryAvailable = deployed.discovery?.complete !== false;
   const workflowsAvailable = discoveryAvailable || workflows.length > 0;
-  const runAvailable = deployed.runHealth?.available === true;
+  const runAvailable = deployed.runHealth?.available === true || runs.length > 0;
   const runComplete = deployed.runHealth?.complete === true;
   const usageAvailable = usage.available === true;
   const usageComplete = usage.complete === true;

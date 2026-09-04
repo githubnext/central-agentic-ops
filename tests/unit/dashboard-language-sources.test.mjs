@@ -328,6 +328,38 @@ test("dashboard source bridge keeps partial workflow inventory available when di
   assert.equal(unavailable.workflows.metadata.completeness, "partial");
 });
 
+test("dashboard source bridge keeps collected runs available when run health is partial", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-03T06:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: false, complete: false },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/gh-aw-cao",
+        path: ".github/workflows/self-care.lock.yml",
+        name: "SelfCare",
+        state: "active",
+        runHealth: {
+          runRecords: [{
+            runId: 42,
+            status: "completed",
+            conclusion: "success",
+            startedAt: "2026-09-03T05:00:00Z",
+          }],
+        },
+      }],
+    },
+    usage: { available: false, complete: false, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+  });
+
+  assert.equal(sources.runs.rows.length, 1);
+  assert.equal(sources.runs.metadata.availability, "available");
+  assert.equal(sources.runs.metadata.completeness, "partial");
+});
+
 test("dashboard source bridge carries package memberships, allowance, and inventory readiness into workflow rows", () => {
   const workflowPath = ".github/workflows/package.lock.yml";
   const sources = buildDashboardLanguageSources({
