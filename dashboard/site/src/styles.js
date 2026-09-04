@@ -270,7 +270,9 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .pie-chart-tooltip text { font-size: 2.25px; }
 .chart-point:hover .point-tooltip, .chart-point:focus-visible .point-tooltip { opacity: 1; }
 .chart-point:focus-visible :is(.line-chart-point, .dot-chart-point) { stroke: var(--focus); stroke-width: 3; }
-.bar-chart-axis { stroke: var(--border); stroke-width: 1; }
+.bar-chart-axis { stroke: var(--border); stroke-width: .75; vector-effect: non-scaling-stroke; }
+.bar-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 1.5 2; vector-effect: non-scaling-stroke; }
+.bar-chart-y-axis text, .bar-chart-x-axis text { fill: var(--muted); font-size: 2.6px; font-variant-numeric: tabular-nums; }
 .bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
 .histogram-chart-bar { fill: var(--accent); stroke: color-mix(in srgb, var(--success) 72%, var(--canvas)); stroke-width: .65; vector-effect: non-scaling-stroke; }
 .chart-widget [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; stroke: var(--focus); stroke-width: 3; }

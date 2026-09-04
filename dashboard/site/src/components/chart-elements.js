@@ -15,6 +15,11 @@ const MIN_RADIUS_POINT_COUNT = 100;
 const MAX_INTERACTIVE_LINE_POINTS = 500;
 const MAX_RENDERED_LINE_POINTS = 2_000;
 const MAX_TIMELINE_TICKS = 5;
+const MAX_BAR_AXIS_TICKS = 5;
+const BAR_CHART_LEFT = 12;
+const BAR_CHART_RIGHT = 100;
+const BAR_CHART_BOTTOM = 38;
+const BAR_CHART_HEIGHT = 34;
 const SWIMLANE_START_X = 25;
 const SWIMLANE_END_X = 117;
 const SWIMLANE_SECTION_WIDTH = 0.8;
@@ -494,23 +499,50 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 
   const finiteValues = points.map((point) => toNumber(point.y)).filter(Number.isFinite);
   const maximum = Math.max(...finiteValues, 1);
-  const barWidth = points.length > 0 ? Math.min(14, 80 / points.length) : 14;
+  const plotWidth = BAR_CHART_RIGHT - BAR_CHART_LEFT;
+  const barWidth = points.length > 0 ? Math.min(14, (plotWidth * 0.8) / points.length) : 14;
   const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
+  const yTicks = [maximum, maximum / 2, 0];
+  const xTickIndexes = sampledIndexes(points.length, MAX_BAR_AXIS_TICKS);
   return h(
     'div',
     { className: 'chart-widget bar-chart-widget', 'data-chart-widget': 'bar' },
     h(
       'svg',
       { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Bar chart with ${points.length} bars` },
-      h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
+      h(
+        'g',
+        { className: 'bar-chart-y-axis', 'data-chart-axis': 'y', 'aria-hidden': 'true' },
+        ...yTicks.flatMap((value) => {
+          const y = BAR_CHART_BOTTOM - ((value / maximum) * BAR_CHART_HEIGHT);
+          return [
+            h('line', { className: 'bar-chart-grid', x1: BAR_CHART_LEFT, y1: y, x2: BAR_CHART_RIGHT, y2: y }),
+            h('text', { x: BAR_CHART_LEFT - 1.5, y: y + 1, 'text-anchor': 'end' }, formatNumber(value, unit))
+          ];
+        }),
+        h('line', {
+          className: 'bar-chart-axis',
+          x1: BAR_CHART_LEFT,
+          y1: BAR_CHART_BOTTOM - BAR_CHART_HEIGHT,
+          x2: BAR_CHART_LEFT,
+          y2: BAR_CHART_BOTTOM
+        })
+      ),
+      h('line', {
+        className: 'bar-chart-axis',
+        x1: BAR_CHART_LEFT,
+        y1: BAR_CHART_BOTTOM,
+        x2: BAR_CHART_RIGHT,
+        y2: BAR_CHART_BOTTOM
+      }),
       ...points.map((point, index) => {
-        const x = ((index + 0.5) / Math.max(points.length, 1)) * 100 - (barWidth / 2);
-        const height = Math.max(1, (Math.max(0, toNumber(point.y)) / maximum) * 34);
+        const x = BAR_CHART_LEFT + (((index + 0.5) / Math.max(points.length, 1)) * plotWidth) - (barWidth / 2);
+        const height = Math.max(1, (Math.max(0, toNumber(point.y)) / maximum) * BAR_CHART_HEIGHT);
         return h('rect', {
           className: `bar-chart-bar ${seriesClassNames.get(point.color ?? 'value') ?? 'chart-series-1'}`,
           style: `--chart-entry-index: ${index}`,
           x,
-          y: 38 - height,
+          y: BAR_CHART_BOTTOM - height,
           width: barWidth,
           height,
           rx: 0.75,
@@ -518,7 +550,20 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           role: 'img',
           'aria-label': chartPointLabel(point, unit)
         }, h('title', null, chartPointLabel(point, unit)));
-      })
+      }),
+      h(
+        'g',
+        { className: 'bar-chart-x-axis', 'data-chart-axis': 'x', 'aria-hidden': 'true' },
+        ...xTickIndexes.map((index) => {
+          const point = points[index];
+          const x = BAR_CHART_LEFT + (((index + 0.5) / points.length) * plotWidth);
+          return h(
+            'text',
+            { x, y: 41.5, 'text-anchor': 'middle', title: point.x },
+            compactAxisLabel(point.x)
+          );
+        })
+      )
     )
   );
 }
@@ -792,6 +837,27 @@ function lineChartTimelineTicks(values) {
     { length: tickCount },
     (_, index) => values[Math.round((index / (tickCount - 1)) * (values.length - 1))]
   );
+}
+
+/**
+ * @param {number} valueCount
+ * @param {number} maximumCount
+ * @returns {number[]}
+ */
+function sampledIndexes(valueCount, maximumCount) {
+  const tickCount = Math.min(valueCount, maximumCount);
+  if (tickCount < 2) return Array.from({ length: tickCount }, (_, index) => index);
+
+  return Array.from(
+    { length: tickCount },
+    (_, index) => Math.round((index / (tickCount - 1)) * (valueCount - 1))
+  );
+}
+
+/** @param {string} value */
+function compactAxisLabel(value) {
+  const formatted = formatTimelineTick(value);
+  return formatted.length > 12 ? `${formatted.slice(0, 11)}…` : formatted;
 }
 
 /**
