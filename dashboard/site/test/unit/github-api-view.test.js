@@ -57,7 +57,7 @@ describe('GitHub API capacity view', () => {
 
     expect(link).not.toBeNull();
     expect(page).not.toBeNull();
-    expect(dashboard.dashboard.pages.find((candidate) => candidate.id === 'github-api')).toMatchObject({
+    expect(dashboard.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'github-api')).toMatchObject({
       kind: 'custom',
       icon: 'meter',
       views: expect.arrayContaining([
