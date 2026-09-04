@@ -9,7 +9,7 @@ test("package lifecycle matrix selects only packages owning changed files", () =
   assert.deepEqual(names(["uk-ai-advisory/dashboard.json"]), ["UK AI Advisory"]);
   assert.deepEqual(
     names([".github/workflows/shared/control.md"]),
-    ["root", "AW Maintenance", "EU CRA", "UK AI Advisory", "SelfCare", "Software Development Practices", "Dependabot"],
+    ["root", "AW Doctor", "EU CRA", "UK AI Advisory", "SelfCare", "Software Development Practices", "Dependabot"],
   );
   assert.deepEqual(
     names(["dashboard/site/index.html"]),
@@ -21,7 +21,7 @@ test("package lifecycle matrix selects only packages owning changed files", () =
   );
   assert.deepEqual(
     names([".github/graders/aw-maintenance-compiler-security-operational-value.sh"]),
-    ["root", "AW Maintenance"],
+    ["root", "AW Doctor"],
   );
 });
 

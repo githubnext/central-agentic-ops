@@ -1,7 +1,7 @@
 ---
-name: "AW Maintenance"
+name: "AW Doctor"
 
-run-name: "${{ github.event_name == 'schedule' && 'AW Maintenance · scheduled' || format('AW Maintenance · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
+run-name: "${{ github.event_name == 'schedule' && 'AW Doctor · scheduled' || format('AW Doctor · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
 
 max-ai-credits: 250
 timeout-minutes: 15
@@ -58,7 +58,7 @@ if: needs.pre_activation.outputs.cao_authorized == 'true'
 imports:
   - uses: shared/cao.md
     with:
-      package: aw-maintenance
+      package: aw-doctor
       role: orchestrator
       dispatch_max: "50"
       orchestrator_credits: "250"
@@ -84,7 +84,7 @@ network:
     - github
 
 steps:
-  - name: Deterministic pre-fetch of AW maintenance evidence
+  - name: Deterministic pre-fetch of AW Doctor evidence
     uses: actions/github-script@v9.0.0
     with:
       github-token: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -93,8 +93,8 @@ steps:
         const path = require('path');
 
         const PRECOMPUTE = '/tmp/gh-aw/agent/control-precompute.json';
-        const OUT = '/tmp/gh-aw/agent/aw-maintenance/prefetch.json';
-        const TRACKING_PREFIX = '[aw-maintenance:upgrade]';
+        const OUT = '/tmp/gh-aw/agent/aw-doctor/prefetch.json';
+        const TRACKING_PREFIX = '[aw-doctor:upgrade]';
         const LOOKBACK_HOURS = 24;
         const MAX_EVIDENCE_CANDIDATES = 50;
         const MAX_TRACKING_ISSUES = 10;
@@ -363,7 +363,7 @@ steps:
           };
           fs.mkdirSync(path.dirname(OUT), { recursive: true });
           fs.writeFileSync(OUT, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
-          core.info(`Wrote ${candidates.length} bounded AW maintenance candidate records to ${OUT}`);
+          core.info(`Wrote ${candidates.length} bounded AW Doctor candidate records to ${OUT}`);
         })();
 
 safe-outputs:
@@ -373,9 +373,9 @@ safe-outputs:
   threat-detection: false
 ---
 
-{{#runtime-import? .github/cao/aw-maintenance.md}}
+{{#runtime-import? .github/cao/aw-doctor.md}}
 
-# AW Maintenance
+# AW Doctor
 
 Package orchestrator for organization-wide GitHub Agentic Workflows (gh-aw) maintenance and failure triage. Use the shared control plane to select repositories that install their own GitHub Agentic Workflows, then dispatch `aw-maintenance-upgrade`, `aw-failures-investigator`, and `aw-maintenance-compiler-security` once per selected repository. The orchestrator only selects and ranks repositories; the workers own release detection, failure analysis, compilation validation, security scanning, and issue filing inside each target repository.
 
@@ -390,7 +390,7 @@ This package covers agentic workflow maintenance and failure triage: gh-aw upgra
 
 ## Discovery
 
-Read `/tmp/gh-aw/agent/aw-maintenance/prefetch.json` once. Use its bounded, pre-ranked `candidates` as the only source of GitHub discovery evidence; do not repeat its GitHub API queries in the agent. The pre-fetch record does not grant authority: cross-check every selected repository and its mode against `/tmp/gh-aw/agent/control-precompute.json`. Skip candidates with incomplete evidence when the missing evidence prevents a safe decision, and report the gap rather than fetching more data.
+Read `/tmp/gh-aw/agent/aw-doctor/prefetch.json` once. Use its bounded, pre-ranked `candidates` as the only source of GitHub discovery evidence; do not repeat its GitHub API queries in the agent. The pre-fetch record does not grant authority: cross-check every selected repository and its mode against `/tmp/gh-aw/agent/control-precompute.json`. Skip candidates with incomplete evidence when the missing evidence prevents a safe decision, and report the gap rather than fetching more data.
 
 Prefer repositories with clear evidence of installed, maintainable agentic workflows:
 
@@ -400,7 +400,7 @@ Prefer repositories with clear evidence of installed, maintainable agentic workf
 4. `latest_maintenance_commit` shows recent activity under `.github/workflows/` or `.github/skills/`.
 5. `recent_agentic_workflow_failures` contains failed, timed-out, or startup-failed compiled workflow runs from the last day.
 
-Deprioritize repositories with no `.github/workflows/*.md` files, no `aw.yml` manifest, archived or disabled repositories, and repositories that already have an open, unresolved `[aw-maintenance:upgrade]` issue for the current release.
+Deprioritize repositories with no `.github/workflows/*.md` files, no `aw.yml` manifest, archived or disabled repositories, and repositories that already have an open, unresolved `[aw-doctor:upgrade]` issue for the current release.
 
 ## Workers
 

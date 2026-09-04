@@ -6,7 +6,7 @@ includes:
   - .github/workflows/aw.json
   - activity/aw.yml
   - ambient-context/aw.yml
-  - aw-maintenance/aw.yml
+  - aw-doctor/aw.yml
   - dashboard/aw.yml
   - dependabot/aw.yml
   - optimization/aw.yml

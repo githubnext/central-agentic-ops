@@ -10,8 +10,8 @@ const repositoryPattern = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
 const workerPackages = new Map([
   ["ambient-context-agents-md-curator.lock.yml", "ambient-context"],
   ["ambient-context-skills-curator.lock.yml", "ambient-context"],
-  ["aw-failures-investigator.lock.yml", "aw-maintenance"],
-  ["aw-maintenance-upgrade.lock.yml", "aw-maintenance"],
+  ["aw-failures-investigator.lock.yml", "aw-doctor"],
+  ["aw-maintenance-upgrade.lock.yml", "aw-doctor"],
   ["dependabot-release-train-updater.lock.yml", "dependabot"],
   ["optimization-ai-credit-auditor.lock.yml", "optimization"],
   ["optimization-ai-credit-optimizer.lock.yml", "optimization"],

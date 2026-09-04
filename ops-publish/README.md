@@ -12,8 +12,8 @@ Ops Publish deliberately recreates issues instead of using GitHub issue transfer
 The first version supports bot-authored `create_issue` safe outputs from these Central Agentic Ops workers:
 
 - Ambient Context
-- AW Failures
-- AW Maintenance
+- AW Doctor / Failures
+- AW Doctor
 - Dependabot
 - Optimization
 
@@ -85,7 +85,7 @@ The target must contain matching authority on its default branch:
   "version": 1,
   "target-authority": {
     "packages": {
-      "aw-maintenance": {
+      "aw-doctor": {
         "authority": "acme/central-agentic-ops"
       }
     }

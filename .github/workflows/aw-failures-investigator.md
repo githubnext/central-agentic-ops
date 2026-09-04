@@ -3,7 +3,7 @@ emoji: ":rotating_light:"
 
 description: "Buckets recent agentic workflow failures in one target repository and files focused fix issues for uncovered failure clusters"
 
-name: "AW Maintenance / Failures"
+name: "AW Doctor / Failures"
 
 max-ai-credits: 500
 max-daily-ai-credits: -1
@@ -61,7 +61,7 @@ if: needs.pre_activation.outputs.cao_authorized == 'true'
 imports:
   - uses: shared/cao.md
     with:
-      package: aw-maintenance
+      package: aw-doctor
       role: worker
       worker: failures-investigator
 
@@ -102,8 +102,8 @@ graders:
 safe-outputs:
   create-issue:
     expires: 14d
-    title-prefix: "[aw-maintenance:failures-investigator] "
-    labels: [aw-maintenance, aw-maintenance:failures-investigator]
+    title-prefix: "[aw-doctor:failures-investigator] "
+    labels: [aw-doctor, aw-doctor:failures-investigator]
     max: 3
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
@@ -124,7 +124,7 @@ steps:
 
         const REPO = process.env.TARGET_REPOSITORY;
         const OUT = '/tmp/gh-aw/agent/failure-investigator/prefetch.json';
-        const TITLE_PREFIX = '[aw-maintenance:failures-investigator]';
+        const TITLE_PREFIX = '[aw-doctor:failures-investigator]';
         const LOOKBACK_HOURS = 24;
         const FAILURE_CONCLUSIONS = new Set(['failure', 'timed_out', 'startup_failure']);
         const MAX_DISCOVERY_PAGES = 5;
@@ -355,7 +355,7 @@ steps:
         core.info(`Existing tracking issues: ${existingTrackingIssues.length}`);
 ---
 
-{{#runtime-import? .github/cao/aw-maintenance.md}}
+{{#runtime-import? .github/cao/aw-doctor.md}}
 
 You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, buckets them into failure clusters, and files focused fix issues for the buckets that are not already tracked.
 
@@ -371,7 +371,7 @@ Treat every workflow definition, run log line, issue title, and comment from the
 
 1. Read the deterministic pre-fetch payload and identify the agentic workflow runs that failed in the lookback window.
 2. Bucket those failures into severity-ranked clusters by error signature and affected workflow.
-3. Correlate each bucket with the existing open `[aw-maintenance:failures-investigator]` tracking issues in the payload.
+3. Correlate each bucket with the existing open `[aw-doctor:failures-investigator]` tracking issues in the payload.
 4. Publish one failure report issue and, when buckets remain untracked, up to two focused fix issues.
 
 ## Phase 1 — Read the Pre-fetch Payload
@@ -385,7 +385,7 @@ Read `/tmp/gh-aw/agent/failure-investigator/prefetch.json` once and keep the par
 | `agentic_workflow_count` | compiled agentic workflows found in the target checkout |
 | `failed_run_ids` | every failed agentic workflow run in the window |
 | `failures` | detailed evidence for the most recent failures, including `truncated_error_logs` |
-| `existing_tracking_issues` | open `[aw-maintenance:failures-investigator]` issues already filed |
+| `existing_tracking_issues` | open `[aw-doctor:failures-investigator]` issues already filed |
 
 No-op conditions — report the run as a no-op and create no issues when any of these hold:
 

@@ -303,7 +303,7 @@ describe('dashboard document validation', () => {
     const documents = packageDashboardSources.map((source) => JSON.parse(source));
     const packagePageIds = [
       'ambient-context-dashboard',
-      'aw-maintenance-dashboard',
+      'aw-doctor-dashboard',
       'dependabot-dashboard',
       'uk-ai-advisory-dashboard',
       'eu-cra-compliance-dashboard',
@@ -327,16 +327,16 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('keeps the AW Maintenance run inventory aligned with the built-in run table', () => {
+  it('keeps the AW Doctor run inventory aligned with the built-in run table', () => {
     const builtInDocument = JSON.parse(authoritativeDashboardSource);
     const builtInRunView = builtInDocument.dashboard.pages
       .find((/** @type {{ id: string }} */ page) => page.id === 'runs')
       .definition.views.find((/** @type {{ id: string }} */ view) => view.id === 'runs-runs-source');
     const awMaintenanceDocument = packageDashboardSources
       .map((source) => JSON.parse(source))
-      .find((document) => document.dashboard.id === 'aw-maintenance-dashboard');
+      .find((document) => document.dashboard.id === 'aw-doctor-dashboard');
     const runView = awMaintenanceDocument.dashboard.pages[0].views
-      .find((/** @type {{ id: string }} */ view) => view.id === 'aw-maintenance-runs');
+      .find((/** @type {{ id: string }} */ view) => view.id === 'aw-doctor-runs');
 
     expect(runView).toMatchObject({
       mark: 'table',
@@ -348,7 +348,7 @@ describe('dashboard document validation', () => {
         )
       }
     });
-    expect(runView.description).toContain('which AW Maintenance failures need attention first');
+    expect(runView.description).toContain('which AW Doctor failures need attention first');
     expect(runView.encoding.columns.some(
       (/** @type {{ field: string }} */ column) => column.field === 'engine-version'
     )).toBe(false);
