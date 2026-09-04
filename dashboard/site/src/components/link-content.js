@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
+import { isPlainObject } from './ui-primitives.js';
 
 /**
  * @typedef {{ href: string, label: string, externalHref?: string }} SafeLink
@@ -149,12 +150,4 @@ export function renderSafeLink(content, link) {
  */
 export function renderLinkedValue(value, link) {
   return renderSafeLink(value, link);
-}
-
-/**
- * @param {unknown} value
- * @returns {value is Record<string, unknown>}
- */
-function isPlainObject(value) {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

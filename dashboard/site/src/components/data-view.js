@@ -12,7 +12,7 @@ import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderO
 import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.js';
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
-import { renderCloseButton } from './ui-primitives.js';
+import { renderCloseButton, isPlainObject } from './ui-primitives.js';
 
 /** @type {Record<string, 'organization-link'|'repository-link'|'workflow-link'>} */
 const ENTITY_LINK_FIELDS = {
@@ -467,7 +467,3 @@ async function copyIntent(content) {
   }
 }
 
-/** @param {unknown} value @returns {value is Record<string, any>} */
-function isPlainObject(value) {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
