@@ -878,6 +878,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const page = activatePage(rendered, 'performance');
+    expect(page?.querySelectorAll('.custom-view-grid > [data-view-layout="half"]')).toHaveLength(4);
     expect(page?.querySelector('[data-chart-widget="histogram"]')).not.toBeNull();
     expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(2);
     expect(page?.querySelectorAll('[data-chart-widget="bar"]')).toHaveLength(3);
@@ -1533,7 +1534,7 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(3);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(2);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(0);
     expect(overviewPage?.querySelector('.overview-observability h2')?.textContent).toBe('Attention by domain');
     const cards = [...(overviewPage?.querySelectorAll('.attention-domain-card') ?? [])];
@@ -1565,26 +1566,7 @@ describe('presenter built-in and custom pages', () => {
     ]);
     expect(cards.every((card) => card.textContent?.includes('Open evidence'))).toBe(true);
     expect(overviewPage?.querySelector('.overview-method-note')?.textContent).toContain('State key:');
-    expect(overviewPage?.querySelector('.overview-package-status h2')?.textContent).toBe('Packages');
-    const packageCards = [...(overviewPage?.querySelectorAll('.package-status-card') ?? [])];
-    expect(packageCards).toHaveLength(1);
-    expect(packageCards[0]?.querySelector('header strong')?.textContent).toBe('Daily Ops');
-    expect(packageCards[0]?.querySelector('header .octicon-workflow')).not.toBeNull();
-    expect(packageCards[0]?.classList.contains('package-status-attention')).toBe(true);
-    expect(packageCards[0]?.querySelector('.package-status-state')?.textContent).toBe('Needs attention');
-    expect(packageCards[0]?.querySelector('.package-status-live-coverage')?.textContent).toBe('Rollout1 live · 5 review17% live');
-    expect(packageCards[0]?.querySelector('progress')?.getAttribute('value')).toBe('17');
-    expect(packageCards[0]?.querySelector('.package-status-activity')?.textContent).toContain('2 dispatches');
-    expect(packageCards[0]?.querySelector('.package-status-activity')?.textContent).toContain('1/2 produced output');
-    expect(packageCards[0]?.querySelector('.package-status-repository-heading')?.textContent).toBe('Target repositoriesMode');
-    expect(packageCards[0]?.querySelectorAll('.package-status-repositories li')).toHaveLength(6);
-    expect(packageCards[0]?.querySelector('.package-status-repositories')?.textContent).toContain('github/gh-awLive');
-    expect(packageCards[0]?.querySelectorAll('.package-status-repositories .octicon-repo')).toHaveLength(6);
-    expect(packageCards[0]?.querySelector('.package-status-default-mode')).toBeNull();
-    expect(packageCards[0]?.querySelector('.package-status-worker-count')).toBeNull();
-    expect(packageCards[0]?.querySelector('footer')).toBeNull();
-    expect(packageCards[0]?.querySelector('.package-status-identity')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
-    expect(packageCards[0]?.querySelector('.package-status-activity')?.getAttribute('href')).toBe('#page-package-dispatches?package=daily-ops');
+    expect(overviewPage?.querySelector('.overview-package-status')).toBeNull();
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
   });
 
@@ -1643,12 +1625,7 @@ describe('presenter built-in and custom pages', () => {
     expect(valueCard?.textContent).toContain('Threshold unavailable');
     expect(valueCard?.textContent).toContain('no ROI is inferred');
     expect(evidenceCard?.textContent).toContain('2 gaps');
-    const packageCard = overviewPage?.querySelector('.package-status-card');
-    expect(packageCard?.querySelector('.package-status-activity')?.textContent).toContain('Run telemetry unavailable');
-    expect(packageCard?.querySelector('.package-status-activity')?.textContent).toContain('Output collection unavailable');
-    expect(packageCard?.querySelector('.package-status-activity')?.getAttribute('aria-label')).toContain(
-      'Recent dispatch status is unavailable because run telemetry was not collected.'
-    );
+    expect(overviewPage?.querySelector('.package-status-card')).toBeNull();
   });
 
   it('DLS-PAGE-014 DLS-PAGE-015 renders mode-filtered package AIC utilization and package-run trends', () => {
