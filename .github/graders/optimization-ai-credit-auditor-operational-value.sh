@@ -123,12 +123,12 @@ collect_logs() {
 }
 
 load_snapshot() {
-  evidence_repo=$1
-  central_repo=$2
-  target_repo=$3
-  audit_day=$4
-  cutoff=$5
-  output=$6
+    evidence_repo=$1
+    central_repo=$2
+    target_repo=$3
+    audit_day=$4
+    cutoff=$5
+    output=$6
     branch="memory/token-audit-${central_repo}-${target_repo}"
     commits_file="$tmp_dir/commits.json"
     gh api --paginate --method GET "repos/$evidence_repo/commits" \
