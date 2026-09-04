@@ -12,6 +12,7 @@ import { renderEmptyMessage } from './ui-primitives.js';
 const MAX_LINE_POINT_RADIUS = 2.5;
 const MIN_LINE_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
+const MAX_TIMELINE_TICKS = 5;
 const SWIMLANE_DEFINITIONS = [
   ['action-required', 'Action required'],
   ['failure', 'Failure'],
@@ -280,6 +281,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const hasWindowHighlight = points.some((point) => typeof point.highlighted === 'boolean');
     const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
     const xValues = [...new Set(points.map((point) => point.x))];
+    const timelineTicks = lineChartTimelineTicks(xValues);
     const values = points.map((point) => toNumber(point.y));
     const finiteValues = values.filter(Number.isFinite);
     const maximum = Math.max(...finiteValues, 1);
@@ -368,9 +370,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       xValues.length > 0
         ? h(
           'div',
-          { className: 'chart-axis', 'data-chart-axis': 'line' },
-          h('span', null, xValues[0]),
-          xValues.length > 1 ? h('span', null, xValues[xValues.length - 1]) : null
+          { className: 'chart-axis timeline-chart-axis', 'data-chart-axis': 'line' },
+          ...timelineTicks.map((value) => h('span', { title: value }, formatTimelineTick(value)))
         )
         : null
     );
@@ -610,6 +611,35 @@ function formatSwimlaneDuration(milliseconds) {
 function lineChartPointRadius(pointCount) {
   const progress = Math.min(1, Math.max(0, (pointCount - 2) / (MIN_RADIUS_POINT_COUNT - 2)));
   return MAX_LINE_POINT_RADIUS - (progress * (MAX_LINE_POINT_RADIUS - MIN_LINE_POINT_RADIUS));
+}
+
+/**
+ * @param {string[]} values
+ * @returns {string[]}
+ */
+function lineChartTimelineTicks(values) {
+  const tickCount = Math.min(values.length, MAX_TIMELINE_TICKS);
+  if (tickCount < 2) return values;
+
+  return Array.from(
+    { length: tickCount },
+    (_, index) => values[Math.round((index / (tickCount - 1)) * (values.length - 1))]
+  );
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function formatTimelineTick(value) {
+  if (!/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value)) return value;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+
+  const options = value.includes('T')
+    ? { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC', timeZoneName: 'short' }
+    : { month: 'short', day: 'numeric', timeZone: 'UTC' };
+  return new Intl.DateTimeFormat('en', /** @type {Intl.DateTimeFormatOptions} */ (options)).format(date);
 }
 
 /**
