@@ -162,6 +162,10 @@ steps:
         incomplete("CAO activity run-health coverage is unavailable or incomplete");
         process.exit(0);
       }
+      if (!Number.isFinite(snapshot.runHealth?.windowHours) || snapshot.runHealth.windowHours < 168) {
+        incomplete("CAO activity run-health window is shorter than seven days");
+        process.exit(0);
+      }
       if (!Array.isArray(snapshot.workflows)) {
         incomplete("CAO activity snapshot has no workflow records");
         process.exit(0);
@@ -235,13 +239,14 @@ Treat workflow names, failure fields, run metadata, issue text, and every value 
 Group related runs into defect clusters, not one finding per run:
 
 1. Start with repository and workflow path.
-2. Normalize the strongest available signature in this order: `failureMessage`, `failureStep`, `failureJob`, then conclusion.
-3. Merge clusters across workflows only when the evidence identifies the same shared cause.
-4. Assign severity:
+2. Derive one cluster-level signature from the strongest enriched run evidence in this order: `failureMessage`, `failureStep`, `failureJob`, then conclusion.
+3. Treat conclusion-only runs from the same repository and workflow as corroborating recurrence only when their timing and available evidence are consistent with the enriched signature. Otherwise keep them separate as insufficiently evidenced; never assume they share a cause.
+4. Merge clusters across workflows only when the evidence identifies the same shared cause.
+5. Assign severity:
    - **P0** — `startup_failure`, infrastructure or agent crash, or evidence that every run is blocked.
    - **P1** — the same actionable signature occurs in at least two runs.
    - **P2** — an isolated, transient, or insufficiently evidenced failure.
-5. For each cluster retain repository, workflows, normalized signature, severity, run count, representative run URL, probable cause, and confidence.
+6. For each cluster retain repository, workflows, normalized signature, severity, run count, representative run URL, probable cause, and confidence.
 
 Do not invent a cause. State that more evidence is required when the bounded snapshot does not support one.
 

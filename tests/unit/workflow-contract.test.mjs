@@ -2013,11 +2013,13 @@ test("SelfCare open source failures uses complete dashboard activity evidence", 
   assert.match(source, /snapshot\.schemaVersion !== 1/);
   assert.match(source, /snapshot\.runHealth\?\.available !== true/);
   assert.match(source, /snapshot\.runHealth\?\.complete !== true/);
+  assert.match(source, /snapshot\.runHealth\.windowHours < 168/);
   assert.match(source, /workflow\.visibility === "public"/);
   assert.match(source, /failures\.slice\(0, 100\)/);
   assert.match(source, /exactly `githubnext\/gh-aw-cao`/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /Do not discover repositories/);
+  assert.match(source, /conclusion-only runs[\s\S]*?corroborating recurrence/);
   assert.match(source, /labels: \[self-care, self-care:open-source-failures\]/);
   assert.match(source, /title-prefix: "\[self-care:open-source-failures\] "/);
   assert.match(source, /max: 3/);
