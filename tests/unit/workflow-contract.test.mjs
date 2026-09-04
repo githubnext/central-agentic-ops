@@ -873,7 +873,7 @@ test("root package composes its operational packages through manifests", () => {
   const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
 
   assert.deepEqual(rootManifest.includes, [
-    ".github/workflows/agentic-auto-upgrade.yml",
+    ".github/workflows/aw.json",
     "activity/aw.yml",
     "ambient-context/aw.yml",
     "aw-maintenance/aw.yml",

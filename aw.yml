@@ -3,7 +3,7 @@ description: Central agentic workflow control plane for reusable packages at the
 min-version: v0.88.4
 experimental: true
 includes:
-  - .github/workflows/agentic-auto-upgrade.yml
+  - .github/workflows/aw.json
   - activity/aw.yml
   - ambient-context/aw.yml
   - aw-maintenance/aw.yml
