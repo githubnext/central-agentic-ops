@@ -1525,6 +1525,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     scope: isPlainObject(viewData?.scope) ? viewData.scope : undefined,
     titleLink: isPlainObject(view['title-link']) ? view['title-link'] : undefined,
     routeParameter,
+    viewId: typeof view.id === 'string' ? view.id : undefined,
     headingTag
   });
   if (!rendered) {

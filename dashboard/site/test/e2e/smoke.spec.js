@@ -1880,7 +1880,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
               route: { 'hash-query-parameter': 'workflow' },
               views: [
                 {
-                  id: 'workflow-runs-identity',
+                  id: 'workflow-runs-route',
                   title: 'Workflow runs',
                   data: { sources: ['workflows'] },
                   mark: 'element',
@@ -1914,7 +1914,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
               route: { 'hash-query-parameter': 'workflow' },
               views: [
                 {
-                  id: 'workflow-reports',
+                  id: 'workflow-reports-route',
                   title: 'Workflow reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
