@@ -411,12 +411,12 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "aw-maintenance-compiler-security.md": { credits: 500, timeout: 45 },
     "aw-maintenance-upgrade.md": { credits: 500, timeout: 30 },
     "dependabot-release-train-updater.md": { credits: 600, timeout: 60 },
-    "eu-cra-compliance-article-14-reporting-readiness.md": { credits: 150, timeout: 30 },
-    "eu-cra-compliance-conformity-release-evidence.md": { credits: 150, timeout: 30 },
-    "eu-cra-compliance-scope-classifier.md": { credits: 150, timeout: 25 },
-    "eu-cra-compliance-security-requirements-auditor.md": { credits: 150, timeout: 30 },
-    "eu-cra-compliance-supply-chain-sbom-auditor.md": { credits: 150, timeout: 30 },
-    "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-article-14-reporting-readiness.md": { credits: 100, timeout: 30 },
+    "eu-cra-compliance-conformity-release-evidence.md": { credits: 100, timeout: 30 },
+    "eu-cra-compliance-scope-classifier.md": { credits: 100, timeout: 25 },
+    "eu-cra-compliance-security-requirements-auditor.md": { credits: 100, timeout: 30 },
+    "eu-cra-compliance-supply-chain-sbom-auditor.md": { credits: 100, timeout: 30 },
+    "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 100, timeout: 30 },
     "optimization-ai-credit-auditor.md": { credits: 350, timeout: 35 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
     "software-development-practices.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
@@ -1632,6 +1632,7 @@ test("EU CRA workflows preserve advisory and human-review boundaries", () => {
   assert.match(orchestrator, /plus at most two alternates per available slot/);
   assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
   assert.match(orchestrator, /Keep that total at or below 48/);
+  assert.match(orchestrator, /worker_credits_per_target: "600"/);
 
   for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Maintenance"]]) {
     const source = workflow(name);
@@ -1659,6 +1660,14 @@ test("EU CRA workflows preserve advisory and human-review boundaries", () => {
     assert.match(source, /^graders:\n\s+operational-value:\n\s+run: \.github\/graders\/eu-cra-compliance-.+-operational-value\.sh$/m);
     assert.match(source, /<!-- operational-value: domain=[a-z0-9-]+ target=OWNER\/REPO target-sha=40_HEX_SHA -->/);
     assert.match(source, /### Human Acceptance/);
+    assert.match(source, /max-ai-credits: 100/);
+    assert.match(source, /exact unprefixed title `TARGET_REPO CRA/);
+    assert.match(source, /Write concise technical English/);
+    assert.match(source, /small moment of delight/);
+    assert.match(source, /shared progressive-disclosure contract/);
+    assert.match(source, /at most 18 evidence-gathering tool calls/);
+    assert.match(source, /Do not repeat an equivalent search or fetch with another tool/);
+    assert.match(source, /keep the issue body at or below 1,500 words/);
   }
 
   assert.match(maintainer, /schedule: daily/);
