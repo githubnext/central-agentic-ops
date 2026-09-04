@@ -390,6 +390,7 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   const chartLayout = await runtimeCharts.evaluateAll((charts) => {
     const bounds = charts.map((chart) => chart.getBoundingClientRect());
     return {
+      widgetHeights: charts.map((chart) => chart.querySelector('.chart-widget')?.getBoundingClientRect().height ?? 0),
       firstRow: {
         leftX: bounds[0].x,
         rightX: bounds[1].x,
@@ -406,6 +407,7 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   expect(chartLayout.firstRow.verticalOffset).toBeLessThan(1);
   expect(chartLayout.secondRow.leftX).toBeLessThan(chartLayout.secondRow.rightX);
   expect(chartLayout.secondRow.verticalOffset).toBeLessThan(1);
+  expect(Math.max(...chartLayout.widgetHeights) - Math.min(...chartLayout.widgetHeights)).toBeLessThan(1);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {

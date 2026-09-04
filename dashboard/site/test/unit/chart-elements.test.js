@@ -119,22 +119,31 @@ describe('chart element helpers', () => {
     expect(semantic.querySelector('li:nth-child(3) i')?.classList.contains('chart-series-semantic-waiting')).toBe(true);
   });
 
-  it('shows an informative empty state when a chart has fewer than two entries', () => {
+  it('distinguishes missing chart data from an insufficient sample', () => {
     for (const chartType of ['bar', 'histogram', 'line', 'pie']) {
-      for (const points of [[], [{ x: 'only', y: 1, color: null }]]) {
-        const chart = renderChartWidget(chartType, points, listChartSeries(points));
+      const chart = renderChartWidget(chartType, [], []);
 
-        expect(chart.getAttribute('data-chart-widget')).toBe(chartType);
-        expect(chart.querySelector('svg')).toBeNull();
-        expect(chart.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
-      }
+      expect(chart.getAttribute('data-chart-widget')).toBe(chartType);
+      expect(chart.querySelector('svg')).toBeNull();
+      expect(chart.querySelector('[role="status"]')?.textContent).toBe('No data is available for this visualization.');
     }
 
+    const point = [{ x: 'only', y: 1, color: null }];
+    for (const chartType of ['bar', 'histogram', 'line']) {
+      const chart = renderChartWidget(chartType, point, listChartSeries(point));
+      expect(chart.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
+    }
+  });
+
+  it('renders a single-category pie distribution', () => {
     const singleCategoryPie = renderChartWidget('pie', [
       { x: 'only', y: 1, color: null },
       { x: 'only', y: 2, color: null }
     ], []);
-    expect(singleCategoryPie.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
+    expect(singleCategoryPie.querySelector('[role="status"]')).toBeNull();
+    expect(singleCategoryPie.querySelector('svg')).not.toBeNull();
+    expect(singleCategoryPie.querySelector('[data-chart-category="only"]')).not.toBeNull();
+    expect(singleCategoryPie.querySelector('.pie-chart-total-value')?.textContent).toBe('3');
   });
 
   it('renders categorical workflow runs as accessible swimlanes without connecting marks', () => {
