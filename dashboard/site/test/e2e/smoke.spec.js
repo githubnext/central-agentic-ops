@@ -337,10 +337,10 @@ test('desktop navigation sections collapse and expand around the current view', 
   await expect(page.getByRole('heading', { name: 'Runs', level: 1 })).toBeVisible();
 });
 
-test('performance page leads with a workflow duration histogram', async ({ page }) => {
+test('performance page lays out runtime charts side by side', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1200, height: 844 });
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -381,6 +381,10 @@ test('performance page leads with a workflow duration histogram', async ({ page 
   await expect(pageRegion).toBeVisible();
   await expect(pageRegion.locator('.custom-view').first().locator('[data-chart-widget="histogram"]')).toBeVisible();
   await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(3);
+  const firstChart = await pageRegion.locator('.custom-view').nth(0).boundingBox();
+  const secondChart = await pageRegion.locator('.custom-view').nth(1).boundingBox();
+  expect(firstChart?.y).toBe(secondChart?.y);
+  expect(firstChart?.x).toBeLessThan(secondChart?.x ?? 0);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {

@@ -3126,7 +3126,7 @@
             "mark": "chart",
             "chart": "histogram",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "run",
@@ -3152,7 +3152,7 @@
             "mark": "chart",
             "chart": "bar",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "job",
@@ -3183,7 +3183,7 @@
             "mark": "chart",
             "chart": "bar",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "sandbox-runtime",
@@ -3214,7 +3214,7 @@
             "mark": "chart",
             "chart": "bar",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "model",
