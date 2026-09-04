@@ -69,18 +69,30 @@ jobs:
               }
               return 0;
             };
-            const tags = await github.paginate(github.rest.repos.listTags, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100,
-            });
-            const versions = tags.flatMap(({ name }) => {
+            const [releases, tags] = await Promise.all([
+              github.paginate(github.rest.repos.listReleases, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+              }),
+              github.paginate(github.rest.repos.listTags, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+              }),
+            ]);
+            const toVersion = (name) => {
               const match = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(name);
               return match ? [[Number(match[1]), Number(match[2]), Number(match[3])]] : [];
-            });
+            };
+            const releaseVersions = releases
+              .filter((release) => !release.draft)
+              .flatMap((release) => toVersion(release.tag_name));
+            const tagVersions = tags.flatMap(({ name }) => toVersion(name));
+            const versions = [...releaseVersions, ...tagVersions];
             versions.sort((left, right) => compareVersions(right, left));
             if (versions.length === 0) {
-              core.warning('No stable semantic version tags found; using v0.0.0 as the bump baseline.');
+              core.warning('No stable semantic version releases or tags found; using v0.0.0 as the bump baseline.');
             }
             const latest = versions[0] || [0, 0, 0];
             const next = [...latest];
