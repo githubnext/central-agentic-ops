@@ -58,7 +58,7 @@ imports:
       role: orchestrator
       dispatch_max: "48"
       orchestrator_credits: "200"
-      worker_credits_per_target: "900"
+      worker_credits_per_target: "600"
 
 permissions:
   contents: read

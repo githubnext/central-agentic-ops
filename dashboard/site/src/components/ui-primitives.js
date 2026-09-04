@@ -95,6 +95,21 @@ export function coverageWindowHours(metadata) {
 }
 
 /**
+ * Builds a short caveat sentence for a source's `completeness` metadata,
+ * describing a named subject (e.g. `'usage'`, `'run'`) as partially or
+ * unknowingly covered. Returns an empty string for complete or unrecognized
+ * completeness values.
+ * @param {string | undefined} completeness
+ * @param {string} subject
+ * @returns {string}
+ */
+export function completenessCaveat(completeness, subject) {
+  if (completeness === 'partial') return `Partial ${subject} coverage.`;
+  if (completeness === 'unknown') return `${subject[0].toUpperCase()}${subject.slice(1)} coverage is unknown.`;
+  return '';
+}
+
+/**
  * Formats a `Date` or millisecond timestamp as a medium-date, short-time,
  * UTC string (e.g. `Aug 30, 2026, 10:00 AM`). Callers are responsible for
  * validating their input; invalid input renders `Invalid Date`.

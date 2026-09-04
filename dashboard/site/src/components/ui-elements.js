@@ -26,6 +26,7 @@ import { renderWorkflowRouteView } from './workflow-route-view.js';
  *   scope?: Record<string, unknown>,
  *   routeParameter?: string,
  *   titleLink?: Record<string, unknown>,
+ *   element?: string,
  *   viewId?: string,
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
@@ -47,11 +48,12 @@ const ELEMENT_RENDERERS = new Map([
   ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
   ['workflow-route', renderWorkflowRouteView],
   ['workflow-detail', renderWorkflowDetail],
+  ['workflow-runs', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'workflow-detail', 'workflow-runs', 'workflow-runtime', 'outcome-detail']);
 
 /**
  * @param {string} name
@@ -59,7 +61,7 @@ const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'cont
  * @returns {HTMLElement | null}
  */
 export function renderUiElement(name, context) {
-  return ELEMENT_RENDERERS.get(name)?.(context) ?? null;
+  return ELEMENT_RENDERERS.get(name)?.({ ...context, element: name }) ?? null;
 }
 
 /**

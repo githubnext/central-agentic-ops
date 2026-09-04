@@ -8,14 +8,10 @@ import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
 import { rowsFor } from './source-rows.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
-
-/**
- * @typedef {'insights'|'reports'|'runs'} WorkflowPageView
- */
+import { workflowRouteLayout } from './workflow-route-layout.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
- * @param {WorkflowPageView} selectedView
  * @param {(args: {
  *   context: import('./ui-elements.js').ElementRenderContext,
  *   route: { repository: string, workflow: string },
@@ -23,17 +19,14 @@ import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
  * }) => HTMLElement | null} [renderBody]
  * @returns {HTMLElement}
  */
-export function renderWorkflowPage(context, selectedView, renderBody) {
+export function renderWorkflowPage(context, renderBody) {
   const workflows = rowsFor(context.sources, 'workflows');
+  const layout = workflowRouteLayout(context);
   const root = createRouteView({
-    rootClassName: selectedView === 'insights' ? 'workflow-runtime' : 'workflow-detail',
+    rootClassName: layout.rootClassName,
     routeParameter: context.routeParameter,
     datasetKey: 'workflow',
-    selectMessage: selectedView === 'runs'
-      ? 'Select a workflow to view its runs.'
-      : selectedView === 'reports'
-        ? 'Select a workflow to view its reports.'
-        : 'Select a workflow to inspect its runtime.',
+    selectMessage: layout.selectMessage,
     notFoundMessage: 'Workflow not found.',
     hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
     renderMatched: (routeValue) => {
@@ -48,12 +41,12 @@ export function renderWorkflowPage(context, selectedView, renderBody) {
       const name = workflowName(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
-        detail: workflowRouteAllocation(selectedView, route, workflow, name)
+        detail: workflowRouteAllocation(layout, route, workflow, name)
       }));
       return h(
         'div',
-        { className: selectedView === 'insights' ? 'workflow-runtime-content' : 'workflow-detail-content' },
-        renderWorkflowTabs(selectedView, route, name),
+        { className: layout.contentClassName },
+        renderWorkflowTabs(layout.variant, route, name),
         renderWorkflowIdentity(workflow),
         renderBody?.({ context, route, workflow }) ?? null
       );
@@ -63,42 +56,34 @@ export function renderWorkflowPage(context, selectedView, renderBody) {
 }
 
 /**
- * @param {WorkflowPageView} selectedView
+ * @param {import('./workflow-route-layout.js').WorkflowRouteLayout} layout
  * @param {{ repository: string, workflow: string }} route
  * @param {Record<string, unknown>} workflow
  * @param {string} title
  */
-function workflowRouteAllocation(selectedView, route, workflow, title) {
-  if (selectedView === 'insights') {
-    return {
-      title,
-      description: `Run health, AI Credit usage, and operational value for ${text(workflow.workflow)} in ${route.repository}.`,
-      mode: ['review', 'live'].includes(text(workflow['rollout-mode'])) ? text(workflow['rollout-mode']) : '',
-      navigationPage: workflow.package ? 'packages' : 'repositories'
-    };
-  }
-
+function workflowRouteAllocation(layout, route, workflow, title) {
   return {
     title,
-    description: selectedView === 'runs'
-      ? `Observed runs for ${route.workflow} in ${route.repository}.`
-      : `Durable reports produced by ${route.workflow} in ${route.repository}.`,
+    description: layout.description
+      .replace('{workflow}', text(workflow.workflow))
+      .replace('{repository}', route.repository),
     ...(['review', 'live'].includes(text(workflow['rollout-mode']))
       ? { mode: text(workflow['rollout-mode']) }
       : {}),
-    navigationPage: 'repositories',
-    breadcrumbs: [
-      { label: 'Repositories', href: '#page-repositories' },
-      {
-        label: route.repository,
-        href: `#page-repository-detail?repository=${encodeURIComponent(route.repository)}`
-      }
-    ]
+    navigationPage: layout.navigationPage === 'packages' && workflow.package ? 'packages' : 'repositories',
+    ...(layout.breadcrumbs
+      ? {
+          breadcrumbs: layout.breadcrumbs.map((crumb) => ({
+            label: crumb.label.replace('{repository}', route.repository),
+            href: crumb.href.replace('{repository-encoded}', encodeURIComponent(route.repository))
+          }))
+        }
+      : {})
   };
 }
 
 /**
- * @param {WorkflowPageView} selectedView
+ * @param {import('./workflow-route-layout.js').WorkflowRouteVariant} selectedView
  * @param {{ repository: string, workflow: string }} route
  * @param {string} workflowName
  */

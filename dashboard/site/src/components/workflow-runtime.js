@@ -20,7 +20,7 @@ import { rowsFor } from './source-rows.js';
  * @returns {HTMLElement}
  */
 export function renderWorkflowRuntime(context) {
-  return renderWorkflowPage(context, 'insights', ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow));
+  return renderWorkflowPage(context, ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow));
 }
 
 /**

@@ -184,7 +184,25 @@ describe('renderWorkflowDetail', () => {
   it('uses declarative route view ids to choose the runs composition', () => {
     const rendered = renderWorkflowDetail({
       ...context('custom-workflow-page'),
+      element: 'workflow-runs',
       viewId: 'workflow-runs-route'
+    });
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: {
+        parameter: 'workflow',
+        value: 'githubnext/gh-aw-cao:.github/workflows/ambient-context.md'
+      }
+    }));
+
+    expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
+  });
+
+  it('prefers declarative workflow elements over page identity', () => {
+    const rendered = renderWorkflowDetail({
+      ...context('workflow-detail'),
+      pageId: 'totally-custom-page',
+      element: 'workflow-runs'
     });
 
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {

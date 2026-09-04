@@ -7,7 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { pluralSuffix, titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage } from './ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 import { rowsFor } from './source-rows.js';
 
@@ -406,9 +406,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
       : `${formatAic(used)} of ${formatAic(allowed)} AIC across ${formatNumber(reportedRuns)} reported run${pluralSuffix(reportedRuns)}.`;
   const coverage = !available
     ? ''
-    : completeness === 'partial'
-      ? ' Partial usage coverage.'
-      : completeness === 'unknown' ? ' Usage coverage is unknown.' : '';
+    : completenessCaveat(completeness, 'usage');
   const ariaLabel = ratio === null
     ? `${entry.name}: no utilization available`
     : `${entry.name}: ${formatAic(used)} of ${formatAic(allowed)} AI Credits used, ${formatPercent(ratio)}`;
@@ -441,7 +439,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
       { className: 'utilization-track', role: 'img', 'aria-label': ariaLabel },
       h('span', { style: `width: ${meterPercent.toFixed(2)}%` })
     ),
-    h('p', null, detail, coverage),
+    h('p', null, detail, coverage ? ` ${coverage}` : ''),
     h(
       'small',
       null,
@@ -485,9 +483,7 @@ function renderRunTrend(sources, mode, headingId) {
   };
   const maximum = Math.max(1, ...series.successful, ...series.failed, ...series.cancelled);
   const chartDescription = `Daily cumulative successful, failed, and cancelled ${modeLabel.toLowerCase()} package run counts.`;
-  const coverage = runsSource.metadata?.completeness === 'partial'
-    ? 'Partial run coverage.'
-    : runsSource.metadata?.completeness === 'unknown' ? 'Run coverage is unknown.' : null;
+  const coverage = completenessCaveat(runsSource.metadata?.completeness, 'run') || null;
 
   return h(
     'section',
