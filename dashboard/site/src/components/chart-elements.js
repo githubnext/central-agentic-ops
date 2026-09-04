@@ -12,6 +12,8 @@ import { renderEmptyMessage } from './ui-primitives.js';
 const MAX_LINE_POINT_RADIUS = 2.5;
 const MIN_LINE_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
+const MAX_INTERACTIVE_LINE_POINTS = 500;
+const MAX_RENDERED_LINE_POINTS = 2_000;
 const MAX_TIMELINE_TICKS = 5;
 const SWIMLANE_START_X = 25;
 const SWIMLANE_END_X = 117;
@@ -284,17 +286,22 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
   if (chartType === 'line') {
     const groupedSeries = groupChartSeries(points);
     const hasWindowHighlight = points.some((point) => typeof point.highlighted === 'boolean');
+    const showInteractivePoints = points.length <= MAX_INTERACTIVE_LINE_POINTS;
     const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
     const xValues = [...new Set(points.map((point) => point.x))];
+    const xIndexes = new Map(xValues.map((value, index) => [value, index]));
     const timelineTicks = lineChartTimelineTicks(xValues);
-    const values = points.map((point) => toNumber(point.y));
-    const finiteValues = values.filter(Number.isFinite);
-    const maximum = Math.max(...finiteValues, 1);
+    let maximum = 1;
+    for (const point of points) {
+      const value = toNumber(point.y);
+      if (Number.isFinite(value)) maximum = Math.max(maximum, value);
+    }
     const pointRadius = lineChartPointRadius(points.length);
     const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
-    const highlightedIndexes = xValues
-      .map((value, index) => points.some((point) => point.x === value && point.highlighted) ? index : -1)
-      .filter((index) => index >= 0);
+    const highlightedIndexes = [...new Set(points.flatMap((point) => {
+      const index = point.highlighted ? xIndexes.get(point.x) : undefined;
+      return index === undefined ? [] : [index];
+    }))];
     const xStep = xValues.length > 1 ? 100 / (xValues.length - 1) : 100;
     const windowBand = highlightedIndexes.length > 0
       ? {
@@ -304,7 +311,11 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       : null;
     return h(
       'div',
-      { className: 'chart-widget line-chart-widget', 'data-chart-widget': 'line' },
+      {
+        className: 'chart-widget line-chart-widget',
+        'data-chart-widget': 'line',
+        'data-line-rendering': showInteractivePoints ? 'rich' : 'compact'
+      },
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
@@ -321,31 +332,35 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         ...groupedSeries.flatMap(([seriesName, seriesPoints], seriesIndex) => {
           const seriesClassName = seriesClassNames.get(seriesName) ?? 'chart-series-1';
           const coordinates = seriesPoints.map((point) => {
-            const xIndex = xValues.indexOf(point.x);
+            const xIndex = xIndexes.get(point.x) ?? 0;
             const x = xValues.length < 2 ? 50 : (xIndex / (xValues.length - 1)) * 100;
-            const y = 38 - (Math.max(0, point.y) / maximum) * 34;
+            const y = 38 - (Math.max(0, toNumber(point.y)) / maximum) * 34;
             return { point, x, y };
           });
+          const renderedCoordinates = sampleLineCoordinates(coordinates, MAX_RENDERED_LINE_POINTS);
+          const highlightedCoordinates = hasWindowHighlight
+            ? sampleLineCoordinates(coordinates.filter(({ point }) => point.highlighted), MAX_RENDERED_LINE_POINTS)
+            : [];
           return [
             h('polyline', {
               className: `line-chart-series ${seriesClassName}${hasWindowHighlight ? ' line-chart-context' : ''}`,
               style: `--chart-entry-index: ${seriesIndex}`,
               pathLength: 1,
-              points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
+              points: renderedCoordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
             }),
-            ...(hasWindowHighlight && coordinates.filter(({ point }) => point.highlighted).length > 1
+            ...(highlightedCoordinates.length > 1
               ? [h('polyline', {
                 className: `line-chart-series line-chart-current ${seriesClassName}`,
                 style: `--chart-entry-index: ${seriesIndex}`,
                 pathLength: 1,
-                points: coordinates.filter(({ point }) => point.highlighted).map(({ x, y }) => `${x},${y}`).join(' '),
+                points: highlightedCoordinates.map(({ x, y }) => `${x},${y}`).join(' '),
                 fill: 'none',
                 'data-chart-window': 'current'
               })]
               : []),
-            ...coordinates.map(({ point, x, y }, pointIndex) => h('g', {
+            ...(showInteractivePoints ? coordinates.map(({ point, x, y }, pointIndex) => h('g', {
               className: `chart-point${point.highlighted === false ? ' chart-point-context' : point.highlighted ? ' chart-point-current' : ''}`,
               style: `--chart-entry-index: ${pointIndex}`,
               tabIndex: 0,
@@ -368,7 +383,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               },
               h('rect', { width: 42, height: 9, rx: 2 }),
               h('text', { x: 3, y: 6 }, chartPointLabel(point, unit))
-            )))
+            ))) : [])
           ];
         })
       ),
@@ -418,6 +433,35 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       })
     )
   );
+}
+
+/**
+ * Keeps line-series SVG output bounded while retaining the first, last, minimum,
+ * and maximum observations represented by each bucket.
+ * @template T
+ * @param {Array<T & { y: number }>} coordinates
+ * @param {number} limit
+ * @returns {Array<T & { y: number }>}
+ */
+function sampleLineCoordinates(coordinates, limit) {
+  if (coordinates.length <= limit) return coordinates;
+  const bucketCount = Math.max(1, Math.floor((limit - 2) / 2));
+  const bucketSize = (coordinates.length - 2) / bucketCount;
+  const sampled = [coordinates[0]];
+  for (let bucket = 0; bucket < bucketCount; bucket += 1) {
+    const start = 1 + Math.floor(bucket * bucketSize);
+    const end = Math.min(coordinates.length - 1, 1 + Math.floor((bucket + 1) * bucketSize));
+    let minimumIndex = start;
+    let maximumIndex = start;
+    for (let index = start + 1; index < end; index += 1) {
+      if (coordinates[index].y < coordinates[minimumIndex].y) minimumIndex = index;
+      if (coordinates[index].y > coordinates[maximumIndex].y) maximumIndex = index;
+    }
+    sampled.push(coordinates[Math.min(minimumIndex, maximumIndex)]);
+    if (minimumIndex !== maximumIndex) sampled.push(coordinates[Math.max(minimumIndex, maximumIndex)]);
+  }
+  sampled.push(coordinates[coordinates.length - 1]);
+  return sampled;
 }
 
 /**

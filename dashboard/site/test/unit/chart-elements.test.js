@@ -315,6 +315,24 @@ describe('chart element helpers', () => {
     expect(renderPoints(150).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
   });
 
+  it('renders 100,000 line-chart points in bounded time and SVG size', () => {
+    const points = Array.from({ length: 100_000 }, (_, index) => ({
+      x: new Date(index * 60_000).toISOString(),
+      y: index % 1_000,
+      color: null
+    }));
+    const startedAt = performance.now();
+    const chart = renderChartWidget('line', points, listChartSeries(points));
+    const elapsedMilliseconds = performance.now() - startedAt;
+    const renderedPoints = chart.querySelector('.line-chart-series')?.getAttribute('points')?.split(' ') ?? [];
+
+    expect(elapsedMilliseconds).toBeLessThan(1_000);
+    expect(chart.getAttribute('data-line-rendering')).toBe('compact');
+    expect(renderedPoints.length).toBeLessThanOrEqual(2_000);
+    expect(chart.querySelectorAll('.chart-point')).toHaveLength(0);
+    expect(chart.querySelectorAll('svg *').length).toBeLessThan(25);
+  });
+
   it('renders a concise, evenly sampled timeline axis while preserving exact values', () => {
     const points = Array.from({ length: 9 }, (_, index) => ({
       x: `2026-09-0${index + 1}T0${index}:15:00Z`,
