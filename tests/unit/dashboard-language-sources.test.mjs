@@ -34,6 +34,7 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
     resource: "core",
     bucket: "core · app",
     "history-series": "core · app",
+    "has-history": false,
     limit: 5_000,
     used: 125,
     remaining: 4_875,
@@ -96,7 +97,10 @@ test("dashboard source bridge derives reset-safe rate-limit forecasts and correl
   const rows = sources["github-api-rate-limits"].rows;
   assert.equal(rows[1]["operation-consumed"], 10);
   assert.equal(rows[1]["attribution-status"], "available");
+  assert.equal(rows[0]["has-history"], false);
+  assert.equal(rows[1]["has-history"], true);
   assert.equal(rows[2]["consumed-since-previous"], 10);
+  assert.equal(rows[2]["has-history"], true);
   assert.equal(rows[2]["burn-rate-per-minute"], 0.333);
   assert.equal(rows[2]["projected-remaining-at-reset"], 40);
   assert.equal(rows[2]["projected-exhaustion-at"], "2026-09-04T15:00:00.000Z");

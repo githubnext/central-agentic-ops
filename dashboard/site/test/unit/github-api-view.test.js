@@ -28,6 +28,7 @@ function rateLimitRow(overrides = {}) {
     resource: 'core',
     bucket: 'core · reader',
     'history-series': 'core · reader',
+    'has-history': true,
     remaining: 4_875,
     limit: 5_000,
     used: 125,
@@ -223,21 +224,23 @@ describe('GitHub API rate-limit dashboard', () => {
       source: 'github-api-rate-limits',
       metadata,
       rows: [
-        rateLimitRow({ 'observed-at': observedAt, 'history-series': 'core · reader' }),
+        rateLimitRow({ 'observed-at': observedAt, 'history-series': 'core · reader', 'has-history': false }),
         rateLimitRow({
           'observation-id': 'run-1:after:reader:search:2026-09-04T12:00:00Z',
           'observed-at': observedAt,
           resource: 'search',
           bucket: 'search · reader',
-          'history-series': 'search · reader'
+          'history-series': 'search · reader',
+          'has-history': false
         })
       ]
     });
-    const history = page?.querySelector('[aria-labelledby="github-api-remaining-trend-heading"]');
+    const historyHeading = [...(page?.querySelectorAll('h3, h4') ?? [])]
+      .find((heading) => heading.textContent === 'Quota history');
+    const history = historyHeading?.closest('section');
 
-    expect(history?.textContent).toContain('No trend is available yet.');
+    expect(history?.textContent).toContain('Quota history is unavailable until at least two observations exist');
     expect(history?.querySelector('.chart-legend')).toBeNull();
     expect(history?.querySelector('.line-chart-series')).toBeNull();
-    expect(history?.textContent).toContain('core · reader');
   });
 });

@@ -69,6 +69,7 @@ test("activity cache state is explicit when the cache is absent", async () => {
     await writeFile(sourcePath, [
       JSON.stringify({ ...recent, observedAt: "2026-09-03T11:59:59Z" }),
       JSON.stringify(recent),
+      JSON.stringify({ ...recent, observedAt: "2026-09-04T12:00:01Z" }),
       JSON.stringify({ ...recent, schemaVersion: 2 }),
       "invalid",
     ].join("\n"));

@@ -66,12 +66,13 @@ export async function prepareGithubTelemetryHistory({
       throw error;
     })
     : "";
-  const cutoff = now().getTime() - retentionHours * 60 * 60 * 1000;
+  const nowMs = now().getTime();
+  const cutoff = nowMs - retentionHours * 60 * 60 * 1000;
   const retained = content.split(/\r?\n/).filter(Boolean).flatMap((line) => {
     try {
       const entry = JSON.parse(line);
       const observedAt = Date.parse(entry?.observedAt);
-      return entry?.schemaVersion === 1 && Number.isFinite(observedAt) && observedAt >= cutoff ? [entry] : [];
+      return entry?.schemaVersion === 1 && Number.isFinite(observedAt) && observedAt >= cutoff && observedAt <= nowMs ? [entry] : [];
     } catch {
       return [];
     }

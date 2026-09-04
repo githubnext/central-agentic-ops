@@ -178,6 +178,7 @@ export function githubTelemetryRows(entries = [], generatedAt = new Date().toISO
       resource,
       bucket,
       "history-series": segment === 1 ? bucket : `${bucket} · segment ${segment}`,
+      "has-history": false,
       limit,
       used: finite(rate?.used) ?? Math.max(0, limit - remaining),
       remaining,
@@ -258,6 +259,14 @@ export function githubTelemetryRows(entries = [], generatedAt = new Date().toISO
   const latest = new Map();
   for (const row of rows) latest.set(`${row.credential}\u0000${row.resource}`, row);
   for (const row of latest.values()) row["is-current"] = true;
+  const historyInstants = new Map();
+  for (const row of rows) {
+    const key = `${row.phase}\u0000${row["history-series"]}`;
+    const instants = historyInstants.get(key) || new Set();
+    instants.add(row["observed-at"]);
+    historyInstants.set(key, instants);
+  }
+  for (const row of rows) row["has-history"] = historyInstants.get(`${row.phase}\u0000${row["history-series"]}`).size >= 2;
   return rows;
 }
 

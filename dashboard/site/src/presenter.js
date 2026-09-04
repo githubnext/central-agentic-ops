@@ -1307,7 +1307,8 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   }
 
   if (filteredRows.length === 0 && view.mark !== 'table') {
-    return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag);
+    const emptyMessage = typeof view['empty-message'] === 'string' ? view['empty-message'] : undefined;
+    return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag, emptyMessage);
   }
 
   const rendered = renderDataView(typeof view.mark === 'string' ? view.mark : '', {
@@ -1567,11 +1568,12 @@ function renderPageTitleLink(target, candidate) {
  * @param {'available'|'empty'|'unavailable'} availability
  * @param {string[]} contextDetails
  * @param {'h3'|'h4'} [headingTag]
+ * @param {string} [message]
  * @returns {HTMLElement}
  */
-function renderCustomViewState(pageId, title, sourceName, availability, contextDetails, headingTag = 'h3') {
+function renderCustomViewState(pageId, title, sourceName, availability, contextDetails, headingTag = 'h3', message) {
   return renderPageSection(pageId, title, [
-    h('p', { 'data-view-availability': availability }, customViewAvailabilityMessage(availability)),
+    h('p', { 'data-view-availability': availability }, message ?? customViewAvailabilityMessage(availability)),
     ...renderCustomViewStateDetails(sourceName, contextDetails)
   ], headingTag);
 }

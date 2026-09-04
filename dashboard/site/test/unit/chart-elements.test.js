@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { chartSeriesClassName, groupChartSeries, hasRenderableChartData, listChartSeries, pieChartEntries, renderChartLegend, renderChartWidget, renderPieLegend } from '../../src/components/chart-elements.js';
+import { chartSeriesClassName, groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderChartWidget, renderPieLegend } from '../../src/components/chart-elements.js';
 
 describe('chart element helpers', () => {
   it('DLS-SAFE-009 groups chart series deterministically and lists reusable class names', () => {
@@ -126,11 +126,7 @@ describe('chart element helpers', () => {
 
         expect(chart.getAttribute('data-chart-widget')).toBe(chartType);
         expect(chart.querySelector('svg')).toBeNull();
-        expect(chart.querySelector('[role="status"]')?.textContent).toBe(
-          chartType === 'line'
-            ? 'No trend is available yet. At least two observations in one series are required.'
-            : 'Not enough data to show this visualization.'
-        );
+        expect(chart.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
       }
     }
 
@@ -139,19 +135,6 @@ describe('chart element helpers', () => {
       { x: 'only', y: 2, color: null }
     ], []);
     expect(singleCategoryPie.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
-  });
-
-  it('requires two observations in the same series before drawing a line', () => {
-    const sparse = [
-      { x: '2026-09-04T12:00:00Z', y: 90, color: 'core' },
-      { x: '2026-09-04T12:00:00Z', y: 100, color: 'search' }
-    ];
-    const history = [...sparse, { x: '2026-09-04T12:15:00Z', y: 89, color: 'core' }];
-
-    expect(hasRenderableChartData('line', sparse)).toBe(false);
-    expect(renderChartWidget('line', sparse, listChartSeries(sparse)).querySelector('svg')).toBeNull();
-    expect(hasRenderableChartData('line', history)).toBe(true);
-    expect(renderChartWidget('line', history, listChartSeries(history)).querySelector('svg')).not.toBeNull();
   });
 
   it('renders categorical workflow runs as accessible swimlanes without connecting marks', () => {
