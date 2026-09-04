@@ -399,7 +399,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "uk-ai-advisory-package-maintainer.md": { credits: 200, timeout: 20 },
     "uk-ai-advisory-operational-resilience.md": { credits: 600, timeout: 30 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 3 },
+    "aw-doctor.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 3 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
@@ -928,7 +928,7 @@ test("root CAO workflows use organization-billed Copilot authentication", () => 
     "aw-failures-investigator",
     "aw-maintenance-compiler-security",
     "aw-maintenance-upgrade",
-    "aw-maintenance",
+    "aw-doctor",
     "dependabot-release-train-updater",
     "dependabot",
     "optimization-ai-credit-auditor",
@@ -1271,7 +1271,7 @@ test("live workers require target-owned package authority before agent execution
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
     ["aw-failures-investigator.md", "aw-doctor"],
-    ["aw-maintenance.md", "aw-doctor"],
+    ["aw-doctor.md", "aw-doctor"],
     ["aw-maintenance-upgrade.md", "aw-doctor"],
     ["dependabot.md", "dependabot"],
     ["dependabot-release-train-updater.md", "dependabot"],
@@ -1305,7 +1305,7 @@ test("orchestrators use checked-in policy with independent manual narrowing", ()
   for (const [name, packageName] of [
     ["uk-ai-advisory.md", "uk-ai-advisory"],
     ["ambient-context.md", "ambient-context"],
-    ["aw-maintenance.md", "aw-doctor"],
+    ["aw-doctor.md", "aw-doctor"],
     ["dependabot.md", "dependabot"],
     ["eu-cra-compliance.md", "eu-cra-compliance"],
     ["optimization.md", "optimization"],
@@ -1337,7 +1337,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
     ["aw-failures-investigator.md", "aw-doctor"],
-    ["aw-maintenance.md", "aw-doctor"],
+    ["aw-doctor.md", "aw-doctor"],
     ["aw-maintenance-upgrade.md", "aw-doctor"],
     ["dependabot.md", "dependabot"],
     ["dependabot-release-train-updater.md", "dependabot"],
@@ -1416,7 +1416,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
-  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md", "software-development-practices.md"]) {
+  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-doctor.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md", "software-development-practices.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -1867,12 +1867,12 @@ test("SelfCare runs every 20 minutes", () => {
 });
 
 test("AW Doctor runs hourly with bounded deterministic discovery", () => {
-  const source = workflow("aw-maintenance.md");
-  const compiled = workflow("aw-maintenance.lock.yml");
+  const source = workflow("aw-doctor.md");
+  const compiled = workflow("aw-doctor.lock.yml");
 
   assert.match(source, /schedule: "hourly"/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
-  assert.match(source, /name: Deterministic pre-fetch of AW maintenance evidence/);
+  assert.match(source, /name: Deterministic pre-fetch of AW Doctor evidence/);
   assert.match(source, /const MAX_EVIDENCE_CANDIDATES = 50/);
   assert.match(source, /Use its bounded, pre-ranked `candidates` as the only source of GitHub discovery evidence/);
   assert.match(source, /do not repeat its GitHub API queries in the agent/);
@@ -2191,7 +2191,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "aw-failures-investigator.lock.yml",
       "aw-maintenance-compiler-security.lock.yml",
       "aw-maintenance-upgrade.lock.yml",
-      "aw-maintenance.lock.yml",
+      "aw-doctor.lock.yml",
       "dependabot-release-train-updater.lock.yml",
       "dependabot.lock.yml",
       "eu-cra-compliance-article-14-reporting-readiness.lock.yml",
@@ -2267,7 +2267,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const orchestratorGates = new Map([
       ["uk-ai-advisory.lock.yml", "uk-ai-advisory"],
       ["ambient-context.lock.yml", "ambient-context"],
-      ["aw-maintenance.lock.yml", "aw-doctor"],
+      ["aw-doctor.lock.yml", "aw-doctor"],
       ["dependabot.lock.yml", "dependabot"],
       ["eu-cra-compliance.lock.yml", "eu-cra-compliance"],
       ["optimization.lock.yml", "optimization"],

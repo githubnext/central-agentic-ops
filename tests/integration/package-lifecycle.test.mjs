@@ -44,7 +44,7 @@ const awDoctorExpectedFiles = [
   ".github/workflows/aw-failures-investigator.md",
   ".github/workflows/aw-maintenance-compiler-security.md",
   ".github/workflows/aw-maintenance-upgrade.md",
-  ".github/workflows/aw-maintenance.md",
+  ".github/workflows/aw-doctor.md",
   ".github/workflows/shared/cao.md",
   ".github/workflows/shared/control.md",
 ];
@@ -167,7 +167,7 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
     }
     for (const workflowId of [
       "ambient-context",
-      "aw-maintenance",
+      "aw-doctor",
       "dependabot",
       "optimization",
     ]) {

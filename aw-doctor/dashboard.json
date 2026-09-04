@@ -61,7 +61,7 @@
               },
               "filters": {
                 "workflow": [
-                  ".github/workflows/aw-maintenance.md",
+                  ".github/workflows/aw-doctor.md",
                   ".github/workflows/aw-maintenance-compiler-security.md",
                   ".github/workflows/aw-maintenance-upgrade.md",
                   ".github/workflows/aw-failures-investigator.md"
