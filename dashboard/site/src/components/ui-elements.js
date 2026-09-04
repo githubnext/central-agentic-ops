@@ -11,9 +11,9 @@ import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
-import { renderWorkflowRuntime, renderWorkflowRuntimeBody } from './workflow-runtime.js';
+import { renderWorkflowRuntime } from './workflow-runtime.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
-import { renderWorkflowPage } from './workflow-page.js';
+import { renderWorkflowRouteView } from './workflow-route-view.js';
 
 /**
  * @typedef {{
@@ -26,6 +26,7 @@ import { renderWorkflowPage } from './workflow-page.js';
  *   scope?: Record<string, unknown>,
  *   routeParameter?: string,
  *   titleLink?: Record<string, unknown>,
+ *   viewId?: string,
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */
@@ -44,14 +45,7 @@ const ELEMENT_RENDERERS = new Map([
   ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
   ['package-dispatches', (context) => renderPackageNavigation(context, 'dispatches')],
   ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
-  ['workflow-route', (context) => {
-    const variant = routeVariant(context);
-    return renderWorkflowPage(
-      context,
-      variant,
-      variant === 'insights' ? ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow) : undefined
-    );
-  }],
+  ['workflow-route', renderWorkflowRouteView],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail]
@@ -74,15 +68,6 @@ export function renderUiElement(name, context) {
  */
 export function elementHandlesEmptyRows(name) {
   return EMPTY_AWARE_ELEMENTS.has(name);
-}
-
-/** @param {ElementRenderContext} context */
-function routeVariant(context) {
-  return context.pageId === 'workflow-runs'
-    ? 'runs'
-    : context.pageId === 'workflow-runtime'
-      ? 'insights'
-      : 'reports';
 }
 
 /**

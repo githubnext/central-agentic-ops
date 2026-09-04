@@ -181,6 +181,22 @@ describe('renderWorkflowDetail', () => {
     );
   });
 
+  it('uses declarative route view ids to choose the runs composition', () => {
+    const rendered = renderWorkflowDetail({
+      ...context('custom-workflow-page'),
+      viewId: 'workflow-runs-route'
+    });
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: {
+        parameter: 'workflow',
+        value: 'githubnext/gh-aw-cao:.github/workflows/ambient-context.md'
+      }
+    }));
+
+    expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
+  });
+
   it('renders explicit empty states for missing and invalid workflow routes', () => {
     const rendered = renderWorkflowDetail(context());
     expect(rendered.textContent).toBe('Select a workflow to view its reports.');

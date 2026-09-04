@@ -1118,7 +1118,7 @@
             }
           },
           {
-            "id": "workflow-reports",
+            "id": "workflow-reports-route",
             "title": "Workflow reports",
             "data": {
               "sources": [
@@ -1215,7 +1215,7 @@
             }
           },
           {
-            "id": "workflow-runs-identity",
+            "id": "workflow-runs-route",
             "title": "Workflow runs",
             "data": {
               "sources": [
@@ -1404,7 +1404,7 @@
             }
           },
           {
-            "id": "workflow-runtime-insights",
+            "id": "workflow-runtime-route",
             "title": "Workflow runtime",
             "data": {
               "sources": [

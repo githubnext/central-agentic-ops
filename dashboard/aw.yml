@@ -144,5 +144,7 @@ resources:
     destination: .github/aw/dashboard/site/src/components/workflow-identity.js
   - source: site/src/components/workflow-route.js
     destination: .github/aw/dashboard/site/src/components/workflow-route.js
+  - source: site/src/components/workflow-route-view.js
+    destination: .github/aw/dashboard/site/src/components/workflow-route-view.js
   - source: site/src/components/workflow-runtime.js
     destination: .github/aw/dashboard/site/src/components/workflow-runtime.js

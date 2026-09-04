@@ -3446,7 +3446,7 @@ dashboard:
     const overviewSwimlane = overview.definition.views.find((/** @type {{ id: string }} */ view) => view.id === 'overview-run-health');
     const workflowRuntime = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runtime');
     const swimlane = workflowRuntime.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-health');
-    const routeChrome = workflowRuntime.views.find((/** @type {{ id: string, element?: string }} */ view) => view.id === 'workflow-runtime-insights');
+    const routeChrome = workflowRuntime.views.find((/** @type {{ id: string, element?: string }} */ view) => view.id === 'workflow-runtime-route');
 
     expect(overviewSwimlane).toMatchObject({
       chart: 'swimlane',
