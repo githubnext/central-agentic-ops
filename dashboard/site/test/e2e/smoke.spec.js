@@ -545,7 +545,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
   await expect(page.locator('.overview-page .custom-view')).toHaveCount(3);
-  await expect(page.locator('.overview-page .custom-view').first().locator('[data-chart-widget="line"]')).toBeVisible();
+  await expect(page.locator('.overview-page .custom-view').first().locator('[data-chart-widget="swimlane"]')).toBeVisible();
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Attention by domain', level: 2 })).toBeVisible();
   const cards = page.locator('.attention-domain-card');
