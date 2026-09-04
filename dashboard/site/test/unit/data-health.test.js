@@ -46,6 +46,8 @@ describe('data health sources', () => {
         status: 'unavailable'
       })
     ]);
+    expect(sources['data-health-sources'].metadata.availability).toBe('available');
+    expect(sources['data-health-summary'].metadata.availability).toBe('available');
     expect(sources['data-health-summary'].rows).toEqual(expect.arrayContaining([
       { label: 'Logical sources', value: '2' },
       { label: 'Healthy sources', value: '1' },
