@@ -168,6 +168,7 @@ function pieChartSegmentPath(startFraction, endFraction) {
   const start = Math.min(1, Math.max(0, startFraction));
   const end = Math.min(1, Math.max(start, endFraction));
   const sweep = end - start;
+  /** @param {number} fraction */
   const pointAt = (fraction) => {
     const angle = (fraction * Math.PI * 2) - (Math.PI / 2);
     return [
