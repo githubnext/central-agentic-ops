@@ -266,7 +266,16 @@ describe('chart element helpers', () => {
     expect(bar.querySelector('.bar-chart-bar')?.getAttribute('height')).toBe(chartHeight);
     expect(bar.querySelector('.bar-chart-bar')?.getAttribute('rx')).toBe('0.75');
     expect(bar.querySelector('.bar-chart-bar')?.getAttribute('style')).toContain('--chart-entry-index: 0');
-    expect(bar.querySelector('.bar-chart-bar:last-child')?.getAttribute('height')).toBe('1');
+    expect([...bar.querySelectorAll('.bar-chart-bar')].at(-1)?.getAttribute('height')).toBe('1');
+    expect([...bar.querySelectorAll('.bar-chart-y-axis text')].map((tick) => tick.textContent)).toEqual(['3', '1.50', '0']);
+    expect([...bar.querySelectorAll('.bar-chart-x-axis text')].map((tick) => tick.lastChild?.textContent)).toEqual([
+      'Aug 29',
+      'Aug 30',
+      'invalid'
+    ]);
+    expect(bar.querySelectorAll('.bar-chart-grid')).toHaveLength(3);
+    expect(bar.querySelector('[data-chart-axis="x"]')).not.toBeNull();
+    expect(bar.querySelector('[data-chart-axis="y"]')).not.toBeNull();
     expect(line.getAttribute('data-chart-widget')).toBe('line');
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
     expect(line.querySelector('.line-chart-series')?.getAttribute('pathLength')).toBe('1');
@@ -407,6 +416,48 @@ describe('chart element helpers', () => {
       points[4].x,
       points[6].x,
       points[8].x
+    ]);
+  });
+
+  it('renders concise, evenly sampled bar axes while preserving exact category values', () => {
+    const points = Array.from({ length: 9 }, (_, index) => ({
+      x: `category-with-a-long-name-${index + 1}`,
+      y: index * 25,
+      color: null
+    }));
+    const chart = renderChartWidget('bar', points, listChartSeries(points), null, 'Total', {
+      name: 'AI Credits',
+      symbol: 'AIC',
+      significant: 1
+    });
+    const xTicks = [...chart.querySelectorAll('.bar-chart-x-axis text')];
+
+    expect(xTicks).toHaveLength(5);
+    expect(xTicks.map((tick) => tick.lastChild?.textContent)).toEqual([
+      'category-wi…',
+      'category-wi…',
+      'category-wi…',
+      'category-wi…',
+      'category-wi…'
+    ]);
+    expect(xTicks.map((tick) => tick.getAttribute('title'))).toEqual([
+      points[0].x,
+      points[2].x,
+      points[4].x,
+      points[6].x,
+      points[8].x
+    ]);
+    expect([...chart.querySelectorAll('.bar-chart-x-axis text > title')].map((title) => title.textContent)).toEqual([
+      points[0].x,
+      points[2].x,
+      points[4].x,
+      points[6].x,
+      points[8].x
+    ]);
+    expect([...chart.querySelectorAll('.bar-chart-y-axis text')].map((tick) => tick.textContent)).toEqual([
+      '200 AIC',
+      '100 AIC',
+      '0 AIC'
     ]);
   });
 });
