@@ -3,9 +3,9 @@
  */
 
 import { h } from '../dom.js';
-import { renderLinkTabs } from './tab-nav.js';
 import { titleCase } from './count-formatters.js';
 import { createRouteView } from './route-empty-state.js';
+import { renderRouteTabSet } from './route-tab-set.js';
 import { renderWorkflowValueReport } from './workflow-runtime.js';
 import { rowsFor } from './source-rows.js';
 
@@ -77,14 +77,15 @@ export function renderPackageNavigation(context, selectedView) {
  */
 function renderPackageTabs(packageId, packageName, selectedView) {
   const packageQuery = `?package=${encodeURIComponent(packageId)}`;
-  return renderLinkTabs({
+  return renderRouteTabSet({
     className: 'package-tabs',
     ariaLabel: `${packageName} views`,
+    currentTab: selectedView,
     tabs: [
-      { label: 'Insights', icon: 'graph', href: `#page-package-insights${packageQuery}`, current: selectedView === 'insights' },
-      { label: 'Workflows', icon: 'workflow', href: `#page-package-detail${packageQuery}`, current: selectedView === 'workflows' },
-      { label: 'Dispatches', icon: 'play', href: `#page-package-dispatches${packageQuery}`, current: selectedView === 'dispatches' },
-      { label: 'Reports', icon: 'issue', href: `#page-package-reports${packageQuery}`, current: selectedView === 'reports' }
+      { id: 'insights', label: 'Insights', icon: 'graph', href: `#page-package-insights${packageQuery}` },
+      { id: 'workflows', label: 'Workflows', icon: 'workflow', href: `#page-package-detail${packageQuery}` },
+      { id: 'dispatches', label: 'Dispatches', icon: 'play', href: `#page-package-dispatches${packageQuery}` },
+      { id: 'reports', label: 'Reports', icon: 'issue', href: `#page-package-reports${packageQuery}` }
     ]
   });
 }

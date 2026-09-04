@@ -4,9 +4,9 @@
 
 import { h } from '../dom.js';
 import { text } from './count-formatters.js';
-import { renderLinkTabs } from './tab-nav.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
+import { renderRouteTabSet } from './route-tab-set.js';
 import { rowsFor } from './source-rows.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
 import { workflowRouteComposition } from './workflow-route-composition.js';
@@ -86,13 +86,14 @@ function workflowRouteAllocation(composition, route, workflow, title) {
 function renderWorkflowTabs(selectedView, route, workflowName) {
   const workflowQuery = `?workflow=${encodeURIComponent(workflowRouteValue(route.repository, route.workflow))}`;
   const navigationLabel = selectedView === 'insights' ? workflowName : route.workflow;
-  return renderLinkTabs({
+  return renderRouteTabSet({
     className: 'repository-tabs workflow-tabs',
     ariaLabel: `${navigationLabel} views`,
+    currentTab: selectedView,
     tabs: [
-      { label: 'Insights', icon: 'graph', href: `#page-workflow-runtime${workflowQuery}`, current: selectedView === 'insights' },
-      { label: 'Reports', icon: 'issue', href: `#page-workflow-detail${workflowQuery}`, current: selectedView === 'reports' },
-      { label: 'Runs', icon: 'play', href: `#page-workflow-runs${workflowQuery}`, current: selectedView === 'runs' }
+      { id: 'insights', label: 'Insights', icon: 'graph', href: `#page-workflow-runtime${workflowQuery}` },
+      { id: 'reports', label: 'Reports', icon: 'issue', href: `#page-workflow-detail${workflowQuery}` },
+      { id: 'runs', label: 'Runs', icon: 'play', href: `#page-workflow-runs${workflowQuery}` }
     ]
   });
 }
@@ -109,4 +110,3 @@ function qualifiedRepository(row) {
 function workflowName(workflow) {
   return text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
 }
-
