@@ -77,6 +77,7 @@ const craExpectedFiles = [
   ".github/workflows/shared/control.md",
 ];
 const dashboardExpectedFiles = [
+  ...activityExpectedFiles,
   ".github/workflows/dashboard-build.yml",
   ...[...readFileSync(
     new URL("../../dashboard/aw.yml", import.meta.url),
