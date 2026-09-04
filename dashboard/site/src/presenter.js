@@ -1379,15 +1379,54 @@ function renderRouteScopedDataView(pageId, view, index, sources, units, headingT
   const render = (routeValue) => {
     const selected = typeof routeValue === 'string' ? routeValue.trim() : '';
     const source = sources[sourceName];
+    const routeRows = source && Array.isArray(source.rows)
+      ? source.rows.filter((row) => (
+          selected.length > 0
+          && String(row[routeField] ?? '').toLowerCase() === selected.toLowerCase()
+        ))
+      : [];
+    if (view.chart === 'swimlane' && selected.length > 0) {
+      const workflowExists = Array.isArray(sources.workflows?.rows) && sources.workflows.rows.some((row) => {
+        const repositoryName = String(row.repository ?? '').trim();
+        const repository = repositoryName.includes('/') || !String(row.organization ?? '').trim()
+          ? repositoryName
+          : `${String(row.organization).trim()}/${repositoryName}`;
+        return `${repository}:${String(row.workflow ?? '').trim()}`.toLowerCase() === selected.toLowerCase();
+      });
+      if (!workflowExists) {
+        root.replaceChildren(renderSwimlaneRouteState(
+          pageId,
+          getViewTitle(view, index),
+          'Workflow not found',
+          'The selected workflow could not be resolved for this repository/ref.',
+          headingTag
+        ));
+        return;
+      }
+      const dataWithoutFilters = { ...data };
+      delete dataWithoutFilters.filters;
+      const intervalRows = filterRowsForView(routeRows, dataWithoutFilters);
+      const visibleRows = filterRowsForView(routeRows, data);
+      if (visibleRows.length === 0) {
+        const filteredEmpty = intervalRows.length > 0
+          && isPlainObject(data.filters)
+          && Object.keys(data.filters).length > 0;
+        root.replaceChildren(renderSwimlaneRouteState(
+          pageId,
+          getViewTitle(view, index),
+          filteredEmpty ? 'No runs match the current filters.' : 'No workflow runs in this period',
+          filteredEmpty ? 'Clear filters' : 'Try increasing the time horizon.',
+          headingTag
+        ));
+        return;
+      }
+    }
     const scopedSources = source && Array.isArray(source.rows)
       ? {
           ...sources,
           [sourceName]: {
             ...source,
-            rows: source.rows.filter((row) => (
-              selected.length > 0
-              && String(row[routeField] ?? '').toLowerCase() === selected.toLowerCase()
-            ))
+            rows: routeRows
           }
         }
       : sources;
@@ -1399,6 +1438,24 @@ function renderRouteScopedDataView(pageId, view, index, sources, units, headingT
   });
   render('');
   return root;
+}
+
+/**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {string} stateTitle
+ * @param {string} detail
+ * @param {'h3'|'h4'} headingTag
+ */
+function renderSwimlaneRouteState(pageId, title, stateTitle, detail, headingTag) {
+  return renderPageSection(pageId, title, [
+    h(
+      'div',
+      { className: 'chart-widget swimlane-chart-widget swimlane-empty-state', role: 'status' },
+      h('strong', null, stateTitle),
+      h('p', null, detail)
+    )
+  ], headingTag);
 }
 
 /**
@@ -1630,7 +1687,7 @@ function compareTableValues(left, right) {
  * @param {Record<string, any> | null} y
  * @param {Record<string, any> | null} color
  * @param {string | null} hrefField
- * @returns {Array<{ key: string, x: string, y: number, color: string | null, highlighted: boolean | null, link: { href: string, label: string } | null }>}
+ * @returns {Array<{ key: string, x: string, y: number, category: string, color: string | null, highlighted: boolean | null, link: { href: string, label: string } | null, source: Record<string, unknown> }>}
  */
 function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
   const aggregate = typeof y?.aggregate === 'string' ? y.aggregate : null;
@@ -1639,19 +1696,21 @@ function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
       key: `${pageId}-${title}-${rowIndex}`,
       x: x ? toText(row[x.field]) : 'unknown',
       y: y ? toNumber(row[y.field]) : 0,
+      category: y ? toText(row[y.field]) : 'unknown',
       color: color ? toText(row[color.field]) : null,
       highlighted: typeof row['in-window'] === 'boolean' ? row['in-window'] : null,
-      link: hrefField ? findLink(row, /** @type {LinkFieldName} */ (hrefField)) : null
+      link: hrefField ? findLink(row, /** @type {LinkFieldName} */ (hrefField)) : null,
+      source: row
     }));
   }
 
-  /** @type {Map<string, { x: string, color: string | null, values: unknown[], links: Array<{ href: string, label: string }> }>} */
+  /** @type {Map<string, { x: string, color: string | null, values: unknown[], links: Array<{ href: string, label: string }>, source: Record<string, unknown> }>} */
   const groups = new Map();
   for (const row of rows) {
     const xValue = x ? toText(row[x.field]) : 'unknown';
     const colorValue = color ? toText(row[color.field]) : null;
     const key = JSON.stringify([xValue, colorValue]);
-    const group = groups.get(key) ?? { x: xValue, color: colorValue, values: [], links: [] };
+    const group = groups.get(key) ?? { x: xValue, color: colorValue, values: [], links: [], source: row };
     group.values.push(y ? row[y.field] : null);
     const link = hrefField ? findLink(row, /** @type {LinkFieldName} */ (hrefField)) : null;
     if (link) group.links.push(link);
@@ -1680,21 +1739,23 @@ function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
       key: `${pageId}-${title}-${index}`,
       x: group.x,
       y: value,
+      category: toText(group.values[0]),
       color: group.color,
       highlighted: null,
-      link: distinctLinks.size === 1 ? distinctLinks.values().next().value ?? null : null
+      link: distinctLinks.size === 1 ? distinctLinks.values().next().value ?? null : null,
+      source: group.source
     };
   });
 }
 
 /**
  * Applies declarative chart ordering and limiting after aggregation.
- * @param {Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>} points
+ * @param {Array<{ key: string, x: string, y: number, category?: string, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null, source?: Record<string, unknown> }>} points
  * @param {Record<string, any> | null} x
  * @param {Record<string, any> | null} y
  * @param {Record<string, any> | null} color
  * @param {unknown} dataConfig
- * @returns {Array<{ key: string, x: string, y: number, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null }>}
+ * @returns {Array<{ key: string, x: string, y: number, category?: string, color: string | null, highlighted?: boolean | null, link: { href: string, label: string } | null, source?: Record<string, unknown> }>}
  */
 function prepareChartPoints(points, x, y, color, dataConfig) {
   const prepared = [...points];

@@ -71,7 +71,7 @@ describe('data view renderer', () => {
     expect(rendered?.querySelector('.view-description')).toBeNull();
   });
 
-  it('defaults pie, line, and histogram data tables to hidden while honoring explicit table visibility', () => {
+  it('defaults pie, line, histogram, and swimlane data tables to hidden while honoring explicit table visibility', () => {
     const context = /** @type {Parameters<typeof renderDataView>[1]} */ ({
       pageId: 'repositories',
       title: 'AI Credit usage by AW repository',
@@ -124,6 +124,30 @@ describe('data view renderer', () => {
     });
     expect(histogram?.querySelector('.histogram-chart-widget')).not.toBeNull();
     expect(histogram?.querySelector('.custom-chart-table')).toBeNull();
+
+    const swimlane = renderDataView('chart', {
+      ...context,
+      view: {
+        ...context.view,
+        chart: 'swimlane',
+        encoding: {
+          ...context.view.encoding,
+          x: { field: 'started-at', type: 'temporal' },
+          y: { field: 'run-conclusion', type: 'ordinal' }
+        }
+      },
+      buildChartPoints: () => [{
+        key: 'run-1',
+        x: '2026-08-31T12:48:37Z',
+        y: Number.NaN,
+        category: 'success',
+        color: 'success',
+        link: null,
+        source: { run: '1' }
+      }]
+    });
+    expect(swimlane?.querySelector('.swimlane-chart-widget')).not.toBeNull();
+    expect(swimlane?.querySelector('.custom-chart-table')).toBeNull();
 
     const bar = renderDataView('chart', {
       ...context,
