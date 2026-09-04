@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderCloseButton, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -110,5 +110,15 @@ describe('ui primitives', () => {
     expect(rendered.getAttribute('title')).toBe('Dismiss Notice');
     expect(rendered.getAttribute('aria-label')).toBe('Dismiss Notice');
     expect(rendered.querySelector('svg use')?.getAttribute('href')).toContain('#octicon-x');
+  });
+
+  it('identifies plain objects while rejecting arrays and null', () => {
+    expect(isPlainObject({})).toBe(true);
+    expect(isPlainObject({ foo: 'bar' })).toBe(true);
+    expect(isPlainObject([])).toBe(false);
+    expect(isPlainObject(null)).toBe(false);
+    expect(isPlainObject('string')).toBe(false);
+    expect(isPlainObject(42)).toBe(false);
+    expect(isPlainObject(undefined)).toBe(false);
   });
 });
