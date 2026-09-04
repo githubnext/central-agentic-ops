@@ -281,6 +281,7 @@ describe('chart element helpers', () => {
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(pie.querySelector('.pie-chart-track')?.getAttribute('stroke-width')).toBe('10');
     expect(pie.querySelector('.pie-chart-segment')?.getAttribute('stroke-width')).toBe('10');
+    expect([...pie.querySelectorAll('.pie-chart-segment')].map((segment) => segment.getAttribute('pathLength'))).toEqual(['100', '100']);
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3');
     expect(pie.querySelector('.pie-chart-tooltip rect')?.getAttribute('width')).toBe('21.25');
