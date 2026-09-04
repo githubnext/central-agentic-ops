@@ -31,6 +31,7 @@ jobs:
           RELEASE_BUMP: ${{ inputs.bump }}
           TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         with:
+          github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           script: |
             const requestedBump = process.env.RELEASE_BUMP;
             const triggeringActor = process.env.TRIGGERING_ACTOR;
@@ -119,11 +120,12 @@ jobs:
       - name: Install gh-aw
         uses: github/gh-aw-actions/setup-cli@23e16337f3568b3c18bb04a976793f282a016755 # v0.88.4
         with:
+          github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           version: v0.88.4
       - name: Validate files installed from aw.yml
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
         run: npm run test:package-lifecycle
 
   prepare-release:
@@ -140,6 +142,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ needs.resolve-version.outputs.release_tag }}
         with:
+          github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           script: |
             const releaseTag = process.env.RELEASE_TAG;
             core.info(`Creating draft release ${releaseTag}.`);

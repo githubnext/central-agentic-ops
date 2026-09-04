@@ -791,6 +791,7 @@ test("release computes an authorized semantic version bump and creates a draft f
   assert.deepEqual(config.on.workflow_dispatch.inputs.bump.options, ["patch", "minor", "major"]);
   assert.match(version, /RELEASE_BUMP: \$\{\{ inputs\.bump \}\}/);
   assert.match(version, /TRIGGERING_ACTOR: \$\{\{ github\.triggering_actor \}\}/);
+  assert.match(version, /github-token: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \}\}/);
   assert.match(version, /const bump = \['patch', 'minor', 'major'\]\.includes\(requestedBump\) \? requestedBump : 'patch'/);
   assert.match(version, /Unknown release bump.*defaulting to patch/);
   assert.match(version, /context\.payload\.repository\.fork/);
@@ -808,9 +809,12 @@ test("release computes an authorized semantic version bump and creates a draft f
   assert.match(version, /else if \(bump === 'minor'\)/);
   assert.match(version, /Resolved \$\{bump\} bump from/);
   assert.match(validation, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: \$\{\{ github\.repository \}\}@\$\{\{ github\.sha \}\}/);
+  assert.match(validation, /github-token: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \}\}/);
+  assert.match(validation, /GH_TOKEN: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \}\}/);
   assert.match(validation, /npm run test:package-lifecycle/);
   assert.deepEqual(jobs.get("prepare-release")?.needs, ["resolve-version", "validate-package"]);
   assert.match(prepare, /draft: true/);
+  assert.match(prepare, /github-token: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \}\}/);
   assert.match(prepare, /generate_release_notes: true/);
   assert.match(prepare, /publish the draft, and mark it as the latest release from the GitHub website/);
   assert.equal(jobs.has("publish-release"), false);
