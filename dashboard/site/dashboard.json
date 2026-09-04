@@ -2965,7 +2965,7 @@
             "count-source": "runtime-signals",
             "count-label": "signals",
             "views": [
-              "runtime-run-health",
+              "runtime-episode-summary",
               "runtime-anomaly-readiness",
               "runtime-needs-attention"
             ]
@@ -2976,7 +2976,6 @@
             "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
             "layout": "full",
             "views": [
-              "runtime-episode-summary",
               "runtime-execution-episodes",
               "runtime-episode-attribution-gap"
             ]
@@ -2984,38 +2983,16 @@
         ],
         "views": [
           {
-            "id": "runtime-run-health",
-            "title": "Runtime health trend",
-            "description": "Daily run conclusions provide the leading runtime reliability signal.",
+            "id": "runtime-episode-summary",
+            "title": "Execution episodes",
             "data": {
-              "source": "runs",
-              "time": {
-                "range": "30d"
-              }
+              "sources": [
+                "runtime-episode-summary"
+              ]
             },
-            "mark": "chart",
-            "chart": "swimlane",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "started-at",
-                "type": "temporal",
-                "title": "Started"
-              },
-              "y": {
-                "field": "run-conclusion",
-                "type": "ordinal",
-                "title": "Conclusion"
-              },
-              "color": {
-                "field": "run-conclusion",
-                "type": "nominal"
-              },
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              }
-            }
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
           },
           {
             "id": "runtime-anomaly-readiness",
@@ -3039,18 +3016,6 @@
             },
             "mark": "element",
             "element": "signal-list",
-            "layout": "full"
-          },
-          {
-            "id": "runtime-episode-summary",
-            "title": "Execution episodes",
-            "data": {
-              "sources": [
-                "runtime-episode-summary"
-              ]
-            },
-            "mark": "element",
-            "element": "summary-grid",
             "layout": "full"
           },
           {
