@@ -801,7 +801,8 @@ test("release computes an authorized semantic version bump before drafting and p
   assert.match(version, /listReleases/);
   assert.match(version, /listTags/);
   assert.match(version, /\.filter\(\(release\) => !release\.draft\)/);
-  assert.match(version, /const versions = \[\.\.\.releaseVersions, \.\.\.tagVersions\]/);
+  assert.match(version, /const versionNames = new Set\(\[\.\.\.releaseTags, \.\.\.tags\.map/);
+  assert.match(version, /const versions = \[\.\.\.versionNames\]\.flatMap\(toVersion\)/);
   assert.match(version, /No stable semantic version releases or tags found/);
   assert.match(version, /const latest = versions\[0\] \|\| \[0, 0, 0\]/);
   assert.match(version, /if \(bump === 'major'\)/);
