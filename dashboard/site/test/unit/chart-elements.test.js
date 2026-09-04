@@ -139,6 +139,7 @@ describe('chart element helpers', () => {
   });
 
   it('reduces line-chart point radii linearly as the number of points increases', () => {
+    /** @param {number} count */
     const renderPoints = (count) => {
       const points = Array.from({ length: count }, (_, index) => ({
         x: String(index),
