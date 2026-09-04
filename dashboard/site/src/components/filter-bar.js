@@ -178,7 +178,7 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
 export function relativeTimeWindow(range, referenceEnd) {
   const parsedEnd = Date.parse(referenceEnd ?? '');
   const end = Number.isFinite(parsedEnd) ? parsedEnd : Date.now();
-  let hours = 7 * 24;
+  let hours;
   try {
     hours = dashboardHorizonHours(range);
   } catch {
