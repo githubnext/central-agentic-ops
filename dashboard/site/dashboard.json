@@ -1056,7 +1056,6 @@
             "count-source": "security-signals",
             "count-label": "signals",
             "views": [
-              "security-findings-summary",
               "security-summary",
               "security-signals"
             ]
@@ -1074,35 +1073,6 @@
           }
         ],
         "views": [
-          {
-            "id": "security-findings-summary",
-            "title": "Security findings summary",
-            "description": "Retained findings grouped by severity.",
-            "data": {
-              "source": "findings"
-            },
-            "mark": "table",
-            "layout": "full",
-            "encoding": {
-              "columns": [
-                {
-                  "field": "finding-severity",
-                  "type": "nominal",
-                  "title": "Severity",
-                  "display": "status"
-                },
-                {
-                  "field": "finding",
-                  "as": "finding-count",
-                  "type": "quantitative",
-                  "aggregate": "count",
-                  "title": "Findings"
-                }
-              ]
-            },
-            "controls": "interactive",
-            "empty-message": "No retained security findings were observed."
-          },
           {
             "id": "security-summary",
             "title": "Assurance summary",
