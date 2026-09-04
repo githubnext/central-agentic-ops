@@ -118,6 +118,8 @@ resources:
     destination: .github/aw/dashboard/site/src/components/packages-view.js
   - source: site/src/components/route-empty-state.js
     destination: .github/aw/dashboard/site/src/components/route-empty-state.js
+  - source: site/src/components/route-tab-set.js
+    destination: .github/aw/dashboard/site/src/components/route-tab-set.js
   - source: site/src/components/run-classification.js
     destination: .github/aw/dashboard/site/src/components/run-classification.js
   - source: site/src/components/run-conclusion-classification.json
