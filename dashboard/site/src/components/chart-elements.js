@@ -34,6 +34,10 @@ const SEMANTIC_SERIES_TERMS = {
   attention: new Set(['cancelled', 'canceled', 'degraded', 'warning']),
   neutral: new Set(['disabled', 'dismissed', 'inactive', 'neutral', 'skipped', 'unknown'])
 };
+const SEMANTIC_SERIES_PHRASES = {
+  failure: new Set(['timed out']),
+  waiting: new Set(['action required', 'in progress'])
+};
 
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
@@ -91,24 +95,31 @@ export function chartSeriesClassName(name, index) {
   const terms = new Set(normalized.split(/\s+/).filter(Boolean));
   let meaning = null;
 
-  if (normalized === 'timed out' || [...SEMANTIC_SERIES_TERMS.failure].some((term) => terms.has(term))) {
+  if (SEMANTIC_SERIES_PHRASES.failure.has(normalized) || hasMatchingTerm(terms, SEMANTIC_SERIES_TERMS.failure)) {
     meaning = 'failure';
   } else if (
-    normalized === 'action required'
-    || normalized === 'in progress'
+    SEMANTIC_SERIES_PHRASES.waiting.has(normalized)
     || ((terms.has('approval') || terms.has('review')) && (terms.has('required') || terms.has('awaiting') || terms.has('pending') || terms.has('waiting')))
-    || [...SEMANTIC_SERIES_TERMS.waiting].some((term) => terms.has(term))
+    || hasMatchingTerm(terms, SEMANTIC_SERIES_TERMS.waiting)
   ) {
     meaning = 'waiting';
-  } else if ([...SEMANTIC_SERIES_TERMS.success].some((term) => terms.has(term))) {
+  } else if (hasMatchingTerm(terms, SEMANTIC_SERIES_TERMS.success)) {
     meaning = 'success';
-  } else if ([...SEMANTIC_SERIES_TERMS.attention].some((term) => terms.has(term))) {
+  } else if (hasMatchingTerm(terms, SEMANTIC_SERIES_TERMS.attention)) {
     meaning = 'attention';
-  } else if ([...SEMANTIC_SERIES_TERMS.neutral].some((term) => terms.has(term))) {
+  } else if (hasMatchingTerm(terms, SEMANTIC_SERIES_TERMS.neutral)) {
     meaning = 'neutral';
   }
 
   return meaning ? `${paletteClass} chart-series-semantic-${meaning}` : paletteClass;
+}
+
+/** @param {Set<string>} terms @param {Set<string>} candidates */
+function hasMatchingTerm(terms, candidates) {
+  for (const term of terms) {
+    if (candidates.has(term)) return true;
+  }
+  return false;
 }
 
 /**
