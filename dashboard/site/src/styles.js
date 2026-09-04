@@ -1072,6 +1072,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .workflow-identity { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 420px) {
+  .primary-nav .nav-item.narrow-mobile-nav-overflow { display: none; }
   .data-state-summary, .metrics { grid-template-columns: 1fr; }
   .workflow-run-health > .chart-legend, .value-chart > dl { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr; }
