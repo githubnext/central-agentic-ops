@@ -1,8 +1,9 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test, expect } from '@playwright/test';
 
-const siteRoot = resolve(new URL('../..', import.meta.url).pathname);
+const siteRoot = fileURLToPath(new URL('../..', import.meta.url));
 
 test.beforeEach(async ({ page, context }) => {
   await context.route('http://dashboard.test/**', async (route) => {
