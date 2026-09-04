@@ -723,6 +723,7 @@ test("repository PR automation remains bounded and adapted to CAO", () => {
   assert.match(mattReviewer, /emitted < 3000/);
   assert.doesNotMatch(mattReviewer, /\|\s*head -n 3000/);
   assert.match(mattReviewer, /fromJSON\(github\.event\.inputs\.aw_context \|\| '\{\}'\)\.item_number/);
+  assert.match(mattReviewer, /reaction: none/);
 
   assert.match(decisionGate, /types: \[opened, reopened, synchronize, labeled, ready_for_review\]/);
   assert.match(decisionGate, /allowed-files:\n\s+- "docs\/adr\/\*\*"/);

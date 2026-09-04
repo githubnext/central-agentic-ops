@@ -1,7 +1,7 @@
 # gh-aw-commands: {"payload_version":"v1","schema_version":"v1","compiler_version":"v0.88.4","commands":["matt","souschef"],"workflows":["mattpocock-skills-reviewer","pr-sous-chef"]}
 # Routing summary (sorted):
 #   slash commands:
-#     /matt -> mattpocock-skills-reviewer [pull_request_comment,pull_request_review_comment] reaction=eyes
+#     /matt -> mattpocock-skills-reviewer [pull_request_comment,pull_request_review_comment]
 #     /souschef -> pr-sous-chef [pull_request_comment] reaction=eyes
 #   labels:
 #     (none)
@@ -61,7 +61,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         # runner-guard:ignore RGS-016 -- routing tables below contain emoji variation selectors (U+FE0F) and zero-width joiners (U+200D) used to render standard emoji sequences, not steganographic payloads.
         env:
-          GH_AW_SLASH_ROUTING: '{"matt":[{"workflow":"mattpocock-skills-reviewer","events":["pull_request_comment","pull_request_review_comment"],"ai_reaction":"eyes","status_comment":true}],"souschef":[{"workflow":"pr-sous-chef","events":["pull_request_comment"],"ai_reaction":"eyes","status_comment":true}]}'
+          GH_AW_SLASH_ROUTING: '{"matt":[{"workflow":"mattpocock-skills-reviewer","events":["pull_request_comment","pull_request_review_comment"],"status_comment":true}],"souschef":[{"workflow":"pr-sous-chef","events":["pull_request_comment"],"ai_reaction":"eyes","status_comment":true}]}'
           GH_AW_LABEL_ROUTING: '{}'
           GH_AW_HELP_COMMANDS: '[{"command":"matt","description":"Reviews ready pull requests with pinned Matt Pocock engineering skills and repository-specific change context.","centralized":true,"decentralized":false,"source_file":"mattpocock-skills-reviewer"},{"command":"souschef","description":"Nudges open pull requests toward a focused pr-finisher pass without mutating branches or broadening repository authority.","centralized":true,"decentralized":false,"source_file":"pr-sous-chef"}]'
           GH_AW_HELP_COMMAND_ENABLED: 'true'
