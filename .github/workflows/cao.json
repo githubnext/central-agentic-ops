@@ -60,11 +60,7 @@
       },
       "dependabot": {
         "icon": "dependabot",
-        "targets": {
-          "github/gh-aw": {
-            "mode": "live"
-          }
-        },
+        "mode": "live",
         "workers": {
           "release-train-updater": {
             "workflow": "dependabot-release-train-updater"

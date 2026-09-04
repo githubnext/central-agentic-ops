@@ -104,7 +104,7 @@ test("control policy schema accepts config-defined package and worker catalogs",
   assert.equal(validate(JSON.stringify(policy)).status, 0);
 });
 
-test("checked-in control policy selects seven repositories with local SelfCare authority", () => {
+test("checked-in control policy selects seven repositories with live Dependabot and local SelfCare authority", () => {
   const policy = parsePolicy(readFileSync(join(root, ".github", "workflows", "cao.json"), "utf8"));
   const repositories = [
     "github/gh-aw",
@@ -126,7 +126,7 @@ test("checked-in control policy selects seven repositories with local SelfCare a
       controlRepository: "githubnext/gh-aw-cao",
       targetRepository,
     });
-    assert.equal(effective.safe_output_mode, targetRepository === "github/gh-aw" ? "live" : "review");
+    assert.equal(effective.safe_output_mode, "live");
     assert.equal(effective.max_repositories, 7);
   }
 
