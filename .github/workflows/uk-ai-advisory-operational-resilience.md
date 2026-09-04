@@ -56,7 +56,7 @@ jobs:
 if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
-  - uses: shared/cao.md
+  - uses: shared/control.md
     with:
       package: uk-ai-advisory
       role: worker

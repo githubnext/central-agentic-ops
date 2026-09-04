@@ -3,7 +3,7 @@ description: UK AI Advisory, a non-binding UK AI open-code operational resilienc
 min-version: v0.88.4
 experimental: true
 includes:
-  - .github/workflows/shared/cao.md
+  - .github/workflows/shared/control.md
   - .github/workflows/uk-ai-advisory.md
   - .github/workflows/uk-ai-advisory-package-maintainer.md
 resources:

@@ -63,17 +63,14 @@ test("catalog packages declare their current experimental maturity", () => {
   }
 });
 
-test("operational workflows use the transitive CAO package bundle", () => {
-  const bundle = workflow("shared/cao.md");
+test("operational workflows import the shared CAO control directly", () => {
   const control = workflow("shared/control.md");
-  assert.match(bundle, /imports:\n\s+- uses: control\.md/);
-  assert.match(bundle, /dispatch_max: \$\{\{ github\.aw\.import-inputs\.dispatch_max \}\}/);
   assert.match(control, /dispatch_max:\n\s+type: number/);
   assert.match(control, /orchestrator_credits:\n\s+type: number/);
   assert.match(control, /worker_credits_per_target:\n\s+type: number/);
 
   const operationWorkflows = readdirSync(workflowsDirectory)
-    .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
+    .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/control.md"));
   assert.equal(operationWorkflows.length, 33);
 });
 
