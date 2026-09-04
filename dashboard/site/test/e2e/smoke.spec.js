@@ -387,8 +387,9 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
     const bounds = chart.getBoundingClientRect();
     return { x: bounds.x, y: bounds.y };
   }));
-  expect(firstChart?.x).toBeLessThan(secondChart?.x ?? 0);
-  expect(firstChart?.y).toBe(secondChart?.y);
+  if (!firstChart || !secondChart) throw new Error('Expected at least two Runtime charts.');
+  expect(firstChart.x).toBeLessThan(secondChart.x);
+  expect(firstChart.y).toBe(secondChart.y);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
