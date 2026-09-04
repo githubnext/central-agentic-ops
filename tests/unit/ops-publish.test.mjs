@@ -28,7 +28,7 @@ const event = {
     title: "Investigate failing workflow",
     created_at: "2026-08-27T10:01:00Z",
     user: { login: "github-actions[bot]", type: "Bot" },
-    body: "Target repository: `acme/service`\n\nGenerated from [AW Maintenance / Failures](https://github.com/acme/control/actions/runs/123)",
+    body: "Target repository: `acme/service`\n\nGenerated from [AW Doctor / Failures](https://github.com/acme/control/actions/runs/123)",
   },
 };
 
@@ -71,7 +71,7 @@ test("ops publish derives routing from an allowlisted generated run", () => {
     },
   });
   assert.deepEqual(validated, {
-    packageName: "aw-maintenance",
+    packageName: "aw-doctor",
     targetRepository: "acme/service",
     targetOwner: "acme",
     targetName: "service",
@@ -88,8 +88,8 @@ test("ops publish recognizes every supported worker on the default branch", () =
   for (const [workflowFile, packageName] of [
     ["ambient-context-agents-md-curator.lock.yml", "ambient-context"],
     ["ambient-context-skills-curator.lock.yml", "ambient-context"],
-    ["aw-failures-investigator.lock.yml", "aw-maintenance"],
-    ["aw-maintenance-upgrade.lock.yml", "aw-maintenance"],
+    ["aw-failures-investigator.lock.yml", "aw-doctor"],
+    ["aw-maintenance-upgrade.lock.yml", "aw-doctor"],
     ["dependabot-release-train-updater.lock.yml", "dependabot"],
     ["optimization-ai-credit-auditor.lock.yml", "optimization"],
     ["optimization-ai-credit-optimizer.lock.yml", "optimization"],
@@ -241,17 +241,17 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
 test("ops publish requires target-owned package authority", () => {
   const authority = parseAuthorityJson(JSON.stringify({
     version: 1,
-    "target-authority": { packages: { "aw-maintenance": { authority: "acme/control" } } },
+    "target-authority": { packages: { "aw-doctor": { authority: "acme/control" } } },
   }));
-  assert.doesNotThrow(() => assertTargetAuthority(authority, "aw-maintenance", "acme/control"));
+  assert.doesNotThrow(() => assertTargetAuthority(authority, "aw-doctor", "acme/control"));
   assert.throws(
-    () => assertTargetAuthority(authority, "aw-maintenance", "acme/other-control"),
+    () => assertTargetAuthority(authority, "aw-doctor", "acme/other-control"),
     /different control repository/,
   );
   assert.throws(() => parseAuthorityJson("version: ["), /not valid control policy JSON/);
   assert.throws(
-    () => assertTargetAuthority({ version: 1, "target-authority": { packages: {} } }, "aw-maintenance", "acme/control"),
-    /target-authority.packages.aw-maintenance.authority must use owner\/repository form/,
+    () => assertTargetAuthority({ version: 1, "target-authority": { packages: {} } }, "aw-doctor", "acme/control"),
+    /target-authority.packages.aw-doctor.authority must use owner\/repository form/,
   );
 });
 

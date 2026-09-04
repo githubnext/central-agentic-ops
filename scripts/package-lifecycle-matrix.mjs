@@ -25,9 +25,9 @@ const suites = [
     prefixes: [".github/workflows/activity."],
   },
   {
-    name: "AW Maintenance",
-    manifest: "aw-maintenance/aw.yml",
-    testPattern: "focused AW Maintenance package contract",
+    name: "AW Doctor",
+    manifest: "aw-doctor/aw.yml",
+    testPattern: "focused AW Doctor package contract",
     prefixes: [
       ".github/graders/aw-failures-",
       ".github/graders/aw-maintenance-",

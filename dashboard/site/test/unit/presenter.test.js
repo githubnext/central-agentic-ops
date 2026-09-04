@@ -586,7 +586,7 @@ describe('presenter built-in and custom pages', () => {
       'Models & agents',
       'UK AI advisory',
       'Ambient context',
-      'AW Maintenance',
+      'AW Doctor',
       'Dependabot',
       'EU CRA',
       'Optimization'
@@ -800,7 +800,7 @@ describe('presenter built-in and custom pages', () => {
       'Models & agents',
       'UK AI advisory',
       'Ambient context',
-      'AW Maintenance',
+      'AW Doctor',
       'Dependabot',
       'EU CRA',
       'Optimization'
