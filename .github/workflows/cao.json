@@ -141,6 +141,9 @@
           "docs-build-time-investigator": {
             "workflow": "self-care-docs-build-time-investigator"
           },
+          "open-source-failures": {
+            "workflow": "self-care-open-source-failures"
+          },
           "primer-brand-checker": {
             "workflow": "self-care-primer-brand-checker"
           }

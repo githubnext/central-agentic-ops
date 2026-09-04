@@ -74,7 +74,7 @@ test("operational workflows use the transitive CAO package bundle", () => {
 
   const operationWorkflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
-  assert.equal(operationWorkflows.length, 32);
+  assert.equal(operationWorkflows.length, 33);
 });
 
 test("AI Credit workers collect all workflow logs with bounded resources", () => {
@@ -404,7 +404,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 7, workers: 7 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 8, workers: 8 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -428,6 +428,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "self-care-dashboard-language-refactor.md": { credits: 400, timeout: 30 },
     "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
     "self-care-docs-build-time-investigator.md": { credits: 400, timeout: 30 },
+    "self-care-open-source-failures.md": { credits: 500, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
   };
 
@@ -487,7 +488,7 @@ test("control workflows deny before activation through one shared admission cont
     .map((name) => [name, workflow(name)])
     .filter(([, source]) => /^\s+- uses: shared\/cao\.md$/m.test(source));
 
-  assert.equal(controlled.length, 32, "unexpected shared control workflow count");
+  assert.equal(controlled.length, 33, "unexpected shared control workflow count");
   assert.equal(
     [...sharedControl.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
     1,
@@ -989,6 +990,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
     "self-care-dashboard-language-refactor",
     "self-care-dashboard-review",
     "self-care-docs-build-time-investigator",
+    "self-care-open-source-failures",
     "self-care-primer-brand-checker",
     "self-care",
   ];
@@ -1323,6 +1325,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-docs-build-time-investigator.md", "self-care"],
+    ["self-care-open-source-failures.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(workflow(name), new RegExp(`package: ${bundle}`));
@@ -1389,6 +1392,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-docs-build-time-investigator.md", "self-care"],
+    ["self-care-open-source-failures.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(
@@ -1519,6 +1523,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["self-care-dashboard-language-refactor.md", "self-care", "dashboard-language-refactor"],
     ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
     ["self-care-docs-build-time-investigator.md", "self-care", "docs-build-time-investigator"],
+    ["self-care-open-source-failures.md", "self-care", "open-source-failures"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
   ];
 
@@ -1998,6 +2003,30 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
+test("SelfCare open source failures uses complete dashboard activity evidence", () => {
+  const source = workflow("self-care-open-source-failures.md");
+
+  assert.match(source, /^name: "SelfCare \/ Open Source Failures"$/m);
+  assert.match(source, /tracker-id: self-care-open-source-failures/);
+  assert.match(source, /restore-keys:\s*\n\s+cao-activity-/);
+  assert.match(source, /deployed-workflows\.json/);
+  assert.match(source, /snapshot\.schemaVersion !== 1/);
+  assert.match(source, /snapshot\.runHealth\?\.available !== true/);
+  assert.match(source, /snapshot\.runHealth\?\.complete !== true/);
+  assert.match(source, /workflow\.visibility === "public"/);
+  assert.match(source, /failures\.slice\(0, 100\)/);
+  assert.match(source, /exactly `githubnext\/gh-aw-cao`/);
+  assert.match(source, /safe_output_mode` is `live`/);
+  assert.match(source, /Do not discover repositories/);
+  assert.match(source, /labels: \[self-care, self-care:open-source-failures\]/);
+  assert.match(source, /title-prefix: "\[self-care:open-source-failures\] "/);
+  assert.match(source, /max: 3/);
+  assert.match(source, /select the single most important follow-up action with the highest expected return on investment/i);
+  assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.doesNotMatch(source, /^evals:/m);
+  assert.doesNotMatch(source, /^graders:/m);
+});
+
 test("SelfCare Primer brand checker audits the dashboard against retrieved guidance", () => {
   const source = workflow("self-care-primer-brand-checker.md");
   const compiled = workflow("self-care-primer-brand-checker.lock.yml");
@@ -2247,6 +2276,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "self-care-dashboard-language-refactor.lock.yml",
       "self-care-dashboard-review.lock.yml",
       "self-care-docs-build-time-investigator.lock.yml",
+      "self-care-open-source-failures.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
       "self-care.lock.yml",
       "software-development-practices-github-well-architected.lock.yml",
@@ -2354,6 +2384,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["self-care-dashboard-language-refactor.lock.yml", ["self-care", "dashboard-language-refactor"]],
       ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
       ["self-care-docs-build-time-investigator.lock.yml", ["self-care", "docs-build-time-investigator"]],
+      ["self-care-open-source-failures.lock.yml", ["self-care", "open-source-failures"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
       ["software-development-practices-github-well-architected.lock.yml", ["software-development-practices", "github-well-architected"]],
       ["software-development-practices-nist-ssdf.lock.yml", ["software-development-practices", "nist-ssdf"]],
@@ -2780,6 +2811,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
           "self-care-dashboard-language-refactor",
           "self-care-dashboard-review",
           "self-care-docs-build-time-investigator",
+          "self-care-open-source-failures",
           "self-care-primer-brand-checker",
         ],
       },
