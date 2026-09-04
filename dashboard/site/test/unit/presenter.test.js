@@ -547,6 +547,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
+      'Preview',
       'Runtime',
       'Performance',
       'Security',
@@ -699,6 +700,7 @@ describe('presenter built-in and custom pages', () => {
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
+      'Preview',
       'Runtime',
       'Performance',
       'Security',

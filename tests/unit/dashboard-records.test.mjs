@@ -79,6 +79,69 @@ test("dashboard records retain durable-output target and run attribution", async
   }]);
 });
 
+test("dashboard records attribute issues from the gh-aw workflow XML marker", async () => {
+  const issue = {
+    number: 9,
+    title: "[Maintenance] Preview finding",
+    body: [
+      "A current report issue.",
+      "",
+      "<!-- gh-aw-workflow-id: maintenance-worker -->",
+    ].join("\n"),
+    body_html: "<p>A current report issue.</p>",
+    state: "open",
+    html_url: "https://github.com/acme/control/issues/9",
+    url: "https://api.github.com/repos/acme/control/issues/9",
+    created_at: "2026-09-03T10:00:00Z",
+    updated_at: "2026-09-03T11:00:00Z",
+  };
+  const fetchImpl = async (input) => {
+    const url = new URL(input);
+    let value;
+    if (url.pathname === "/repos/acme/control/issues") value = [issue];
+    else if (url.pathname.endsWith("/issues")) value = [];
+    else if (url.pathname.endsWith("/issues/comments")) value = [];
+    else if (url.pathname.endsWith("/actions/artifacts")) value = { artifacts: [] };
+    else throw new Error(`Unexpected request: ${url}`);
+    return new Response(JSON.stringify(value), { status: 200 });
+  };
+
+  const output = await collectDashboardRecords({
+    repository: "acme/control",
+    token: "test-token",
+    controlSettings: {
+      allowed_repositories: ["acme/control"],
+      packages: { maintenance: { mode: "review" } },
+    },
+    inventory: {
+      ...inventory,
+      workflows: [{
+        id: "maintenance-worker",
+        name: "Maintenance worker",
+        sourcePath: ".github/workflows/maintenance-worker.md",
+      }],
+    },
+    deployedInventory: {
+      workflows: [{ repository: "acme/control" }],
+      allowedRepositories: ["acme/control"],
+    },
+    fetchImpl,
+    generatedAt: "2026-09-03T12:00:00Z",
+  });
+
+  assert.deepEqual(output.records.map((record) => ({
+    bundle: record.bundle,
+    workflowId: record.workflowId,
+    workflowPath: record.workflowPath,
+    workflow: record.workflow,
+  })), [{
+    bundle: "maintenance",
+    workflowId: "maintenance-worker",
+    workflowPath: ".github/workflows/maintenance-worker.md",
+    workflow: "Maintenance worker",
+  }]);
+});
+
 test("dashboard records retain report model and agent metadata when available", async () => {
   const issue = {
     number: 8,
