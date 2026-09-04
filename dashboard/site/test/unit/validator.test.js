@@ -330,6 +330,7 @@ describe('dashboard document validation', () => {
     const valuePage = document.dashboard.pages.find(
       (/** @type {{ id: string }} */ page) => page.id === 'operational-value'
     );
+    expect(valuePage).toBeDefined();
     const valueCallout = valuePage.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'experiment-evidence-boundary'
     );
