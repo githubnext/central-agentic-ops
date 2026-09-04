@@ -1856,7 +1856,7 @@ test("AW Maintenance compiler security worker runs the full validation suite", (
     assert.match(source, new RegExp(`${flag} \\\\`), flag);
   }
   assert.match(source, /gh aw mcp-server/);
-  assert.match(source, /Begin directly with a concise executive summary/);
+  assert.match(source, /Begin directly with a short, plain-language executive summary/);
   assert.match(source, /\*\*Action:\*\* Assign this issue to Copilot/);
   assert.match(source, /<details><summary><b>Failure details<\/b><\/summary>/);
   assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
