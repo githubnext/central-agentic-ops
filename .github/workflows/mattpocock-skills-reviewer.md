@@ -41,7 +41,7 @@ steps:
   - name: Prefetch bounded pull request context
     env:
       GH_TOKEN: ${{ github.token }}
-      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || fromJSON(github.event.inputs.aw_context || '{}').item_number }}
       REPOSITORY: ${{ github.repository }}
     run: |
       set -euo pipefail

@@ -716,10 +716,12 @@ test("repository PR automation remains bounded and adapted to CAO", () => {
   assert.match(sousChef, /advisory: do not edit files, push branches/);
   assert.doesNotMatch(sousChef, /push-to-pull-request-branch:|update-pull-request:|approve-workflow-run:/);
   assert.match(sousChef, /last 30 minutes/);
+  assert.match(sousChef, /fromJSON\(github\.event\.inputs\.aw_context \|\| '\{\}'\)\.item_number/);
 
   assert.equal([...mattReviewer.matchAll(/mattpocock\/skills\/[\w-]+@[0-9a-f]{40}/g)].length, 5);
   assert.match(mattReviewer, /emitted < 3000/);
   assert.doesNotMatch(mattReviewer, /\|\s*head -n 3000/);
+  assert.match(mattReviewer, /fromJSON\(github\.event\.inputs\.aw_context \|\| '\{\}'\)\.item_number/);
 
   assert.match(decisionGate, /types: \[opened, reopened, synchronize, labeled, ready_for_review\]/);
   assert.match(decisionGate, /allowed-files:\n\s+- "docs\/adr\/\*\*"/);

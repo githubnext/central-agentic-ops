@@ -20,7 +20,7 @@ strict: true
 max-ai-credits: 300
 timeout-minutes: 15
 concurrency:
-  group: "${{ github.workflow }}-${{ github.repository }}"
+  group: "${{ github.workflow }}-${{ github.event_name == 'schedule' && github.repository || fromJSON(github.event.inputs.aw_context || '{}').item_number || github.run_id }}"
   cancel-in-progress: true
 tools:
   github:
