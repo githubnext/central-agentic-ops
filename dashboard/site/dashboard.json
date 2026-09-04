@@ -310,10 +310,7 @@
             "title": "Remaining requests",
             "description": "Remaining request capacity before and after each instrumented operation.",
             "data": {
-              "source": "github-api-rate-limits",
-              "time": {
-                "range": "7d"
-              }
+              "source": "github-api-rate-limits"
             },
             "mark": "chart",
             "chart": "line",
@@ -322,6 +319,7 @@
               "x": {
                 "field": "observed-at",
                 "type": "temporal",
+                "time-unit": "hour",
                 "title": "Observed"
               },
               "y": {
@@ -340,13 +338,7 @@
             "title": "API and cache observations",
             "description": "Credential class and cache state are recorded without retaining credential values.",
             "data": {
-              "source": "github-api-rate-limits",
-              "order-by": [
-                {
-                  "field": "observed-at",
-                  "direction": "desc"
-                }
-              ]
+              "source": "github-api-rate-limits"
             },
             "mark": "table",
             "layout": "full",
@@ -4772,6 +4764,7 @@
           "performance",
           "security",
           "operational-value",
+          "github-api",
           "cost"
         ]
       },

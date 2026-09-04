@@ -208,7 +208,7 @@ describe('dashboard document validation', () => {
     if (!invalidContext.ok) {
       expect(invalidContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[8].views[3].encoding.actions[0].context[9]'
+        path: '$.dashboard.pages[9].views[3].encoding.actions[0].context[9]'
       }));
     }
     detailsView.encoding.actions[0].context.pop();
@@ -219,7 +219,7 @@ describe('dashboard document validation', () => {
     if (!duplicateContext.ok) {
       expect(duplicateContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[8].views[3].encoding.actions[0].context[9]'
+        path: '$.dashboard.pages[9].views[3].encoding.actions[0].context[9]'
       }));
     }
     detailsView.encoding.actions[0].context.pop();
@@ -230,7 +230,7 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[8].views[3].encoding.actions[0].when.field'
+        path: '$.dashboard.pages[9].views[3].encoding.actions[0].when.field'
       }));
     }
   });
@@ -261,7 +261,7 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[2].views[1].encoding.color'
+        path: '$.dashboard.pages[3].views[1].encoding.color'
       }));
     }
   });
@@ -349,11 +349,11 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
-        path: '$.dashboard.pages[2].views[5].callout.icon'
+        path: '$.dashboard.pages[3].views[5].callout.icon'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[2].views[5].data',
+        path: '$.dashboard.pages[3].views[5].data',
         message: 'callout views must not declare data.'
       }));
     }
@@ -377,24 +377,24 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[2].filter-bar.filters[1]',
+        path: '$.dashboard.pages[3].filter-bar.filters[1]',
         message: 'filter-bar filters must be unique.'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
-        path: '$.dashboard.pages[2].filter-bar.filters[2]'
+        path: '$.dashboard.pages[3].filter-bar.filters[2]'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[2].filter-bar.time-range'
+        path: '$.dashboard.pages[3].filter-bar.time-range'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
-        path: '$.dashboard.pages[2].filter-bar.export'
+        path: '$.dashboard.pages[3].filter-bar.export'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
-        path: '$.dashboard.pages[2].filter-bar.unknown'
+        path: '$.dashboard.pages[3].filter-bar.unknown'
       }));
     }
   });

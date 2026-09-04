@@ -6,7 +6,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_CACHE_ROOT = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-activity");
-const DEFAULT_LEDGER_PATH = path.join(DEFAULT_CACHE_ROOT, "cao-gh.jsonl");
+const DEFAULT_LEDGER_PATH = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-gh", "cao-gh.jsonl");
 
 async function walk(root, relative = "") {
   const directory = path.join(root, relative);
@@ -105,18 +105,29 @@ export async function recordGithubTelemetry({
   const entry = {
     schemaVersion: 1,
     observedAt: now().toISOString(),
+    pairId: [
+      process.env.GITHUB_RUN_ID || "local",
+      process.env.GITHUB_RUN_ATTEMPT || "1",
+      process.env.GITHUB_JOB || "unknown",
+      operation,
+    ].join(":"),
     phase,
     operation,
     outcome,
     tokenType,
+    credentialRole: process.env.CAO_GITHUB_CREDENTIAL_ROLE || "read",
     repository: process.env.GITHUB_REPOSITORY || null,
     workflow: process.env.GITHUB_WORKFLOW || null,
+    job: process.env.GITHUB_JOB || null,
     runId: process.env.GITHUB_RUN_ID || null,
     runAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
     rateLimit,
     rateLimitError,
     activityCache: await collectActivityCacheState(cacheRoot),
   };
+  entry.activityCache.key = process.env.CAO_ACTIVITY_CACHE_KEY || null;
+  entry.activityCache.matchedKey = process.env.CAO_ACTIVITY_CACHE_MATCHED_KEY || null;
+  entry.activityCache.hit = Boolean(entry.activityCache.matchedKey);
   await mkdir(path.dirname(ledgerPath), { recursive: true });
   await appendFile(ledgerPath, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
   return entry;

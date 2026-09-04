@@ -39,7 +39,7 @@ test("GitHub telemetry records rate-limit and bounded cache metadata without tok
       limit: 5_000,
       used: 125,
       remaining: 4_875,
-      resetAt: "2026-09-03T22:40:00.000Z",
+      resetAt: "2026-09-04T13:20:00.000Z",
     });
     const ledger = await readFile(ledgerPath, "utf8");
     assert.doesNotMatch(ledger, /secret-token-value/);

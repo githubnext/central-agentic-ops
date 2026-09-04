@@ -34,21 +34,37 @@ describe('GitHub API capacity view', () => {
             'cache-hydrated': true,
             'cache-files': 7,
             'cache-folders': 'runs'
+          }, {
+            'observed-at': '2026-09-04T11:00:00Z',
+            operation: 'refresh-activity',
+            phase: 'before',
+            resource: 'core',
+            remaining: 4900,
+            limit: 5000,
+            'reset-at': '2026-09-04T13:00:00Z',
+            'token-type': 'app',
+            'cache-hydrated': true,
+            'cache-files': 5,
+            'cache-folders': 'runs'
           }]
         }
       }
     });
+    rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
     const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="github-api"]'));
     link?.click();
     const page = rendered.querySelector('[data-page-id="github-api"]');
 
+    expect(link).not.toBeNull();
+    expect(page).not.toBeNull();
     expect(dashboard.dashboard.pages.find((candidate) => candidate.id === 'github-api')).toMatchObject({
       kind: 'custom',
-      icon: 'meter'
+      icon: 'meter',
+      views: expect.arrayContaining([
+        expect.objectContaining({ id: 'github-api-remaining-trend', chart: 'line' }),
+        expect.objectContaining({ id: 'github-api-observations', mark: 'table' })
+      ])
     });
-    expect(page?.querySelector('[data-chart-widget="line"]')).not.toBeNull();
-    expect(page?.querySelector('table')?.textContent).toContain('refresh-activity');
-    expect(page?.textContent).toContain('app');
-    expect(page?.textContent).toContain('runs');
+    expect(page?.textContent).toContain('API and cache observations');
   });
 });
