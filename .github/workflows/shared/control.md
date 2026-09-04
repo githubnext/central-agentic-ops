@@ -20,6 +20,8 @@ import-schema:
     type: number
     default: "0"
 
+max-daily-ai-credits: 0
+
 github-app:
   client-id: ${{ vars.GH_AW_GITHUB_READ_APP_ID }}
   private-key: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
