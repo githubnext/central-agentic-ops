@@ -191,7 +191,11 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend-pie strong { color: var(--fg); font-variant-numeric: tabular-nums; }
 .chart-legend-pie small { color: var(--muted); }
 .chart-axis { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
-.line-chart-widget .chart-axis { width: 100%; }
+.timeline-chart-axis { position: relative; width: calc(100% - 32px); margin: -12px 16px 12px; padding-top: 9px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.timeline-chart-axis span { position: relative; white-space: nowrap; }
+.timeline-chart-axis span::before { position: absolute; top: -10px; left: 50%; width: 1px; height: 5px; background: var(--border); content: ""; }
+.timeline-chart-axis span:first-child::before { left: 0; }
+.timeline-chart-axis span:last-child::before { right: 0; left: auto; }
 .chart-series-1 { stroke: var(--success); }
 .chart-series-2 { stroke: var(--attention); }
 .chart-series-3 { stroke: var(--danger); }

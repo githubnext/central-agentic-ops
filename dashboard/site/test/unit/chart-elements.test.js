@@ -122,6 +122,10 @@ describe('chart element helpers', () => {
     expect(line.getAttribute('data-chart-widget')).toBe('line');
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
     expect(line.querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
+    expect([...line.querySelectorAll('.timeline-chart-axis span')].map((tick) => tick.textContent)).toEqual([
+      'Aug 29',
+      'Aug 30'
+    ]);
     expect(pie.getAttribute('data-chart-widget')).toBe('pie');
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
@@ -156,5 +160,30 @@ describe('chart element helpers', () => {
     expect(renderPoints(51).querySelector('.line-chart-point')?.getAttribute('r')).toBe('1.5');
     expect(renderPoints(100).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
     expect(renderPoints(150).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
+  });
+
+  it('renders a concise, evenly sampled timeline axis while preserving exact values', () => {
+    const points = Array.from({ length: 9 }, (_, index) => ({
+      x: `2026-09-0${index + 1}T0${index}:15:00Z`,
+      y: index,
+      color: null
+    }));
+    const chart = renderChartWidget('line', points, listChartSeries(points));
+    const ticks = [...chart.querySelectorAll('.timeline-chart-axis span')];
+
+    expect(ticks.map((tick) => tick.textContent)).toEqual([
+      'Sep 1, 00:15 UTC',
+      'Sep 3, 02:15 UTC',
+      'Sep 5, 04:15 UTC',
+      'Sep 7, 06:15 UTC',
+      'Sep 9, 08:15 UTC'
+    ]);
+    expect(ticks.map((tick) => tick.getAttribute('title'))).toEqual([
+      points[0].x,
+      points[2].x,
+      points[4].x,
+      points[6].x,
+      points[8].x
+    ]);
   });
 });
