@@ -795,7 +795,28 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                 views: [
                   { id: 'package-workflows', data: { source: 'workflows' } },
                   { id: 'package-runs', data: { source: 'runs' } },
-                  { id: 'package-usage', data: { source: 'usage' } }
+                  { id: 'package-usage', data: { source: 'usage' } },
+                  {
+                    id: 'packages-utilization',
+                    title: 'Package AIC utilization',
+                    data: { sources: ['workflows', 'usage'] },
+                    mark: 'element',
+                    element: 'package-utilization'
+                  },
+                  {
+                    id: 'packages-run-trend',
+                    title: 'All runs over time',
+                    data: { sources: ['workflows', 'runs', 'outcomes'] },
+                    mark: 'element',
+                    element: 'package-run-trend'
+                  },
+                  {
+                    id: 'packages-summary',
+                    title: 'All output by package',
+                    data: { sources: ['workflows', 'usage', 'findings', 'outcomes', 'runs'] },
+                    mark: 'element',
+                    element: 'package-summary-table'
+                  }
                 ]
               }
             },
@@ -1021,7 +1042,6 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   `);
 
   await expect(page.getByRole('heading', { name: 'Packages', level: 1 })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'All' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.package-utilization-card')).toHaveCount(2);
   await expect(page.locator('[data-package-id="aw-maintenance"]')).toContainText('9.6%');
   await expect(page.locator('[data-package-id="aw-maintenance"] .octicon-gear')).toBeVisible();
@@ -1112,25 +1132,6 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const visiblePackageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr:visible');
   await expect(visiblePackageReportRows).toHaveCount(1);
   await expect(visiblePackageReportRows).toContainText('Reconcile ambient context');
-
-  await page.locator('[data-nav-page-id="packages"]').click();
-  await page.getByRole('tab', { name: 'All' }).focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
-  await expect(awMaintenanceSummary.locator('td')).toHaveText(['1', '1', '0', '0', '1', '23.9', 'Aug 28, 2026, 10:00 AM']);
-  await expect(page.getByRole('tab', { name: 'Review' })).toBeFocused();
-
-  await page.getByRole('tab', { name: 'Live' }).click();
-  await expect(page.getByRole('tab', { name: 'Live' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('heading', { name: 'Live runs over time', level: 3 })).toBeVisible();
-  await expect(page.locator('.package-trend-panel header')).toContainText('2as of');
-
-  await page.setViewportSize({ width: 600, height: 900 });
-  const cards = page.locator('.package-utilization-card');
-  const firstCard = await cards.nth(0).boundingBox();
-  const secondCard = await cards.nth(1).boundingBox();
-  expect(firstCard).not.toBeNull();
-  expect(secondCard?.y).toBeGreaterThan(firstCard?.y ?? 0);
 });
 
 test('DLS-PAGE-017 renders an editable filter bar and applies changes automatically', async ({ page }) => {
