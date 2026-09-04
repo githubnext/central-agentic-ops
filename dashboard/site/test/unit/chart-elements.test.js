@@ -121,9 +121,13 @@ describe('chart element helpers', () => {
     expect(bar.querySelector('.bar-chart-bar:last-child')?.getAttribute('height')).toBe('1');
     expect(line.getAttribute('data-chart-widget')).toBe('line');
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
+    expect(line.querySelector('.line-chart-series')?.getAttribute('pathLength')).toBe('1');
+    expect(line.querySelector('.line-chart-series')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(line.querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
+    expect(line.querySelector('.chart-point')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(pie.getAttribute('data-chart-widget')).toBe('pie');
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
+    expect(pie.querySelector('.pie-chart-mark')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3');
     expect(pie.querySelector('.pie-chart-tooltip rect')?.getAttribute('width')).toBe('21.25');
@@ -132,6 +136,7 @@ describe('chart element helpers', () => {
     expect(pie.querySelector('.pie-chart-mark:last-child')).toBe(firstPieMark);
     expect(histogram.getAttribute('data-chart-widget')).toBe('histogram');
     expect(histogram.querySelectorAll('.histogram-chart-bar')).toHaveLength(3);
+    expect(histogram.querySelector('.histogram-chart-mark')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(histogram.querySelectorAll('.histogram-chart-mark .point-tooltip')).toHaveLength(3);
     expect(histogram.querySelector('.histogram-chart-bar')?.classList.contains('chart-series-1')).toBe(true);
     expect(histogram.querySelector('.histogram-chart-tooltip text')?.getAttribute('lengthAdjust')).toBe('spacingAndGlyphs');

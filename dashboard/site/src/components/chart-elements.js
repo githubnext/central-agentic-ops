@@ -145,6 +145,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           const tooltipY = Math.min(Math.max(21 + (Math.sin(midpoint) * 14) - 9, 1), 34);
           const segment = h('g', {
             className: 'chart-point pie-chart-mark',
+            style: `--chart-entry-index: ${index}`,
             tabIndex: 0,
             role: 'img',
             'aria-label': segmentLabel
@@ -211,6 +212,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           const tooltipX = Math.min(Math.max(x + ((barWidth - 1) / 2) - 21, 1), 57);
           return h('g', {
             className: 'chart-point histogram-chart-mark',
+            style: `--chart-entry-index: ${index}`,
             tabIndex: 0,
             role: 'img',
             'aria-label': label
@@ -267,7 +269,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
         ...gridLines,
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
-        ...groupedSeries.flatMap(([seriesName, seriesPoints]) => {
+        ...groupedSeries.flatMap(([seriesName, seriesPoints], seriesIndex) => {
           const seriesClassName = seriesClassNames.get(seriesName) ?? 'chart-series-1';
           const coordinates = seriesPoints.map((point) => {
             const xIndex = xValues.indexOf(point.x);
@@ -278,12 +280,15 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           return [
             h('polyline', {
               className: `line-chart-series ${seriesClassName}`,
+              style: `--chart-entry-index: ${seriesIndex}`,
+              pathLength: 1,
               points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
             }),
-            ...coordinates.map(({ point, x, y }) => h('g', {
+            ...coordinates.map(({ point, x, y }, pointIndex) => h('g', {
               className: 'chart-point',
+              style: `--chart-entry-index: ${pointIndex}`,
               tabIndex: 0,
               role: 'img',
               'aria-label': chartPointLabel(point, unit)

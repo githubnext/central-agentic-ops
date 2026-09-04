@@ -203,7 +203,10 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .chart-point { cursor: crosshair; }
-.pie-chart-mark, .histogram-chart-mark { animation: chart-mark-enter 240ms ease-out both; }
+.pie-chart-segment { animation: pie-chart-entry 420ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 45ms); }
+.line-chart-series { animation: line-chart-entry 600ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 70ms); }
+.line-chart-point { transform-box: fill-box; transform-origin: center; animation: line-chart-point-entry 280ms ease-out both; animation-delay: calc(180ms + var(--chart-entry-index, 0) * 35ms); }
+.histogram-chart-bar, .table-summary-histogram rect { transform-box: fill-box; transform-origin: center bottom; animation: histogram-chart-entry 360ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 35ms); }
 .pie-chart-segment, .histogram-chart-bar { transition: opacity 120ms ease, filter 120ms ease; }
 .pie-chart-mark:hover .pie-chart-segment, .pie-chart-mark:focus-visible .pie-chart-segment, .histogram-chart-mark:hover .histogram-chart-bar, .histogram-chart-mark:focus-visible .histogram-chart-bar { filter: brightness(1.08); opacity: .82; }
 .point-tooltip { opacity: 0; pointer-events: none; transition: opacity 80ms linear; }
@@ -235,12 +238,21 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend i.chart-series-4 { border-color: var(--accent); color: var(--accent); }
 .chart-legend i.chart-series-5 { border-color: var(--muted); color: var(--muted); }
 .chart-legend i.chart-series-6 { border-color: var(--purple); color: var(--purple); }
-@keyframes chart-mark-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes pie-chart-entry {
+  from { opacity: 0; stroke-dasharray: 0 100; }
+}
+@keyframes line-chart-entry {
+  from { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  to { stroke-dasharray: 1; stroke-dashoffset: 0; }
+}
+@keyframes line-chart-point-entry {
+  from { opacity: 0; transform: scale(0); }
+}
+@keyframes histogram-chart-entry {
+  from { opacity: 0; transform: scaleY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pie-chart-mark, .histogram-chart-mark { animation: none; }
+  .pie-chart-segment, .line-chart-series, .line-chart-point, .histogram-chart-bar, .table-summary-histogram rect { animation: none; }
   .pie-chart-segment, .histogram-chart-bar, .point-tooltip { transition: none; }
 }
 .view-description { margin: 3px 0 0; color: var(--muted); }

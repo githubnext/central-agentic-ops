@@ -26,5 +26,6 @@ describe('histogram', () => {
     expect(rendered.getAttribute('role')).toBe('img');
     expect(rendered.getAttribute('aria-label')).toBe('Latency distribution');
     expect(rendered.querySelectorAll('rect')).toHaveLength(3);
+    expect(rendered.querySelector('rect')?.getAttribute('style')).toContain('--chart-entry-index: 0');
   });
 });
