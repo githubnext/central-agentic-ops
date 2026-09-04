@@ -96,6 +96,6 @@ function combineSourceMetadata(sources) {
     'retrieved-at': retrieved ?? new Date().toISOString(),
     completeness: metadata.some((value) => value.completeness === 'partial') ? 'partial' : metadata.length > 0 && metadata.every((value) => value.completeness === 'complete') ? 'complete' : 'unknown',
     freshness: metadata.some((value) => value.freshness === 'stale') ? 'stale' : metadata.length > 0 && metadata.every((value) => value.freshness === 'fresh') ? 'fresh' : 'unknown',
-    availability: metadata.some((value) => value.availability === 'unavailable') ? 'unavailable' : metadata.length > 0 && metadata.every((value) => value.availability === 'available') ? 'available' : 'empty'
+    availability: sources.length > 0 ? 'available' : 'empty'
   };
 }
