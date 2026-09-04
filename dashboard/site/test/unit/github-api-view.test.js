@@ -23,7 +23,7 @@ describe('GitHub API capacity view', () => {
           source: 'github-api-rate-limits',
           metadata,
           rows: [{
-            'observed-at': '2026-09-04T12:00:00Z',
+            'observed-at': '2026-09-04T10:00:00Z',
             operation: 'refresh-activity',
             phase: 'after',
             resource: 'core',
@@ -108,6 +108,8 @@ describe('GitHub API capacity view', () => {
       expect.objectContaining({ field: 'remaining-percent', unit: 'percent' }),
       expect.objectContaining({ field: 'used' })
     ]));
+    expect(page?.querySelectorAll('.line-chart-series')).toHaveLength(2);
+    expect(page?.querySelector('.dot-chart-point')).toBeNull();
     expect(page?.textContent).toContain('API and cache observations');
     expect(page?.textContent).toContain('API type');
     expect(page?.textContent).toContain('Remaining');

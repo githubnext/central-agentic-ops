@@ -4815,7 +4815,6 @@
           "performance",
           "security",
           "operational-value",
-          "github-api",
           "cost"
         ]
       },
@@ -4824,6 +4823,7 @@
         "pages": [
           "readiness",
           "data-health",
+          "github-api",
           "updates"
         ]
       },

@@ -3440,6 +3440,38 @@ dashboard:
     expect(result.ok).toBe(true);
   });
 
+  it('DLS-VIEW-005 accepts temporal dot charts with quantitative references', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: rate-limit-chart
+  title: Rate-limit chart
+  pages:
+    - id: github-api
+      kind: custom
+      views:
+        - id: remaining
+          data:
+            source: github-api-rate-limits
+          mark: chart
+          chart: dot
+          encoding:
+            x:
+              field: observed-at
+              type: temporal
+            y:
+              field: remaining
+              type: quantitative
+            color:
+              field: resource
+              type: nominal
+            reference:
+              field: limit
+              type: quantitative
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('accepts unbucketed categorical swimlanes and rejects quantitative or aggregated lanes', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const overview = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'overview');

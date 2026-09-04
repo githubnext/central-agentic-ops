@@ -235,6 +235,7 @@ function renderChartView(context) {
   const x = isPlainObject(encoding?.x) && typeof encoding.x.field === 'string' ? encoding.x : null;
   const y = isPlainObject(encoding?.y) && typeof encoding.y.field === 'string' ? encoding.y : null;
   const color = isPlainObject(encoding?.color) && typeof encoding.color.field === 'string' ? encoding.color : null;
+  const reference = isPlainObject(encoding?.reference) && typeof encoding.reference.field === 'string' ? encoding.reference : null;
   const href = isPlainObject(encoding?.href) && typeof encoding.href.field === 'string' ? encoding.href : null;
   const chartType = typeof view.chart === 'string' ? view.chart : x?.type === 'temporal' ? 'line' : 'bar';
   const points = prepareChartPoints(
@@ -256,7 +257,8 @@ function renderChartView(context) {
     pieSummary,
     y ? fieldTitle(y) : 'Total',
     y ? fieldUnit(y, context.units ?? {}) : null,
-    isPlainObject(view.data) && isPlainObject(view.data.time) ? view.data.time : null
+    isPlainObject(view.data) && isPlainObject(view.data.time) ? view.data.time : null,
+    reference?.field ?? null
   );
   const showTable = typeof view.table === 'boolean' ? view.table : chartType === 'bar';
   const table = showTable ? renderTableRegion({

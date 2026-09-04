@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderChartWidget, renderPieLegend } from '../../src/components/chart-elements.js';
+import { chartSeriesClassName, groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderChartWidget, renderPieLegend } from '../../src/components/chart-elements.js';
 
 describe('chart element helpers', () => {
   it('DLS-SAFE-009 groups chart series deterministically and lists reusable class names', () => {
@@ -17,8 +17,8 @@ describe('chart element helpers', () => {
       ['value', [points[3]]]
     ]);
     expect(listChartSeries(points)).toEqual([
-      { name: 'fail', className: 'chart-series-1' },
-      { name: 'pass', className: 'chart-series-2' },
+      { name: 'fail', className: 'chart-series-1 chart-series-semantic-failure' },
+      { name: 'pass', className: 'chart-series-2 chart-series-semantic-success' },
       { name: 'value', className: 'chart-series-3' }
     ]);
 
@@ -42,6 +42,18 @@ describe('chart element helpers', () => {
       'chart-series-12',
       'chart-series-1'
     ]);
+  });
+
+  it('assigns color-blind-safe semantic colors before falling back to the palette', () => {
+    expect(chartSeriesClassName('startup-failure', 0)).toBe('chart-series-1 chart-series-semantic-failure');
+    expect(chartSeriesClassName('timed_out', 1)).toBe('chart-series-2 chart-series-semantic-failure');
+    expect(chartSeriesClassName('Success', 2)).toBe('chart-series-3 chart-series-semantic-success');
+    expect(chartSeriesClassName('waiting for approval', 3)).toBe('chart-series-4 chart-series-semantic-waiting');
+    expect(chartSeriesClassName('action_required', 4)).toBe('chart-series-5 chart-series-semantic-waiting');
+    expect(chartSeriesClassName('in-progress', 5)).toBe('chart-series-6 chart-series-semantic-waiting');
+    expect(chartSeriesClassName('cancelled', 6)).toBe('chart-series-7 chart-series-semantic-attention');
+    expect(chartSeriesClassName('skipped', 7)).toBe('chart-series-8 chart-series-semantic-neutral');
+    expect(chartSeriesClassName('repository', 8)).toBe('chart-series-9');
   });
 
   it('DLS-SAFE-009 renders reusable visual chart legends', () => {
@@ -96,6 +108,15 @@ describe('chart element helpers', () => {
       78
     );
     expect(expanded.querySelector('li:last-child i')?.className).toBe('chart-series-12');
+
+    const semantic = renderPieLegend([
+      ['failure', 1],
+      ['success', 2],
+      ['waiting for approval', 3]
+    ], 6);
+    expect(semantic.querySelector('li:nth-child(1) i')?.classList.contains('chart-series-semantic-failure')).toBe(true);
+    expect(semantic.querySelector('li:nth-child(2) i')?.classList.contains('chart-series-semantic-success')).toBe(true);
+    expect(semantic.querySelector('li:nth-child(3) i')?.classList.contains('chart-series-semantic-waiting')).toBe(true);
   });
 
   it('shows an informative empty state when a chart has fewer than two entries', () => {
@@ -279,6 +300,22 @@ describe('chart element helpers', () => {
     expect(histogram.querySelector('.histogram-chart-mark:last-child')).toBe(firstHistogramMark);
     expect(unitPie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
     expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
+  });
+
+  it('renders temporal dot observations with per-series reference lines', () => {
+    const points = [
+      { x: '2026-09-04T10:00:00Z', y: 4_900, color: 'core', source: { limit: 5_000 } },
+      { x: '2026-09-04T11:00:00Z', y: 4_875, color: 'core', source: { limit: 5_000 } },
+      { x: '2026-09-04T11:00:00Z', y: 28, color: 'search', source: { limit: 30 } }
+    ];
+    const dot = renderChartWidget('dot', points, listChartSeries(points), null, 'Remaining', null, null, 'limit');
+
+    expect(dot.getAttribute('data-chart-widget')).toBe('dot');
+    expect(dot.querySelectorAll('.dot-chart-point')).toHaveLength(3);
+    expect(dot.querySelectorAll('.dot-chart-reference')).toHaveLength(2);
+    expect(dot.querySelector('[data-chart-reference="core"]')?.getAttribute('data-chart-reference-value')).toBe('5000');
+    expect(dot.querySelector('.line-chart-series')).toBeNull();
+    expect(dot.querySelector('svg')?.getAttribute('aria-label')).toBe('Dot chart with 3 points and 2 reference lines');
   });
 
   it('dims historical line context and emphasizes the selected window', () => {
