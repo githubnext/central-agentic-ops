@@ -646,7 +646,15 @@ export async function startDashboardServer({
 
   let expectedAuthority = null;
   let codespaceAuthority = null;
-  const isAllowedHost = (host) => host === expectedAuthority || (codespaceAuthority && host === codespaceAuthority);
+  let localhostAuthority = null;
+  const isAllowedHost = (host) =>
+      host === expectedAuthority
+      || (localhostAuthority && host === localhostAuthority)
+      || (codespaceAuthority && host === codespaceAuthority);
+  const isAllowedOrigin = (origin) =>
+      origin === `http://${expectedAuthority}`
+      || (localhostAuthority && origin === `http://${localhostAuthority}`)
+      || (codespaceAuthority && origin === `https://${codespaceAuthority}`);
   const server = createServer(async (request, response) => {
     try {
       if (!expectedAuthority || !request.headers.host || !isAllowedHost(request.headers.host)
@@ -681,7 +689,7 @@ export async function startDashboardServer({
           response.writeHead(405, { Allow: "POST" }).end();
           return;
         }
-        if (request.headers.origin !== `http://${expectedAuthority}`
+        if (!isAllowedOrigin(request.headers.origin)
             || !request.headers["content-type"]?.startsWith("application/json")) {
           console.log("Rejected Copilot request with invalid headers.", {
             hasOrigin: typeof request.headers.origin === "string",
@@ -872,11 +880,19 @@ export async function startDashboardServer({
           return;
         }
         expectedAuthority = `${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`;
+        if (isLoopbackHost(address.address)) {
+          localhostAuthority = `localhost:${address.port}`;
+        }
         if (process.env.CODESPACES === "true" && process.env.CODESPACE_NAME
             && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN) {
           codespaceAuthority = `${process.env.CODESPACE_NAME}-${address.port}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`;
         }
-        console.log("Dashboard server listening.", { authority: expectedAuthority, ...(codespaceAuthority ? { codespaceAuthority } : {}), copilot });
+        console.log("Dashboard server listening.", {
+          authority: expectedAuthority,
+          ...(localhostAuthority ? { localhostAuthority } : {}),
+          ...(codespaceAuthority ? { codespaceAuthority } : {}),
+          copilot,
+        });
         accept();
       });
     });
@@ -888,6 +904,7 @@ export async function startDashboardServer({
   }
   return {
     url: `http://${expectedAuthority}${routePrefix}`,
+    ...(codespaceAuthority ? { codespaceUrl: `https://${codespaceAuthority}${routePrefix}` } : {}),
     async close() {
       if (closed) return;
       closed = true;
@@ -938,6 +955,9 @@ async function main() {
   }
   const preview = await startDashboardServer(options);
   console.log(`Dashboard preview: ${preview.url}/`);
+  if (preview.codespaceUrl) {
+    console.log(`Dashboard preview (Codespace): ${preview.codespaceUrl}/`);
+  }
   const shutdown = () => void preview.close().then(() => process.exit());
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
