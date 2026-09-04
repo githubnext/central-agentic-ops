@@ -5265,8 +5265,7 @@
       {
         "label": "Attention",
         "pages": [
-          "overview",
-          "preview"
+          "overview"
         ]
       },
       {
@@ -5282,6 +5281,7 @@
       {
         "label": "Control plane",
         "pages": [
+          "preview",
           "readiness",
           "data-health",
           "github-api",

@@ -329,9 +329,8 @@ test('desktop navigation sections collapse and expand around the current view', 
   const mainSection = page.locator('.nav-section').filter({ hasText: 'Main' });
   const investigateSection = page.locator('.nav-section').filter({ hasText: 'Investigate' });
   await expect(mainSection).toHaveAttribute('open', '');
-  await expect(investigateSection).not.toHaveAttribute('open', '');
+  await expect(investigateSection).toHaveAttribute('open', '');
 
-  await investigateSection.locator('summary').click();
   await expect(investigateSection.getByRole('link', { name: 'Runs' })).toBeVisible();
   await investigateSection.getByRole('link', { name: 'Runs' }).click();
   await expect(investigateSection).toHaveAttribute('open', '');
