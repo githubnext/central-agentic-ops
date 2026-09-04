@@ -2,6 +2,48 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDashboardLanguageSources } from "../../dashboard/report/dashboard-language-sources.mjs";
 
+test("dashboard source bridge expands GitHub telemetry resources", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+    usage: {},
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-04T12:00:00Z", records: [] },
+    githubTelemetry: [{
+      observedAt: "2026-09-04T11:59:00Z",
+      phase: "after",
+      operation: "refresh-activity",
+      outcome: "success",
+      tokenType: "app",
+      rateLimit: {
+        core: { limit: 5_000, used: 125, remaining: 4_875, resetAt: "2026-09-04T13:00:00Z" },
+      },
+      rateLimitError: null,
+      activityCache: { hydrated: true, bytes: 1024, files: 6, folders: ["runs", "usage"] },
+    }],
+  });
+
+  assert.deepEqual(sources["github-api-rate-limits"].rows, [{
+    "observed-at": "2026-09-04T11:59:00Z",
+    phase: "after",
+    operation: "refresh-activity",
+    outcome: "success",
+    "token-type": "app",
+    resource: "core",
+    limit: 5_000,
+    used: 125,
+    remaining: 4_875,
+    "remaining-percent": 97.5,
+    "reset-at": "2026-09-04T13:00:00Z",
+    "cache-hydrated": true,
+    "cache-bytes": 1024,
+    "cache-files": 6,
+    "cache-folders": "runs, usage",
+    "rate-limit-error": "",
+  }]);
+  assert.equal(sources["github-api-rate-limits"].metadata.availability, "available");
+  assert.equal(sources["github-api-rate-limits"].metadata.completeness, "complete");
+});
+
 test("dashboard source bridge carries API capacity admission blocks into run rows", () => {
   const workflowPath = ".github/workflows/self-care.lock.yml";
   const sources = buildDashboardLanguageSources({
