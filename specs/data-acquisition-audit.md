@@ -13,7 +13,7 @@ editors:
 **Status:** Working Draft  
 **Audit date:** 2026-09-04 (refreshed)
 
-**Update note (2026-09-04 material refresh):** `activity/github-telemetry.mjs` now persists its per-phase `gh api rate_limit` ledger (`cao-gh.jsonl`) across runs through the `cao-activity-*` Actions cache, restoring and trimming it to a rolling 24-hour window (`prepare`, `GITHUB_TELEMETRY_RETENTION_HOURS`) at the start of `activity.yml` instead of deleting it every run.
+**Update note (2026-09-04 material refresh):** `.github/workflows/aw-maintenance.md` was renamed to `aw-doctor.md` (package renamed from AW Maintenance to AW Doctor); the `gh aw logs`/API prefetch inventory below is updated to the current path. No other collection, predownload, indexing, or caching behavior changed since the prior refresh.
 
 ## Abstract
 
@@ -76,7 +76,7 @@ The former two-request Contents API bootstrap in `shared/control.md` has been re
 
 | Source family | API pattern | Rate-limit concern |
 | --- | --- | --- |
-| `.github/workflows/aw-maintenance.md` | GitHub Script reads latest release, repository trees and manifests, open issues, commits, and recent workflow runs. | Per-target prefetch repeats latest-release lookup and repository scans. |
+| `.github/workflows/aw-doctor.md` (formerly `aw-maintenance.md`) | GitHub Script reads latest release, repository trees and manifests, open issues, commits, and recent workflow runs. | Per-target prefetch repeats latest-release lookup and repository scans. |
 | `.github/workflows/aw-maintenance-upgrade.md` | GitHub Script paginates gh-aw releases and searches target issues before agent execution. | A 24-hour Actions cache avoids most release-list calls; target issue search remains per run. |
 | `.github/workflows/ambient-context-agents-md-curator.md` and `ambient-context-skills-curator.md` | Lists open pull requests, then lists files or review comments for bounded candidate pulls. | N+1 per-pull requests; bounds limit the worst case but no shared target snapshot exists. |
 | `.github/graders/ambient-context-agents-md-curator-operational-value.sh` | Paginates evidence issues and target pull requests, then reads files for candidate pull requests before collecting logs. | Full issue/PR pagination is repeated for each evaluation. |
