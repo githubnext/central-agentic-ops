@@ -784,12 +784,12 @@ describe('presenter built-in and custom pages', () => {
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
-      'Preview',
       'Runtime',
       'Performance',
       'Security',
       'Value',
       'Cost',
+      'Preview',
       'Readiness',
       'Data health',
       'GitHub API',
