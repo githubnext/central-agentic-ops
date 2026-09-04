@@ -178,7 +178,7 @@ Call `create_pull_request` exactly once with:
 
 ### Step 5: Skip when the dashboard is already on-brand
 
-If the audit finds no meaningful deviations, call `noop` once with a concise reason. Do not open a pull request.
+Always finish by calling exactly one safe-output tool. If the audit finds no meaningful deviations or no improvement is needed for any other reason, call `noop` once with a concise plain-text reason and do not open a pull request. Never finish with only a textual response.
 
 ## Rules
 

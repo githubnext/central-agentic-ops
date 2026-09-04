@@ -127,7 +127,7 @@ function renderPackageSummaryRow(entry, summary) {
   return /** @type {HTMLTableRowElement} */ (h(
     'tr',
     { dataset: { packageSummaryKey: entry.key } },
-    h('th', { scope: 'row' }, h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h('span', null, entry.name))),
+    h('th', { scope: 'row' }, renderPackageIdentityLink(entry, 'span')),
     h('td', null, formatNumber(summary?.runs ?? 0)),
     h('td', null, formatNumber(summary?.successful ?? 0)),
     h('td', null, formatNumber(summary?.failed ?? 0)),
@@ -430,7 +430,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
       h(
         'span',
         { className: 'package-utilization-identity' },
-        h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h('strong', null, entry.name)),
+        renderPackageIdentityLink(entry, 'strong'),
         scopeLabel ? h('small', null, scopeLabel) : null
       ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
@@ -667,6 +667,18 @@ function summarizePackages(workflows) {
 /** @param {string} packageId */
 function packageInsightsHref(packageId) {
   return `#page-package-insights?package=${encodeURIComponent(packageId)}`;
+}
+
+/**
+ * Renders the shared package-identity link (icon plus name) used by both the
+ * summary table and the utilization card header, wrapping the name in the
+ * caller-selected inline element.
+ * @param {{ id: string, icon: string, name: string }} entry
+ * @param {'span'|'strong'} nameTag
+ * @returns {HTMLElement}
+ */
+function renderPackageIdentityLink(entry, nameTag) {
+  return h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h(nameTag, null, entry.name));
 }
 
 /**
