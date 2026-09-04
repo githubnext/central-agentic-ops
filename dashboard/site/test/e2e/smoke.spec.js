@@ -384,16 +384,24 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   const runtimeCharts = pageRegion.locator('.custom-view-grid > [data-view-layout="half"]');
   await expect(runtimeCharts).toHaveCount(4);
   const chartLayout = await runtimeCharts.evaluateAll((charts) => {
-    const firstBounds = charts[0].getBoundingClientRect();
-    const secondBounds = charts[1].getBoundingClientRect();
+    const bounds = charts.map((chart) => chart.getBoundingClientRect());
     return {
-      firstX: firstBounds.x,
-      secondX: secondBounds.x,
-      verticalOffset: Math.abs(firstBounds.y - secondBounds.y)
+      firstRow: {
+        leftX: bounds[0].x,
+        rightX: bounds[1].x,
+        verticalOffset: Math.abs(bounds[0].y - bounds[1].y)
+      },
+      secondRow: {
+        leftX: bounds[2].x,
+        rightX: bounds[3].x,
+        verticalOffset: Math.abs(bounds[2].y - bounds[3].y)
+      }
     };
   });
-  expect(chartLayout.firstX).toBeLessThan(chartLayout.secondX);
-  expect(chartLayout.verticalOffset).toBeLessThan(1);
+  expect(chartLayout.firstRow.leftX).toBeLessThan(chartLayout.firstRow.rightX);
+  expect(chartLayout.firstRow.verticalOffset).toBeLessThan(1);
+  expect(chartLayout.secondRow.leftX).toBeLessThan(chartLayout.secondRow.rightX);
+  expect(chartLayout.secondRow.verticalOffset).toBeLessThan(1);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
