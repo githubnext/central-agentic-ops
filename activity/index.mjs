@@ -8,6 +8,11 @@ import {
   performanceJobRecord,
   runFailureEvidence,
 } from "./failure-evidence.mjs";
+import {
+  previousIndexCanRetainRuns,
+  previousIndexIsReusable,
+  previousRunRecords,
+} from "./run-health-snapshot.mjs";
 import { normalizeVersion, updateState } from "./version.mjs";
 
 (async () => {
@@ -337,45 +342,24 @@ function emptyRunHealth() {
   };
 }
 
-function previousRunRecords(previousIndex, registryByRepository, windowStart) {
-  const records = new Map();
-  for (const workflow of previousIndex?.workflows || []) {
-    const registry = registryByRepository.get(workflow.repository);
-    if (!registry || ![...registry.values()].some((entry) => entry.id === workflow.id)) continue;
-    for (const run of workflow.runHealth?.runRecords || []) {
-      if (Date.parse(run.createdAt) < windowStart.getTime()) continue;
-      records.set(`${workflow.id}:${run.runId}`, { workflowId: workflow.id, run });
-    }
-  }
-  return records;
-}
-
-function previousIndexIsReusable(previousIndex, windowStart) {
-  const generatedAt = Date.parse(previousIndex?.generatedAt);
-  const previousWindowStart = Date.parse(previousIndex?.runHealth?.windowStart);
-  if (previousIndex?.schemaVersion !== 1
-    || previousIndex.organization !== organization
-    || previousIndex.repositoryScope !== (repositoryScopeEnabled ? "allowlist" : "organization")
-    || previousIndex.includePrivate !== includePrivate
-    || previousIndex.runHealth?.available !== true
-    || previousIndex.runHealth?.complete !== true
-    || previousIndex.runHealth?.windowHours !== runWindowHours
-    || !Number.isFinite(generatedAt)
-    || !Number.isFinite(previousWindowStart)
-    || previousWindowStart > windowStart.getTime()) return false;
-  return JSON.stringify(previousIndex.allowedRepositories || []) === JSON.stringify(allowedRepositories);
-}
-
 async function collectRunHealth(registryByRepository, previousIndex) {
   const windowStart = new Date(Date.now() - runWindowHours * 60 * 60 * 1000);
-  const reusable = previousIndexIsReusable(previousIndex, windowStart);
+  const previousIndexContext = {
+    organization,
+    repositoryScope: repositoryScopeEnabled ? "allowlist" : "organization",
+    includePrivate,
+    runWindowHours,
+    allowedRepositories,
+  };
+  const retainPreviousRuns = previousIndexCanRetainRuns(previousIndex, windowStart, previousIndexContext);
+  const reusable = previousIndexIsReusable(previousIndex, windowStart, previousIndexContext);
   const overlapStart = reusable
     ? new Date(Math.max(windowStart.getTime(), Date.parse(previousIndex.generatedAt) - 60 * 60 * 1000))
     : windowStart;
   let page = 0;
   let complete = true;
   let available = true;
-  const records = previousRunRecords(reusable ? previousIndex : null, registryByRepository, windowStart);
+  const records = previousRunRecords(retainPreviousRuns ? previousIndex : null, registryByRepository, windowStart);
   const previousWorkflowIds = new Map();
   const repositoriesWithPendingRuns = new Set();
   for (const workflow of previousIndex?.workflows || []) {

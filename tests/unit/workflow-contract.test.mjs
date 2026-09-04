@@ -2629,6 +2629,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
     { source: "failure-evidence.mjs", destination: ".github/aw/activity/failure-evidence.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
     { source: "github-telemetry.mjs", destination: ".github/aw/activity/github-telemetry.mjs" },
+    { source: "run-health-snapshot.mjs", destination: ".github/aw/activity/run-health-snapshot.mjs" },
     { source: "version.mjs", destination: ".github/aw/activity/version.mjs" },
   ]);
   assert.ok(rootManifest.includes.includes("activity/aw.yml"));

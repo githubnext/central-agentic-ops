@@ -32,6 +32,7 @@ const activityExpectedFiles = [
   ".github/aw/activity/failure-evidence.mjs",
   ".github/aw/activity/github-telemetry.mjs",
   ".github/aw/activity/index.mjs",
+  ".github/aw/activity/run-health-snapshot.mjs",
   ".github/aw/activity/version.mjs",
   ".github/workflows/activity.yml",
   ".github/workflows/cao-maintenance.yml",
