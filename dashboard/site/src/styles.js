@@ -191,7 +191,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend-pie strong { color: var(--fg); font-variant-numeric: tabular-nums; }
 .chart-legend-pie small { color: var(--muted); }
 .chart-axis { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
-.timeline-chart-axis { position: relative; width: calc(100% - 32px); margin: -12px 16px 12px; padding-top: 9px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.timeline-chart-axis { position: relative; width: 100%; margin: -12px 0 12px; padding-top: 9px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
 .timeline-chart-axis span { position: relative; white-space: nowrap; }
 .timeline-chart-axis span::before { position: absolute; top: -10px; left: 50%; width: 1px; height: 5px; background: var(--border); content: ""; }
 .timeline-chart-axis span:first-child::before { left: 0; }
@@ -841,7 +841,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .pie-chart-card > .view-source, .pie-chart-card > .view-metadata, .pie-chart-card > .view-context { grid-column: 1; }
 }
 @media (max-width: 700px) {
-  .timeline-chart-axis span:nth-child(even) { display: none; }
+  .timeline-chart-axis span:not(:first-child):not(:last-child):nth-child(even) { display: none; }
   .app-shell { display: block; }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
   .sidebar-header { margin: 0 0 8px; }
