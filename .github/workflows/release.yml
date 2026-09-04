@@ -35,14 +35,16 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           RELEASE_BUMP: ${{ inputs.bump }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         with:
           script: |
             const requestedBump = process.env.RELEASE_BUMP;
+            const triggeringActor = process.env.TRIGGERING_ACTOR;
             const bump = ['patch', 'minor', 'major'].includes(requestedBump) ? requestedBump : 'patch';
             if (bump !== requestedBump) {
               core.warning(`Unknown release bump "${requestedBump}"; defaulting to patch.`);
             }
-            core.info(`Processing ${context.payload.inputs.operation} release request from ${context.actor} with a ${bump} bump.`);
+            core.info(`Processing ${context.payload.inputs.operation} release request from ${triggeringActor} with a ${bump} bump.`);
             if (context.payload.repository.fork) {
               throw new Error('Releases cannot run from forks');
             }
@@ -50,13 +52,13 @@ jobs:
             const { data: access } = await github.rest.repos.getCollaboratorPermissionLevel({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              username: context.actor,
+              username: triggeringActor,
             });
             const role = access.role_name || access.permission;
             if (!['maintain', 'admin'].includes(role)) {
-              throw new Error(`Releases require maintain or admin access; ${context.actor} has the ${role} role`);
+              throw new Error(`Releases require maintain or admin access; ${triggeringActor} has the ${role} role`);
             }
-            core.info(`Authorized ${context.actor} with the ${role} role.`);
+            core.info(`Authorized ${triggeringActor} with the ${role} role.`);
 
             const defaultRef = `refs/heads/${context.payload.repository.default_branch}`;
             if (context.ref !== defaultRef) {
@@ -198,19 +200,56 @@ jobs:
               throw new Error(`No draft release exists for ${releaseTag}`);
             }
 
-            core.info(`Publishing draft release ${releaseTag} (release ID ${draft.id}).`);
-            const { data: release } = await github.rest.repos.updateRelease({
+            const targetSha = draft.target_commitish;
+            if (!/^[0-9a-f]{40}$/.test(targetSha)) {
+              throw new Error(`Draft ${releaseTag} does not identify an immutable commit`);
+            }
+            const ref = `tags/${releaseTag}`;
+            core.info(`Reserving ${releaseTag} at its reviewed commit ${targetSha}.`);
+            await github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              release_id: draft.id,
-              tag_name: releaseTag,
-              name: releaseTag,
-              draft: false,
-              make_latest: 'true',
+              ref: `refs/${ref}`,
+              sha: targetSha,
             });
-            core.summary
-              .addHeading(`Published ${releaseTag}`)
-              .addRaw('The release contains no uploaded assets; gh aw add resolves package files from aw.yml.')
-              .addEOL()
-              .addLink('View release', release.html_url);
-            await core.summary.write();
+            try {
+              const { data: createdRef } = await github.rest.git.getRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref,
+              });
+              if (createdRef.object.sha !== targetSha) {
+                throw new Error(`${releaseTag} does not point to the reviewed commit`);
+              }
+
+              core.info(`Publishing draft release ${releaseTag} (release ID ${draft.id}).`);
+              const { data: release } = await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: draft.id,
+                tag_name: releaseTag,
+                name: releaseTag,
+                draft: false,
+                make_latest: 'true',
+              });
+              core.summary
+                .addHeading(`Published ${releaseTag}`)
+                .addRaw('The release contains no uploaded assets; gh aw add resolves package files from aw.yml.')
+                .addEOL()
+                .addLink('View release', release.html_url);
+              await core.summary.write();
+            } catch (error) {
+              const { data: currentRef } = await github.rest.git.getRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref,
+              });
+              if (currentRef.object.sha === targetSha) {
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref,
+                });
+              }
+              throw error;
+            }

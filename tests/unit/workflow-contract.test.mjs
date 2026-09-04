@@ -792,6 +792,7 @@ test("release computes an authorized semantic version bump before drafting and p
   assert.equal(config.on.workflow_dispatch.inputs.bump.default, "patch");
   assert.deepEqual(config.on.workflow_dispatch.inputs.bump.options, ["patch", "minor", "major"]);
   assert.match(version, /RELEASE_BUMP: \$\{\{ inputs\.bump \}\}/);
+  assert.match(version, /TRIGGERING_ACTOR: \$\{\{ github\.triggering_actor \}\}/);
   assert.match(version, /const bump = \['patch', 'minor', 'major'\]\.includes\(requestedBump\) \? requestedBump : 'patch'/);
   assert.match(version, /Unknown release bump.*defaulting to patch/);
   assert.match(version, /context\.payload\.repository\.fork/);
@@ -815,6 +816,12 @@ test("release computes an authorized semantic version bump before drafting and p
   assert.match(prepare, /generate_release_notes: true/);
   assert.match(publish, /release\.tag_name === releaseTag \|\| release\.name === releaseTag/);
   assert.match(publish, /Multiple draft releases match/);
+  assert.match(publish, /const targetSha = draft\.target_commitish/);
+  assert.match(publish, /does not identify an immutable commit/);
+  assert.match(publish, /git\.createRef/);
+  assert.match(publish, /sha: targetSha/);
+  assert.match(publish, /createdRef\.object\.sha !== targetSha/);
+  assert.match(publish, /git\.deleteRef/);
   assert.match(publish, /tag_name: releaseTag/);
   assert.match(publish, /draft: false/);
   assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
