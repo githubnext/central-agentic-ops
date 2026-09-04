@@ -178,7 +178,13 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
 export function relativeTimeWindow(range, referenceEnd) {
   const parsedEnd = Date.parse(referenceEnd ?? '');
   const end = Number.isFinite(parsedEnd) ? parsedEnd : Date.now();
-  const start = end - dashboardHorizonHours(range) * 3_600_000;
+  let hours = 7 * 24;
+  try {
+    hours = dashboardHorizonHours(range);
+  } catch {
+    hours = dashboardHorizonHours('1w');
+  }
+  const start = end - hours * 3_600_000;
   return { range, start: new Date(start).toISOString(), end: new Date(end).toISOString() };
 }
 
