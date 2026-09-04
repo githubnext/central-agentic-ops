@@ -302,6 +302,22 @@ describe('chart element helpers', () => {
     expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
   });
 
+  it('renders temporal dot observations with per-series reference lines', () => {
+    const points = [
+      { x: '2026-09-04T10:00:00Z', y: 4_900, color: 'core', source: { limit: 5_000 } },
+      { x: '2026-09-04T11:00:00Z', y: 4_875, color: 'core', source: { limit: 5_000 } },
+      { x: '2026-09-04T11:00:00Z', y: 28, color: 'search', source: { limit: 30 } }
+    ];
+    const dot = renderChartWidget('dot', points, listChartSeries(points), null, 'Remaining', null, null, 'limit');
+
+    expect(dot.getAttribute('data-chart-widget')).toBe('dot');
+    expect(dot.querySelectorAll('.dot-chart-point')).toHaveLength(3);
+    expect(dot.querySelectorAll('.dot-chart-reference')).toHaveLength(2);
+    expect(dot.querySelector('[data-chart-reference="core"]')?.getAttribute('data-chart-reference-value')).toBe('5000');
+    expect(dot.querySelector('.line-chart-series')).toBeNull();
+    expect(dot.querySelector('svg')?.getAttribute('aria-label')).toBe('Dot chart with 3 points and 2 reference lines');
+  });
+
   it('dims historical line context and emphasizes the selected window', () => {
     const points = [
       { x: '2026-09-03T10:00:00Z', y: 2, color: 'worker', highlighted: false },

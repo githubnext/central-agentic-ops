@@ -199,7 +199,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .view-disclosure > .page-section { padding: 0 14px 14px; }
 .chart-widget { min-height: 180px; display: grid; place-items: center; margin: 12px 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
-.line-chart-widget svg { width: 100%; }
+.line-chart-widget svg, .dot-chart-widget svg { width: 100%; }
 .pie-chart-track { stroke: var(--border-muted); }
 .pie-chart-segment { transform: rotate(-90deg); transform-origin: center; stroke: var(--accent); vector-effect: non-scaling-stroke; }
 .pie-chart-total-value { fill: var(--fg); font-size: 5px; font-weight: 700; }
@@ -211,7 +211,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend-pie strong { color: var(--fg); font-variant-numeric: tabular-nums; }
 .chart-legend-pie small { color: var(--muted); }
 .chart-axis { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
-.line-chart-widget .chart-axis { width: 100%; }
+.line-chart-widget .chart-axis, .dot-chart-widget .chart-axis { width: 100%; }
 .timeline-chart-axis { position: relative; width: 100%; margin: -12px 0 12px; padding-top: 9px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
 .timeline-chart-axis span { position: relative; white-space: nowrap; }
 .timeline-chart-axis span::before { position: absolute; top: -10px; left: 50%; width: 1px; height: 5px; background: var(--border); content: ""; }
@@ -237,6 +237,8 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .histogram-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 1.5 2; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.dot-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.dot-chart-reference { stroke-width: 1; stroke-dasharray: 4 3; opacity: .72; vector-effect: non-scaling-stroke; }
 .line-chart-window-band { fill: var(--accent); opacity: .055; }
 .line-chart-context { opacity: .3; stroke-width: 1.1; }
 .chart-point-context { opacity: .35; }
@@ -249,7 +251,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-point { cursor: crosshair; }
 .pie-chart-segment { animation: pie-chart-entry 420ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 45ms); }
 .line-chart-series { animation: line-chart-entry 600ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 70ms); }
-.line-chart-point { transform-box: fill-box; transform-origin: center; animation: line-chart-point-entry 280ms ease-out both; animation-delay: calc(180ms + var(--chart-entry-index, 0) * 35ms); }
+.line-chart-point, .dot-chart-point { transform-box: fill-box; transform-origin: center; animation: line-chart-point-entry 280ms ease-out both; animation-delay: calc(180ms + var(--chart-entry-index, 0) * 35ms); }
 .histogram-chart-bar, .table-summary-histogram rect { transform-box: fill-box; transform-origin: center bottom; animation: histogram-chart-entry 360ms ease-out both; animation-delay: calc(var(--chart-entry-index, 0) * 35ms); }
 .pie-chart-segment, .histogram-chart-bar { transition: opacity 120ms ease, filter 120ms ease; }
 .pie-chart-mark:hover .pie-chart-segment, .pie-chart-mark:focus-visible .pie-chart-segment { filter: brightness(1.08); opacity: .82; }
@@ -259,7 +261,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .point-tooltip text { fill: var(--fg); font-size: 3px; font-weight: 600; }
 .pie-chart-tooltip text { font-size: 2.25px; }
 .chart-point:hover .point-tooltip, .chart-point:focus-visible .point-tooltip { opacity: 1; }
-.chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: 3; }
+.chart-point:focus-visible :is(.line-chart-point, .dot-chart-point) { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: 1; }
 .bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
 .histogram-chart-bar { fill: var(--accent); stroke: color-mix(in srgb, var(--success) 72%, var(--canvas)); stroke-width: .65; vector-effect: non-scaling-stroke; }
@@ -345,7 +347,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
   from { opacity: 0; transform: scaleY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pie-chart-segment, .line-chart-series, .line-chart-point, .histogram-chart-bar, .table-summary-histogram rect { animation: none; }
+  .pie-chart-segment, .line-chart-series, .line-chart-point, .dot-chart-point, .histogram-chart-bar, .table-summary-histogram rect { animation: none; }
   .pie-chart-segment, .histogram-chart-bar, .point-tooltip { transition: none; }
 }
 .view-description { margin: 3px 0 0; color: var(--muted); }
