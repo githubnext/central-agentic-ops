@@ -3,7 +3,7 @@
 set -euo pipefail
 export LC_ALL=C
 
-WORKFLOW_NAME="Optimization / AI Credit Savings"
+WORKFLOW_NAME="AW Optimization / AI Credit Savings"
 MATURATION_SECONDS=604800
 
 tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/optimization-ai-credit-optimizer-value.XXXXXX")
@@ -13,7 +13,7 @@ definition() {
     cat <<'JSON'
 {
   "schemaVersion": 4, "grader": "operational-value",
-  "repository": "githubnext/gh-aw-cao", "workflowName": "Optimization / AI Credit Savings",
+  "repository": "githubnext/gh-aw-cao",   "workflowName": "AW Optimization / AI Credit Savings",
   "sourcePath": ".github/workflows/optimization-ai-credit-optimizer.md",
   "adoption": {"commit": "35c7c3cbd319632f85784cce196e57c0f61db9a0", "adoptedAt": "2026-08-18T17:54:55Z"},
   "operationalValue": "Lower the dispatched target's highest-AIC workflow cost without increasing its failure rate.",

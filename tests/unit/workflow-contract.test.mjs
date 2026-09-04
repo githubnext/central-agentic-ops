@@ -66,16 +66,13 @@ test("catalog packages declare their current experimental maturity", () => {
 });
 
 test("operational workflows use the transitive CAO package bundle", () => {
-  const bundle = workflow("shared/cao.md");
   const control = workflow("shared/control.md");
-  assert.match(bundle, /imports:\n\s+- uses: control\.md/);
-  assert.match(bundle, /dispatch_max: \$\{\{ github\.aw\.import-inputs\.dispatch_max \}\}/);
   assert.match(control, /dispatch_max:\n\s+type: number/);
   assert.match(control, /orchestrator_credits:\n\s+type: number/);
   assert.match(control, /worker_credits_per_target:\n\s+type: number/);
 
   const operationWorkflows = readdirSync(workflowsDirectory)
-    .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
+    .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/control.md"));
   assert.equal(operationWorkflows.length, 32);
 });
 
@@ -108,7 +105,7 @@ test("AW Optimization combines AI Credit and ambient-context workers", () => {
   assert.equal(manifest.name, "AW Optimization");
   assert.equal(dashboard.dashboard.title, "AW Optimization");
   assert.match(orchestrator, /^name: "AW Optimization"$/m);
-  assert.match(orchestrator, /worker_credits_per_target: "1650"/);
+  assert.match(orchestrator, /worker_credits_per_target: 1650/);
   assert.match(
     orchestrator,
     /workflows: \[optimization-ai-credit-auditor, optimization-ai-credit-optimizer, optimization-agents-md-curator, optimization-skills-curator\]/,
@@ -470,9 +467,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     assert.match(source, /concurrency:\n\s+group:.*\n\s+job-discriminator: \$\{\{ github\.run_id \}\}\n\s+cancel-in-progress: true/, name);
     assert.doesNotMatch(source, /^\s+(contents|actions|issues|pull-requests): write$/m, name);
     if (limits.dispatchMax) {
-      assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);
+      assert.match(source, new RegExp(`dispatch_max: ${limits.dispatchMax}`), name);
       assert.match(source, new RegExp(`dispatch-workflow:[\\s\\S]*?max: ${limits.dispatchMax}`), name);
-      assert.match(source, new RegExp(`orchestrator_credits: "${limits.credits}"`), name);
+      assert.match(source, new RegExp(`orchestrator_credits: ${limits.credits}`), name);
     }
   }
 
@@ -517,7 +514,7 @@ test("control workflows deny before activation through one shared admission cont
   const controlled = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && !name.endsWith(".lock.md"))
     .map((name) => [name, workflow(name)])
-    .filter(([, source]) => /^\s+- uses: shared\/cao\.md$/m.test(source));
+    .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
 
   assert.equal(controlled.length, 32, "unexpected shared control workflow count");
   assert.equal(
@@ -1703,7 +1700,7 @@ test("EU CRA workflows preserve advisory and human-review boundaries", () => {
   assert.match(orchestrator, /plus at most two alternates per available slot/);
   assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
   assert.match(orchestrator, /Keep that total at or below 48/);
-  assert.match(orchestrator, /worker_credits_per_target: "600"/);
+  assert.match(orchestrator, /worker_credits_per_target: 600/);
 
   for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Maintenance"]]) {
     const source = workflow(name);

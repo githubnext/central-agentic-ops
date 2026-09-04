@@ -52,13 +52,13 @@ jobs:
 if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
-  - uses: shared/cao.md
+  - uses: shared/control.md
     with:
       package: self-care
       role: orchestrator
-      dispatch_max: "8"
-      orchestrator_credits: "200"
-      worker_credits_per_target: "2000"
+      dispatch_max: 8
+      orchestrator_credits: 200
+      worker_credits_per_target: 2000
 
 permissions:
   contents: read
