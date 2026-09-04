@@ -22,7 +22,7 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'des
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter', 'navigation-page'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range'];
 
-export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'callout', 'chart', 'table', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
+export const VIEW_KEYS = ['id', 'title', 'description', 'intent', 'data', 'mark', 'element', 'callout', 'chart', 'table', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'route-field', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_TITLE_LINK_KEYS = ['href-field', 'identifier-field'];
 export const CALLOUT_KEYS = ['label', 'icon'];

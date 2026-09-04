@@ -2817,6 +2817,7 @@ dashboard:
       icon: rocket
       views:
         - id: summary
+          intent: Help operators identify workflow states that require attention.
           data:
             sources: [workflows]
           mark: element
@@ -2845,6 +2846,7 @@ dashboard:
       icon: not-an-octicon
       views:
         - id: topology
+          intent: ''
           data:
             source: workflows
             limit: 1
@@ -2852,6 +2854,7 @@ dashboard:
           element: unknown-topology
           encoding: {}
         - id: runs
+          intent: Explain the run conclusion inventory.
           data:
             sources: [runs]
           mark: table
@@ -2875,10 +2878,12 @@ dashboard:
       expect(result.errors).toEqual(expect.arrayContaining([
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].icon' }),
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].element' }),
+        expect.objectContaining({ code: 'DLS-E002', path: '$.dashboard.pages[0].views[0].intent' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].data.source' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].data.limit' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].encoding' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[1].data.sources' }),
+        expect.objectContaining({ code: 'DLS-E002', path: '$.dashboard.pages[0].views[1].intent' }),
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[1].encoding.columns[0].display' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[2].encoding.value.display' })
       ]));
