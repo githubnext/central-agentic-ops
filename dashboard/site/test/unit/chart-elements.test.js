@@ -121,6 +121,7 @@ describe('chart element helpers', () => {
     expect(bar.querySelector('.bar-chart-bar:last-child')?.getAttribute('height')).toBe('1');
     expect(line.getAttribute('data-chart-widget')).toBe('line');
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
+    expect(line.querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
     expect(pie.getAttribute('data-chart-widget')).toBe('pie');
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
@@ -135,5 +136,21 @@ describe('chart element helpers', () => {
     expect(histogram.querySelector('.histogram-chart-mark')?.getAttribute('aria-label')).toContain('AIC');
     expect(unitPie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
     expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
+  });
+
+  it('reduces line-chart point radii linearly as the number of points increases', () => {
+    const renderPoints = (count) => {
+      const points = Array.from({ length: count }, (_, index) => ({
+        x: String(index),
+        y: index,
+        color: null
+      }));
+      return renderChartWidget('line', points, listChartSeries(points));
+    };
+
+    expect(renderPoints(2).querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
+    expect(renderPoints(51).querySelector('.line-chart-point')?.getAttribute('r')).toBe('1.5');
+    expect(renderPoints(100).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
+    expect(renderPoints(150).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
   });
 });
