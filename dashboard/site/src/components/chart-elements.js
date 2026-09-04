@@ -9,8 +9,10 @@ import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
 import { renderEmptyMessage } from './ui-primitives.js';
 
-const MAX_LINE_POINT_RADIUS = 2.5;
-const MIN_LINE_POINT_RADIUS = 0.5;
+const MAX_LINE_POINT_SIZE = 6;
+const MIN_LINE_POINT_SIZE = 2;
+const MAX_DOT_POINT_RADIUS = 2.5;
+const MIN_DOT_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
 const MAX_INTERACTIVE_LINE_POINTS = 500;
 const MAX_RENDERED_LINE_POINTS = 2_000;
@@ -385,7 +387,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         .map((value) => ({ seriesName, value })))
       : [];
     for (const { value } of referenceLines) maximum = Math.max(maximum, value);
-    const pointRadius = lineChartPointRadius(points.length);
+    const pointSize = lineChartPointSize(points.length);
+    const dotPointRadius = dotChartPointRadius(points.length);
     const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
     const highlightedIndexes = [...new Set(points.flatMap((point) => {
       const index = point.highlighted ? xIndexes.get(point.x) : undefined;
@@ -470,7 +473,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
                 className: `dot-chart-point ${seriesClassName}`,
                 cx: x,
                 cy: y,
-                r: pointRadius,
+                r: dotPointRadius,
                 'aria-hidden': 'true'
               }))
               : []),
@@ -482,12 +485,21 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               'aria-label': `${chartPointLabel(point, unit)}${point.highlighted === false ? ' (context)' : point.highlighted ? ' (selected window)' : ''}`
             },
             h('title', null, chartPointLabel(point, unit)),
-            h('circle', {
-              className: `${isDotChart ? 'dot-chart-point' : 'line-chart-point'} ${seriesClassName}`,
-              cx: x,
-              cy: y,
-              r: hasWindowHighlight ? 0.65 : pointRadius
-            }),
+            isDotChart
+              ? h('circle', {
+                className: `dot-chart-point ${seriesClassName}`,
+                cx: x,
+                cy: y,
+                r: dotPointRadius
+              })
+              : h('line', {
+                className: `line-chart-point ${seriesClassName}`,
+                style: `--chart-point-size: ${hasWindowHighlight ? 4 : pointSize}px`,
+                x1: x,
+                y1: y,
+                x2: x + 0.001,
+                y2: y
+              }),
             h(
               'g',
               {
@@ -844,9 +856,18 @@ function formatSwimlaneDuration(milliseconds) {
  * @param {number} pointCount
  * @returns {number}
  */
-function lineChartPointRadius(pointCount) {
+function lineChartPointSize(pointCount) {
   const progress = Math.min(1, Math.max(0, (pointCount - 2) / (MIN_RADIUS_POINT_COUNT - 2)));
-  return MAX_LINE_POINT_RADIUS - (progress * (MAX_LINE_POINT_RADIUS - MIN_LINE_POINT_RADIUS));
+  return MAX_LINE_POINT_SIZE - (progress * (MAX_LINE_POINT_SIZE - MIN_LINE_POINT_SIZE));
+}
+
+/**
+ * @param {number} pointCount
+ * @returns {number}
+ */
+function dotChartPointRadius(pointCount) {
+  const progress = Math.min(1, Math.max(0, (pointCount - 2) / (MIN_RADIUS_POINT_COUNT - 2)));
+  return MAX_DOT_POINT_RADIUS - (progress * (MAX_DOT_POINT_RADIUS - MIN_DOT_POINT_RADIUS));
 }
 
 /**

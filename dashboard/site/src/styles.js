@@ -246,7 +246,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .line-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 2 2; }
 .histogram-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 1.5 2; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.line-chart-point { stroke-width: var(--chart-point-size, 4px); stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .dot-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .dot-chart-reference { stroke-width: 1; stroke-dasharray: 4 3; opacity: .72; vector-effect: non-scaling-stroke; }
 .line-chart-window-band { fill: var(--accent); opacity: .055; }
@@ -270,7 +270,8 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .point-tooltip text { fill: var(--fg); font-size: 3px; font-weight: 600; }
 .pie-chart-tooltip text { font-size: 2.25px; }
 .chart-point:hover .point-tooltip, .chart-point:focus-visible .point-tooltip { opacity: 1; }
-.chart-point:focus-visible :is(.line-chart-point, .dot-chart-point) { stroke: var(--focus); stroke-width: 3; }
+.chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: calc(var(--chart-point-size, 4px) + 2px); }
+.chart-point:focus-visible .dot-chart-point { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: .75; vector-effect: non-scaling-stroke; }
 .bar-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 1.5 2; vector-effect: non-scaling-stroke; }
 .bar-chart-y-axis text, .bar-chart-x-axis text { fill: var(--muted); font-size: 2.6px; font-variant-numeric: tabular-nums; }
@@ -348,8 +349,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
   from { opacity: 0; stroke-dasharray: 0 100; }
 }
 @keyframes line-chart-entry {
-  from { stroke-dasharray: 1; stroke-dashoffset: 1; }
-  to { stroke-dasharray: 1; stroke-dashoffset: 0; }
+  from { opacity: 0; }
 }
 @keyframes line-chart-point-entry {
   from { opacity: 0; transform: scale(0); }

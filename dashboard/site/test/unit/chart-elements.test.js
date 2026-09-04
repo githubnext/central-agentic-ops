@@ -280,7 +280,7 @@ describe('chart element helpers', () => {
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
     expect(line.querySelector('.line-chart-series')?.getAttribute('pathLength')).toBe('1');
     expect(line.querySelector('.line-chart-series')?.getAttribute('style')).toContain('--chart-entry-index: 0');
-    expect(line.querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
+    expect(line.querySelector('.line-chart-point')?.getAttribute('style')).toContain('--chart-point-size: 6px');
     expect(line.querySelector('.chart-point')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect([...line.querySelectorAll('.timeline-chart-axis span')].map((tick) => tick.textContent)).toEqual([
       'Aug 29',
@@ -354,12 +354,12 @@ describe('chart element helpers', () => {
     expect(Number(line.querySelector('.line-chart-window-band')?.getAttribute('width'))).toBeGreaterThan(0);
     expect(line.querySelector('.line-chart-current')?.getAttribute('points')).not.toBe('');
     expect(line.querySelectorAll('.chart-point-context')).toHaveLength(1);
-    expect(line.querySelector('.chart-point-context circle')?.getAttribute('r')).toBe('0.65');
-    expect(line.querySelector('.chart-point-current circle')?.getAttribute('r')).toBe('0.65');
+    expect(line.querySelector('.chart-point-context .line-chart-point')?.getAttribute('style')).toContain('--chart-point-size: 4px');
+    expect(line.querySelector('.chart-point-current .line-chart-point')?.getAttribute('style')).toContain('--chart-point-size: 4px');
     expect(line.querySelector('.chart-window-key')?.textContent).toContain('Selected window');
   });
 
-  it('reduces line-chart point radii linearly as the number of points increases', () => {
+  it('reduces non-scaling line-chart point sizes as the number of points increases', () => {
     /** @param {number} count */
     const renderPoints = (count) => {
       const points = Array.from({ length: count }, (_, index) => ({
@@ -370,10 +370,10 @@ describe('chart element helpers', () => {
       return renderChartWidget('line', points, listChartSeries(points));
     };
 
-    expect(renderPoints(2).querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
-    expect(renderPoints(51).querySelector('.line-chart-point')?.getAttribute('r')).toBe('1.5');
-    expect(renderPoints(100).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
-    expect(renderPoints(150).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
+    expect(renderPoints(2).querySelector('.line-chart-point')?.getAttribute('style')).toContain('--chart-point-size: 6px');
+    expect(renderPoints(51).querySelector('.line-chart-point')?.getAttribute('style')).toContain('--chart-point-size: 4px');
+    expect(renderPoints(100).querySelector('.line-chart-point')?.getAttribute('style')).toContain('--chart-point-size: 2px');
+    expect(renderPoints(150).querySelector('.line-chart-point')?.getAttribute('style')).toContain('--chart-point-size: 2px');
   });
 
   it('renders 100,000 line-chart points in bounded time and SVG size', () => {
