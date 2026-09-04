@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   assertTargetAuthority,
+  configuredWorkerPackages,
   inspectPublishEvent,
   issueContentDigest,
   parseAuthorityJson,
@@ -13,9 +14,14 @@ import {
   publicationMarker,
   publishedIssueBody,
   validateWorkflowRun,
-} from "../../.github/scripts/ops-publish/ops-publish.mjs";
+} from "../../ops-publish/ops-publish.mjs";
+import { controlSettings, parsePolicy } from "../../.github/cao/src/policy.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const packages = controlSettings(
+  parsePolicy(readFileSync(join(root, ".github", "workflows", "cao.json"), "utf8")),
+  "githubnext/gh-aw-cao",
+).packages;
 
 const event = {
   action: "labeled",
@@ -56,6 +62,7 @@ test("ops publish derives routing from an allowlisted generated run", () => {
     reviewRepository: "acme/review",
     allowedOwners: "acme",
     allowedRepositories: "acme/service",
+    packages,
     run: {
       id: 123,
       event: "workflow_dispatch",
@@ -85,20 +92,13 @@ test("ops publish recognizes every supported worker on the default branch", () =
     reviewers: "OCTOCAT",
     controlRepositories: "ACME/CONTROL",
   });
-  for (const [workflowFile, packageName] of [
-    ["ambient-context-agents-md-curator.lock.yml", "ambient-context"],
-    ["ambient-context-skills-curator.lock.yml", "ambient-context"],
-    ["aw-failures-investigator.lock.yml", "aw-maintenance"],
-    ["aw-maintenance-upgrade.lock.yml", "aw-maintenance"],
-    ["dependabot-release-train-updater.lock.yml", "dependabot"],
-    ["optimization-ai-credit-auditor.lock.yml", "optimization"],
-    ["optimization-ai-credit-optimizer.lock.yml", "optimization"],
-  ]) {
+  for (const [workflowFile, packageName] of configuredWorkerPackages(packages)) {
     const validated = validateWorkflowRun({
       inspection,
       reviewRepository: "acme/review",
       allowedOwners: "ACME",
       allowedRepositories: "ACME/SERVICE",
+      packages,
       run: {
         id: 123,
         event: "workflow_dispatch",
@@ -194,6 +194,7 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
     reviewRepository: "acme/review",
     allowedOwners: "acme",
     allowedRepositories: "",
+    packages,
   }), /outside control-plane\.scope\.allowed-owners/);
   assert.throws(() => validateWorkflowRun({
     run: { ...run, display_title: "AW failure investigation · acme/service · live" },
@@ -201,6 +202,7 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
     reviewRepository: "acme/review",
     allowedOwners: "acme",
     allowedRepositories: "acme/service",
+    packages,
   }), /does not identify a review-mode target repository/);
 
   assert.throws(() => validateWorkflowRun({
@@ -209,6 +211,7 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
     reviewRepository: "acme/review",
     allowedOwners: "acme",
     allowedRepositories: "acme/service",
+    packages,
   }), /default branch/);
 
   assert.throws(() => validateWorkflowRun({
@@ -217,6 +220,7 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
     reviewRepository: "acme/review",
     allowedOwners: "acme",
     allowedRepositories: "acme/service",
+    packages,
   }), /not from a supported/);
 
   for (const [runOverride, message] of [
@@ -234,6 +238,7 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
       reviewRepository: "acme/review",
       allowedOwners: "acme",
       allowedRepositories: "acme/service",
+      packages,
     }), message);
   }
 });
@@ -296,6 +301,6 @@ test("Ops Publish remains an explicit least-privilege add-on", () => {
   assert.match(workflow, /TARGET_TOKEN: \$\{\{ steps\.target-app-token\.outputs\.token \|\| secrets\.CENTRAL_AGENTIC_OPS_PUBLISH_TARGET_TOKEN \}\}/);
   assert.doesNotMatch(workflow, /secrets\.GH_AW_GITHUB_TOKEN/);
   assert.doesNotMatch(workflow, /copilot-requests|models:/);
-  const publisher = readFileSync(join(root, ".github", "scripts", "ops-publish", "ops-publish.mjs"), "utf8");
+  const publisher = readFileSync(join(root, "ops-publish", "ops-publish.mjs"), "utf8");
   assert.match(publisher, /AbortSignal\.timeout\(API_TIMEOUT_MS\)/);
 });

@@ -143,7 +143,7 @@ Every orchestrator emits a `central-agentic-ops.dispatcher.run` span after norma
 
 ## Publishing Reviewed Operation Issues
 
-The optional Ops Publish add-on turns an explicit human label into a deterministic issue publication without rerunning AI. It remains outside the Agentic Workflow package catalog: copy `ops-publish/ops-publish.yml` and `.github/scripts/ops-publish/ops-publish.mjs` from a pinned catalog revision into the private repository that receives review issues.
+The optional Ops Publish add-on turns an explicit human label into a deterministic issue publication without rerunning AI. It remains outside the Agentic Workflow package catalog: copy `ops-publish/ops-publish.yml` and `ops-publish/ops-publish.mjs` from a pinned catalog revision into the private repository that receives review issues.
 
 Enable `control-plane.publishing` in `.github/workflows/cao.json`, declare its `reviewers` and optional `control-repositories`, and create the `ops:publish-to-target` label. Applying the label to an eligible bot-authored review issue validates the originating worker run, derives its target and package from trusted run metadata, enforces checked-in scope and target-owned package authority, creates the target issue with provenance, and closes the review issue.
 

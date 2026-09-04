@@ -16,10 +16,10 @@ import {
   issueContentDigest,
   publicationCommentMarker,
   publicationMarker,
-} from "../../.github/scripts/ops-publish/ops-publish.mjs";
+} from "../../ops-publish/ops-publish.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const scriptPath = join(root, ".github", "scripts", "ops-publish", "ops-publish.mjs");
+const scriptPath = join(root, "ops-publish", "ops-publish.mjs");
 const sourceBody = "Finding\n\nGenerated from [AW Maintenance / Failures](https://github.com/acme/control/actions/runs/123)";
 
 function sourceIssue(overrides = {}) {
@@ -111,6 +111,17 @@ function runCommand(command, {
   settings = {
     allowed_owners: ["acme"],
     allowed_repositories: ["acme/service"],
+    packages: {
+      "aw-maintenance": {
+        worker_policies: {
+          "aw-failures-investigator": {
+            worker: "failures-investigator",
+            enabled: true,
+            max_mode: null,
+          },
+        },
+      },
+    },
     publishing_enabled: true,
     publishing_control_repositories: ["acme/control"],
     publishing_reviewers: ["octocat"],

@@ -35,7 +35,7 @@ jobs:
         id: inspect
         env:
           CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-        run: node .github/scripts/ops-publish/ops-publish.mjs inspect
+        run: node ops-publish/ops-publish.mjs inspect
 
       - name: Generate control-repository token
         id: control-app-token
@@ -61,7 +61,7 @@ jobs:
           SOURCE_RUN_ID: ${{ steps.inspect.outputs.run_id }}
           SOURCE_RUN_URL: ${{ steps.inspect.outputs.run_url }}
           SOURCE_ISSUE_CREATED_AT: ${{ steps.inspect.outputs.source_created_at }}
-        run: node .github/scripts/ops-publish/ops-publish.mjs validate-run
+        run: node ops-publish/ops-publish.mjs validate-run
 
       - name: Generate target-repository token
         id: target-app-token
@@ -91,7 +91,7 @@ jobs:
           SOURCE_TOKEN: ${{ github.token }}
           TARGET_REPOSITORY: ${{ steps.validate.outputs.target_repository }}
           TARGET_TOKEN: ${{ steps.target-app-token.outputs.token || secrets.CENTRAL_AGENTIC_OPS_PUBLISH_TARGET_TOKEN }}
-        run: node .github/scripts/ops-publish/ops-publish.mjs publish
+        run: node ops-publish/ops-publish.mjs publish
 
       - name: Summarize publication
         env:
