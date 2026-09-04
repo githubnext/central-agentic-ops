@@ -42,6 +42,7 @@ export const VIEW_ELEMENT_VALUES = [
   'package-reports',
   'workflow-route',
   'workflow-detail',
+  'workflow-runs',
   'workflow-runtime',
   'outcome-detail'
 ];

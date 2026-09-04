@@ -263,7 +263,20 @@ describe('renderWorkflowRuntime', () => {
     const rendered = renderWorkflowRouteView({
       ...context(),
       pageId: 'custom-workflow-page',
+      element: 'workflow-runtime',
       viewId: 'workflow-runtime-route'
+    });
+    selectWorkflow(rendered);
+
+    expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Insights');
+    expect(rendered.querySelector('.workflow-runtime-metrics')).not.toBeNull();
+  });
+
+  it('derives workflow insights composition from the declarative element name', () => {
+    const rendered = renderWorkflowRouteView({
+      ...context(),
+      pageId: 'workflow-detail',
+      element: 'workflow-runtime'
     });
     selectWorkflow(rendered);
 
