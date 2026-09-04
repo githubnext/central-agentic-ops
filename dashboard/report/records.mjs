@@ -141,8 +141,7 @@ function recordFromIssue(issue, outputRepository, reportDefinitions) {
   const workflowId = workflowIdFrom(body);
   const workflow = workflowFrom(body);
   const modelMetadata = modelMetadataFrom(body);
-  const generatedSafeOutput = workflowId
-    || /Generated (?:from|with) \[[^\]]+\]\([^)]*\/actions\/runs\/\d+\)/.test(body);
+  const generatedSafeOutput = /Generated (?:from|with) \[[^\]]+\]\([^)]*\/actions\/runs\/\d+\)/.test(body);
   const bundle = bundleFor(reportDefinitions, issue.title, workflow, body);
   const generatedSafeOutputTitle = /^\[[^\]]+\]\s/.test(issue.title) && bundle;
   if (!generatedSafeOutputTitle && !generatedSafeOutput) return null;
@@ -414,11 +413,19 @@ async function collectDashboardRecordsImpl({
       : await metadataFromRunUrl(record.runUrl);
     const workflowId = record.workflowId || metadata.workflowId;
     const inventoryWorkflow = (inventory.workflows || []).find((workflow) => workflow.id === workflowId);
-    const producerBundle = bundleDefinitions.find((definition) => (
-      definition.id === workflowId
-      || definition.workers.some((worker) => worker.id === workflowId)
-    )) || null;
-    const bundle = bundleDefinitions.find((definition) => definition.id === record.bundle) || producerBundle;
+    const markerBundle = record.workflowId ? bundleDefinitions.find((definition) => (
+      definition.id === record.workflowId
+      || definition.workers.some((worker) => worker.id === record.workflowId)
+    )) : null;
+    const runtimeBundle = metadata.runtimeRepository?.toLowerCase() === repository.toLowerCase()
+      ? bundleDefinitions.find((definition) => (
+        definition.id === workflowId
+        || definition.workers.some((worker) => worker.id === workflowId)
+      ))
+      : null;
+    const bundle = markerBundle
+      || bundleDefinitions.find((definition) => definition.id === record.bundle)
+      || runtimeBundle;
     const inferredMode = record.outputRepository?.toLowerCase() === record.repository?.toLowerCase() ? "live" : "review";
     return {
       ...record,
