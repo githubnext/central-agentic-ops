@@ -281,11 +281,11 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .swimlane-separator { stroke: var(--border-muted); stroke-width: .45; }
 .swimlane-axis, .swimlane-tick { stroke: var(--border); stroke-width: .55; }
 .swimlane-run-mark { stroke-width: 2.5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.swimlane-mark-action-required { stroke: var(--success); }
+.swimlane-mark-action-required { stroke: var(--accent); }
 .swimlane-mark-failure { stroke: var(--danger); }
 .swimlane-mark-cancelled { stroke: var(--attention); }
-.swimlane-mark-skipped { stroke: var(--accent); }
-.swimlane-mark-success { stroke: var(--muted); }
+.swimlane-mark-skipped { stroke: var(--muted); }
+.swimlane-mark-success { stroke: var(--accent); }
 .swimlane-mark:hover, .swimlane-mark:focus-visible { filter: brightness(1.2); stroke-width: 3.5; }
 .swimlane-mark:focus-visible { outline: none; }
 .chart-widget .chart-series-7 { stroke: var(--pink); }
@@ -319,6 +319,18 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend i.chart-series-10 { border-color: var(--cyan); color: var(--cyan); }
 .chart-legend i.chart-series-11 { border-color: var(--lime); color: var(--lime); }
 .chart-legend i.chart-series-12 { border-color: var(--violet); color: var(--violet); }
+.chart-widget .chart-series-semantic-failure { stroke: var(--danger); }
+.chart-widget .chart-series-semantic-success, .chart-widget .chart-series-semantic-waiting { stroke: var(--accent); }
+.chart-widget .chart-series-semantic-attention { stroke: var(--attention); }
+.chart-widget .chart-series-semantic-neutral { stroke: var(--muted); }
+.bar-chart-bar.chart-series-semantic-failure { fill: var(--danger); }
+.bar-chart-bar.chart-series-semantic-success, .bar-chart-bar.chart-series-semantic-waiting { fill: var(--accent); }
+.bar-chart-bar.chart-series-semantic-attention { fill: var(--attention); }
+.bar-chart-bar.chart-series-semantic-neutral { fill: var(--muted); }
+.chart-legend i.chart-series-semantic-failure { border-color: var(--danger); color: var(--danger); }
+.chart-legend i.chart-series-semantic-success, .chart-legend i.chart-series-semantic-waiting { border-color: var(--accent); color: var(--accent); }
+.chart-legend i.chart-series-semantic-attention { border-color: var(--attention); color: var(--attention); }
+.chart-legend i.chart-series-semantic-neutral { border-color: var(--muted); color: var(--muted); }
 @keyframes pie-chart-entry {
   from { opacity: 0; stroke-dasharray: 0 100; }
 }
