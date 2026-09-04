@@ -859,8 +859,8 @@ function isFiniteNumber(value) {
  * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, usage: Array<Record<string, unknown>>, outcomes: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, operationalValues: Array<Record<string, unknown>>, health: ReturnType<typeof summarizeRunHealth> }} input
  */
 function buildDomainAttentionRows(input) {
-      const runTelemetryAvailable = input.sources.runs?.metadata?.availability === 'available';
-      const runTelemetryComplete = input.sources.runs?.metadata?.completeness === 'complete';
+  const runTelemetryAvailable = input.sources.runs?.metadata?.availability === 'available';
+  const runTelemetryComplete = input.sources.runs?.metadata?.completeness === 'complete';
   const controlPolicyDiagnostics = rowsFor(input.sources, 'coverage-diagnostics')
     .filter((row) => String(row.title) === 'Control policy resolution unavailable');
   const controlPolicyBlocks = controlPolicyDiagnostics.length;
