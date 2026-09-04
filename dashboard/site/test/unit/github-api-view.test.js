@@ -23,7 +23,7 @@ describe('GitHub API capacity view', () => {
           source: 'github-api-rate-limits',
           metadata,
           rows: [{
-            'observed-at': '2026-09-04T12:00:00Z',
+            'observed-at': '2026-09-04T10:00:00Z',
             operation: 'refresh-activity',
             phase: 'after',
             resource: 'core',
@@ -61,10 +61,19 @@ describe('GitHub API capacity view', () => {
       kind: 'custom',
       icon: 'meter',
       views: expect.arrayContaining([
-        expect.objectContaining({ id: 'github-api-remaining-trend', chart: 'line' }),
-        expect.objectContaining({ id: 'github-api-observations', mark: 'table' })
+       expect.objectContaining({
+         id: 'github-api-remaining-trend',
+         chart: 'dot',
+         encoding: expect.objectContaining({
+           reference: expect.objectContaining({ field: 'limit' })
+         })
+       }),
+       expect.objectContaining({ id: 'github-api-observations', mark: 'table' })
       ])
     });
+    expect(page?.querySelectorAll('.dot-chart-point')).toHaveLength(2);
+    expect(page?.querySelectorAll('.dot-chart-reference')).toHaveLength(1);
+    expect(page?.querySelector('.line-chart-series')).toBeNull();
     expect(page?.textContent).toContain('API and cache observations');
   });
 });
