@@ -18,7 +18,7 @@ export async function collectActivityCacheState(root = DEFAULT_CACHE_ROOT, execu
     : { status: 0, stdout: "0" };
   const kibibytes = size.status === 0 ? Number.parseInt(size.stdout, 10) : 0;
   return {
-    hydrated: entries.length > 0,
+    hydrated: entries.some((entry) => entry.isFile()),
     bytes: Number.isSafeInteger(kibibytes) ? kibibytes * 1024 : 0,
     entryCount: entries.length,
     folderCount: entries.filter((entry) => entry.isDirectory()).length,

@@ -14,6 +14,7 @@ test("GitHub telemetry records rate-limit and bounded cache metadata without tok
   const ledgerPath = path.join(cacheRoot, "cao-gh.jsonl");
   await mkdir(path.join(cacheRoot, "runs"), { recursive: true });
   await writeFile(path.join(cacheRoot, "runs", "one.json"), "{}\n");
+  await writeFile(path.join(cacheRoot, "control-settings.json"), "{}\n");
   try {
     const entry = await recordGithubTelemetry({
       phase: "before",
@@ -34,7 +35,7 @@ test("GitHub telemetry records rate-limit and bounded cache metadata without tok
     });
 
     assert.equal(entry.activityCache.hydrated, true);
-    assert.equal(entry.activityCache.entryCount, 1);
+    assert.equal(entry.activityCache.entryCount, 2);
     assert.equal(entry.activityCache.folderCount, 1);
     assert.ok(entry.activityCache.bytes > 0);
     assert.deepEqual(entry.rateLimit.core, {
