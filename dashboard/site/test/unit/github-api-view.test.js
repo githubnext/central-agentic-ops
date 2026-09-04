@@ -32,8 +32,8 @@ describe('GitHub API capacity view', () => {
             'reset-at': '2026-09-04T13:00:00Z',
             'token-type': 'app',
             'cache-hydrated': true,
-            'cache-files': 7,
-            'cache-folders': 'runs'
+            'cache-entries': 7,
+            'cache-folders': 1
           }, {
             'observed-at': '2026-09-04T11:00:00Z',
             operation: 'refresh-activity',
@@ -44,8 +44,8 @@ describe('GitHub API capacity view', () => {
             'reset-at': '2026-09-04T13:00:00Z',
             'token-type': 'app',
             'cache-hydrated': true,
-            'cache-files': 5,
-            'cache-folders': 'runs'
+            'cache-entries': 5,
+            'cache-folders': 1
           }]
         }
       }

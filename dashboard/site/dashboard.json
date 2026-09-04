@@ -391,14 +391,14 @@
                   "title": "Cache hydrated"
                 },
                 {
-                  "field": "cache-files",
+                  "field": "cache-entries",
                   "type": "quantitative",
-                  "title": "Cache files"
+                  "title": "Cache entries"
                 },
                 {
                   "field": "cache-folders",
-                  "type": "nominal",
-                  "title": "Cache folders"
+                  "type": "quantitative",
+                  "title": "Top-level folders"
                 }
               ]
             }

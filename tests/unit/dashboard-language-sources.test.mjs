@@ -18,7 +18,7 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
         core: { limit: 5_000, used: 125, remaining: 4_875, resetAt: "2026-09-04T13:00:00Z" },
       },
       rateLimitError: null,
-      activityCache: { hydrated: true, bytes: 1024, files: 6, folders: ["runs", "usage"] },
+      activityCache: { hydrated: true, bytes: 1024, entryCount: 6, folderCount: 2 },
     }],
   });
 
@@ -36,8 +36,8 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
     "reset-at": "2026-09-04T13:00:00Z",
     "cache-hydrated": true,
     "cache-bytes": 1024,
-    "cache-files": 6,
-    "cache-folders": "runs, usage",
+    "cache-entries": 6,
+    "cache-folders": 2,
     "rate-limit-error": "",
   }]);
   assert.equal(sources["github-api-rate-limits"].metadata.availability, "available");

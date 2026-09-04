@@ -108,8 +108,8 @@ export function githubTelemetryRows(entries = []) {
       "reset-at": rate.resetAt ?? null,
       "cache-hydrated": entry.activityCache?.hydrated === true,
       "cache-bytes": entry.activityCache?.bytes ?? 0,
-      "cache-files": entry.activityCache?.files ?? 0,
-      "cache-folders": (entry.activityCache?.folders || []).join(", "),
+      "cache-entries": entry.activityCache?.entryCount ?? 0,
+      "cache-folders": entry.activityCache?.folderCount ?? 0,
       "rate-limit-error": entry.rateLimitError || "",
     }));
   });

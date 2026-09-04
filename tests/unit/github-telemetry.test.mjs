@@ -34,7 +34,9 @@ test("GitHub telemetry records rate-limit and bounded cache metadata without tok
     });
 
     assert.equal(entry.activityCache.hydrated, true);
-    assert.deepEqual(entry.activityCache.folders, ["runs"]);
+    assert.equal(entry.activityCache.entryCount, 1);
+    assert.equal(entry.activityCache.folderCount, 1);
+    assert.ok(entry.activityCache.bytes > 0);
     assert.deepEqual(entry.rateLimit.core, {
       limit: 5_000,
       used: 125,
@@ -53,10 +55,7 @@ test("activity cache state is explicit when the cache is absent", async () => {
   assert.deepEqual(await collectActivityCacheState("/path/that/does/not/exist"), {
     hydrated: false,
     bytes: 0,
-    files: 0,
-    folders: [],
+    entryCount: 0,
     folderCount: 0,
-    oldestModifiedAt: null,
-    newestModifiedAt: null,
   });
 });

@@ -24,7 +24,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 The activity action reads trusted workflow, issue, pull request, and value-artifact data from the installed repository and writes a bounded cache snapshot. The dashboard publisher restores that snapshot, `dashboard-language-sources.mjs` creates `sources.json`, and the packaged renderer serves it at the configured `site-path`. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.
 
-The **GitHub API** view reads the activity snapshot's `cao-gh.jsonl` ledger. It charts rate-limit capacity and lists the before/after credential class and cache-hydration state for each instrumented collection operation.
+The **GitHub API** view reads the activity snapshot's `cao-gh.jsonl` ledger. It charts rate-limit capacity and lists the before/after credential class and aggregate cache-hydration state for each instrumented collection operation.
 
 If authoritative control policy resolution fails, the build remains fail-closed to the control repository and publishes the resolver diagnostic on the dashboard's Coverage diagnostics page. Valid policy that omits or disables an installed package or worker is shown as an admission gate in Overview attention and Security & controls. A latest failed run blocked by pre-activation GitHub REST API capacity is shown separately with its reset time, wait estimate, and official GitHub rate-limit guidance.
 

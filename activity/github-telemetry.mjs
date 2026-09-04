@@ -1,61 +1,27 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { appendFile, mkdir, readdir, stat } from "node:fs/promises";
+import { appendFile, mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_CACHE_ROOT = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-activity");
 const DEFAULT_LEDGER_PATH = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-gh", "cao-gh.jsonl");
 
-async function walk(root, relative = "") {
-  const directory = path.join(root, relative);
-  const entries = await readdir(directory, { withFileTypes: true }).catch((error) => {
-    if (error?.code === "ENOENT") return [];
-    throw error;
-  });
-  let bytes = 0;
-  let files = 0;
-  let oldestModifiedAt = "";
-  let newestModifiedAt = "";
-  for (const entry of entries) {
-    const entryRelative = path.join(relative, entry.name);
-    if (entry.isDirectory()) {
-      const nested = await walk(root, entryRelative);
-      bytes += nested.bytes;
-      files += nested.files;
-      if (nested.oldestModifiedAt && (!oldestModifiedAt || nested.oldestModifiedAt < oldestModifiedAt)) {
-        oldestModifiedAt = nested.oldestModifiedAt;
-      }
-      if (nested.newestModifiedAt > newestModifiedAt) newestModifiedAt = nested.newestModifiedAt;
-      continue;
-    }
-    if (!entry.isFile()) continue;
-    const metadata = await stat(path.join(root, entryRelative));
-    const modifiedAt = metadata.mtime.toISOString();
-    bytes += metadata.size;
-    files += 1;
-    if (!oldestModifiedAt || modifiedAt < oldestModifiedAt) oldestModifiedAt = modifiedAt;
-    if (modifiedAt > newestModifiedAt) newestModifiedAt = modifiedAt;
-  }
-  return { bytes, files, oldestModifiedAt, newestModifiedAt };
-}
-
-export async function collectActivityCacheState(root = DEFAULT_CACHE_ROOT) {
+export async function collectActivityCacheState(root = DEFAULT_CACHE_ROOT, execute = spawnSync) {
   const entries = await readdir(root, { withFileTypes: true }).catch((error) => {
     if (error?.code === "ENOENT") return [];
     throw error;
   });
-  const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).toSorted();
-  const contents = await walk(root);
+  const size = entries.length > 0
+    ? execute("du", ["-sk", "--", root], { encoding: "utf8", maxBuffer: 1024 * 1024 })
+    : { status: 0, stdout: "0" };
+  const kibibytes = size.status === 0 ? Number.parseInt(size.stdout, 10) : 0;
   return {
-    hydrated: contents.files > 0,
-    bytes: contents.bytes,
-    files: contents.files,
-    folders,
-    folderCount: folders.length,
-    oldestModifiedAt: contents.oldestModifiedAt || null,
-    newestModifiedAt: contents.newestModifiedAt || null,
+    hydrated: entries.length > 0,
+    bytes: Number.isSafeInteger(kibibytes) ? kibibytes * 1024 : 0,
+    entryCount: entries.length,
+    folderCount: entries.filter((entry) => entry.isDirectory()).length,
   };
 }
 
