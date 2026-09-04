@@ -116,6 +116,24 @@ export function renderContextChrome(contextDetails) {
 }
 
 /**
+ * Renders a single `<div><dt>{icon}{label}</dt><dd>{content}</dd></div>` row
+ * shared by the "as of", completeness, and freshness entries of the view
+ * metadata summary list.
+ * @param {string} icon
+ * @param {string} label
+ * @param {Node | string} content
+ * @returns {HTMLElement}
+ */
+function renderMetadataRow(icon, label, content) {
+  return h(
+    'div',
+    null,
+    h('dt', null, octicon(icon), label),
+    h('dd', null, content)
+  );
+}
+
+/**
  * @param {{ 'as-of': string, completeness: string, freshness: string }} metadata
  * @returns {HTMLElement[]}
  */
@@ -123,24 +141,9 @@ export function renderViewHeader(metadata) {
   return [h(
     'dl',
     { className: 'view-metadata view-metadata-summary', role: 'group', 'aria-label': 'Data status' },
-    h(
-      'div',
-      null,
-      h('dt', null, octicon('clock'), 'As of'),
-      h('dd', null, h('time', { dateTime: metadata['as-of'] }, formatUtcDateTime(metadata['as-of'])))
-    ),
-    h(
-      'div',
-      null,
-      h('dt', null, octicon('checklist'), 'Completeness'),
-      h('dd', null, renderStatusBadge(metadata.completeness))
-    ),
-    h(
-      'div',
-      null,
-      h('dt', null, octicon('pulse'), 'Freshness'),
-      h('dd', null, renderStatusBadge(metadata.freshness))
-    )
+    renderMetadataRow('clock', 'As of', h('time', { dateTime: metadata['as-of'] }, formatUtcDateTime(metadata['as-of']))),
+    renderMetadataRow('checklist', 'Completeness', renderStatusBadge(metadata.completeness)),
+    renderMetadataRow('pulse', 'Freshness', renderStatusBadge(metadata.freshness))
   )];
 }
 
