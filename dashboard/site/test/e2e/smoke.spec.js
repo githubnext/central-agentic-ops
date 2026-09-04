@@ -2816,6 +2816,10 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
               { id: 'value', kind: 'custom', title: 'Value', icon: 'graph', views: [] },
               { id: 'cost', kind: 'custom', title: 'Cost & efficiency', icon: 'meter', views: [] },
               { id: 'packages', kind: 'custom', title: 'Packages', icon: 'package', views: [] }
+            ],
+            navigation: [
+              { label: 'Main', pages: ['overview', 'runs', 'security'] },
+              { label: 'Investigate', pages: ['value', 'cost', 'packages'] }
             ]
           }
         },
@@ -2824,14 +2828,17 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
     </script>
   `);
 
-  const activeItem = page.locator('.primary-nav > a[aria-current="page"]');
+  const shortcuts = page.locator('.nav-section-items > .nav-item');
+  const activeItem = page.locator('.nav-section-items > .nav-item[aria-current="page"]');
   await expect(activeItem).toBeVisible();
   await expect(activeItem.locator('.nav-label')).toBeHidden();
   expect(await activeItem.evaluate((item) => getComputedStyle(item, '::before').content)).toBe('none');
-  await expect(page.locator('.primary-nav > .nav-item')).toHaveCount(6);
-  await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeVisible();
-  await expect(page.locator('.primary-nav > .nav-item').nth(4).locator('.octicon-meter')).toBeVisible();
-  await expect(page.locator('.primary-nav > .nav-item').nth(5)).toBeHidden();
+  await expect(shortcuts).toHaveCount(6);
+  await expect(shortcuts.nth(4)).toBeVisible();
+  await expect(shortcuts.nth(4).locator('.octicon-meter')).toBeVisible();
+  await expect(shortcuts.nth(5)).toBeHidden();
+  await expect(page.locator('.nav-section').first()).toHaveCSS('flex-direction', 'row');
+  await expect(page.locator('.nav-section-items').first()).toHaveCSS('flex-direction', 'row');
   await expect(page.locator('.primary-nav')).not.toHaveCSS('overflow-x', 'auto');
 
   await page.getByRole('button', { name: 'Select view' }).click();
