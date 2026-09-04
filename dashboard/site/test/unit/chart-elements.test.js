@@ -246,8 +246,9 @@ describe('chart element helpers', () => {
     const pie = renderChartWidget('pie', points, series);
     const histogram = renderChartWidget('histogram', [
       { x: 'run-1', y: 3, color: null },
-      { x: 'run-2', y: 4, color: null },
-      { x: 'run-3', y: 4, color: null }
+      { x: 'run-2', y: 6, color: null },
+      { x: 'run-3', y: 9, color: null },
+      { x: 'run-4', y: 9, color: null }
     ], series, null, 'AIC per run', {
       name: 'AI Credits',
       symbol: 'AIC',
@@ -299,10 +300,10 @@ describe('chart element helpers', () => {
       '0'
     ]);
     expect([...histogram.querySelectorAll('[data-chart-axis="histogram"] span')].map((tick) => tick.textContent)).toEqual([
-      '3.0 AIC',
-      '3.3 AIC',
-      '3.7 AIC',
-      '4.0 AIC'
+      '3 AIC',
+      '5 AIC',
+      '7 AIC',
+      '9 AIC'
     ]);
     expect(histogram.querySelector('.histogram-chart-bar')?.classList.contains('chart-series-1')).toBe(true);
     expect(histogram.querySelector('.histogram-chart-bar')?.getAttribute('rx')).toBe('0.75');

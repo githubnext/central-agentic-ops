@@ -279,7 +279,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const xTickCount = Math.min(xBoundaries.length, MAX_HISTOGRAM_X_TICKS);
     const xTicks = Array.from({ length: xTickCount }, (_, index) => (
       xBoundaries[Math.round((index * (xBoundaries.length - 1)) / Math.max(xTickCount - 1, 1))]
-    ));
+    )).map((value) => formatNumber(value, unit))
+      .filter((value, index, values) => index === 0 || value !== values[index - 1]);
     /** @param {{ lower: number, upper: number }} bin */
     const binLabel = (bin) => {
       const lower = formatNumber(bin.lower, unit);
@@ -352,7 +353,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         ? h(
           'div',
           { className: 'chart-axis', 'data-chart-axis': 'histogram' },
-          ...xTicks.map((value) => h('span', null, formatNumber(value, unit)))
+          ...xTicks.map((value) => h('span', null, value))
         )
         : null
     );
