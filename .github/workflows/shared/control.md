@@ -230,7 +230,11 @@ jobs:
           CAO_CONTROL_SOURCE: ${{ github.workspace }}/.cao/.github/cao/src/github-telemetry.mjs
         run: |
           cp "$CAO_CONTROL_SOURCE" /tmp/gh-aw/agent/github-telemetry.mjs
-          cp /tmp/cao-gh/cao-gh.jsonl /tmp/gh-aw/agent/cao-gh.jsonl
+          if [[ -f /tmp/cao-gh/cao-gh.jsonl ]]; then
+            cp /tmp/cao-gh/cao-gh.jsonl /tmp/gh-aw/agent/cao-gh.jsonl
+          else
+            install -m 600 /dev/null /tmp/gh-aw/agent/cao-gh.jsonl
+          fi
 
       - name: Upload CAO control precompute artifact
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
