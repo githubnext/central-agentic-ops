@@ -14,6 +14,7 @@ const MIN_LINE_POINT_SIZE = 2;
 const MAX_DOT_POINT_RADIUS = 2.5;
 const MIN_DOT_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
+const NON_SCALING_POINT_LENGTH = 0.001;
 const MAX_INTERACTIVE_LINE_POINTS = 500;
 const MAX_RENDERED_LINE_POINTS = 2_000;
 const MAX_TIMELINE_TICKS = 5;
@@ -497,7 +498,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
                 style: `--chart-point-size: ${hasWindowHighlight ? 4 : pointSize}px`,
                 x1: x,
                 y1: y,
-                x2: x + 0.001,
+                x2: x + NON_SCALING_POINT_LENGTH,
                 y2: y
               }),
             h(
