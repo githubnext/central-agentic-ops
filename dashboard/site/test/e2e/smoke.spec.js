@@ -1,309 +1,38 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test, expect } from '@playwright/test';
 
+const siteRoot = fileURLToPath(new URL('../..', import.meta.url));
+
+test.beforeEach(async ({ page, context }) => {
+  await context.route('http://dashboard.test/**', async (route) => {
+    const url = new URL(route.request().url());
+    const pathname = url.pathname;
+
+    if (pathname === '/' || pathname === '/index.html') {
+      await route.fulfill({ contentType: 'text/html', body: '<div id="root"></div>' });
+      return;
+    }
+
+    const filePath = join(siteRoot, pathname);
+    if (existsSync(filePath)) {
+      const content = readFileSync(filePath);
+      const mime = pathname.endsWith('.json')
+        ? 'application/json'
+        : pathname.endsWith('.svg')
+          ? 'image/svg+xml'
+          : 'application/javascript';
+      await route.fulfill({ contentType: mime, body: content });
+    } else {
+      await route.fulfill({ status: 404 });
+    }
+  });
+  await page.goto('http://dashboard.test/');
+});
+
 function buildPresenterModuleUrl() {
-  const dashboardSource = readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8');
-  const dashboardModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dashboardSource)}`;
-  const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
-  const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
-  const horizonSource = readFileSync(new URL('../../src/horizon.js', import.meta.url), 'utf8')
-    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
-  const horizonModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(horizonSource)}`;
-  const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
-  const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
-  const debounceSource = readFileSync(new URL('../../src/debounce.js', import.meta.url), 'utf8');
-  const debounceModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(debounceSource)}`;
-
-  const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
-  const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
-
-  const stylesSource = readFileSync(new URL('../../src/styles.js', import.meta.url), 'utf8');
-  const stylesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(stylesSource)}`;
-
-  const octiconsSprite = readFileSync(new URL('../../src/octicons.svg', import.meta.url), 'utf8');
-  const octiconsSpriteUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(octiconsSprite)}`;
-  const octiconsSource = readFileSync(new URL('../../src/octicons.js', import.meta.url), 'utf8')
-    .replace("'./dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./octicons.svg'", JSON.stringify(octiconsSpriteUrl));
-  const octiconsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(octiconsSource)}`;
-
-  const badgeSource = readFileSync(new URL('../../src/components/badge.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
-  const badgeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(badgeSource)}`;
-
-  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
-  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
-
-  const viewChromeSource = readFileSync(new URL('../../src/components/view-chrome.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
-  const viewChromeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewChromeSource)}`;
-
-  const dataStateSource = readFileSync(new URL('../../src/components/data-state.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
-  const dataStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataStateSource)}`;
-
-  const reactiveSource = readFileSync(new URL('../../src/reactive.js', import.meta.url), 'utf8');
-  const reactiveModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reactiveSource)}`;
-
-  const tableSummaryDataSource = readFileSync(new URL('../../src/table-summary-data.js', import.meta.url), 'utf8');
-  const tableSummaryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummaryDataSource)}`;
-
-  const histogramSource = readFileSync(new URL('../../src/components/histogram.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replaceAll("'../table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
-  const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
-
-  const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../reactive.js'", JSON.stringify(reactiveModuleUrl))
-    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
-  const tableSummaryModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummarySource)}`;
-
-  const dataOperationsSource = readFileSync(new URL('../../src/data-operations.js', import.meta.url), 'utf8');
-  const dataOperationsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataOperationsSource)}`;
-
-  const dataProcessorSource = readFileSync(new URL('../../src/data-processor.js', import.meta.url), 'utf8')
-    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl))
-    .replace("'./table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
-  const dataProcessorModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataProcessorSource)}`;
-
-  const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../data-processor.js'", JSON.stringify(dataProcessorModuleUrl))
-    .replace("'./table-summary.js'", JSON.stringify(tableSummaryModuleUrl));
-  const tableRegionModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableRegionSource)}`;
-
-  const cellDisplaySource = readFileSync(new URL('../../src/components/cell-display.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const cellDisplayModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(cellDisplaySource)}`;
-
-  const runClassificationRuleSource = readFileSync(new URL('../../src/components/run-conclusion-classification.json', import.meta.url), 'utf8');
-  const runClassificationRuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(runClassificationRuleSource)}`;
-
-  const utilizationThresholdsSource = readFileSync(new URL('../../src/components/package-aic-utilization-thresholds.json', import.meta.url), 'utf8');
-  const utilizationThresholdsUrl = `data:application/json;charset=utf-8,${encodeURIComponent(utilizationThresholdsSource)}`;
-
-  const runClassificationSource = readFileSync(new URL('../../src/components/run-classification.js', import.meta.url), 'utf8')
-    .replace("'./run-conclusion-classification.json'", JSON.stringify(runClassificationRuleUrl))
-    .replace("'./package-aic-utilization-thresholds.json'", JSON.stringify(utilizationThresholdsUrl));
-  const runClassificationModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runClassificationSource)}`;
-
-  const attentionRulesJsonSource = readFileSync(new URL('../../src/components/attention-rules.json', import.meta.url), 'utf8');
-  const attentionRulesJsonUrl = `data:application/json;charset=utf-8,${encodeURIComponent(attentionRulesJsonSource)}`;
-
-  const attentionRulesSource = readFileSync(new URL('../../src/components/attention-rules.js', import.meta.url), 'utf8')
-    .replace("'./attention-rules.json'", JSON.stringify(attentionRulesJsonUrl));
-  const attentionRulesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(attentionRulesSource)}`;
-
-  const dispatchTypeClassificationSource = readFileSync(new URL('../../src/components/dispatch-type-classification.json', import.meta.url), 'utf8');
-  const dispatchTypeClassificationUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dispatchTypeClassificationSource)}`;
-
-  const tabNavSource = readFileSync(new URL('../../src/components/tab-nav.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
-  const tabNavModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tabNavSource)}`;
-
-  const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
-
-  const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../debounce.js'", JSON.stringify(debounceModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
-  const filterBarModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(filterBarSource)}`;
-
-  const linkContentSource = readFileSync(new URL('../../src/components/link-content.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
-  const linkContentModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkContentSource)}`;
-
-  const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
-  const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
-
-  const routeStateSource = readFileSync(new URL('../../src/components/route-empty-state.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
-
-  const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
-
-  const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
-  const workflowBadgesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowBadgesSource)}`;
-
-  const workflowIdentitySource = readFileSync(new URL('../../src/components/workflow-identity.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./workflow-badges.js'", JSON.stringify(workflowBadgesModuleUrl));
-  const workflowIdentityModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowIdentitySource)}`;
-
-  const workflowRouteSource = readFileSync(new URL('../../src/components/workflow-route.js', import.meta.url), 'utf8');
-  const workflowRouteModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRouteSource)}`;
-
-  const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
-    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
-    .replace("'./workflow-route.js'", JSON.stringify(workflowRouteModuleUrl));
-  const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
-  const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
-    .replace("'./workflow-route.js'", JSON.stringify(workflowRouteModuleUrl));
-  const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
-  const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
-    .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
-  const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
-
-  const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
-  const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
-
-  const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
-    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./components/dispatch-type-classification.json'", JSON.stringify(dispatchTypeClassificationUrl));
-  const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
-
-  const anomalyReadinessSource = readFileSync(new URL('../../src/components/anomaly-readiness.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
-  const anomalyReadinessModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(anomalyReadinessSource)}`;
-
-  const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
-    .replace("'./package-detail.js'", JSON.stringify(packageDetailModuleUrl))
-    .replace("'./workflow-detail.js'", JSON.stringify(workflowDetailModuleUrl))
-    .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
-    .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./anomaly-readiness.js'", JSON.stringify(anomalyReadinessModuleUrl));
-  const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
-
-  const siteCalloutSource = readFileSync(new URL('../../src/components/site-callout.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const siteCalloutModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(siteCalloutSource)}`;
-
-  const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./cell-display.js'", JSON.stringify(cellDisplayModuleUrl))
-    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const dataViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataViewSource)}`;
-
-  const overviewDataSource = readFileSync(new URL('../../src/overview-data.js', import.meta.url), 'utf8')
-    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./components/run-classification.js'", JSON.stringify(runClassificationModuleUrl))
-    .replace("'./components/attention-rules.js'", JSON.stringify(attentionRulesModuleUrl));
-  const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
-
-  const workflowDataSource = readFileSync(new URL('../../src/workflow-data.js', import.meta.url), 'utf8');
-  const workflowDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDataSource)}`;
-
-  const repositoryDataSource = readFileSync(new URL('../../src/repository-data.js', import.meta.url), 'utf8')
-    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./workflow-data.js'", JSON.stringify(workflowDataModuleUrl));
-  const repositoryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryDataSource)}`;
-  const dataHealthSource = readFileSync(new URL('../../src/data-health.js', import.meta.url), 'utf8');
-  const dataHealthModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataHealthSource)}`;
-
-  const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
-    .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
-    .replace("'./horizon.js'", JSON.stringify(horizonModuleUrl))
-    .replace("'./dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./styles.js'", JSON.stringify(stylesModuleUrl))
-    .replace("'./octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./components/cell-display.js'", JSON.stringify(cellDisplayModuleUrl))
-    .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
-    .replace("'./components/ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
-    .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./components/link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./components/linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./components/chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
-    .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
-    .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
-    .replace("'./components/filter-bar.js'", JSON.stringify(filterBarModuleUrl))
-    .replace("'./components/site-callout.js'", JSON.stringify(siteCalloutModuleUrl))
-    .replace("'./data-processor.js'", JSON.stringify(dataProcessorModuleUrl))
-    .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
-    .replace("'./repository-data.js'", JSON.stringify(repositoryDataModuleUrl))
-    .replace("'./runtime-data.js'", JSON.stringify(runtimeDataModuleUrl))
-    .replace("'./workflow-data.js'", JSON.stringify(workflowDataModuleUrl))
-    .replace("'./data-health.js'", JSON.stringify(dataHealthModuleUrl))
-    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
-
-  return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
+  return 'http://dashboard.test/src/presenter.js';
 }
 
 test('production pages expose a responsive executive chart', async ({ page }) => {
@@ -356,6 +85,9 @@ test('production pages expose a responsive executive chart', async ({ page }) =>
 });
 
 test('control-plane readiness surfaces blocking regressions', async ({ page }) => {
+  /** @type {Error[]} */
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
   await page.setContent(`
@@ -384,7 +116,9 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
           source: 'runs',
           rows: [
             { organization: 'githubnext', repository: 'gh-aw-cao', run: '42', 'run-title': 'Readiness smoke', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Smoke regression', 'run-link': 'https://example.com/runs/42' },
-            { organization: 'githubnext', repository: 'gh-aw-cao', run: '43', 'run-title': 'Worker smoke', workflow: '.github/workflows/daily-worker.md', 'started-at': '2026-09-03T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Worker regression', 'run-link': 'https://example.com/runs/43' }
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '43', 'run-title': 'Worker smoke', workflow: '.github/workflows/daily-worker.md', 'started-at': '2026-09-03T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Worker regression', 'run-link': 'https://example.com/runs/43' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '44', 'run-title': 'Current readiness', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T11:50:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'run-link': 'https://example.com/runs/44' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '45', 'run-title': 'Pending readiness', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T11:55:00Z', 'run-status': 'in_progress', 'run-conclusion': null, 'run-link': 'https://example.com/runs/45' }
           ],
           metadata
         },
@@ -404,22 +138,50 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
       document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
     </script>
   `);
+  expect(pageErrors).toEqual([]);
 
   const readinessPage = page.locator('[data-page-id="readiness"]');
   await expect(readinessPage).toBeVisible();
+  await expect(readinessPage.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('mode:review mode:live');
+  await expect(readinessPage.locator('.filter-bar .count-badge')).toHaveText('2');
   const readinessNavigation = page.locator('[data-nav-page-id="readiness"]');
   await expect(readinessNavigation).toHaveAttribute('aria-current', 'page');
   await expect(readinessNavigation.locator('svg')).toHaveCount(1);
   await expect(page.locator('.nav-section-label').filter({ hasText: 'Control plane' })).toBeVisible();
   await expect(readinessPage.locator('.custom-view').first().locator('[data-chart-widget="line"]')).toBeVisible();
   await expect(readinessPage).toContainText('Not ready');
-  await expect(readinessPage).toContainText('2 runs observed');
+  await expect(readinessPage).toContainText('3 completed runs observed');
   await expect(readinessPage).toContainText('Worker failures');
   await expect(readinessPage).toContainText('Worker warnings');
   await expect(readinessPage).toContainText('No-op reports');
   await expect(readinessPage).toContainText('Runtime regression');
   await expect(readinessPage).toContainText('Output warning');
   await expect(readinessPage).toContainText('Smoke regression');
+
+  const windowStart = readinessPage.locator('[aria-label="Window start time"]');
+  const windowStop = readinessPage.locator('[aria-label="Window stop time"]');
+  const [localStart, localStop] = await page.evaluate((values) => values.map((value) => {
+    const instant = new Date(value);
+    return new Date(instant.getTime() - instant.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  }), ['2026-09-03T11:40:00Z', '2026-09-03T12:00:00Z']);
+  await windowStart.fill(localStart);
+  await windowStop.fill(localStop);
+  await expect(windowStart).toHaveValue(localStart);
+  await expect(windowStop).toHaveValue(localStop);
+  await readinessPage.getByRole('button', { name: 'Apply' }).click();
+  await expect(readinessPage.locator('[aria-label="Time window"]')).toHaveValue('custom');
+  await expect(readinessPage).toContainText('Ready to ship');
+  await expect(readinessPage).toContainText('1 completed runs observed');
+  await expect(readinessPage).not.toContainText('Smoke regression');
+  await expect(readinessPage).not.toContainText('No failures observed');
+  await expect(readinessPage).not.toContainText('No warnings observed');
+  await expect(readinessPage).not.toContainText('No no-op reports observed');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(readinessPage.locator('.time-window-control')).toBeVisible();
+  await expect(readinessPage.locator('[aria-label="Window start time"]')).toBeVisible();
+  await expect(readinessPage.locator('[aria-label="Window stop time"]')).toBeVisible();
+  expect(await readinessPage.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
 
 test('performance page leads with a workflow duration histogram', async ({ page }) => {
@@ -1419,7 +1181,7 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect(filterBar).toBeVisible();
   const filterInput = filterBar.getByRole('searchbox', { name: 'Current filters' });
   await expect(filterInput).toHaveValue('mode:review mode:live');
-  await expect(filterBar.getByText('All recorded')).toBeVisible();
+  await expect(filterBar.getByRole('combobox', { name: 'Time window' })).toHaveValue('all');
   await expect(filterBar.getByRole('link', { name: 'Export JSON' })).toHaveCount(0);
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
 
@@ -1431,7 +1193,7 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
 
   await page.setViewportSize({ width: 400, height: 900 });
   const filterControlBox = await filterBar.locator('.filter-control').boundingBox();
-  const timeRangeBox = await filterBar.locator('.scope-period').boundingBox();
+  const timeRangeBox = await filterBar.locator('.time-window-control').boundingBox();
   expect(filterControlBox).not.toBeNull();
   expect(timeRangeBox?.y).toBeGreaterThan(filterControlBox?.y ?? 0);
 });
@@ -2061,7 +1823,7 @@ test('repository page template follows its JSON-declared hash query route in bro
 
 test('workflow page template follows its JSON-declared route and renders attributed reports', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
-  await page.goto('about:blank#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md');
+  await page.goto('http://dashboard.test/#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md');
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -2415,6 +2177,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             title: 'Outcome',
             description: 'Outcome details.',
             route: { 'hash-query-parameter': 'outcome' },
+            'filter-bar': { filters: ['mode:review', 'mode:live'] },
             views: [{
               id: 'outcome-record',
               title: 'Outcome',
@@ -2459,6 +2222,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
   await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
   await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
+  await expect(page.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('mode:review mode:live');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');
   await expect(page.locator('.outcome-meta')).toContainText('Live');

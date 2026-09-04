@@ -162,12 +162,34 @@ describe('chart element helpers', () => {
     expect(histogram.getAttribute('data-chart-widget')).toBe('histogram');
     expect(histogram.querySelectorAll('.histogram-chart-bar')).toHaveLength(3);
     expect(histogram.querySelectorAll('.histogram-chart-mark .point-tooltip')).toHaveLength(3);
+    expect(histogram.querySelectorAll('.histogram-chart-grid')).toHaveLength(3);
     expect(histogram.querySelector('.histogram-chart-bar')?.classList.contains('chart-series-1')).toBe(true);
+    expect(histogram.querySelector('.histogram-chart-bar')?.getAttribute('rx')).toBe('0.75');
     expect(histogram.querySelector('.histogram-chart-tooltip text')?.getAttribute('lengthAdjust')).toBe('spacingAndGlyphs');
     expect(histogram.querySelector('svg')?.getAttribute('aria-label')).toContain('automatically calculated bins');
     expect(histogram.querySelector('.histogram-chart-mark')?.getAttribute('aria-label')).toContain('AIC');
+    const firstHistogramMark = histogram.querySelector('.histogram-chart-mark');
+    firstHistogramMark?.dispatchEvent(new Event('pointerenter'));
+    expect(histogram.querySelector('.histogram-chart-mark:last-child')).toBe(firstHistogramMark);
     expect(unitPie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
     expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
+  });
+
+  it('dims historical line context and emphasizes the selected window', () => {
+    const points = [
+      { x: '2026-09-03T10:00:00Z', y: 2, color: 'worker', highlighted: false },
+      { x: '2026-09-04T10:00:00Z', y: 3, color: 'worker', highlighted: true },
+      { x: '2026-09-04T11:00:00Z', y: 4, color: 'worker', highlighted: true }
+    ];
+    const line = renderChartWidget('line', points, listChartSeries(points));
+
+    expect(line.querySelector('.line-chart-context')).not.toBeNull();
+    expect(Number(line.querySelector('.line-chart-window-band')?.getAttribute('width'))).toBeGreaterThan(0);
+    expect(line.querySelector('.line-chart-current')?.getAttribute('points')).not.toBe('');
+    expect(line.querySelectorAll('.chart-point-context')).toHaveLength(1);
+    expect(line.querySelector('.chart-point-context circle')?.getAttribute('r')).toBe('0.65');
+    expect(line.querySelector('.chart-point-current circle')?.getAttribute('r')).toBe('0.65');
+    expect(line.querySelector('.chart-window-key')?.textContent).toContain('Selected window');
   });
 
   it('reduces line-chart point radii linearly as the number of points increases', () => {
