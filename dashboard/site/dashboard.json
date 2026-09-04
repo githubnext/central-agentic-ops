@@ -140,7 +140,10 @@
         "class-name": "readiness-page",
         "description": "Fail-closed release readiness across evidence integrity, package inventory, policy controls, and recent runtime behavior.",
         "filter-bar": {
-          "filters": [],
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
           "time-range": "24h"
         },
         "sections": [

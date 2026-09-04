@@ -7,6 +7,7 @@ import { octicon } from '../octicons.js';
 /** @typedef {{ range: string, start: string, end: string }} TimeWindow */
 const FILTER_DEBOUNCE_MS = 500;
 const TIME_RANGE_OPTIONS = ['1h', '6h', '24h', '3d', '1w', '2w', '4w'];
+const ALL_RECORDED = 'all';
 
 /**
  * @param {FilterBarConfig} config
@@ -72,11 +73,15 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
   const prefix = options.id ? `${options.id}.` : '';
   const parameters = new URLSearchParams(window?.location.search ?? '');
   const persistedRange = parameters.get(`${prefix}window`);
-  let range = persistedRange === 'custom' || TIME_RANGE_OPTIONS.includes(persistedRange ?? '')
+  let range = persistedRange === 'custom' || persistedRange === ALL_RECORDED || TIME_RANGE_OPTIONS.includes(persistedRange ?? '')
     ? /** @type {string} */ (persistedRange)
     : defaultRange;
-  if (!TIME_RANGE_OPTIONS.includes(range) && range !== 'custom') range = '1w';
-  const initialWindow = relativeTimeWindow(range === 'custom' ? defaultRange : range, options.referenceEnd);
+  if (range === 'All recorded') range = ALL_RECORDED;
+  if (!TIME_RANGE_OPTIONS.includes(range) && range !== 'custom' && range !== ALL_RECORDED) range = '1w';
+  const initialWindow = relativeTimeWindow(
+    range === 'custom' || range === ALL_RECORDED ? defaultRange : range,
+    options.referenceEnd
+  );
   const persistedStart = parameters.get(`${prefix}start`);
   const persistedEnd = parameters.get(`${prefix}end`);
   if (range === 'custom' && !validTimeWindow(persistedStart, persistedEnd)) range = defaultRange;
@@ -85,6 +90,7 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
     'select',
     { 'aria-label': 'Time window' },
     ...TIME_RANGE_OPTIONS.map((value) => h('option', { value }, `Last ${formatDashboardHorizon(value)}`)),
+    h('option', { value: ALL_RECORDED }, 'All recorded'),
     h('option', { value: 'custom' }, 'Custom range')
   ));
   select.value = range;
@@ -101,6 +107,7 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
   const applyCustomRange = h('button', { type: 'button' }, 'Apply');
 
   const value = () => {
+    if (select.value === ALL_RECORDED) return undefined;
     if (select.value !== 'custom') return relativeTimeWindow(select.value, options.referenceEnd);
     const customStart = isoDateTimeValue(start.value);
     const customEnd = isoDateTimeValue(end.value);
