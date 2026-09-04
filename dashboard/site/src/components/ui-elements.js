@@ -8,7 +8,7 @@ import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
-import { renderSectionHeading, isPlainObject } from './ui-primitives.js';
+import { renderSectionHeading, isPlainObject, renderIdentityLink } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -166,7 +166,7 @@ function renderPackageStatusGridElement(context) {
           h(
             'header',
             { className: 'package-status-header' },
-            h('strong', null, h('a', { className: 'package-status-identity', href: stringValue(row.href) }, octicon(stringValue(row.icon) || 'package'), h('span', null, stringValue(row.title)))),
+            h('strong', null, renderIdentityLink({ href: stringValue(row.href), icon: stringValue(row.icon) || 'package', label: stringValue(row.title), className: 'package-status-identity' })),
             inventoryText === 'Ready' ? null : h('span', { className: 'package-status-state' }, inventoryText)
           ),
           h(
