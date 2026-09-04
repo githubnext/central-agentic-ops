@@ -81,6 +81,7 @@
           "views": [
             {
               "id": "overview-run-health",
+              "locked": true,
               "title": "Run health trend",
               "description": "Daily run conclusions surface the control plane's current operating signal.",
               "data": {
@@ -116,6 +117,7 @@
             },
             {
               "id": "overview-attention-domains",
+              "locked": true,
               "title": "Attention by domain",
               "description": "Ordered by urgency. Each state names only what retained evidence and configured policy can support.",
               "data": {
@@ -136,6 +138,7 @@
             },
             {
               "id": "overview-package-status",
+              "locked": true,
               "title": "Packages",
               "description": "Managed package readiness across rollout mode, worker workflows, and inventory state.",
               "data": {
@@ -350,13 +353,17 @@
             "title": "Quota history",
             "description": "Remaining capacity over the selected UTC time range. Resource and credential series remain independent so reset sawtooths are not combined across credentials.",
             "data": {
-              "source": "github-api-rate-limits"
+              "source": "github-api-rate-limits",
+              "filters": {
+                "has-history": "true"
+              }
             },
             "mark": "chart",
             "chart": "line",
             "table": true,
             "layout": "full",
             "disclosure": "essential",
+            "empty-message": "Quota history is unavailable until at least two observations exist for the same resource and credential.",
             "encoding": {
               "x": {
                 "field": "observed-at",
@@ -1694,7 +1701,7 @@
               ]
             },
             "mark": "element",
-            "element": "workflow-detail",
+            "element": "workflow-route",
             "layout": "full"
           },
           {
@@ -1791,7 +1798,7 @@
               ]
             },
             "mark": "element",
-            "element": "workflow-runs",
+            "element": "workflow-route",
             "layout": "full"
           },
           {
@@ -1983,7 +1990,7 @@
               ]
             },
             "mark": "element",
-            "element": "workflow-runtime",
+            "element": "workflow-route",
             "layout": "full"
           }
         ]

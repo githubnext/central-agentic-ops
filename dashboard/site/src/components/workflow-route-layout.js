@@ -23,7 +23,7 @@
  * @returns {WorkflowRouteLayout}
  */
 export function workflowRouteLayout(context) {
-  const variant = workflowRouteVariant(context.viewId);
+  const variant = workflowRouteVariant(context.viewId, context.element);
   const insights = variant === 'insights';
   const reports = variant === 'reports';
   return {
@@ -53,12 +53,16 @@ export function workflowRouteLayout(context) {
 
 /**
  * @param {string | undefined} viewId
+ * @param {string | undefined} element
  * @returns {WorkflowRouteVariant}
  */
-function workflowRouteVariant(viewId) {
+function workflowRouteVariant(viewId, element) {
   viewId = String(viewId ?? '');
+  element = String(element ?? '');
   if (viewId === 'workflow-runs-route') return 'runs';
   if (viewId === 'workflow-runtime-route') return 'insights';
   if (viewId === 'workflow-reports-route') return 'reports';
+  if (element === 'workflow-runs') return 'runs';
+  if (element === 'workflow-runtime') return 'insights';
   return 'reports';
 }
