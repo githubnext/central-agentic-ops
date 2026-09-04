@@ -645,9 +645,11 @@ export async function startDashboardServer({
   }
 
   let expectedAuthority = null;
+  let codespaceAuthority = null;
+  const isAllowedHost = (host) => host === expectedAuthority || (codespaceAuthority && host === codespaceAuthority);
   const server = createServer(async (request, response) => {
     try {
-      if (!expectedAuthority || !request.headers.host || request.headers.host !== expectedAuthority
+      if (!expectedAuthority || !request.headers.host || !isAllowedHost(request.headers.host)
           || /^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(request.url || "")) {
         response.writeHead(400).end("Bad request\n");
         return;
@@ -820,7 +822,7 @@ export async function startDashboardServer({
   server.on("upgrade", (request, socket) => {
     const key = request.headers["sec-websocket-key"];
     if (!expectedAuthority
-        || request.headers.host !== expectedAuthority
+        || !isAllowedHost(request.headers.host)
         || request.url !== socketPath
         || request.headers.upgrade?.toLowerCase() !== "websocket"
         || request.headers["sec-websocket-version"] !== "13"
@@ -870,7 +872,11 @@ export async function startDashboardServer({
           return;
         }
         expectedAuthority = `${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`;
-        console.log("Dashboard server listening.", { authority: expectedAuthority, copilot });
+        if (process.env.CODESPACES === "true" && process.env.CODESPACE_NAME
+            && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN) {
+          codespaceAuthority = `${process.env.CODESPACE_NAME}-${address.port}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`;
+        }
+        console.log("Dashboard server listening.", { authority: expectedAuthority, ...(codespaceAuthority ? { codespaceAuthority } : {}), copilot });
         accept();
       });
     });

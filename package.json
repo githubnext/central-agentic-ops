@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "setup:github-apps": "node .github/cao/setup-github-apps.mjs",
-    "dev": "node dashboard/local-server.mjs --copilot",
+    "dev": "lsof -ti:4173 | xargs kill 2>/dev/null; node dashboard/local-server.mjs --copilot",
     "docs:dev": "astro dev",
     "docs:build": "astro build",
     "docs:preview": "astro preview",
@@ -17,7 +17,8 @@
     "compile": "gh aw compile --no-emit --no-check-update --schedule-seed githubnext/gh-aw-cao",
     "compile:locks": "gh aw compile --no-check-update --schedule-seed githubnext/gh-aw-cao",
     "check": "npm run typecheck:cao && npm test && npm run test:load && npm run check:svg && npm run compile && npm run docs:build",
-    "update-deps": "npx npm-check-updates -u && npm install"
+    "update-deps": "npx npm-check-updates -u && npm install",
+    "install:copilot": "curl -fsSL https://gh.io/copilot-install | bash"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "7.3.0",
@@ -28,6 +29,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "^26.4.1",
     "typescript": "^7.0.2"
   }
