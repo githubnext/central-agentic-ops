@@ -249,15 +249,18 @@ describe('dashboard document validation', () => {
 
     expect(reportsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-reports-route')).toMatchObject({
       mark: 'element',
-      element: 'workflow-route'
+      element: 'workflow-route',
+      config: { variant: 'reports' }
     });
     expect(runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-route')).toMatchObject({
       mark: 'element',
-      element: 'workflow-route'
+      element: 'workflow-route',
+      config: { variant: 'runs' }
     });
     expect(runtimePage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-route')).toMatchObject({
       mark: 'element',
-      element: 'workflow-route'
+      element: 'workflow-route',
+      config: { variant: 'insights' }
     });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });

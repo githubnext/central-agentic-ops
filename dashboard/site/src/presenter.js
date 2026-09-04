@@ -1562,6 +1562,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     titleLink: isPlainObject(view['title-link']) ? view['title-link'] : undefined,
     routeParameter,
     viewId: typeof view.id === 'string' ? view.id : undefined,
+    elementConfig: isPlainObject(view.config) ? view.config : undefined,
     headingTag
   });
   if (!rendered) {

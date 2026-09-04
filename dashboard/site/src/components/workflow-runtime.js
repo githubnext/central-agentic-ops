@@ -21,7 +21,10 @@ import { rowsFor } from './source-rows.js';
  * @returns {HTMLElement}
  */
 export function renderWorkflowRuntime(context) {
-  return renderWorkflowRouteView({ ...context, viewId: context.viewId ?? 'workflow-runtime-route' });
+  return renderWorkflowRouteView({
+    ...context,
+    elementConfig: context.elementConfig ?? { variant: 'insights' }
+  });
 }
 
 /**

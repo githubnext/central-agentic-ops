@@ -1658,6 +1658,9 @@
             },
             "mark": "element",
             "element": "workflow-route",
+            "config": {
+              "variant": "reports"
+            },
             "layout": "full"
           },
           {
@@ -1755,6 +1758,9 @@
             },
             "mark": "element",
             "element": "workflow-route",
+            "config": {
+              "variant": "runs"
+            },
             "layout": "full"
           },
           {
@@ -1947,6 +1953,9 @@
             },
             "mark": "element",
             "element": "workflow-route",
+            "config": {
+              "variant": "insights"
+            },
             "layout": "full"
           }
         ]

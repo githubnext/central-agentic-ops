@@ -30,8 +30,8 @@ import { renderWorkflowRuntimeBody } from './workflow-runtime.js';
  * }) => HTMLElement | null} WorkflowRouteBodyRenderer
  */
 
-const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<string, WorkflowRouteComposition>>} */ ({
-  'workflow-runtime-route': {
+const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRouteVariant, WorkflowRouteComposition>>} */ ({
+  insights: {
     variant: 'insights',
     rootClassName: 'workflow-runtime',
     contentClassName: 'workflow-runtime-content',
@@ -42,7 +42,7 @@ const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<string, WorkflowR
     element: 'workflow-runtime',
     bodyRenderer: ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow)
   },
-  'workflow-reports-route': {
+  reports: {
     variant: 'reports',
     rootClassName: 'workflow-detail',
     contentClassName: 'workflow-detail-content',
@@ -56,7 +56,7 @@ const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<string, WorkflowR
     element: 'workflow-detail',
     bodyRenderer: () => null
   },
-  'workflow-runs-route': {
+  runs: {
     variant: 'runs',
     rootClassName: 'workflow-detail',
     contentClassName: 'workflow-detail-content',
@@ -72,13 +72,15 @@ const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<string, WorkflowR
   }
 });
 
-const DEFAULT_WORKFLOW_ROUTE_COMPOSITION = 'workflow-reports-route';
+const DEFAULT_WORKFLOW_ROUTE_COMPOSITION = 'reports';
 
 /**
- * @param {string | undefined} viewId
+ * @param {unknown} variant
  * @returns {WorkflowRouteComposition}
  */
-export function workflowRouteComposition(viewId) {
-  return WORKFLOW_ROUTE_COMPOSITIONS[String(viewId ?? DEFAULT_WORKFLOW_ROUTE_COMPOSITION)]
-    ?? WORKFLOW_ROUTE_COMPOSITIONS[DEFAULT_WORKFLOW_ROUTE_COMPOSITION];
+export function workflowRouteComposition(variant) {
+  const key = typeof variant === 'string' && variant in WORKFLOW_ROUTE_COMPOSITIONS
+    ? /** @type {WorkflowRouteVariant} */ (variant)
+    : DEFAULT_WORKFLOW_ROUTE_COMPOSITION;
+  return WORKFLOW_ROUTE_COMPOSITIONS[key];
 }
