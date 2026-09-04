@@ -2415,6 +2415,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             title: 'Outcome',
             description: 'Outcome details.',
             route: { 'hash-query-parameter': 'outcome' },
+            'filter-bar': { filters: ['mode:review', 'mode:live'] },
             views: [{
               id: 'outcome-record',
               title: 'Outcome',
@@ -2459,6 +2460,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
   await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
   await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
+  await expect(page.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('mode:review mode:live');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');
   await expect(page.locator('.outcome-meta')).toContainText('Live');

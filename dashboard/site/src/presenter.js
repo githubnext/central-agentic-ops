@@ -779,7 +779,10 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
           units,
           dashboardDefaults
         );
-        if (filterBar) root.replaceChildren(filterBar, ...replacement.children);
+        if (filterBar) {
+          root.replaceChildren(filterBar, ...replacement.children);
+          dispatchPageRoute(root, root.dataset.routeParameter ?? '', root.dataset.routeValue ?? '');
+        }
       };
       result.then(apply).catch(() => {});
     })
@@ -1031,6 +1034,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     const routeParameter = page?.dataset.routeParameter;
     const routeValue = routeParameter ? parameters.get(routeParameter)?.trim() ?? '' : '';
+    if (page) page.dataset.routeValue = routeValue;
     const title = routeValue || page?.dataset.pageTitle || '';
     const description = page?.dataset.pageDescription ?? '';
     if (breadcrumbPage) breadcrumbPage.textContent = title;
@@ -1045,11 +1049,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
       ? new URLSearchParams(root.ownerDocument.defaultView?.location.search ?? '').get('mode')
       : '';
     renderPageMode(pageMode, requestedMode === 'review' || requestedMode === 'live' ? requestedMode : '');
-    for (const routeView of page?.querySelectorAll('[data-route-view]') ?? []) {
-      routeView.dispatchEvent(new CustomEvent('dashboard-route-change', {
-        detail: { parameter: routeParameter, value: routeValue }
-      }));
-    }
+    if (page) dispatchPageRoute(page, routeParameter ?? '', routeValue);
     const sectionId = parameters.get('section')?.trim();
     const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
     if (section && page?.contains(section)) {
@@ -1059,6 +1059,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
       const scrollingElement = root.ownerDocument.scrollingElement ?? root.ownerDocument.documentElement;
       scrollingElement.scrollTop = scrollTop;
     }
+
     activePageId = pageId;
   };
 
@@ -1089,6 +1090,19 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
   };
   defaultView?.addEventListener('hashchange', onHashChange);
+}
+
+/**
+ * @param {HTMLElement} page
+ * @param {string} parameter
+ * @param {string} value
+ */
+function dispatchPageRoute(page, parameter, value) {
+  for (const routeView of page.querySelectorAll('[data-route-view]')) {
+    routeView.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter, value }
+    }));
+  }
 }
 
 /**
