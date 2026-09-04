@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
+import { rowsFor } from './source-rows.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
 
 /**
@@ -113,11 +114,6 @@ function renderWorkflowTabs(selectedView, route, workflowName) {
       { label: 'Runs', icon: 'play', href: `#page-workflow-runs${workflowQuery}`, current: selectedView === 'runs' }
     ]
   });
-}
-
-/** @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources @param {string} source */
-function rowsFor(sources, source) {
-  return Array.isArray(sources[source]?.rows) ? sources[source].rows : [];
 }
 
 /** @param {Record<string, unknown>} row */

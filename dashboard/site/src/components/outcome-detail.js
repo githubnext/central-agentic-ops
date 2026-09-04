@@ -10,6 +10,7 @@ import { formatUtcDateTime } from './ui-primitives.js';
 import { titleCase } from './count-formatters.js';
 import { renderMetadataSection } from './view-chrome.js';
 import { createRouteView } from './route-empty-state.js';
+import { rowsFor } from './source-rows.js';
 
 const ALLOWED_MARKDOWN_TAGS = new Set([
   'A', 'BLOCKQUOTE', 'BR', 'CODE', 'DEL', 'DETAILS', 'DIV', 'EM',
@@ -230,11 +231,6 @@ function safeHttpsUrl(value) {
   } catch {
     return null;
   }
-}
-
-/** @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources @param {string} source */
-function rowsFor(sources, source) {
-  return Array.isArray(sources[source]?.rows) ? sources[source].rows : [];
 }
 
 /** @param {Record<string, unknown>} outcome */
