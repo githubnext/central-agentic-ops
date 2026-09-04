@@ -68,7 +68,7 @@ export default defineConfig({
                   const labelPrefix = region.matches("pre") ? "Scrollable code example" : "Scrollable table";
                   let label;
                   if (headingText) {
-                    const labelKey = `${labelPrefix}:${headingText}`;
+                    const labelKey = \`\${labelPrefix}:\${headingText}\`;
                     const count = (seenLabels.get(labelKey) || 0) + 1;
                     seenLabels.set(labelKey, count);
                     label = count > 1 ? \`\${labelPrefix}: \${headingText} (\${count})\` : \`\${labelPrefix}: \${headingText}\`;
