@@ -884,8 +884,8 @@ test("root package composes its operational packages through manifests", () => {
   assert.ok(rootManifest.resources.some(({ source, destination }) =>
     source === "default-aw.jsonl" && destination === ".github/aw/default-aw.jsonl"));
   const project = JSON.parse(readFileSync(join(root, ".github", "workflows", "aw.json"), "utf8"));
-  const packagedProject = JSON.parse(readFileSync(join(root, "default-aw.jsonl"), "utf8"));
-  assert.deepEqual(packagedProject, project);
+  const packagedProjects = readFileSync(join(root, "default-aw.jsonl"), "utf8").trim().split("\n").map(JSON.parse);
+  assert.deepEqual(packagedProjects, [project]);
   assert.deepEqual(project.auto_upgrade.options, ["--pre-releases"]);
 });
 
