@@ -436,8 +436,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 }
 
 /**
- * Keeps line-series SVG output bounded while retaining the first, last, minimum,
- * and maximum observations represented by each bucket.
+ * Keeps line-series SVG output bounded while retaining the first, last, and
+ * visual extrema (minimum and maximum SVG y-coordinates) in each bucket.
  * @template T
  * @param {Array<T & { y: number }>} coordinates
  * @param {number} limit
