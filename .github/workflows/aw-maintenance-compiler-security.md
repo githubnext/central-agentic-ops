@@ -210,7 +210,7 @@ Use a compact findings table with tool, workflow or image, tool-reported severit
 <details><summary><b>Fix with an agent</b></summary>
 
 1. Assign this issue to Copilot.
-2. Give it the prompt below. Require the gh-aw MCP server's `fix` and `compile` tools; never allow direct edits to generated `.lock.yml` files.
+2. Configure its MCP client to launch `gh aw mcp-server` over stdio from the target repository, then give it the prompt below. Require the server's `fix` and `compile` tools; never allow direct edits to generated `.lock.yml` files.
 3. Review the resulting pull request and require the same full compiler and security scan to pass before merge. If a finding needs human action, require the agent to stop and explain it.
 
 **Agent prompt**
