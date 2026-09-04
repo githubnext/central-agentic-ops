@@ -21,6 +21,8 @@ const BAR_CHART_RIGHT = 100;
 const BAR_CHART_BOTTOM = 38;
 const BAR_CHART_HEIGHT = 34;
 const MAX_HISTOGRAM_X_TICKS = 5;
+const PIE_CHART_CENTER = 21;
+const PIE_CHART_RADIUS = 15.9155;
 const SWIMLANE_START_X = 25;
 const SWIMLANE_END_X = 117;
 const SWIMLANE_SECTION_WIDTH = 0.8;
@@ -161,6 +163,31 @@ export function pieChartEntries(points) {
   return { entries, total };
 }
 
+/** @param {number} startFraction @param {number} endFraction */
+function pieChartSegmentPath(startFraction, endFraction) {
+  const start = Math.min(1, Math.max(0, startFraction));
+  const end = Math.min(1, Math.max(start, endFraction));
+  const sweep = end - start;
+  /** @param {number} fraction */
+  const pointAt = (fraction) => {
+    const angle = (fraction * Math.PI * 2) - (Math.PI / 2);
+    return [
+      Number((PIE_CHART_CENTER + (Math.cos(angle) * PIE_CHART_RADIUS)).toFixed(4)),
+      Number((PIE_CHART_CENTER + (Math.sin(angle) * PIE_CHART_RADIUS)).toFixed(4))
+    ];
+  };
+  const [startX, startY] = pointAt(start);
+
+  if (sweep <= Number.EPSILON) return `M ${startX} ${startY}`;
+  if (sweep >= 1 - Number.EPSILON) {
+    const [middleX, middleY] = pointAt(start + 0.5);
+    return `M ${startX} ${startY} A ${PIE_CHART_RADIUS} ${PIE_CHART_RADIUS} 0 1 1 ${middleX} ${middleY} A ${PIE_CHART_RADIUS} ${PIE_CHART_RADIUS} 0 1 1 ${startX} ${startY}`;
+  }
+
+  const [endX, endY] = pointAt(end);
+  return `M ${startX} ${startY} A ${PIE_CHART_RADIUS} ${PIE_CHART_RADIUS} 0 ${sweep > 0.5 ? 1 : 0} 1 ${endX} ${endY}`;
+}
+
 /**
  * @param {Array<[string, number]>} entries
  * @param {number} total
@@ -211,18 +238,22 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 
   if (chartType === 'pie') {
     const { entries, total } = /** @type {{ entries: Array<[string, number]>, total: number }} */ (pieData);
-    let offset = 0;
+    const safeTotal = Number.isFinite(total) && total > 0 ? total : 0;
+    let cumulativeValue = 0;
     return h(
       'div',
       { className: 'chart-widget pie-chart-widget', 'data-chart-widget': 'pie' },
       h(
         'svg',
         { viewBox: '0 0 42 42', role: 'img', 'aria-label': `Pie chart: ${entries.map(([label, value]) => `${label} ${formatNumber(value, unit)}`).join(', ') || 'no data'}` },
-        h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 10 }),
+        h('circle', { className: 'pie-chart-track', cx: PIE_CHART_CENTER, cy: PIE_CHART_CENTER, r: PIE_CHART_RADIUS, fill: 'none', 'stroke-width': 10 }),
         ...entries.map(([label, value], index) => {
-          const percent = total > 0 ? (value / total) * 100 : 0;
+          const segmentValue = Number.isFinite(value) && value > 0 ? value : 0;
+          const startFraction = safeTotal > 0 ? cumulativeValue / safeTotal : 0;
+          cumulativeValue = Math.min(safeTotal, cumulativeValue + segmentValue);
+          const endFraction = safeTotal > 0 ? cumulativeValue / safeTotal : startFraction;
           const segmentLabel = `${label}: ${formatNumber(value, unit)}`;
-          const midpoint = ((offset + (percent / 2)) / 100) * Math.PI * 2 - (Math.PI / 2);
+          const midpoint = ((startFraction + endFraction) / 2) * Math.PI * 2 - (Math.PI / 2);
           const tooltipWidth = Math.min(40, Math.max(18, (segmentLabel.length * 1.25) + 5));
           const tooltipX = Math.min(Math.max(21 + (Math.cos(midpoint) * 14) - (tooltipWidth / 2), 1), 41 - tooltipWidth);
           const tooltipY = Math.min(Math.max(21 + (Math.sin(midpoint) * 14) - 9, 1), 34);
@@ -234,16 +265,11 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             'aria-label': segmentLabel
           },
           h('title', null, segmentLabel),
-          h('circle', {
+          h('path', {
             className: `pie-chart-segment ${chartSeriesClassName(label, index)}`,
-            cx: 21,
-            cy: 21,
-            r: 15.9155,
-            pathLength: 100,
+            d: pieChartSegmentPath(startFraction, endFraction),
             fill: 'none',
             'stroke-width': 10,
-            'stroke-dasharray': `${percent} ${100 - percent}`,
-            'stroke-dashoffset': String(-offset),
             'data-chart-category': label
           }),
           h(
@@ -263,7 +289,6 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           const bringTooltipToFront = () => segment.parentNode?.append(segment);
           segment.addEventListener('pointerenter', bringTooltipToFront);
           segment.addEventListener('focus', bringTooltipToFront);
-          offset += percent;
           return segment;
         }),
         h('text', { className: 'pie-chart-total-value', x: 21, y: 20, 'text-anchor': 'middle', 'aria-hidden': 'true' }, formatNumber(total, unit, false)),
