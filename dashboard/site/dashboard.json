@@ -2965,7 +2965,6 @@
             "count-source": "runtime-signals",
             "count-label": "signals",
             "views": [
-              "runtime-run-health",
               "runtime-anomaly-readiness",
               "runtime-needs-attention"
             ]
@@ -2983,40 +2982,6 @@
           }
         ],
         "views": [
-          {
-            "id": "runtime-run-health",
-            "title": "Runtime health trend",
-            "description": "Daily run conclusions provide the leading runtime reliability signal.",
-            "data": {
-              "source": "runs",
-              "time": {
-                "range": "30d"
-              }
-            },
-            "mark": "chart",
-            "chart": "swimlane",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "started-at",
-                "type": "temporal",
-                "title": "Started"
-              },
-              "y": {
-                "field": "run-conclusion",
-                "type": "ordinal",
-                "title": "Conclusion"
-              },
-              "color": {
-                "field": "run-conclusion",
-                "type": "nominal"
-              },
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              }
-            }
-          },
           {
             "id": "runtime-anomaly-readiness",
             "title": "Statistical anomaly readiness",
