@@ -1093,6 +1093,17 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
       `focused AW Doctor package must mirror ${name}`,
     );
   }
+  for (const name of [
+    "optimization-agents-md-curator-operational-value.sh",
+    "optimization-ai-credit-auditor-operational-value.sh",
+    "optimization-ai-credit-optimizer-operational-value.sh",
+  ]) {
+    assert.equal(
+      readFileSync(join(root, "optimization", ".github", "graders", name), "utf8").replace(/\n$/, ""),
+      readFileSync(join(gradersDirectory, name), "utf8").replace(/\n$/, ""),
+      `focused AW Optimization package must mirror ${name}`,
+    );
+  }
 
   for (const name of [...graders, ...packageGraders]) {
     const isPackageMaintainer = name === packageMaintainerGrader;
