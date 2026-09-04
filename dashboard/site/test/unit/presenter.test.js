@@ -562,19 +562,20 @@ describe('presenter built-in and custom pages', () => {
       (section) => section.label === 'Control plane'
     );
     expect(labels).toEqual(['Attention', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
-    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, false, false, false]);
+    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, true, false, false, false]);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.closest('.nav-section')?.textContent).toContain('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.closest('.nav-section')?.textContent).toContain('Investigate');
+    expect(rendered.querySelector('[data-nav-page-id="preview"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
     expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
     expect(controlPlaneNavigation?.pages).toEqual(expect.arrayContaining(['github-api']));
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
-      'Preview',
       'Runtime',
       'Performance',
       'Security',
       'Value',
       'Cost',
+      'Preview',
       'Readiness',
       'Data health',
       'GitHub API',
@@ -783,12 +784,12 @@ describe('presenter built-in and custom pages', () => {
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
-      'Preview',
       'Runtime',
       'Performance',
       'Security',
       'Value',
       'Cost',
+      'Preview',
       'Readiness',
       'Data health',
       'GitHub API',
