@@ -91,10 +91,11 @@ export function chartSeriesClassName(name, index) {
   const terms = new Set(normalized.split(/\s+/).filter(Boolean));
   let meaning = null;
 
-  if ([...SEMANTIC_SERIES_TERMS.failure].some((term) => terms.has(term))) {
+  if (normalized === 'timed out' || [...SEMANTIC_SERIES_TERMS.failure].some((term) => terms.has(term))) {
     meaning = 'failure';
   } else if (
     normalized === 'action required'
+    || normalized === 'in progress'
     || ((terms.has('approval') || terms.has('review')) && (terms.has('required') || terms.has('awaiting') || terms.has('pending') || terms.has('waiting')))
     || [...SEMANTIC_SERIES_TERMS.waiting].some((term) => terms.has(term))
   ) {

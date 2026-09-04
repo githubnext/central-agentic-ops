@@ -46,12 +46,14 @@ describe('chart element helpers', () => {
 
   it('assigns color-blind-safe semantic colors before falling back to the palette', () => {
     expect(chartSeriesClassName('startup-failure', 0)).toBe('chart-series-1 chart-series-semantic-failure');
-    expect(chartSeriesClassName('Success', 1)).toBe('chart-series-2 chart-series-semantic-success');
-    expect(chartSeriesClassName('waiting for approval', 2)).toBe('chart-series-3 chart-series-semantic-waiting');
-    expect(chartSeriesClassName('action_required', 3)).toBe('chart-series-4 chart-series-semantic-waiting');
-    expect(chartSeriesClassName('cancelled', 4)).toBe('chart-series-5 chart-series-semantic-attention');
-    expect(chartSeriesClassName('skipped', 5)).toBe('chart-series-6 chart-series-semantic-neutral');
-    expect(chartSeriesClassName('repository', 6)).toBe('chart-series-7');
+    expect(chartSeriesClassName('timed_out', 1)).toBe('chart-series-2 chart-series-semantic-failure');
+    expect(chartSeriesClassName('Success', 2)).toBe('chart-series-3 chart-series-semantic-success');
+    expect(chartSeriesClassName('waiting for approval', 3)).toBe('chart-series-4 chart-series-semantic-waiting');
+    expect(chartSeriesClassName('action_required', 4)).toBe('chart-series-5 chart-series-semantic-waiting');
+    expect(chartSeriesClassName('in-progress', 5)).toBe('chart-series-6 chart-series-semantic-waiting');
+    expect(chartSeriesClassName('cancelled', 6)).toBe('chart-series-7 chart-series-semantic-attention');
+    expect(chartSeriesClassName('skipped', 7)).toBe('chart-series-8 chart-series-semantic-neutral');
+    expect(chartSeriesClassName('repository', 8)).toBe('chart-series-9');
   });
 
   it('DLS-SAFE-009 renders reusable visual chart legends', () => {
