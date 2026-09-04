@@ -179,7 +179,7 @@ Assess ownership, 24/7 escalation where applicable, awareness criteria and times
 
 Create one issue with:
 
-Use the exact unprefixed title `TARGET_REPO CRA Article 14 readiness`, replacing `TARGET_REPO` with the analyzed repository. The configured `title-prefix` is added automatically; do not repeat it.
+Use the exact unprefixed title `TARGET_REPO CRA Article 14 readiness`, replacing `TARGET_REPO` with the analyzed repository. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 
 Write concise technical English. When evidence supports it, add one brief `What's working` note as a small moment of delight; never invent praise. Follow the shared progressive-disclosure contract and keep critical findings visible.
 

@@ -164,7 +164,7 @@ For each requirement record `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_RE
 
 Create one issue with the verified baseline, assessed product assumptions, requirement matrix, cross-cutting gaps, prioritized remediation backlog, inaccessible evidence, and explicit human-review questions.
 
-Use the exact unprefixed title `TARGET_REPO CRA security requirements audit`, replacing `TARGET_REPO` with the analyzed repository. The configured `title-prefix` is added automatically; do not repeat it.
+Use the exact unprefixed title `TARGET_REPO CRA security requirements audit`, replacing `TARGET_REPO` with the analyzed repository. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 
 Write concise technical English. When evidence supports it, add one brief `What's working` note as a small moment of delight; never invent praise. Follow the shared progressive-disclosure contract and keep critical findings visible.
 

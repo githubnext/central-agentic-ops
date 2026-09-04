@@ -167,7 +167,7 @@ Do not expose vulnerability details or confidential SBOM data in the output. Sum
 
 Create one issue with a component-surface summary, SBOM evidence matrix, release-to-component traceability findings, vulnerability-management integration, provenance findings, prioritized gaps, and human-review questions. Rate each item only as `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
 
-Use the exact unprefixed title `TARGET_REPO CRA supply-chain and SBOM audit`, replacing `TARGET_REPO` with the analyzed repository. The configured `title-prefix` is added automatically; do not repeat it.
+Use the exact unprefixed title `TARGET_REPO CRA supply-chain and SBOM audit`, replacing `TARGET_REPO` with the analyzed repository. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 
 Write concise technical English. When evidence supports it, add one brief `What's working` note as a small moment of delight; never invent praise. Follow the shared progressive-disclosure contract and keep critical findings visible.
 
