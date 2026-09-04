@@ -23,17 +23,41 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
   });
 
   assert.deepEqual(sources["github-api-rate-limits"].rows, [{
+    "observation-id": "unknown:after:app:core:2026-09-04T11:59:00Z",
+    "operation-execution-id": "unknown",
     "observed-at": "2026-09-04T11:59:00Z",
     phase: "after",
     operation: "refresh-activity",
     outcome: "success",
-    "token-type": "app",
+    credential: "app",
+    "credential-type": "app",
     resource: "core",
+    bucket: "core · app",
+    "history-series": "core · app",
     limit: 5_000,
     used: 125,
     remaining: 4_875,
     "remaining-percent": 97.5,
     "reset-at": "2026-09-04T13:00:00Z",
+    "minutes-to-reset": 61,
+    "consumed-since-previous": null,
+    "burn-rate-per-minute": null,
+    "projected-remaining-at-reset": null,
+    "projected-exhaustion-at": null,
+    "runway-ratio": null,
+    "risk-status": "unknown",
+    "risk-order": 3,
+    "is-current": true,
+    "attribution-status": "unavailable",
+    "operation-consumed": null,
+  }]);
+  assert.deepEqual(sources["github-api-collector-health"].rows, [{
+    "observed-at": "2026-09-04T11:59:00Z",
+    "operation-execution-id": "unknown",
+    phase: "after",
+    operation: "refresh-activity",
+    outcome: "success",
+    credential: "app",
     "cache-hydrated": true,
     "cache-bytes": 1024,
     "cache-entries": 6,
@@ -42,6 +66,104 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
   }]);
   assert.equal(sources["github-api-rate-limits"].metadata.availability, "available");
   assert.equal(sources["github-api-rate-limits"].metadata.completeness, "complete");
+});
+
+test("dashboard source bridge derives reset-safe rate-limit forecasts and correlated attribution", () => {
+  const checkpoint = (observedAt, remaining, phase, pairId, resetAt = "2026-09-04T13:00:00Z") => ({
+    observedAt,
+    phase,
+    pairId,
+    operation: "refresh-activity",
+    outcome: "success",
+    tokenType: "app",
+    credentialRole: "activity-reader",
+    rateLimit: { core: { limit: 100, used: 100 - remaining, remaining, resetAt } },
+    rateLimitError: null,
+    activityCache: {},
+  });
+  const sources = buildDashboardLanguageSources({
+    deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+    usage: {},
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-04T11:01:00Z", records: [] },
+    githubTelemetry: [
+      checkpoint("2026-09-04T10:00:00Z", 100, "before", "run-1"),
+      checkpoint("2026-09-04T10:30:00Z", 90, "after", "run-1"),
+      checkpoint("2026-09-04T11:00:00Z", 80, "after", "run-2"),
+    ],
+  });
+
+  const rows = sources["github-api-rate-limits"].rows;
+  assert.equal(rows[1]["operation-consumed"], 10);
+  assert.equal(rows[1]["attribution-status"], "available");
+  assert.equal(rows[2]["consumed-since-previous"], 10);
+  assert.equal(rows[2]["burn-rate-per-minute"], 0.333);
+  assert.equal(rows[2]["projected-remaining-at-reset"], 40);
+  assert.equal(rows[2]["projected-exhaustion-at"], "2026-09-04T15:00:00.000Z");
+  assert.equal(rows[2]["runway-ratio"], 2);
+  assert.equal(rows[2]["risk-status"], "healthy");
+  assert.equal(rows[2]["is-current"], true);
+});
+
+test("dashboard source bridge never carries burn forecasts across reset windows", () => {
+  const entries = [
+    ["2026-09-04T10:00:00Z", 20, "2026-09-04T11:00:00Z"],
+    ["2026-09-04T10:20:00Z", 10, "2026-09-04T11:00:00Z"],
+    ["2026-09-04T10:40:00Z", 0, "2026-09-04T11:00:00Z"],
+    ["2026-09-04T11:01:00Z", 100, "2026-09-04T12:00:00Z"],
+  ].map(([observedAt, remaining, resetAt]) => ({
+    observedAt,
+    phase: "after",
+    operation: "refresh",
+    tokenType: "app",
+    rateLimit: { core: { limit: 100, remaining, resetAt } },
+    activityCache: {},
+  }));
+  const sources = buildDashboardLanguageSources({
+    deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+    usage: {},
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-04T11:02:00Z", records: [] },
+    githubTelemetry: entries,
+  });
+
+  const rows = sources["github-api-rate-limits"].rows;
+  assert.equal(rows[2]["risk-status"], "critical");
+  assert.equal(rows[2]["is-current"], false);
+  assert.equal(rows[3]["consumed-since-previous"], null);
+  assert.equal(rows[3]["burn-rate-per-minute"], null);
+  assert.equal(rows[3]["risk-status"], "unknown");
+  assert.equal(rows[3]["is-current"], true);
+});
+
+test("dashboard source bridge exposes stale and partial rate-limit evidence as unknown", () => {
+  const base = {
+    observedAt: "2026-09-04T10:00:00Z",
+    phase: "after",
+    operation: "refresh",
+    tokenType: "app",
+    rateLimit: { search: { limit: 30, used: 27, remaining: 3, resetAt: "2026-09-04T11:00:00Z" } },
+    activityCache: {},
+  };
+  const sources = buildDashboardLanguageSources({
+    deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+    usage: {},
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-04T12:00:01Z", records: [] },
+    githubTelemetry: [
+      base,
+      { ...base, observedAt: "2026-09-04T10:01:00Z", rateLimit: {}, rateLimitError: "unavailable" },
+      { ...base, observedAt: "2026-09-04T10:02:00Z" },
+    ],
+  });
+
+  assert.equal(sources["github-api-rate-limits"].metadata.freshness, "stale");
+  assert.equal(sources["github-api-rate-limits"].metadata.completeness, "partial");
+  assert.equal(sources["github-api-rate-limits"].rows[0]["risk-status"], "unknown");
+  assert.equal(sources["github-api-rate-limits"].rows[1]["burn-rate-per-minute"], null);
+  assert.equal(sources["github-api-rate-limits"].rows[1]["projected-exhaustion-at"], null);
+  assert.equal(sources["github-api-rate-limits"].rows[1]["history-series"], "search · app · segment 2");
+  assert.equal(sources["github-api-collector-health"].rows[1]["rate-limit-error"], "unavailable");
 });
 
 test("dashboard source bridge carries API capacity admission blocks into run rows", () => {

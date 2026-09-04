@@ -273,6 +273,8 @@ The `source` vocabulary is closed in version 0.1.0.
 | `outcomes` | safe-output outcome observation | scope IDs, `package`, `runtime-repository`, `workflow-name`, `run`, `run-conclusion`, `safe-output`, `outcome-number`, `outcome-title`, `outcome-summary`, `outcome-body-html`, `outcome-category`, `outcome-status`, `outcome-state`, `evidence-strength`, `rollout-mode`, `engine`, `engine-version`, `requested-model`, `resolved-model`, `published-at`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
 | `findings` | finding | scope IDs, `run`, `finding`, `finding-severity`, `finding-status`, `finding-summary`, `observed-at`, `engine`, `engine-version`, `requested-model`, `resolved-model`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
 | `operational-values` | value observation | scope IDs, `observation-id`, `run`, `run-attempt`, `experiment`, `operational-case`, `evaluator-digest`, `rollout-mode`, `operational-value`, `operational-value-definition`, `requested-evidence-at`, `evidence-cutoff`, `maturity-at`, `maturity-status`, `baseline-value`, `delta-from-baseline`, `accepted-evidence-provenance`, `diagnostics`, `diagnostic-definitions`, `observed-at`, `evidence-link`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
+| `github-api-rate-limits` | one observation of one GitHub API quota resource at one checkpoint for one credential | `observation-id`, `operation-execution-id`, `observed-at`, `credential`, `credential-type`, `resource`, `bucket`, `history-series`, `remaining`, `limit`, `used`, `remaining-percent`, `reset-at`, `minutes-to-reset`, `consumed-since-previous`, `burn-rate-per-minute`, `projected-remaining-at-reset`, `projected-exhaustion-at`, `runway-ratio`, `risk-status`, `risk-order`, `is-current`, `operation`, `phase`, `outcome`, `attribution-status`, `operation-consumed` |
+| `github-api-collector-health` | one GitHub API telemetry collection checkpoint | `operation-execution-id`, `observed-at`, `credential`, `operation`, `phase`, `outcome`, `cache-hydrated`, `cache-bytes`, `cache-entries`, `cache-folders`, `rate-limit-error` |
 
 “Scope IDs” means the applicable `organization`, `repository`, and `workflow` fields. Fields that do not apply to an observation are absent rather than fabricated. Link-bearing source fields are relation-specific optional fields whose intrinsic type is one Section 9.1 link object. `organization-link`, `repository-link`, `workflow-link`, `issue-link`, `pull-request-link`, `run-link`, `evidence-link`, and `external-link` correspond to the `organization`, `repository`, `workflow`, `issue`, `pull-request`, `run`, `evidence`, and `external` link relations, respectively; a source row MUST NOT encode multiple link relations inside one field.
 
@@ -295,6 +297,10 @@ A package groups one orchestrator and one or more workers that execute centrally
 - **DLS-SEM-021:** `rollout-mode` **MUST** use `review`, `live`, or `unknown`.
 - **DLS-SEM-022:** `workflow-role` **MUST** use `orchestrator`, `worker`, or `standalone`. An orchestrator or worker workflow **MUST** identify its `package`; a standalone workflow **MUST NOT** identify a package.
 - **DLS-SEM-023:** `max-ai-credits` and `package-aic-allowance`, when available, **MUST** be non-negative. `package-aic-allowance` **MUST** equal the sum of the package's available configured per-run workflow limits and **MUST NOT** be presented as actual AIC usage.
+- **DLS-SEM-024:** A `github-api-rate-limits` row **MUST** preserve the grain declared in Section 5.1 and **MUST NOT** contain cache or collector-health fields. `remaining-percent` **MUST** equal `remaining / limit * 100`, and `used` **MUST** equal `limit - remaining` when GitHub does not supply it.
+- **DLS-SEM-025:** Rate-limit burn and forecast fields **MUST** be materialized before dashboard evaluation. Calculations **MUST** partition observations by `credential`, `resource`, and `reset-at`; they **MUST NOT** cross reset boundaries. `risk-status` **MUST** be `critical`, `warning`, `healthy`, or `unknown`, with centralized and testable thresholds. Stale, partial, unavailable, or insufficient observations **MUST NOT** be presented with a fabricated healthy forecast.
+- **DLS-SEM-026:** Operation consumption attribution **MUST** use paired `before` and `after` observations with the same stable `operation-execution-id`, credential, resource, and reset window. When this evidence is absent or inconsistent, `attribution-status` **MUST** be `unavailable` and `operation-consumed` **MUST** be null.
+- **DLS-SEM-027:** `github-api-collector-health` **MUST** remain distinct from GitHub quota health. A credential identifier **MUST** be a non-secret operational alias or role and **MUST NOT** contain a token or credential value.
 
 ---
 
@@ -335,6 +341,8 @@ Dashboard defaults establish the initial context. A custom view's `data` context
 
 Canonical dimensions include entity IDs, `package`, `workflow-role`, `variant`, `workflow-active`, `run-status`, `run-conclusion`, `outcome-state`, `rollout-mode`, `engine`, `requested-model`, `resolved-model`, operational-value definition, categorical observation results, and temporal fields.
 
+GitHub API rate-limit dimensions additionally include `credential`, `credential-type`, `resource`, `bucket`, `history-series`, `operation`, `phase`, `outcome`, `risk-status`, `is-current`, and `attribution-status`. `bucket` identifies one resource and credential. `history-series` preserves that identity while starting a new visual segment after an unavailable collection checkpoint so a line does not bridge a known evidence gap. Neither field changes the observation grain.
+
 ### 7.2 Canonical Measures
 
 | Measure | Meaning | Additivity |
@@ -347,6 +355,16 @@ Canonical dimensions include entity IDs, `package`, `workflow-role`, `variant`, 
 | `aic` | Authoritatively supplied AI Credits | Additive |
 | `value` on `grader-observations` | Value emitted by a grader | Non-additive by default |
 | `operational-value` | Absolute attainment under a named definition | Non-additive by default |
+| `limit` | GitHub quota capacity for one resource and credential window | Non-additive |
+| `used` | GitHub-reported or arithmetically derived requests used in the current window | Non-additive |
+| `remaining` | Requests remaining in the current window | Non-additive |
+| `remaining-percent` | Remaining capacity normalized to the resource limit | Non-additive |
+| `minutes-to-reset` | Observation-relative minutes until the exact reset timestamp | Non-additive |
+| `consumed-since-previous` | Requests consumed since the previous same-window observation | Non-additive |
+| `burn-rate-per-minute` | Reset-safe estimated requests consumed per minute | Non-additive |
+| `projected-remaining-at-reset` | Forecast remaining capacity at reset | Non-additive |
+| `runway-ratio` | Estimated time to exhaustion divided by time to reset | Non-additive |
+| `operation-consumed` | Reliably paired requests consumed by one operation execution | Non-additive |
 
 Entity counts are obtained with `count` or `distinct-count`; they are not stored measures.
 
@@ -760,7 +778,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-DOC-001–015 | T-DOC-001 | 1 | Apply positive and negative syntax, root, version, identity, vocabulary, GitHub URL base, callouts, defaults, page-shape, and scalar-type fixtures. |
 | DLS-SEM-001–007 | T-SEM-001 | 2 | Validate entity ancestry, active state, run status, run conclusion, and explicit experiment assignments. |
 | DLS-SEM-008–016 | T-SEM-002 | 2 | Distinguish grader, eval, tokens, AIC, run conclusions, outcomes, engine/models, and value; reject causal labeling. |
-| DLS-SEM-017–023 | T-SEM-003 | 2 | Validate source vocabulary, grain, token classes, rollout modes, package workflow roles and membership, per-run package allowances, and distinct measure names. |
+| DLS-SEM-017–027 | T-SEM-003 | 2 | Validate source vocabulary, grain, token classes, rollout modes, package workflow roles and membership, per-run package allowances, distinct measure names, reset-safe rate-limit forecasting, credential isolation, correlated attribution, and collector separation. |
 | DLS-CTX-001–008 | T-CTX-001 | 2 | Exercise ancestry, boundary times, Boolean filter rules, inheritance, rollout mode, unknown, and operation order. |
 | DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
@@ -941,6 +959,7 @@ dashboard:
 - Added essential and supplemental view disclosure, a four-essential-view authoring bound, accessible presentation requirements, and SEQ and NASA-TLX user-research guidance.
 - Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
 - Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
+- Added the `github-api-rate-limits` and `github-api-collector-health` logical sources, reset-safe derived measures, correlated operation attribution, risk semantics, and strict separation of GitHub quota state from collector/cache health.
 - Added constrained custom-page hash-query routing and route-bound templating through **DLS-VIEW-026** and **DLS-VIEW-027**.
 - Added route-aware human-readable title allocation and allowlisted `outcome-body-html` presentation through **DLS-SAFE-012**.
 - Added dashboard-level site-wide callouts, optional source-row visibility conditions, and volatile accessible dismissal through **DLS-DOC-015** and **DLS-SAFE-014**.

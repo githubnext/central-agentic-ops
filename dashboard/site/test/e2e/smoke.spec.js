@@ -93,6 +93,97 @@ test('production pages expose a responsive executive chart', async ({ page }) =>
   expect(widePlotBox?.width).toBeGreaterThan((wideChartBox?.width ?? 0) * 0.95);
 });
 
+test('GitHub API rate-limit dashboard remains operable at desktop and narrow widths', async ({ page }) => {
+  const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(buildPresenterModuleUrl())};
+      const documentModel = ${JSON.stringify(documentModel)};
+      const metadata = {
+        'source-id': 'rate-limit-viewport-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-09-04T12:00:00Z',
+        'retrieved-at': '2026-09-04T12:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const row = {
+        'observation-id': 'run-1:after:reader:core:2026-09-04T12:00:00Z',
+        'operation-execution-id': 'run-1',
+        'observed-at': '2026-09-04T12:00:00Z',
+        phase: 'after',
+        operation: 'refresh-activity',
+        outcome: 'success',
+        credential: 'reader',
+        'credential-type': 'app',
+        resource: 'core',
+        bucket: 'core · reader',
+        'history-series': 'core · reader',
+        remaining: 1000,
+        limit: 5000,
+        used: 4000,
+        'remaining-percent': 20,
+        'reset-at': '2026-09-04T13:00:00Z',
+        'minutes-to-reset': 60,
+        'burn-rate-per-minute': 20,
+        'projected-remaining-at-reset': -200,
+        'projected-exhaustion-at': '2026-09-04T12:50:00Z',
+        'runway-ratio': 0.83,
+        'risk-status': 'critical',
+        'risk-order': 0,
+        'is-current': true,
+        'attribution-status': 'available',
+        'operation-consumed': 20
+      };
+      const sources = {
+        'github-api-rate-limits': {
+          source: 'github-api-rate-limits',
+          metadata,
+          rows: [
+            { ...row, 'observation-id': 'run-0:after:reader:core:2026-09-04T11:00:00Z', 'operation-execution-id': 'run-0', 'observed-at': '2026-09-04T11:00:00Z', remaining: 2200, used: 2800, 'remaining-percent': 44, 'is-current': false },
+            row
+          ]
+        },
+        'github-api-collector-health': {
+          source: 'github-api-collector-health',
+          metadata,
+          rows: [{
+            'observed-at': '2026-09-04T12:00:00Z',
+            'operation-execution-id': 'run-1',
+            phase: 'after',
+            operation: 'refresh-activity',
+            outcome: 'success',
+            credential: 'reader',
+            'cache-hydrated': true,
+            'cache-entries': 12,
+            'cache-folders': 2,
+            'rate-limit-error': ''
+          }]
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  await page.locator('[data-nav-page-id="github-api"]').click();
+  const apiPage = page.locator('[data-page-id="github-api"]');
+  const capacity = apiPage.locator('[aria-labelledby="github-api-remaining-capacity-heading"]');
+  await expect(capacity.locator('[data-chart-widget="bar"]')).toBeVisible();
+  await expect(apiPage.getByText('critical', { exact: true }).first()).toBeVisible();
+  let box = await capacity.boundingBox();
+  expect(box?.width).toBeLessThanOrEqual(1200);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(capacity.locator('[data-chart-widget="bar"]')).toBeVisible();
+  box = await capacity.boundingBox();
+  expect(box?.x).toBeGreaterThanOrEqual(0);
+  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+  await expect(apiPage.locator('details[data-disclosure="supplemental"]')).toHaveCount(4);
+});
+
 test('control-plane readiness surfaces blocking regressions', async ({ page }) => {
   /** @type {Error[]} */
   const pageErrors = [];
