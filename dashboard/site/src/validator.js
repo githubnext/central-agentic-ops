@@ -1469,10 +1469,10 @@ function validateView(view, viewNode, path, viewIds, errors) {
     }
   }
 
-  if (view['empty-message'] !== undefined && view.mark !== 'table') {
+  if (view['empty-message'] !== undefined && !['chart', 'table'].includes(String(view.mark))) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
-      'empty-message is allowed only when mark is "table".',
+      'empty-message is allowed only when mark is "chart" or "table".',
       `${path}.empty-message`
     ));
   }
