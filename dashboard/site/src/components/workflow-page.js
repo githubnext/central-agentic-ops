@@ -8,25 +8,20 @@ import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
 import { rowsFor } from './source-rows.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
-import { workflowRouteLayout } from './workflow-route-layout.js';
+import { workflowRouteComposition } from './workflow-route-composition.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
- * @param {(args: {
- *   context: import('./ui-elements.js').ElementRenderContext,
- *   route: { repository: string, workflow: string },
- *   workflow: Record<string, unknown>
- * }) => HTMLElement | null} [renderBody]
  * @returns {HTMLElement}
  */
-export function renderWorkflowPage(context, renderBody) {
+export function renderWorkflowPage(context) {
   const workflows = rowsFor(context.sources, 'workflows');
-  const layout = workflowRouteLayout(context);
+  const composition = workflowRouteComposition(context.viewId);
   const root = createRouteView({
-    rootClassName: layout.rootClassName,
+    rootClassName: composition.rootClassName,
     routeParameter: context.routeParameter,
     datasetKey: 'workflow',
-    selectMessage: layout.selectMessage,
+    selectMessage: composition.selectMessage,
     notFoundMessage: 'Workflow not found.',
     hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
     renderMatched: (routeValue) => {
@@ -41,14 +36,14 @@ export function renderWorkflowPage(context, renderBody) {
       const name = workflowName(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
-        detail: workflowRouteAllocation(layout, route, workflow, name)
+        detail: workflowRouteAllocation(composition, route, workflow, name)
       }));
       return h(
         'div',
-        { className: layout.contentClassName },
-        renderWorkflowTabs(layout.variant, route, name),
+        { className: composition.contentClassName },
+        renderWorkflowTabs(composition.variant, route, name),
         renderWorkflowIdentity(workflow),
-        renderBody?.({ context, route, workflow }) ?? null
+        composition.bodyRenderer?.({ context, route, workflow }) ?? null
       );
     }
   });
@@ -56,24 +51,24 @@ export function renderWorkflowPage(context, renderBody) {
 }
 
 /**
- * @param {import('./workflow-route-layout.js').WorkflowRouteLayout} layout
+ * @param {import('./workflow-route-composition.js').WorkflowRouteComposition} composition
  * @param {{ repository: string, workflow: string }} route
  * @param {Record<string, unknown>} workflow
  * @param {string} title
  */
-function workflowRouteAllocation(layout, route, workflow, title) {
+function workflowRouteAllocation(composition, route, workflow, title) {
   return {
     title,
-    description: layout.description
+    description: composition.description
       .replace('{workflow}', text(workflow.workflow))
       .replace('{repository}', route.repository),
     ...(['review', 'live'].includes(text(workflow['rollout-mode']))
       ? { mode: text(workflow['rollout-mode']) }
       : {}),
-    navigationPage: layout.navigationPage === 'packages' && workflow.package ? 'packages' : 'repositories',
-    ...(layout.breadcrumbs
+    navigationPage: composition.navigationPage === 'packages' && workflow.package ? 'packages' : 'repositories',
+    ...(composition.breadcrumbs
       ? {
-          breadcrumbs: layout.breadcrumbs.map((crumb) => ({
+          breadcrumbs: composition.breadcrumbs.map((crumb) => ({
             label: crumb.label.replace('{repository}', route.repository),
             href: crumb.href.replace('{repository-encoded}', encodeURIComponent(route.repository))
           }))
@@ -83,7 +78,7 @@ function workflowRouteAllocation(layout, route, workflow, title) {
 }
 
 /**
- * @param {import('./workflow-route-layout.js').WorkflowRouteVariant} selectedView
+ * @param {import('./workflow-route-composition.js').WorkflowRouteVariant} selectedView
  * @param {{ repository: string, workflow: string }} route
  * @param {string} workflowName
  */

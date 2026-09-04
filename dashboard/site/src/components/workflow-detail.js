@@ -1,5 +1,5 @@
 /**
- * Route-aware workflow reports and runs chrome.
+ * Declarative workflow route element compatibility wrapper.
  */
 
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -9,8 +9,5 @@ import { renderWorkflowRouteView } from './workflow-route-view.js';
  * @returns {HTMLElement}
  */
 export function renderWorkflowDetail(context) {
-  return renderWorkflowRouteView({
-    ...context,
-    viewId: context.viewId ?? (context.pageId === 'workflow-runs' ? 'workflow-runs-route' : 'workflow-reports-route')
-  });
+  return renderWorkflowRouteView(context);
 }

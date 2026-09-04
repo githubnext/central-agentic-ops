@@ -2237,7 +2237,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow runs',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-runs'
+                  element: 'workflow-route'
                 },
                 {
                   id: 'workflow-runs-table',
@@ -2271,7 +2271,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-detail'
+                  element: 'workflow-route'
                 },
                 {
                   id: 'workflow-report-table',
