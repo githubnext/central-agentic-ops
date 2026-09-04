@@ -136,6 +136,13 @@ function transitivelyNeeds(jobs, jobName, dependency, visited = new Set()) {
     || needs.some((name) => transitivelyNeeds(jobs, name, dependency, visited));
 }
 
+function stepBlock(source, name) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`\\n\\s+- name: ${escaped}[\\s\\S]*?(?=\\n\\s+- name: |$)`).exec(source);
+  assert.ok(match, `missing step: ${name}`);
+  return match[0];
+}
+
 function resolvePolicy({
   eventName,
   configuredMode,
@@ -503,6 +510,12 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /reason == 'github-api-capacity-insufficient'/);
   assert.match(sharedControl, /^\s+id: cao_precompute$/m);
   assert.match(sharedControl, /CAO precompute blocked: GitHub API limited until \$\{\{ steps\.cao_precompute\.outputs\.github_api_reset_at \}\}/);
+  assert.match(stepBlock(sharedControl, "\"CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}\""), /::warning title=CAO precompute blocked by GitHub API capacity/);
+  assert.doesNotMatch(stepBlock(sharedControl, "\"CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}\""), /^\s+exit 1$/m);
+  assert.match(stepBlock(sharedControl, "\"CAO precompute blocked: GitHub API capacity unavailable\""), /::warning title=CAO precompute could not verify GitHub API capacity/);
+  assert.doesNotMatch(stepBlock(sharedControl, "\"CAO precompute blocked: GitHub API capacity unavailable\""), /^\s+exit 1$/m);
+  assert.match(sharedControl, /name: Validate CAO control precompute artifact\n\s+if: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/);
+  assert.match(sharedControl, /name: Upload CAO control precompute artifact\n\s+if: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/);
   assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
   for (const [name, source] of controlled) {
     assert.equal(
@@ -529,6 +542,10 @@ test("control workflows deny before activation through one shared admission cont
     assert.match(preActivation, /Generate CAO pre-activation GitHub App token/, generatedName);
     assert.match(preActivation, /CAO admission blocked: GitHub API limited until/, generatedName);
     assert.match(preActivation, /CAO precompute blocked: GitHub API limited until/, generatedName);
+    assert.match(stepBlock(preActivation, "\"CAO precompute blocked: GitHub API capacity unavailable\""), /::warning title=CAO precompute could not verify GitHub API capacity/);
+    assert.doesNotMatch(stepBlock(preActivation, "\"CAO precompute blocked: GitHub API capacity unavailable\""), /^\s+exit 1$/m);
+    assert.match(preActivation, /Validate CAO control precompute artifact[\s\S]*?if: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, generatedName);
+    assert.match(preActivation, /Upload CAO control precompute artifact[\s\S]*?if: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, generatedName);
     assert.match(activation, /needs\.pre_activation\.outputs\.cao_authorized == 'true'/, generatedName);
     assert.ok(transitivelyNeeds(jobs, "agent", "activation"), `${generatedName}: agent must depend on activation`);
   }
