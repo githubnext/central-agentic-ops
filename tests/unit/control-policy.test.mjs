@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/cao/src/policy.mjs";
+import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/cao/policy.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const control = join(root, ".github", "cao", "src", "control.mjs");

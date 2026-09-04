@@ -10,6 +10,10 @@ includes:
   - dependabot/aw.yml
   - optimization/aw.yml
 resources:
+  - source: .github/cao/control.mjs
+    destination: .github/cao/control.mjs
+  - source: .github/cao/policy.mjs
+    destination: .github/cao/policy.mjs
   - source: AGENTS.md
     destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md

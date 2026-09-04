@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { parsePolicy } from "../.github/cao/src/policy.mjs";
+import { parsePolicy } from "../.github/cao/policy.mjs";
 
 export const PUBLISH_LABEL = "ops:publish-to-target";
 const API_TIMEOUT_MS = 30_000;

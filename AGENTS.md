@@ -38,7 +38,7 @@ Run `npm run check` for complete repository validation. It executes, in order: `
 
 | Command | Purpose |
 |---------|---------|
-| `npm run typecheck:cao` | TypeScript type-check for `.github/cao/src/` (ES2022, NodeNext) |
+| `npm run typecheck:cao` | TypeScript type-check for `.github/cao/` (ES2022, NodeNext) |
 | `npm test` | Unit tests (`tests/unit/`) then integration tests (`tests/integration/control-*.test.mjs`) via the Node.js built-in test runner |
 | `npm run test:unit` | Unit tests only |
 | `npm run test:integration` | Integration tests only (serial) |
@@ -74,7 +74,7 @@ Run these commands from the `dashboard/site/` directory:
 
 ### Choosing which tests to run
 
-- Editing control-plane sources under `.github/cao/src/` → `npm run typecheck:cao && npm test`
+- Editing control-plane sources under `.github/cao/` → `npm run typecheck:cao && npm test`
 - Editing dashboard site under `dashboard/site/` → from that directory: `npm test && npm run test:e2e && npm run lint && npm run typecheck`
 - Editing workflow `.md` files → `npm run compile` (add `compile:locks` if lock files should update)
 - Editing SVGs → `npm run check:svg`

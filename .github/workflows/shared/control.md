@@ -64,7 +64,7 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
           path: .cao
-          sparse-checkout: .github/cao/src
+          sparse-checkout: .github/cao
           sparse-checkout-cone-mode: true
           fetch-depth: 1
           persist-credentials: false
@@ -86,7 +86,7 @@ jobs:
           CAO_REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
         run: |
           set -uo pipefail
-          cao_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src"
+          cao_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/cao"
           if node "$cao_dir/control.mjs" admit; then
             exit 0
           fi
@@ -125,7 +125,7 @@ jobs:
           CAO_GITHUB_API_LIMIT: ${{ steps.cao_admission.outputs.github_api_limit }}
           CAO_GITHUB_API_REMAINING: ${{ steps.cao_admission.outputs.github_api_remaining }}
           CAO_GITHUB_API_RESET_AT: ${{ steps.cao_admission.outputs.github_api_reset_at }}
-        run: node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/control.mjs" persist-api-gate
+        run: node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/control.mjs" persist-api-gate
 
       - name: "CAO admission blocked: GitHub API limited until ${{ steps.cao_admission.outputs.github_api_reset_at }}"
         if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-insufficient' }}
@@ -187,7 +187,7 @@ jobs:
           CAO_WORKER_CREDITS_PER_TARGET: "${{ github.aw.import-inputs.worker_credits_per_target }}"
         run: |
           set -euo pipefail
-          node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/control.mjs" precompute
+          node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/control.mjs" precompute
 
       - name: Generate CAO precompute gate writer token
         id: cao_precompute_gate_writer_token
@@ -208,7 +208,7 @@ jobs:
           CAO_GITHUB_API_LIMIT: ${{ steps.cao_precompute.outputs.github_api_limit }}
           CAO_GITHUB_API_REMAINING: ${{ steps.cao_precompute.outputs.github_api_remaining }}
           CAO_GITHUB_API_RESET_AT: ${{ steps.cao_precompute.outputs.github_api_reset_at }}
-        run: node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/src/control.mjs" persist-api-gate
+        run: node "${GITHUB_WORKSPACE:-.}/.cao/.github/cao/control.mjs" persist-api-gate
 
       - name: "CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}"
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' }}
@@ -258,6 +258,17 @@ jobs:
 
   agent:
     pre-steps:
+      - name: Checkout CAO control modules
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .cao
+          sparse-checkout: .github/cao
+          sparse-checkout-cone-mode: true
+          fetch-depth: 1
+          persist-credentials: false
+          token: ${{ secrets.GH_AW_GITHUB_TOKEN || github.token }}
+
       - name: Download CAO control precompute artifact
         uses: actions/download-artifact@v8.0.1
         with:

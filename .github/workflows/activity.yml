@@ -101,7 +101,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           node "$DASHBOARD_REPORT_ROOT/control-settings.mjs" \
-            .github/cao/src/control.mjs \
+            .github/cao/control.mjs \
             .github/workflows/cao.json \
             "$RUNNER_TEMP/cao-activity/control-settings.json"
 

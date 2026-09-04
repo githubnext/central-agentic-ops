@@ -17,7 +17,7 @@ Admission reads the advisory `CAO_GITHUB_API_GATE` repository variable before pr
 
 ## What Admission Gates
 
-The shared control component reads `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from the exact `github.workflow_sha`. Admission then reads `.github/workflows/cao.json` at that revision, and authorized runs execute the `precompute` command from the same modules. They do not use policy or CAO runtime from another branch or from the agent checkout.
+The shared control component reads `.github/cao/control.mjs` and `.github/cao/policy.mjs` from the exact `github.workflow_sha`. Admission then reads `.github/workflows/cao.json` at that revision, and authorized runs execute the `precompute` command from the same modules. The same immutable runtime is deployed into the agent job.
 
 | Check | Admitted when |
 | --- | --- |
@@ -62,11 +62,11 @@ Failure in either phase prevents agent execution. Admission denial skips activat
 Setup creates one atomic control-plane revision:
 
 1. Install the gh-aw package from an immutable CAO tag or commit.
-2. Materialize `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from that same CAO revision.
+2. Install `.github/cao/control.mjs` and `.github/cao/policy.mjs` from that same CAO revision.
 3. Declare the installed package and its worker-to-workflow mapping in `.github/workflows/cao.json`.
 4. Commit the workflows, generated locks, CAO runtime, and policy together, then push before running the operation.
 
-The CAO runtime files are control-repository-owned and are not gh-aw package resources. Follow [Quickstart: add the operation](getting-started.md#step-3---add-the-dependabot-operation) to install them and [Quickstart: set the first-run boundary](getting-started.md#step-4---set-the-first-run-boundary) to create the policy.
+The root gh-aw package installs the CAO runtime files. Follow [Quickstart: add the operation](getting-started.md#step-3---add-the-dependabot-operation) to install them and [Quickstart: set the first-run boundary](getting-started.md#step-4---set-the-first-run-boundary) to create the policy.
 
 Package installation does not install the CAO runtime, declare a package, or grant admission. The CAO setup procedure and checked-in control policy own those decisions.
 

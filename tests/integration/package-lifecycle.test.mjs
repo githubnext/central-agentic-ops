@@ -155,6 +155,8 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
   const consumer = installPackage(packageSource);
   try {
     assert.ok(existsSync(join(consumer, ".github", "aw", "default-AGENTS.md")));
+    assert.ok(existsSync(join(consumer, ".github", "cao", "control.mjs")));
+    assert.ok(existsSync(join(consumer, ".github", "cao", "policy.mjs")));
     assert.deepEqual(
       JSON.parse(readFileSync(join(consumer, ".github", "workflows", "aw.json"), "utf8")).auto_upgrade.options,
       ["--pre-releases"],

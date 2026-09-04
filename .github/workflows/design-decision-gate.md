@@ -72,7 +72,7 @@ steps:
       fi
       CORE_ADDITIONS="$(jq '[
         .[]
-        | select(.filename | test("^(.github/cao/src|activity|dashboard/report|dashboard/site/src|scripts)/"))
+        | select(.filename | test("^(.github/cao|activity|dashboard/report|dashboard/site/src|scripts)/"))
         | .additions
       ] | add // 0' /tmp/gh-aw/agent/pr-files.json)"
       HAS_IMPLEMENTATION_LABEL="$(jq '[.labels[]?.name] | index("implementation") != null' /tmp/gh-aw/agent/pr.json)"

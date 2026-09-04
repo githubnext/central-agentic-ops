@@ -15,7 +15,7 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 - Public and private control repositories are supported. Preserve an existing repository's visibility; for a new repository, use the visibility the user chooses.
 - In a public control repository, policy, workflow runs, operational metadata, and review safe outputs are public. State that exposure before creation and never place confidential target information in those outputs.
 - Install the root CAO package from one full commit SHA. Resolve a reviewed release or the current default branch once before installation so every package dependency uses the same immutable source identity.
-- Materialize `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from that same immutable CAO commit. These are control-repository-owned runtime files; gh-aw package resources cannot and must not install them under `.github/aw`.
+- Install `.github/cao/control.mjs` and `.github/cao/policy.mjs` from that same immutable CAO commit through the root package resources.
 - The root package installs `.github/aw/default-AGENTS.md` as package-owned source for control-repository ambient context. If the control repository has no root `AGENTS.md`, materialize that source as `AGENTS.md`; never overwrite or merge into existing agent instructions without the user's approval.
 - Keep rollout policy only in `.github/workflows/cao.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
 - Keep credentials out of files, chat, command arguments, and workflow inputs. Have the user enter secrets directly through GitHub or an interactive terminal prompt.
@@ -79,27 +79,18 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     Proceed only with API evidence of an active entitlement or explicit confirmation from an organization administrator when the billing endpoint is inaccessible or inconclusive. Treat `total_seats: 0` with `seat_management_setting: unconfigured` as unavailable: the workflow token can still receive `copilot-requests: write`, but Copilot model-catalog authorization fails with HTTP 403 before the agent starts. Stop until organization billing is enabled, and do not replace `auto` with an explicit model or configure `COPILOT_GITHUB_TOKEN` to hide that failure.
   - Run `gh aw doctor --repo <organization>/<control-repository> --dir .` only from an attached checkout of an existing repository. Run `gh aw --help` before creating a repository or clone. If the extension is unavailable, install `github/gh-aw`, then rerun the check.
    - Check whether the proposed control repository already exists. Reuse it only with the user's agreement; record its visibility and never delete, overwrite, empty, or change its visibility implicitly.
-6. Create and clone the control repository with the chosen `--public` or `--private` visibility when it does not exist. Perform every remaining file and Git operation inside that clone. For an explicitly selected source-managed control repository, remain in its source checkout instead: confirm its active remote is the intended control repository and verify `.github/workflows/cao.json`, `.github/cao/src/control.mjs`, `.github/cao/src/policy.mjs`, and the in-tree workflow sources and locks. Run `gh aw doctor --repo <organization>/<control-repository> --dir .` before configuring credentials or executing CAO.
+6. Create and clone the control repository with the chosen `--public` or `--private` visibility when it does not exist. Perform every remaining file and Git operation inside that clone. For an explicitly selected source-managed control repository, remain in its source checkout instead: confirm its active remote is the intended control repository and verify `.github/workflows/cao.json`, `.github/cao/control.mjs`, `.github/cao/policy.mjs`, and the in-tree workflow sources and locks. Run `gh aw doctor --repo <organization>/<control-repository> --dir .` before configuring credentials or executing CAO.
 7. Install the root CAO package in a separate control repository. Before installing, review the manifest metadata: `gh aw add` rejects packages marked `private` and warns for packages marked `experimental`. `gh aw add` reads root `aw.yml`, installs its orchestrators, workers, shared controls, skills, resources, and the deterministic core activity index, and compiles the workflow lock files without rewriting their authentication profile:
 
     ```bash
     cao_ref=$(gh api repos/githubnext/gh-aw-cao/commits/main --jq '.sha')
     [[ "$cao_ref" =~ ^[0-9a-fA-F]{40,64}$ ]]
     gh aw add "githubnext/gh-aw-cao@${cao_ref}"
-    cao_checkout="$(mktemp -d)"
-    git init "$cao_checkout"
-    git -C "$cao_checkout" remote add origin https://github.com/githubnext/gh-aw-cao.git
-    git -C "$cao_checkout" fetch --depth=1 origin "$cao_ref"
-    git -C "$cao_checkout" sparse-checkout set --cone .github/cao/src
-    git -C "$cao_checkout" checkout --detach "$cao_ref"
-    mkdir -p .github/cao
-    cp -R "$cao_checkout/.github/cao/src" .github/cao/
-    rm -rf "$cao_checkout"
     ```
 
     A reviewed release tag may replace `main` when resolving `cao_ref`. Do not pass an unresolved branch or omit the ref: one immutable source identity keeps repeated package dependencies consistent and records a reproducible installation. In a source-managed control repository, do not install a package over workflows maintained directly in-tree. Its reviewed workflow sources, generated locks, runtime files, and policy form the runtime revision; verify them at the current commit instead.
 
-    When the selected authentication profile requires GitHub Apps and the user wants automated creation, run the credential-only helper from the immutable CAO checkout at `cao_ref`. Target the control repository explicitly and complete both browser creation and installation prompts:
+    When the selected authentication profile requires GitHub Apps and the user wants automated creation, run the credential-only helper from a reviewed immutable CAO checkout at `cao_ref`. Target the control repository explicitly and complete both browser creation and installation prompts:
 
     ```bash
     node /path/to/cao/.github/cao/setup-github-apps.mjs --repo <organization>/<control-repository>
@@ -175,7 +166,7 @@ Stop before installation or execution and explain the blocker when:
 - organization-billed Copilot inference is unavailable or unconfirmed;
 - any installed Copilot-backed source omits `copilot-requests: write` or any generated lock requires `secrets.COPILOT_GITHUB_TOKEN`;
 - the installed root package does not contain `.github/aw/default-AGENTS.md`;
-- `.github/cao/src/control.mjs` or `.github/cao/src/policy.mjs` cannot be materialized from the selected immutable CAO ref;
+- `.github/cao/control.mjs` or `.github/cao/policy.mjs` is missing from the installed immutable CAO package;
 - the selected target does not exist, cannot be accessed, requires credentials that were not configured, or would expose non-public evidence through a public control repository;
 - the existing repository contains conflicting files that the user has not approved replacing;
 - root package installation fails; or
