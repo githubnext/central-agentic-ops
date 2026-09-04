@@ -56,7 +56,7 @@ imports:
     with:
       package: self-care
       role: orchestrator
-      dispatch_max: "7"
+      dispatch_max: "8"
       orchestrator_credits: "200"
       worker_credits_per_target: "2000"
 
@@ -83,8 +83,8 @@ network:
 
 safe-outputs:
   dispatch-workflow:
-    workflows: [self-care-accessibility-checker, self-care-code-improvement, self-care-data-acquisition-audit, self-care-dashboard-language-refactor, self-care-dashboard-review, self-care-docs-build-time-investigator, self-care-primer-brand-checker]
-    max: 7
+    workflows: [self-care-accessibility-checker, self-care-code-improvement, self-care-data-acquisition-audit, self-care-dashboard-language-refactor, self-care-dashboard-review, self-care-docs-build-time-investigator, self-care-open-source-failures, self-care-primer-brand-checker]
+    max: 8
   threat-detection: false
 
 source: githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d
@@ -98,7 +98,7 @@ source: githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d
 
 This operation is exclusively for `githubnext/gh-aw-cao`. Select that repository only when its precomputed candidate mode is `live`. Treat every other repository and every non-live candidate as ineligible, regardless of apparent need, and record the skip reason in the standard report.
 
-The single eligible repository contains the documentation site and dashboard maintained by the seven workers. Do not discover, rank, or dispatch work to any other repository.
+The single eligible repository contains the documentation site and dashboard maintained by the eight workers. Do not discover, rank, or dispatch work to any other repository.
 
 ## Workers
 
@@ -106,14 +106,15 @@ The single eligible repository contains the documentation site and dashboard mai
 - `self-care-code-improvement`: extracts one evidenced duplicated dashboard UI construct into a tested reusable component and opens one focused draft pull request.
 - `self-care-dashboard-review`: uses deterministic checks and CFO, CSO, and CTO browser journeys to assess dashboard correctness, decision support, efficiency, and usability.
 - `self-care-docs-build-time-investigator`: analyzes Documentation Pages workflow timing evidence and opens one issue with a non-repeating caching or dashboard build-speed improvement.
-- `self-care-primer-brand-checker`: audits the dashboard against retrieved Primer brand guidance and opens one focused draft pull request when an evidenced presentational fix is available.
 - `self-care-data-acquisition-audit`: reviews gh-aw logs, GitHub API access, predownloads, indexing, and caching, then opens one focused draft pull request when the acquisition audit is stale.
 - `self-care-dashboard-language-refactor`: replaces one over-specialized dashboard view with tested reusable subcomponents configured through Dashboard Language and opens one focused draft pull request.
+- `self-care-open-source-failures`: scans the dashboard activity snapshot for clustered failures across represented public projects and files one digest plus focused remediation issues.
+- `self-care-primer-brand-checker`: audits the dashboard against retrieved Primer brand guidance and opens one focused draft pull request when an evidenced presentational fix is available.
 
-Dispatch all seven enabled workers for the selected repository. Never dispatch a worker in review mode or for another repository.
+Dispatch all eight enabled workers for the selected repository. Never dispatch a worker in review mode or for another repository.
 
 ## Completion
 
 Finish with the standard orchestrator report inherited from `shared/control.md`. Preserve `Scope`, `Repository Decisions`, `Workers`, `Dispatches`, and `Outcome`, including every standard field. Use exact precomputed totals for repositories scanned and distinguish eligible, selected, skipped, and deferred repositories. Use `0`, `none`, or `not applicable` for every empty field.
 
-In `Outcome`, additionally state whether the sole authorized live target was selected and whether all seven SelfCare workers were dispatched.
+In `Outcome`, additionally state whether the sole authorized live target was selected and whether all eight SelfCare workers were dispatched.

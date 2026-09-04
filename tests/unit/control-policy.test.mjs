@@ -138,6 +138,10 @@ test("checked-in control policy selects seven repositories with live Dependabot 
   });
   assert.equal(selfCare.safe_output_mode, "live");
   assert.equal(selfCare.max_repositories, 1);
+  assert.equal(
+    policy["control-plane"].packages["self-care"].workers["open-source-failures"].workflow,
+    "self-care-open-source-failures",
+  );
   assert.equal(policy["target-authority"].packages["self-care"].authority, "githubnext/gh-aw-cao");
 });
 
