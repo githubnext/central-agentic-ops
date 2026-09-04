@@ -44,9 +44,6 @@ export const VIEW_ELEMENT_VALUES = [
   'package-dispatches',
   'package-reports',
   'workflow-route',
-  'workflow-detail',
-  'workflow-runs',
-  'workflow-runtime',
   'outcome-detail'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'swimlane'];

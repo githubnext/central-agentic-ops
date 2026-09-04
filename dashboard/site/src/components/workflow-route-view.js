@@ -18,19 +18,25 @@ const ROUTE_VIEW_BODY_ENTRIES = /** @type {Array<[string, WorkflowRouteBodyRende
 /** @type {Map<string, WorkflowRouteBodyRenderer>} */
 const ROUTE_VIEW_BODIES = new Map(ROUTE_VIEW_BODY_ENTRIES);
 
+/** @type {Readonly<Record<string, string>>} */
+const ROUTE_VIEW_ELEMENTS = Object.freeze({
+  'workflow-runtime-route': 'workflow-runtime',
+  'workflow-reports-route': 'workflow-detail',
+  'workflow-runs-route': 'workflow-runs'
+});
+
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @returns {HTMLElement}
  */
 export function renderWorkflowRouteView(context) {
-  const selectedViewId = String(
-    context.viewId
-      ?? (context.element === 'workflow-runtime'
-        ? 'workflow-runtime-route'
-        : context.element === 'workflow-runs'
-          ? 'workflow-runs-route'
-          : 'workflow-reports-route')
+  const selectedViewId = String(context.viewId ?? 'workflow-reports-route');
+  const routeView = renderWorkflowPage(
+    {
+      ...context,
+      element: ROUTE_VIEW_ELEMENTS[selectedViewId] ?? context.element
+    },
+    ROUTE_VIEW_BODIES.get(selectedViewId)
   );
-  const routeView = renderWorkflowPage(context, ROUTE_VIEW_BODIES.get(selectedViewId));
   return routeView;
 }

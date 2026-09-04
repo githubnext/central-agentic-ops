@@ -1986,7 +1986,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow runs',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-runs'
+                  element: 'workflow-route'
                 },
                 {
                   id: 'workflow-runs-table',
@@ -2020,7 +2020,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-detail'
+                  element: 'workflow-route'
                 },
                 {
                   id: 'workflow-report-table',
@@ -2376,7 +2376,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
               title: 'Workflow runtime',
               data: { sources: ['workflows', 'runs', 'usage', 'operational-values'] },
               mark: 'element',
-              element: 'workflow-runtime'
+              element: 'workflow-route'
             }]
           }]
         }

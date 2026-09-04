@@ -173,6 +173,7 @@ describe('dashboard document validation', () => {
         ]
       }
     });
+
     expect(detailsView).toMatchObject({
       disclosure: 'supplemental',
       controls: 'static',
@@ -244,6 +245,27 @@ describe('dashboard document validation', () => {
         path: '$.dashboard.pages[9].views[3].encoding.actions[0].when.field'
       }));
     }
+  });
+
+  it('defines workflow route composition through a reusable workflow-route element', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const reportsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-detail');
+    const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');
+    const runtimePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runtime');
+
+    expect(reportsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-reports-route')).toMatchObject({
+      mark: 'element',
+      element: 'workflow-route'
+    });
+    expect(runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-route')).toMatchObject({
+      mark: 'element',
+      element: 'workflow-route'
+    });
+    expect(runtimePage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-route')).toMatchObject({
+      mark: 'element',
+      element: 'workflow-route'
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
   it('accepts every package dashboard document', () => {
@@ -3552,7 +3574,7 @@ dashboard:
     });
     expect(routeChrome).toMatchObject({
       mark: 'element',
-      element: 'workflow-runtime'
+      element: 'workflow-route'
     });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
 
