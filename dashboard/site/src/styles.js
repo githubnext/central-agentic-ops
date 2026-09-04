@@ -157,6 +157,8 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .layout-section-header p { margin: 3px 0 0; color: var(--muted); font-size: .8125rem; }
 .layout-section .page-section { min-width: 0; }
 .layout-section .page-section > h4 { margin: 12px 0 8px; font-size: .875rem; font-weight: 600; }
+.view-description-section { position: relative; }
+.view-description-tooltip { position: absolute; top: 4px; right: 0; }
 .custom-view-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
 .custom-view { min-width: 0; grid-column: span 12; }
 .custom-view[data-view-layout="half"] { grid-column: span 6; }

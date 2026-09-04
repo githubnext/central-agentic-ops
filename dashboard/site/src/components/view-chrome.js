@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
-import { renderSectionHeading } from './ui-primitives.js';
+import { renderSectionHeading, renderTooltip } from './ui-primitives.js';
 import { titleCase } from './count-formatters.js';
 
 /**
@@ -13,19 +13,30 @@ import { titleCase } from './count-formatters.js';
  * @param {string} title
  * @param {HTMLElement[]} content
  * @param {'h3'|'h4'} [headingTag]
+ * @param {string} [description]
  * @returns {HTMLElement}
  */
-export function renderPageSection(pageId, title, content, headingTag = 'h3') {
+export function renderPageSection(pageId, title, content, headingTag = 'h3', description) {
   const headingId = `${pageId}-${slugifyText(title)}-heading`;
+  const tooltip = description
+    ? renderTooltip({
+        id: `${headingId}-description`,
+        label: `${title} explanation`,
+        description,
+        icon: octicon('question')
+      })
+    : null;
+  tooltip?.classList.add('view-description-tooltip');
   return h(
     'section',
     {
-      className: 'page-section',
+      className: `page-section${tooltip ? ' view-description-section' : ''}`,
       tabIndex: 0,
       'aria-labelledby': headingId
     },
     h(headingTag, { id: headingId }, title),
-    ...content
+    ...content,
+    ...(tooltip ? [tooltip] : [])
   );
 }
 
