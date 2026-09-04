@@ -1922,7 +1922,9 @@ test("SelfCare Primer brand checker audits the dashboard against retrieved guida
   assert.match(source, /dashboard\/site\/src\/\*\*\/\*\.js/);
   assert.match(source, /npm --prefix dashboard\/site run test:e2e/);
   assert.match(source, /create-pull-request:\n\s+target-repo:.*\n\s+title-prefix: "Primer branding: "\n\s+draft: true/);
-  assert.match(source, /If the audit finds no meaningful deviations, call `noop` once/);
+  assert.match(source, /Always finish by calling exactly one safe-output tool/);
+  assert.match(source, /no improvement is needed for any other reason, call `noop` once with a concise plain-text reason/);
+  assert.match(source, /Never finish with only a textual response/);
   assert.equal(source.split(liveGuard).length - 1, 1);
   assert.match(compiled, /\\"noop\\":\{\\"max\\":1,\\"report-as-issue\\":\\"false\\"\}/);
 });
