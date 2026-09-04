@@ -334,6 +334,7 @@ describe('dashboard document validation', () => {
     const valueCallout = valuePage.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'experiment-evidence-boundary'
     );
+    expect(valueCallout).toBeDefined();
     expect(valueCallout.description).toContain('partial AI Credit telemetry');
     expect(callout.data).toBeUndefined();
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
