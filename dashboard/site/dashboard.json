@@ -1247,7 +1247,7 @@
               ]
             },
             "mark": "element",
-            "element": "workflow-route",
+            "element": "workflow-detail",
             "layout": "full"
           },
           {
@@ -1344,7 +1344,7 @@
               ]
             },
             "mark": "element",
-            "element": "workflow-route",
+            "element": "workflow-runs",
             "layout": "full"
           },
           {
@@ -1536,7 +1536,7 @@
               ]
             },
             "mark": "element",
-            "element": "workflow-route",
+            "element": "workflow-runtime",
             "layout": "full"
           }
         ]

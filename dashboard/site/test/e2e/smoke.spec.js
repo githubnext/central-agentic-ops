@@ -1832,7 +1832,8 @@ test('repository page template follows its JSON-declared hash query route in bro
 
 test('workflow page template follows its JSON-declared route and renders attributed reports', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
-  await page.goto('http://dashboard.test/#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md');
+  const workflowRoute = 'githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md';
+  await page.goto(`http://dashboard.test/#page-workflow-detail?workflow=${workflowRoute}`);
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -1884,7 +1885,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow runs',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-route'
+                  element: 'workflow-runs'
                 },
                 {
                   id: 'workflow-runs-table',
@@ -1918,7 +1919,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   title: 'Workflow reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'workflow-route'
+                  element: 'workflow-detail'
                 },
                 {
                   id: 'workflow-report-table',
@@ -2033,7 +2034,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.locator('#page-workflow-detail .custom-table .status-success')).toHaveText('closed');
   await expect(page.locator('#page-workflow-detail .custom-table .mode-review')).toHaveText('review');
   await page.getByRole('link', { name: 'Runs', exact: true }).click();
-  await expect(page.getByRole('link', { name: 'Runs', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ambient Context');
   await expect(page.locator('#page-workflow-runs').getByRole('group', { name: 'Data status' })).toContainText('CompletenesscompleteFreshnessfresh');
   await expect(page.locator('#page-workflow-runs .custom-table tbody tr')).toHaveCount(2);
   await page.locator('#page-workflow-runs').getByRole('button', { name: /^Started/ }).click();
@@ -2041,7 +2042,197 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await page.locator('#page-workflow-runs').getByRole('searchbox', { name: 'Filter Runs' }).fill('Manual review');
   await expect(page.locator('#page-workflow-runs .custom-table tbody tr:visible')).toHaveCount(1);
   await expect(page.locator('#page-workflow-runs .custom-table tbody')).toContainText('Manual review');
-  await page.getByRole('link', { name: 'Reports' }).click();
+  await page.goto(`http://dashboard.test/#page-workflow-detail?workflow=${workflowRoute}`);
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const metadata = {
+        'source-id': 'workflow-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-31T20:00:00Z',
+        'retrieved-at': '2026-08-31T20:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'workflow-route',
+          title: 'Central Agentic Ops',
+          repository: 'githubnext/gh-aw-cao',
+          pages: [
+            {
+              id: 'repositories',
+              kind: 'custom',
+              title: 'Repositories',
+              views: []
+            },
+            {
+              id: 'repository-detail',
+              kind: 'custom',
+              title: 'Repository',
+              route: { 'hash-query-parameter': 'repository' },
+              views: []
+            },
+            {
+              id: 'workflow-runtime',
+              kind: 'custom',
+              title: 'Workflow runtime',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: []
+            },
+            {
+              id: 'workflow-runs',
+              kind: 'custom',
+              title: 'Workflow runs',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: [
+                {
+                  id: 'workflow-runs-route',
+                  title: 'Workflow runs',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'workflow-runs'
+                },
+                {
+                  id: 'workflow-runs-table',
+                  title: 'Runs',
+                  data: { source: 'workflow-runs', 'route-field': 'workflow-route' },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    columns: [
+                      { field: 'run', type: 'nominal', title: 'Run' },
+                      { field: 'run-title', type: 'nominal', title: 'Title' },
+                      { field: 'run-status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'run-conclusion', type: 'nominal', title: 'Conclusion', display: 'status' },
+                      { field: 'event', type: 'nominal', title: 'Trigger' },
+                      { field: 'started-at', type: 'temporal', title: 'Started' }
+                    ],
+                    href: { field: 'run-link', type: 'nominal' }
+                  }
+                }
+              ]
+            },
+            {
+              id: 'workflow-detail',
+              kind: 'custom',
+              title: 'Workflow',
+              description: 'Workflow reports.',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: [
+                {
+                  id: 'workflow-reports-route',
+                  title: 'Workflow reports',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'workflow-detail'
+                },
+                {
+                  id: 'workflow-report-table',
+                  title: 'Reports',
+                  data: { source: 'workflow-reports', 'route-field': 'workflow-route' },
+                  mark: 'table',
+                  encoding: {
+                    columns: [
+                      { field: 'outcome-title', type: 'nominal', title: 'Report', display: 'outcome-link' },
+                      { field: 'outcome-status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
+                      { field: 'outcome-category', type: 'nominal', title: 'Type' },
+                      { field: 'observed-at', type: 'temporal', title: 'Updated' }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              id: 'outcome-detail',
+              kind: 'custom',
+              title: 'Outcome',
+              route: { 'hash-query-parameter': 'outcome' },
+              views: [{
+                id: 'outcome-record',
+                title: 'Outcome',
+                data: { sources: ['outcomes'] },
+                mark: 'element',
+                element: 'outcome-detail'
+              }]
+            }
+          ]
+        }
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'gh-aw-cao',
+            package: 'ambient-context',
+            'package-name': 'Ambient Context',
+            workflow: '.github/workflows/ambient-context.md',
+            'workflow-name': 'Ambient Context',
+            'workflow-role': 'orchestrator',
+            'rollout-mode': 'review'
+          }]
+        },
+        outcomes: {
+          source: 'outcomes',
+          metadata,
+          rows: [{
+            organization: 'customer',
+            repository: 'target',
+            'runtime-repository': 'githubnext/gh-aw-cao',
+            workflow: '.github/workflows/ambient-context.md',
+            'workflow-name': 'Ambient Context',
+            'safe-output': 'report-1',
+            'outcome-title': 'Debug ambient context workflow failure',
+            'outcome-summary': 'Investigated the reported workflow failure.',
+            'outcome-category': 'pull-request',
+            'outcome-status': 'closed',
+            'rollout-mode': 'review',
+            'observed-at': '2026-08-31T19:00:00Z'
+          }]
+        },
+        runs: {
+          source: 'runs',
+          metadata,
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'gh-aw-cao',
+              workflow: '.github/workflows/ambient-context.md',
+              run: '102',
+              'run-title': 'Scheduled review',
+              event: 'schedule',
+              'run-status': 'completed',
+              'run-conclusion': 'success',
+              'started-at': '2026-08-31T20:00:00Z',
+              'run-link': {
+                relation: 'run',
+                href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/102',
+                label: 'View run 102'
+              }
+            },
+            {
+              organization: 'githubnext',
+              repository: 'gh-aw-cao',
+              workflow: '.github/workflows/ambient-context.md',
+              run: '101',
+              'run-title': 'Manual review',
+              event: 'workflow_dispatch',
+              'run-status': 'completed',
+              'run-conclusion': 'failure',
+              'started-at': '2026-08-31T19:00:00Z'
+            }
+          ]
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
   await page.locator('#page-workflow-detail .custom-table tbody a').first().click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
   await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
@@ -2084,7 +2275,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
               title: 'Workflow runtime',
               data: { sources: ['workflows', 'runs', 'usage', 'operational-values'] },
               mark: 'element',
-              element: 'workflow-route'
+              element: 'workflow-runtime'
             }]
           }]
         }
