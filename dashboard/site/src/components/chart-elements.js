@@ -27,6 +27,13 @@ const SWIMLANE_DEFINITIONS = [
 ];
 const SWIMLANE_FAILURES = new Set(['failure', 'startup-failure', 'stale', 'timed-out']);
 const CHART_SERIES_COLOR_COUNT = 12;
+const SEMANTIC_SERIES_TERMS = {
+  failure: new Set(['denied', 'error', 'errored', 'fail', 'failed', 'failing', 'failure', 'invalid', 'rejected', 'stale', 'timeout', 'unhealthy', 'unsuccessful']),
+  success: new Set(['approved', 'complete', 'completed', 'healthy', 'pass', 'passed', 'passing', 'resolved', 'succeed', 'succeeded', 'success', 'successful']),
+  waiting: new Set(['awaiting', 'pending', 'queued', 'waiting']),
+  attention: new Set(['cancelled', 'canceled', 'degraded', 'warning']),
+  neutral: new Set(['disabled', 'dismissed', 'inactive', 'neutral', 'skipped', 'unknown'])
+};
 
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
@@ -67,8 +74,40 @@ export function groupChartSeries(points) {
 export function listChartSeries(points) {
   return groupChartSeries(points).map(([name], index) => ({
     name,
-    className: `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`
+    className: chartSeriesClassName(name, index)
   }));
+}
+
+/**
+ * Retains a varied fallback palette while adding a stable semantic color when
+ * the series name describes a commonly understood status.
+ * @param {string} name
+ * @param {number} index
+ * @returns {string}
+ */
+export function chartSeriesClassName(name, index) {
+  const paletteClass = `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`;
+  const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const terms = new Set(normalized.split(/\s+/).filter(Boolean));
+  let meaning = null;
+
+  if ([...SEMANTIC_SERIES_TERMS.failure].some((term) => terms.has(term))) {
+    meaning = 'failure';
+  } else if (
+    normalized === 'action required'
+    || ((terms.has('approval') || terms.has('review')) && (terms.has('required') || terms.has('awaiting') || terms.has('pending') || terms.has('waiting')))
+    || [...SEMANTIC_SERIES_TERMS.waiting].some((term) => terms.has(term))
+  ) {
+    meaning = 'waiting';
+  } else if ([...SEMANTIC_SERIES_TERMS.success].some((term) => terms.has(term))) {
+    meaning = 'success';
+  } else if ([...SEMANTIC_SERIES_TERMS.attention].some((term) => terms.has(term))) {
+    meaning = 'attention';
+  } else if ([...SEMANTIC_SERIES_TERMS.neutral].some((term) => terms.has(term))) {
+    meaning = 'neutral';
+  }
+
+  return meaning ? `${paletteClass} chart-series-semantic-${meaning}` : paletteClass;
 }
 
 /**
@@ -120,7 +159,7 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
       return h(
         'li',
         null,
-        h('i', { className: `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`, 'aria-hidden': 'true' }),
+        h('i', { className: chartSeriesClassName(label, index), 'aria-hidden': 'true' }),
         h('span', null, renderSafeLink(label, link)),
         h('strong', null, formatNumber(value, unit)),
         h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
@@ -177,7 +216,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           },
           h('title', null, segmentLabel),
           h('circle', {
-            className: `pie-chart-segment chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`,
+            className: `pie-chart-segment ${chartSeriesClassName(label, index)}`,
             cx: 21,
             cy: 21,
             r: 15.9155,
