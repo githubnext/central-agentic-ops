@@ -47,6 +47,16 @@ async function nextDashboard(socket) {
   });
 }
 
+async function nextSocketMessage(socket, predicate = () => true) {
+  while (true) {
+    const message = await new Promise((resolve, reject) => {
+      socket.addEventListener("message", (event) => resolve(JSON.parse(event.data)), { once: true });
+      socket.addEventListener("error", reject, { once: true });
+    });
+    if (predicate(message)) return message;
+  }
+}
+
 async function requestWithHost(url, host) {
   return new Promise((resolve, reject) => {
     const target = new URL(url);
@@ -201,6 +211,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
   const prompts = [];
   const promptGate = Promise.withResolvers();
   let runtimeClosed = false;
+  let runtimeStopped = false;
 
   const preview = await startDashboardServer({
     siteRoot: root,
@@ -214,11 +225,19 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     createCopilotRuntime: async () => ({
       prompt: async (payload) => {
         prompts.push(payload);
+        payload.onEvent({ type: "assistant-delta", content: "Updating dashboard…" });
+        await promptGate.promise;
+        if (runtimeStopped) return { aborted: true };
         const source = payload.request === "Produce invalid JSON"
           ? "{ invalid"
           : JSON.stringify(JSON.parse(dashboard("package-one")));
         await writeFile(payload.viewDashboardPath, source);
-        await promptGate.promise;
+        return { aborted: false };
+      },
+      stop: async () => {
+        runtimeStopped = true;
+        promptGate.resolve();
+        return true;
       },
       close: async () => {
         runtimeClosed = true;
@@ -235,27 +254,24 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     assert.doesNotMatch(index, /<script[^>]+src=.*copilot-prompt/);
     assert.doesNotMatch(index, /eval\(/);
 
-    const responsePromise = fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: new URL(preview.url).origin,
-      },
-      body: JSON.stringify({ view: "package-one", request: "Add a failure trend" }),
-    });
+    const socket = await openDashboardSocket(preview.url);
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Add a failure trend",
+    }));
     while (prompts.length === 0) await new Promise((resolve) => setTimeout(resolve, 5));
-    const concurrentResponse = await fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: new URL(preview.url).origin,
-      },
-      body: JSON.stringify({ view: "package-one", request: "Change the summary" }),
-    });
-    assert.equal(concurrentResponse.status, 409);
-    promptGate.resolve();
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
+    const concurrentError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /already running/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Change the summary",
+    }));
+    assert.equal((await concurrentError).type, "error");
+    const stoppedMessage = nextSocketMessage(socket, (message) => message.type === "stopped");
+    socket.send(JSON.stringify({ type: "copilot.stop" }));
+    assert.equal((await stoppedMessage).type, "stopped");
     assert.equal(prompts.length, 1);
     assert.equal(prompts[0].view, "package-one");
     assert.equal(prompts[0].request, "Add a failure trend");
@@ -271,25 +287,16 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       dashboard("package-one"),
     );
 
-    const invalidJsonResponse = await fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: new URL(preview.url).origin,
-      },
-      body: JSON.stringify({ view: "package-one", request: "Produce invalid JSON" }),
-    });
-    assert.equal(invalidJsonResponse.status, 500);
-
-    const invalidOrigin = await fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: "http://attacker.example",
-      },
-      body: JSON.stringify({ view: "package-one", request: "Change it" }),
-    });
-    assert.equal(invalidOrigin.status, 400);
+    runtimeStopped = false;
+    const invalidJsonError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /could not update/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Produce invalid JSON",
+    }));
+    assert.equal((await invalidJsonError).type, "error");
+    socket.close();
   } finally {
     await preview.close();
     await rm(root, { recursive: true, force: true });

@@ -36,7 +36,6 @@ const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".
   ? null
   : resolve(scriptDirectory, "..");
 const socketEndpoint = "/__dashboard_socket";
-const copilotEndpoint = "/__dashboard_copilot";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
 const trustedDashboardWorkflowPaths = new Set([
   ".github/workflows/dashboard-build.yml",
@@ -184,17 +183,6 @@ async function sourceSignature(paths) {
   return entries.join("\n");
 }
 
-async function readJsonRequest(request, limit = 16 * 1024) {
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of request) {
-    size += chunk.length;
-    if (size > limit) throw new Error("Request body is too large.");
-    chunks.push(chunk);
-  }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-}
-
 function isLoopbackHost(host) {
   const unbracketed = host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
   if (unbracketed === "localhost" || unbracketed === "::1") return true;
@@ -296,8 +284,16 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
   }
   console.log("Copilot headless server started.");
 
+  let activeSession = null;
   return {
-    async prompt({ view, request, bundledDashboardPath, editableDashboardPaths, viewDashboardPath }) {
+    async prompt({
+      view,
+      request,
+      bundledDashboardPath,
+      editableDashboardPaths,
+      viewDashboardPath,
+      onEvent = () => {},
+    }) {
       console.log("Creating Copilot dashboard session.", {
         view,
         bundledDashboardPath,
@@ -408,8 +404,52 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         throw error;
       }
       console.log("Copilot dashboard session created.", { sessionId: session.sessionId, view });
+      let aborted = false;
+      let disconnected = false;
+      const disconnect = async () => {
+        if (disconnected) return;
+        disconnected = true;
+        console.log("Disconnecting Copilot dashboard session.", { sessionId: session.sessionId });
+        await session.disconnect().catch((error) => {
+          console.log("Copilot dashboard session disconnect failed.", {
+            sessionId: session.sessionId,
+            ...errorMetadata(error),
+          });
+        });
+      };
+      const sessionHandle = {
+        async stop() {
+          if (aborted) return;
+          aborted = true;
+          console.log("Stopping Copilot dashboard session.", { sessionId: session.sessionId });
+          await session.abort().catch((error) => {
+            console.log("Copilot dashboard session abort failed.", {
+              sessionId: session.sessionId,
+              ...errorMetadata(error),
+            });
+          });
+          await disconnect();
+        },
+      };
+      activeSession = sessionHandle;
       const unsubscribe = session.on((event) => {
         console.log("Copilot dashboard session event.", { sessionId: session.sessionId, type: event.type });
+        if (event.type === "assistant.message_delta") {
+          onEvent({ type: "assistant-delta", content: event.data.deltaContent });
+        } else if (event.type === "assistant.message") {
+          onEvent({ type: "assistant-message", content: event.data.content });
+        } else if (event.type === "tool.execution_start") {
+          onEvent({ type: "status", message: `Running ${event.data.toolName}…` });
+        } else if (event.type === "tool.execution_complete") {
+          onEvent({
+            type: "status",
+            message: event.data.success ? "Applying dashboard update…" : "A dashboard tool failed.",
+          });
+        } else if (event.type === "session.error") {
+          onEvent({ type: "error", message: event.data.message });
+        } else if (event.type === "session.idle" && event.data.aborted) {
+          aborted = true;
+        }
       });
       try {
         console.log("Sending Copilot dashboard request.", {
@@ -431,6 +471,7 @@ ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Use only read_dashboard_source, validate_dashboard_source, and save_dashboard_source to inspect, validate, and save the original source that defines the named view. Run validate_dashboard_source repeatedly until it passes, then use save_dashboard_source so the JSON is normalized with two-space indentation and the local preview reloads. Complete the edit rather than only describing it.`,
           });
         } catch (error) {
+          if (aborted) return { aborted: true };
           console.log("Copilot dashboard session request failed.", {
             sessionId: session.sessionId,
             view,
@@ -439,18 +480,20 @@ Built-in views come from the site's dashboard.json. Package views come from thei
           throw error;
         }
         console.log("Copilot dashboard request completed.", { sessionId: session.sessionId, view });
+        return { aborted };
       } finally {
         unsubscribe();
-        console.log("Disconnecting Copilot dashboard session.", { sessionId: session.sessionId });
-        await session.disconnect().catch((error) => {
-          console.log("Copilot dashboard session disconnect failed.", {
-            sessionId: session.sessionId,
-            ...errorMetadata(error),
-          });
-        });
+        if (activeSession === sessionHandle) activeSession = null;
+        await disconnect();
       }
     },
+    async stop() {
+      if (!activeSession) return false;
+      await activeSession.stop();
+      return true;
+    },
     async close() {
+      await activeSession?.stop();
       const errors = await client.stop();
       for (const error of errors) console.log("Copilot shutdown error.", errorMetadata(error));
     },
@@ -483,6 +526,47 @@ function websocketTextFrame(content) {
 
 function websocketCloseFrame() {
   return Buffer.from([0x88, 0x00]);
+}
+
+function websocketPongFrame(content) {
+  const header = Buffer.from([0x8a, content.length]);
+  return Buffer.concat([header, content]);
+}
+
+function readWebsocketFrames(buffer) {
+  const messages = [];
+  let offset = 0;
+  while (buffer.length - offset >= 2) {
+    const first = buffer[offset];
+    const second = buffer[offset + 1];
+    const final = (first & 0x80) !== 0;
+    const opcode = first & 0x0f;
+    const masked = (second & 0x80) !== 0;
+    let length = second & 0x7f;
+    let headerLength = 2;
+    if (length === 126) {
+      if (buffer.length - offset < 4) break;
+      length = buffer.readUInt16BE(offset + 2);
+      headerLength = 4;
+    } else if (length === 127) {
+      if (buffer.length - offset < 10) break;
+      const extendedLength = buffer.readBigUInt64BE(offset + 2);
+      if (extendedLength > 16_384n) throw new Error("WebSocket message is too large.");
+      length = Number(extendedLength);
+      headerLength = 10;
+    }
+    if (!masked || !final || length > 16_384) throw new Error("Unsupported WebSocket frame.");
+    if (buffer.length - offset < headerLength + 4 + length) break;
+    const maskOffset = offset + headerLength;
+    const payloadOffset = maskOffset + 4;
+    const payload = Buffer.allocUnsafe(length);
+    for (let index = 0; index < length; index += 1) {
+      payload[index] = buffer[payloadOffset + index] ^ buffer[maskOffset + (index % 4)];
+    }
+    messages.push({ opcode, payload });
+    offset = payloadOffset + length;
+  }
+  return { messages, remaining: buffer.subarray(offset) };
 }
 
 /**
@@ -562,11 +646,136 @@ export async function startDashboardServer({
   let closed = false;
   let copilotRuntime;
   let copilotRequestActive = false;
+  let copilotSocket = null;
 
   const broadcastDashboard = () => {
     console.log("Broadcasting dashboard preview update.", { socketCount: sockets.size });
     const frame = websocketTextFrame(dashboardContent);
     for (const socket of sockets) socket.write(frame);
+  };
+
+  const sendSocketEvent = (socket, event) => {
+    if (!socket.destroyed && !socket.writableEnded) {
+      socket.write(websocketTextFrame(JSON.stringify(event)));
+    }
+  };
+
+  const runCopilotRequest = async (socket, payload) => {
+    if (!copilotRuntime) {
+      sendSocketEvent(socket, { type: "error", message: "Copilot mode is not available." });
+      return;
+    }
+    if (copilotRequestActive) {
+      console.log("Rejected concurrent Copilot dashboard request.");
+      sendSocketEvent(socket, {
+        type: "error",
+        message: "A Copilot dashboard request is already running.",
+      });
+      return;
+    }
+    if (typeof payload?.view !== "string" || payload.view.length < 1 || payload.view.length > 200
+        || typeof payload?.request !== "string" || payload.request.trim().length < 1
+        || payload.request.length > 10000) {
+      console.log("Rejected invalid Copilot dashboard request payload.");
+      sendSocketEvent(socket, { type: "error", message: "A valid view and request are required." });
+      return;
+    }
+
+    copilotRequestActive = true;
+    copilotSocket = socket;
+    try {
+      const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
+        resolvedCatalogRoot,
+        resolvedInstalledDashboardsDirectory,
+      )];
+      const viewDashboardPath = await dashboardSourceForView(payload.view, editableDashboardPaths);
+      console.log("Accepted Copilot dashboard request.", {
+        view: payload.view,
+        requestLength: payload.request.trim().length,
+        viewDashboardPath,
+      });
+      const onEvent = (event) => sendSocketEvent(socket, event);
+      onEvent({
+        type: "debug",
+        message: "Starting dashboard view update.",
+        details: { view: payload.view },
+      });
+      onEvent({ type: "started" });
+      const result = await copilotRuntime.prompt({
+        view: payload.view,
+        request: payload.request.trim(),
+        bundledDashboardPath,
+        editableDashboardPaths,
+        viewDashboardPath,
+        onEvent,
+      });
+      if (result?.aborted) {
+        onEvent({
+          type: "debug",
+          message: "Dashboard view update was stopped.",
+          details: { view: payload.view },
+        });
+        onEvent({ type: "stopped" });
+        return;
+      }
+      onEvent({
+        type: "debug",
+        message: "Copilot session completed; validating the saved dashboard source.",
+        details: { view: payload.view },
+      });
+      const savedSource = await readFile(viewDashboardPath, "utf8");
+      let normalizedSource;
+      try {
+        normalizedSource = normalizeDashboardJson(savedSource);
+      } catch (error) {
+        console.log("Copilot dashboard request left invalid JSON.", {
+          view: payload.view,
+          viewDashboardPath,
+          ...errorMetadata(error),
+        });
+        throw new Error("Copilot produced invalid dashboard JSON.");
+      }
+      if (savedSource !== normalizedSource) {
+        await writeFile(viewDashboardPath, normalizedSource);
+        console.log("Normalized saved Copilot dashboard JSON.", {
+          view: payload.view,
+          viewDashboardPath,
+          bytes: Buffer.byteLength(normalizedSource),
+        });
+      }
+      console.log("Verified saved Copilot dashboard JSON.", {
+        view: payload.view,
+        viewDashboardPath,
+      });
+      onEvent({
+        type: "debug",
+        message: "Dashboard view update completed.",
+        details: { view: payload.view },
+      });
+      onEvent({ type: "done" });
+    } catch (error) {
+      console.log("Copilot request failed.", errorMetadata(error));
+      sendSocketEvent(socket, {
+        type: "debug",
+        message: "Dashboard view update failed.",
+        details: { view: payload.view, ...errorMetadata(error) },
+      });
+      sendSocketEvent(socket, {
+        type: "error",
+        message: "Copilot could not update the view.",
+      });
+    } finally {
+      copilotRequestActive = false;
+      if (copilotSocket === socket) copilotSocket = null;
+    }
+  };
+
+  const handleSocketCommand = async (socket, command) => {
+    if (command?.type === "copilot.start") {
+      await runCopilotRequest(socket, command);
+    } else if (command?.type === "copilot.stop") {
+      if (socket === copilotSocket) await copilotRuntime?.stop();
+    }
   };
 
   const rebuild = async (notify = true) => {
@@ -651,10 +860,6 @@ export async function startDashboardServer({
       host === expectedAuthority
       || (localhostAuthority && host === localhostAuthority)
       || (codespaceAuthority && host === codespaceAuthority);
-  const isAllowedOrigin = (origin) =>
-      origin === `http://${expectedAuthority}`
-      || (localhostAuthority && origin === `http://${localhostAuthority}`)
-      || (codespaceAuthority && origin === `https://${codespaceAuthority}`);
   const server = createServer(async (request, response) => {
     try {
       if (!expectedAuthority || !request.headers.host || !isAllowedHost(request.headers.host)
@@ -678,98 +883,6 @@ export async function startDashboardServer({
           && !url.searchParams.has("local-preview")) {
         url.searchParams.set("local-preview", copilotRuntime ? "copilot" : "enabled");
         response.writeHead(302, { Location: `${routePrefix}/${url.search}`, "Content-Type": "text/html; charset=utf-8" }).end();
-        return;
-      }
-      if (pathname === copilotEndpoint) {
-        if (!copilotRuntime) {
-          response.writeHead(404).end("Not found\n");
-          return;
-        }
-        if (request.method !== "POST") {
-          response.writeHead(405, { Allow: "POST" }).end();
-          return;
-        }
-        if (!isAllowedOrigin(request.headers.origin)
-            || !request.headers["content-type"]?.startsWith("application/json")) {
-          console.log("Rejected Copilot request with invalid headers.", {
-            hasOrigin: typeof request.headers.origin === "string",
-            contentType: request.headers["content-type"] || null,
-          });
-          response.writeHead(400).end("Bad request\n");
-          return;
-        }
-        if (copilotRequestActive) {
-          console.log("Rejected concurrent Copilot dashboard request.");
-          response.writeHead(409, { "Content-Type": contentTypes.get(".json") });
-          response.end(JSON.stringify({ error: "A Copilot dashboard request is already running." }));
-          return;
-        }
-        copilotRequestActive = true;
-        try {
-          const payload = await readJsonRequest(request);
-          if (typeof payload?.view !== "string" || payload.view.length < 1 || payload.view.length > 200
-              || typeof payload?.request !== "string" || payload.request.trim().length < 1
-              || payload.request.length > 10000) {
-            console.log("Rejected invalid Copilot dashboard request payload.", {
-              viewValid: typeof payload?.view === "string"
-                && payload.view.length >= 1
-                && payload.view.length <= 200,
-              requestLength: typeof payload?.request === "string" ? payload.request.length : null,
-            });
-            response.writeHead(400, { "Content-Type": contentTypes.get(".json") });
-            response.end(JSON.stringify({ error: "A valid view and request are required." }));
-            return;
-          }
-          const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
-            resolvedCatalogRoot,
-            resolvedInstalledDashboardsDirectory,
-          )];
-          const viewDashboardPath = await dashboardSourceForView(payload.view, editableDashboardPaths);
-          console.log("Accepted Copilot dashboard request.", {
-            view: payload.view,
-            requestLength: payload.request.trim().length,
-            viewDashboardPath,
-          });
-          await copilotRuntime.prompt({
-            view: payload.view,
-            request: payload.request.trim(),
-            bundledDashboardPath,
-            editableDashboardPaths,
-            viewDashboardPath,
-          });
-          const savedSource = await readFile(viewDashboardPath, "utf8");
-          let normalizedSource;
-          try {
-            normalizedSource = normalizeDashboardJson(savedSource);
-          } catch (error) {
-            console.log("Copilot dashboard request left invalid JSON.", {
-              view: payload.view,
-              viewDashboardPath,
-              ...errorMetadata(error),
-            });
-            throw new Error("Copilot produced invalid dashboard JSON.");
-          }
-          if (savedSource !== normalizedSource) {
-            await writeFile(viewDashboardPath, normalizedSource);
-            console.log("Normalized saved Copilot dashboard JSON.", {
-              view: payload.view,
-              viewDashboardPath,
-              bytes: Buffer.byteLength(normalizedSource),
-            });
-          }
-          console.log("Verified saved Copilot dashboard JSON.", {
-            view: payload.view,
-            viewDashboardPath,
-          });
-          response.writeHead(200, { "Content-Type": contentTypes.get(".json") });
-          response.end(JSON.stringify({ ok: true }));
-        } catch (error) {
-          console.log("Copilot request failed.", errorMetadata(error));
-          response.writeHead(500, { "Content-Type": contentTypes.get(".json") });
-          response.end(JSON.stringify({ error: "Copilot could not update the view." }));
-        } finally {
-          copilotRequestActive = false;
-        }
         return;
       }
       if (request.method !== "GET" && request.method !== "HEAD") {
@@ -851,17 +964,34 @@ export async function startDashboardServer({
     ].join("\r\n"));
     sockets.add(socket);
     console.log("Dashboard preview socket connected.", { socketCount: sockets.size });
-    let receivedHeaderBytes = 0;
+    let incoming = Buffer.alloc(0);
     let removed = false;
     const remove = () => {
       if (removed) return;
       removed = true;
       sockets.delete(socket);
+      if (socket === copilotSocket) void copilotRuntime?.stop();
       console.log("Dashboard preview socket disconnected.", { socketCount: sockets.size });
     };
     socket.on("data", (data) => {
-      receivedHeaderBytes += Math.min(data.length, 2 - receivedHeaderBytes);
-      if (receivedHeaderBytes === 2 && !socket.writableEnded) {
+      try {
+        incoming = Buffer.concat([incoming, data]);
+        const parsed = readWebsocketFrames(incoming);
+        incoming = parsed.remaining;
+        for (const frame of parsed.messages) {
+          if (frame.opcode === 0x8) {
+            if (!socket.writableEnded) socket.end(websocketCloseFrame());
+          } else if (frame.opcode === 0x9) {
+            socket.write(websocketPongFrame(frame.payload));
+          } else if (frame.opcode === 0x1) {
+            const command = JSON.parse(frame.payload.toString("utf8"));
+            void handleSocketCommand(socket, command);
+          } else {
+            throw new Error("Unsupported WebSocket opcode.");
+          }
+        }
+      } catch (error) {
+        console.log("Dashboard preview socket command failed.", errorMetadata(error));
         socket.end(websocketCloseFrame());
       }
     });
