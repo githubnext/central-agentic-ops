@@ -2589,6 +2589,9 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.doesNotMatch(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
   assert.match(workflow, /actions: write[\s\S]*?DISPATCH_WORKFLOW: dashboard-build\.yml[\s\S]*?node dashboard\/dispatch-workflow\.mjs/);
   assert.match(workflow, /needs: dashboard/);
+  assert.match(workflow, /name: Restore node_modules[\s\S]*?id: node-modules-cache[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}[\s\S]*?path: node_modules[\s\S]*?key: \$\{\{ runner\.os \}\}-node-24-\$\{\{ hashFiles\('package-lock\.json'\) \}\}/);
+  assert.match(workflow, /name: Install dependencies\n\s+if: steps\.node-modules-cache\.outputs\.cache-hit != 'true'\n\s+run: npm ci/);
+  assert.match(workflow, /name: Save node_modules[\s\S]*?if: steps\.node-modules-cache\.outputs\.cache-hit != 'true'[\s\S]*?actions\/cache\/save@[0-9a-f]{40}[\s\S]*?path: node_modules[\s\S]*?key: \$\{\{ steps\.node-modules-cache\.outputs\.cache-primary-key \}\}/);
   assert.match(workflow, /run: npm run docs:build/);
   assert.match(workflow, /name: central-agentic-ops-dashboard\n\s+path: dist/);
   assert.match(workflow, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
