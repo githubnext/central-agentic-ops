@@ -2983,6 +2983,18 @@
         ],
         "views": [
           {
+            "id": "runtime-episode-summary",
+            "title": "Execution episodes",
+            "data": {
+              "sources": [
+                "runtime-episode-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
             "id": "runtime-anomaly-readiness",
             "title": "Statistical anomaly readiness",
             "data": {
@@ -3004,18 +3016,6 @@
             },
             "mark": "element",
             "element": "signal-list",
-            "layout": "full"
-          },
-          {
-            "id": "runtime-episode-summary",
-            "title": "Execution episodes",
-            "data": {
-              "sources": [
-                "runtime-episode-summary"
-              ]
-            },
-            "mark": "element",
-            "element": "summary-grid",
             "layout": "full"
           },
           {

@@ -59,6 +59,11 @@ describe('Runtime dashboard view', () => {
       })
     )).toEqual([
       {
+        id: 'runtime-episode-summary',
+        mark: 'element',
+        element: 'summary-grid'
+      },
+      {
         id: 'runtime-anomaly-readiness',
         mark: 'element',
         element: 'anomaly-readiness'
@@ -67,11 +72,6 @@ describe('Runtime dashboard view', () => {
         id: 'runtime-needs-attention',
         mark: 'element',
         element: 'signal-list'
-      },
-      {
-        id: 'runtime-episode-summary',
-        mark: 'element',
-        element: 'summary-grid'
       },
       {
         id: 'runtime-execution-episodes',
