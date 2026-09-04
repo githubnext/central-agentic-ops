@@ -7,6 +7,7 @@ import { renderLinkTabs } from './tab-nav.js';
 import { titleCase } from './count-formatters.js';
 import { createRouteView } from './route-empty-state.js';
 import { renderWorkflowValueReport } from './workflow-runtime.js';
+import { rowsFor } from './source-rows.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -89,15 +90,7 @@ function renderPackageTabs(packageId, packageName, selectedView) {
 }
 
 /**
- * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
- * @param {string} source
- * @returns {Array<Record<string, unknown>>}
- */
-function rowsFor(sources, source) {
-  return Array.isArray(sources[source]?.rows) ? sources[source].rows : [];
-}
-
-/** @param {unknown} value */
+ @param {unknown} value */
 function normalizePackageRoute(value) {
   if (typeof value !== 'string') return '';
   const packageId = value.trim();

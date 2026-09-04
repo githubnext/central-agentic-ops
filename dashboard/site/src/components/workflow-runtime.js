@@ -15,6 +15,7 @@ import { renderWorkflowIdentity } from './workflow-identity.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { createRouteView } from './route-empty-state.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
+import { rowsFor } from './source-rows.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -632,11 +633,6 @@ function matchingRows(context, sourceName, repository, workflow) {
 function matchesWorkflow(row, repository, workflow) {
   return qualifiedRepository(row).toLowerCase() === repository.toLowerCase()
     && text(row.workflow) === workflow;
-}
-
-/** @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources @param {string} source */
-function rowsFor(sources, source) {
-  return Array.isArray(sources[source]?.rows) ? sources[source].rows : [];
 }
 
 /** @param {Record<string, unknown>} row */

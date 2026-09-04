@@ -7,6 +7,7 @@ import { renderLinkTabs } from './tab-nav.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
+import { rowsFor } from './source-rows.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -116,11 +117,6 @@ function qualifiedRepository(row) {
 /** @param {Record<string, unknown>} workflow */
 function workflowName(workflow) {
   return text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
-}
-
-/** @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources @param {string} source */
-function rowsFor(sources, source) {
-  return Array.isArray(sources[source]?.rows) ? sources[source].rows : [];
 }
 
 /** @param {unknown} value */

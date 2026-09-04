@@ -9,6 +9,7 @@ import { pluralSuffix, titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
+import { rowsFor } from './source-rows.js';
 
 const MODES = ['all', 'review', 'live'];
 const DAY_IN_MILLISECONDS = 86_400_000;
@@ -771,15 +772,7 @@ function sourceWindowLabel(metadata) {
 }
 
 /**
- * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
- * @param {string} name
- * @returns {Array<Record<string, unknown>>}
- */
-function rowsFor(sources, name) {
-  return Array.isArray(sources[name]?.rows) ? sources[name].rows : [];
-}
 
-/**
  * @param {Record<string, unknown>} row
  * @returns {boolean}
  */
