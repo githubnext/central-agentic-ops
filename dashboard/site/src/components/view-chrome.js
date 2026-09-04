@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
-import { formatUtcDateTime, renderListWithFallback, renderSectionHeading, renderTooltip } from './ui-primitives.js';
+import { formatUtcDateTime, renderDlRow, renderListWithFallback, renderSectionHeading, renderTooltip } from './ui-primitives.js';
 import { titleCase } from './count-formatters.js';
 
 /**
@@ -93,12 +93,7 @@ export function renderDefinitionList(className, rows) {
  * @returns {HTMLElement[]}
  */
 export function renderDefinitionListRows(rows) {
-  return rows.map((row) => h(
-    'div',
-    null,
-    h('dt', null, String(row.label ?? '')),
-    h('dd', null, String(row.value ?? ''))
-  ));
+  return rows.map((row) => renderDlRow(String(row.label ?? ''), String(row.value ?? '')));
 }
 
 /**
@@ -119,12 +114,7 @@ export function renderContextChrome(contextDetails) {
  * @returns {HTMLElement}
  */
 function renderMetadataRow(icon, label, content) {
-  return h(
-    'div',
-    null,
-    h('dt', null, octicon(icon), label),
-    h('dd', null, content)
-  );
+  return renderDlRow([octicon(icon), label], content);
 }
 
 /**

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderIdentityLink, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIdentityLink, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -42,6 +42,17 @@ describe('ui primitives', () => {
     expect(withDetail.querySelector('p')?.textContent).toBe('observed orchestrator runs');
     expect(withoutDetail.textContent).toBe('Measured AIC—');
     expect(withoutDetail.querySelector('p')).toBeNull();
+  });
+
+  it('renders the shared dt/dd row primitive used across metadata and stat lists', () => {
+    const row = renderDlRow('Freshness', 'Fresh', 'Updated moments ago');
+    expect(row.querySelector('dt')?.textContent).toBe('Freshness');
+    expect(row.querySelector('dd')?.textContent).toBe('Fresh');
+    expect(row.querySelector('p')?.textContent).toBe('Updated moments ago');
+
+    const compositeTerm = renderDlRow([document.createTextNode('!'), 'Label'], 'Value');
+    expect(compositeTerm.querySelector('dt')?.textContent).toBe('!Label');
+    expect(compositeTerm.querySelector('p')).toBeNull();
   });
 
   it('renders accessible tooltip semantics around arbitrary rich content', () => {
