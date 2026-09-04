@@ -101,11 +101,11 @@ function workflowRouteAllocation(config, route, workflow, title) {
 /**
  * @param {'insights'|'reports'|'runs'} currentTab
  * @param {{ repository: string, workflow: string }} route
- * @param {string} workflowName
+ * @param {string} displayName
  */
-function renderWorkflowTabs(currentTab, route, workflowName) {
+function renderWorkflowTabs(currentTab, route, displayName) {
   const workflowQuery = `?workflow=${encodeURIComponent(workflowRouteValue(route.repository, route.workflow))}`;
-  const navigationLabel = currentTab === 'insights' ? workflowName : route.workflow;
+  const navigationLabel = currentTab === 'insights' ? displayName : route.workflow;
   return renderRouteTabSet({
     className: 'repository-tabs workflow-tabs',
     ariaLabel: `${navigationLabel} views`,
