@@ -11,7 +11,7 @@ import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
 const modes = ["review", "live"];
-const ghAwVersion = "v0.88.2";
+const ghAwVersion = "v0.88.4";
 
 function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
@@ -37,8 +37,8 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
 
   for (const name of ["activity.yml", "copilot-setup-steps.yml", "release.yml", "workflow-contracts.yml"]) {
     const source = workflow(name);
-    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.2/);
-    assert.match(source, /version: v0\.88\.2/);
+    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.4/);
+    assert.match(source, /version: v0\.88\.4/);
   }
 });
 
@@ -74,7 +74,7 @@ test("operational workflows use the transitive CAO package bundle", () => {
 
   const operationWorkflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
-  assert.equal(operationWorkflows.length, 31);
+  assert.equal(operationWorkflows.length, 32);
 });
 
 test("AI Credit workers collect all workflow logs with bounded resources", () => {
@@ -404,7 +404,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 6, workers: 6 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 7, workers: 7 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -425,6 +425,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
     "self-care-data-acquisition-audit.md": { credits: 300, timeout: 20 },
+    "self-care-dashboard-language-refactor.md": { credits: 400, timeout: 30 },
     "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
     "self-care-docs-build-time-investigator.md": { credits: 400, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
@@ -486,7 +487,7 @@ test("control workflows deny before activation through one shared admission cont
     .map((name) => [name, workflow(name)])
     .filter(([, source]) => /^\s+- uses: shared\/cao\.md$/m.test(source));
 
-  assert.equal(controlled.length, 31, "unexpected shared control workflow count");
+  assert.equal(controlled.length, 32, "unexpected shared control workflow count");
   assert.equal(
     [...sharedControl.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
     1,
@@ -868,21 +869,20 @@ test("CAO upgrade script refreshes gh-aw, packages, and Actions", () => {
   assert.match(upgrade, /^gh aw upgrade$/m);
 });
 
-test("root package directly includes grader-backed workers for dependency packaging", () => {
-  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
-  const importedWorkerIds = [
-    "ambient-context-agents-md-curator",
-    "dependabot-release-train-updater",
-    "optimization-ai-credit-auditor",
-    "optimization-ai-credit-optimizer",
-  ];
+test("root package composes its operational packages through manifests", () => {
+  const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
 
-  for (const workflowId of importedWorkerIds) {
-    const graderPath = `.github/graders/${workflowId}-operational-value.sh`;
-    assert.ok(existsSync(join(root, graderPath)), `${graderPath} must exist`);
-    assert.match(workflow(`${workflowId}.md`), new RegExp(`run: ${graderPath.replaceAll(".", "\\.")}`));
-    assert.match(rootManifest, new RegExp(`- \\.github/workflows/${workflowId.replaceAll("-", "\\-")}\\.md`));
-  }
+  assert.deepEqual(rootManifest.includes, [
+    ".github/workflows/agentic-auto-upgrade.yml",
+    "activity/aw.yml",
+    "ambient-context/aw.yml",
+    "aw-maintenance/aw.yml",
+    "dashboard/aw.yml",
+    "dependabot/aw.yml",
+    "optimization/aw.yml",
+  ]);
+  const project = JSON.parse(readFileSync(join(root, ".github", "workflows", "aw.json"), "utf8"));
+  assert.deepEqual(project.auto_upgrade.options, ["--pre-releases"]);
 });
 
 test("compiled workflow locks are not ignored", () => {
@@ -936,6 +936,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
     "self-care-accessibility-checker",
     "self-care-code-improvement",
     "self-care-data-acquisition-audit",
+    "self-care-dashboard-language-refactor",
     "self-care-dashboard-review",
     "self-care-docs-build-time-investigator",
     "self-care-primer-brand-checker",
@@ -1269,6 +1270,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
     ["self-care-data-acquisition-audit.md", "self-care"],
+    ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-docs-build-time-investigator.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
@@ -1334,6 +1336,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
     ["self-care-data-acquisition-audit.md", "self-care"],
+    ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-docs-build-time-investigator.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
@@ -1463,6 +1466,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
     ["self-care-data-acquisition-audit.md", "self-care", "data-acquisition-audit"],
+    ["self-care-dashboard-language-refactor.md", "self-care", "dashboard-language-refactor"],
     ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
     ["self-care-docs-build-time-investigator.md", "self-care", "docs-build-time-investigator"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
@@ -1912,7 +1916,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
   assert.match(source, /cli-proxy: true/);
-  assert.match(source, /playwright:\n\s+mode: cli\n\s+version: "0\.1\.18"/);
+  assert.match(source, /playwright:\n\s+version: "0\.1\.18"/);
   assert.match(source, /npm pack axe-core@4\.13\.0/);
   assert.match(source, /npm run docs:preview -- --host 127\.0\.0\.1 --port <port>/);
   assert.match(source, /Do not use a generic flat static server rooted at `dist\/` as the primary preview mechanism/);
@@ -2039,6 +2043,25 @@ test("SelfCare code improvement preserves its focused dashboard component missio
   assert.equal(source.split(liveGuard).length - 1, 3);
 });
 
+test("SelfCare view reuse worker generalizes one Dashboard Language view", () => {
+  const source = workflow("self-care-dashboard-language-refactor.md");
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
+
+  assert.match(source, /^name: "SelfCare \/ View Reuse"$/m);
+  assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: dashboard-language-refactor/);
+  assert.match(source, /safe_output_mode` is `live`/);
+  assert.match(source, /branches on a built-in page identity, route, view ID, or one-off element name/);
+  assert.match(source, /dashboard\/site\/dashboard\.json/);
+  assert.match(source, /docs\/dashboard-language-specification\.md/);
+  assert.match(source, /dashboard\/site\/src\/specification\.js/);
+  assert.match(source, /at least one additional existing or test-fixture composition/);
+  assert.match(source, /Update both `dashboard\/aw\.yml` and root `aw\.yml` only when a new runtime file must be packaged/);
+  assert.match(source, /npm --prefix dashboard\/site run validate:corpus/);
+  assert.match(source, /labels: \[self-care, self-care:dashboard-language-refactor\]/);
+  assert.match(source, /title-prefix: "\[self-care:dashboard-language-refactor\] "/);
+  assert.equal(source.split(liveGuard).length - 1, 2);
+});
+
 test("dashboard authoring corpus workflow generates only validated training examples", () => {
   const source = workflow("dashboard-authoring-corpus.md");
   const dashboardIrSkill = readFileSync(
@@ -2108,8 +2131,12 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
   try {
     cpSync(join(root, ".github"), join(temporaryRoot, ".github"), { recursive: true });
+    cpSync(join(root, "AGENTS.md"), join(temporaryRoot, "AGENTS.md"));
     cpSync(join(root, "aw.yml"), join(temporaryRoot, "aw.yml"));
     cpSync(join(root, "README.md"), join(temporaryRoot, "README.md"));
+    for (const packageDirectory of ["activity", "ambient-context", "aw-maintenance", "dashboard", "dependabot", "optimization"]) {
+      cpSync(join(root, packageDirectory), join(temporaryRoot, packageDirectory), { recursive: true });
+    }
     execFileSync("git", ["init", "--quiet"], { cwd: temporaryRoot });
 
     execFileSync("gh", [
@@ -2149,6 +2176,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "self-care-accessibility-checker.lock.yml",
       "self-care-code-improvement.lock.yml",
       "self-care-data-acquisition-audit.lock.yml",
+      "self-care-dashboard-language-refactor.lock.yml",
       "self-care-dashboard-review.lock.yml",
       "self-care-docs-build-time-investigator.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
@@ -2252,6 +2280,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
       ["self-care-data-acquisition-audit.lock.yml", ["self-care", "data-acquisition-audit"]],
+      ["self-care-dashboard-language-refactor.lock.yml", ["self-care", "dashboard-language-refactor"]],
       ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
       ["self-care-docs-build-time-investigator.lock.yml", ["self-care", "docs-build-time-investigator"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
@@ -2449,18 +2478,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     ? { source: entry, destination: entry, kind: "action-workflow" }
     : { ...entry, source: `${sourcePrefix}${entry.source}` };
 
-  assert.deepEqual(
-    rootPackage.includes
-      .filter((entry) => (typeof entry === "string" ? entry : entry.destination)?.startsWith(".github/workflows/dashboard"))
-      .map((entry) => normalizeInclude(entry)),
-    dashboardPackage.includes.map((entry) => normalizeInclude(entry, typeof entry === "string" ? "" : "dashboard/")),
-  );
-  assert.deepEqual(
-    rootPackage.resources.filter((entry) => entry.source.startsWith("dashboard/")),
-    dashboardPackage.resources.map((entry) => ({ ...entry, source: `dashboard/${entry.source}` })),
-  );
+  assert.ok(rootPackage.includes.includes("dashboard/aw.yml"));
   assert.match(dashboardManifest, /name: CAO Dashboard/);
-  assert.match(rootManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
+  assert.match(rootManifest, /^\s+- dashboard\/aw\.yml$/m);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
@@ -2520,7 +2540,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(activityWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(activityWorkflow, /Save operational-value observation cache/);
-  assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.2/);
+  assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.4/);
   assert.match(deployedWorkflows, /const \{ staleRegistration, \.\.\.capabilities \} = await workflowCapabilities/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
   assert.match(deployedWorkflows, /shared\\\/\(\?:cao\|control\)\\\.md/);
@@ -2579,12 +2599,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
     { source: "version.mjs", destination: ".github/aw/activity/version.mjs" },
   ]);
-  assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
-  assert.ok(rootManifest.includes.includes(".github/workflows/cao-maintenance.yml"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/failure-evidence.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/version.mjs"));
+  assert.ok(rootManifest.includes.includes("activity/aw.yml"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.doesNotMatch(workflow, /workflow_call:/);
   assert.match(workflow, /workflow_dispatch:[\s\S]*?request-id:/);
@@ -2688,6 +2703,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
           "self-care-accessibility-checker",
           "self-care-code-improvement",
           "self-care-data-acquisition-audit",
+          "self-care-dashboard-language-refactor",
           "self-care-dashboard-review",
           "self-care-docs-build-time-investigator",
           "self-care-primer-brand-checker",

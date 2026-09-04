@@ -19,7 +19,7 @@ const CHART_SERIES_COLOR_COUNT = 12;
  */
 
 /**
- * @typedef {{ x: string, y: number, color: string | null }} ChartPointLike
+ * @typedef {{ x: string, y: number, color: string | null, highlighted?: boolean | null }} ChartPointLike
  */
 
 /**
@@ -109,7 +109,7 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
 /**
  * Renders a declaratively selected chart using normalized dashboard points.
  * @param {string} chartType
- * @param {Array<{ x: string, y: number, color: string | null }>} points
+ * @param {ChartPointLike[]} points
  * @param {ChartSeriesDescriptor[]} series
  * @param {{ entries: Array<[string, number]>, total: number } | null} [pieSummary]
  * @param {string} [totalLabel]
@@ -261,6 +261,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 
   if (chartType === 'line') {
     const groupedSeries = groupChartSeries(points);
+    const hasWindowHighlight = points.some((point) => typeof point.highlighted === 'boolean');
     const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
     const xValues = [...new Set(points.map((point) => point.x))];
     const values = points.map((point) => toNumber(point.y));
@@ -268,12 +269,30 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const maximum = Math.max(...finiteValues, 1);
     const pointRadius = lineChartPointRadius(points.length);
     const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
+    const highlightedIndexes = xValues
+      .map((value, index) => points.some((point) => point.x === value && point.highlighted) ? index : -1)
+      .filter((index) => index >= 0);
+    const xStep = xValues.length > 1 ? 100 / (xValues.length - 1) : 100;
+    const windowBand = highlightedIndexes.length > 0
+      ? {
+        start: Math.max(0, (Math.min(...highlightedIndexes) - 0.5) * xStep),
+        end: Math.min(100, (Math.max(...highlightedIndexes) + 0.5) * xStep)
+      }
+      : null;
     return h(
       'div',
       { className: 'chart-widget line-chart-widget', 'data-chart-widget': 'line' },
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
+        windowBand ? h('rect', {
+          className: 'line-chart-window-band',
+          x: windowBand.start,
+          y: 0,
+          width: Math.max(windowBand.end - windowBand.start, 1),
+          height: 38,
+          'aria-hidden': 'true'
+        }) : null,
         ...gridLines,
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...groupedSeries.flatMap(([seriesName, seriesPoints], seriesIndex) => {
@@ -286,26 +305,36 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           });
           return [
             h('polyline', {
-              className: `line-chart-series ${seriesClassName}`,
+              className: `line-chart-series ${seriesClassName}${hasWindowHighlight ? ' line-chart-context' : ''}`,
               style: `--chart-entry-index: ${seriesIndex}`,
               pathLength: 1,
               points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
             }),
+            ...(hasWindowHighlight && coordinates.filter(({ point }) => point.highlighted).length > 1
+              ? [h('polyline', {
+                className: `line-chart-series line-chart-current ${seriesClassName}`,
+                style: `--chart-entry-index: ${seriesIndex}`,
+                pathLength: 1,
+                points: coordinates.filter(({ point }) => point.highlighted).map(({ x, y }) => `${x},${y}`).join(' '),
+                fill: 'none',
+                'data-chart-window': 'current'
+              })]
+              : []),
             ...coordinates.map(({ point, x, y }, pointIndex) => h('g', {
-              className: 'chart-point',
+              className: `chart-point${point.highlighted === false ? ' chart-point-context' : point.highlighted ? ' chart-point-current' : ''}`,
               style: `--chart-entry-index: ${pointIndex}`,
               tabIndex: 0,
               role: 'img',
-              'aria-label': chartPointLabel(point, unit)
+              'aria-label': `${chartPointLabel(point, unit)}${point.highlighted === false ? ' (context)' : point.highlighted ? ' (selected window)' : ''}`
             },
             h('title', null, chartPointLabel(point, unit)),
             h('circle', {
               className: `line-chart-point ${seriesClassName}`,
               cx: x,
               cy: y,
-              r: pointRadius
+              r: hasWindowHighlight ? 0.65 : pointRadius
             }),
             h(
               'g',
@@ -320,6 +349,11 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           ];
         })
       ),
+      hasWindowHighlight
+        ? h('div', { className: 'chart-window-key', 'aria-label': 'Chart window key' },
+          h('span', { className: 'chart-window-context' }, 'Previous context'),
+          h('strong', null, 'Selected window'))
+        : null,
       xValues.length > 0
         ? h(
           'div',
