@@ -42,6 +42,11 @@
         "symbol": "grade",
         "significant": 0.01
       },
+      "percent": {
+        "name": "Percent",
+        "symbol": "%",
+        "significant": 0.1
+      },
       "seconds": {
         "name": "Seconds",
         "symbol": "s",
@@ -300,8 +305,8 @@
         "sections": [
           {
             "id": "github-api-capacity",
-            "title": "Rate-limit capacity",
-            "description": "Primary rate-limit resources observed with the exact credential used by each operation.",
+            "title": "Rate-limit capacity by API type",
+            "description": "Every reported API rate-limit bucket is normalized to remaining capacity so resources with different limits can be compared.",
             "layout": "full",
             "views": [
               "github-api-remaining-trend",
@@ -312,8 +317,8 @@
         "views": [
           {
             "id": "github-api-remaining-trend",
-            "title": "Remaining requests",
-            "description": "Remaining request capacity before and after each instrumented operation.",
+            "title": "Remaining capacity by API type",
+            "description": "Percentage of each API type's limit remaining before and after every instrumented operation.",
             "data": {
               "source": "github-api-rate-limits"
             },
@@ -328,13 +333,15 @@
                 "title": "Observed"
               },
               "y": {
-                "field": "remaining",
+                "field": "remaining-percent",
                 "type": "quantitative",
-                "title": "Requests remaining"
+                "title": "Remaining capacity",
+                "unit": "percent"
               },
               "color": {
                 "field": "resource",
-                "type": "nominal"
+                "type": "nominal",
+                "title": "API type"
               }
             }
           },
@@ -368,12 +375,23 @@
                 {
                   "field": "resource",
                   "type": "nominal",
-                  "title": "Resource"
+                  "title": "API type"
+                },
+                {
+                  "field": "remaining-percent",
+                  "type": "quantitative",
+                  "title": "Remaining",
+                  "unit": "percent"
                 },
                 {
                   "field": "remaining",
                   "type": "quantitative",
-                  "title": "Remaining"
+                  "title": "Requests remaining"
+                },
+                {
+                  "field": "used",
+                  "type": "quantitative",
+                  "title": "Requests used"
                 },
                 {
                   "field": "limit",

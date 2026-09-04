@@ -7,8 +7,8 @@ const dashboard = JSON.parse(readFileSync(`${process.cwd()}/dashboard.json`, 'ut
 const metadata = {
   'source-id': 'github-api-fixture',
   'source-kind': 'fixture',
-  'as-of': '2026-09-04T12:00:00Z',
-  'retrieved-at': '2026-09-04T12:00:00Z',
+  'as-of': '2026-09-04T13:00:00Z',
+  'retrieved-at': '2026-09-04T13:00:00Z',
   completeness: /** @type {'complete'} */ ('complete'),
   freshness: /** @type {'fresh'} */ ('fresh'),
   availability: /** @type {'available'} */ ('available')
@@ -29,7 +29,23 @@ describe('GitHub API capacity view', () => {
             resource: 'core',
             remaining: 4875,
             limit: 5000,
+            used: 125,
+            'remaining-percent': 97.5,
             'reset-at': '2026-09-04T13:00:00Z',
+            'token-type': 'app',
+            'cache-hydrated': true,
+            'cache-entries': 7,
+            'cache-folders': 1
+          }, {
+            'observed-at': '2026-09-04T12:00:00Z',
+            operation: 'refresh-activity',
+            phase: 'after',
+            resource: 'search',
+            remaining: 3,
+            limit: 30,
+            used: 27,
+            'remaining-percent': 10,
+            'reset-at': '2026-09-04T12:01:00Z',
             'token-type': 'app',
             'cache-hydrated': true,
             'cache-entries': 7,
@@ -41,7 +57,23 @@ describe('GitHub API capacity view', () => {
             resource: 'core',
             remaining: 4900,
             limit: 5000,
+            used: 100,
+            'remaining-percent': 98,
             'reset-at': '2026-09-04T13:00:00Z',
+            'token-type': 'app',
+            'cache-hydrated': true,
+            'cache-entries': 5,
+            'cache-folders': 1
+          }, {
+            'observed-at': '2026-09-04T11:00:00Z',
+            operation: 'refresh-activity',
+            phase: 'before',
+            resource: 'search',
+            remaining: 30,
+            limit: 30,
+            used: 0,
+            'remaining-percent': 100,
+            'reset-at': '2026-09-04T12:01:00Z',
             'token-type': 'app',
             'cache-hydrated': true,
             'cache-entries': 5,
@@ -57,14 +89,29 @@ describe('GitHub API capacity view', () => {
 
     expect(link).not.toBeNull();
     expect(page).not.toBeNull();
-    expect(dashboard.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'github-api')).toMatchObject({
+    const apiPage = dashboard.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'github-api');
+    expect(apiPage).toMatchObject({
       kind: 'custom',
-      icon: 'meter',
-      views: expect.arrayContaining([
-        expect.objectContaining({ id: 'github-api-remaining-trend', chart: 'line' }),
-        expect.objectContaining({ id: 'github-api-observations', mark: 'table' })
-      ])
+      icon: 'meter'
     });
+    const trend = apiPage?.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-remaining-trend');
+    const observations = apiPage?.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-observations');
+    expect(trend).toMatchObject({
+      chart: 'line',
+      encoding: {
+        y: expect.objectContaining({ field: 'remaining-percent', unit: 'percent' }),
+        color: expect.objectContaining({ field: 'resource' })
+      }
+    });
+    expect(observations).toMatchObject({ mark: 'table' });
+    expect(observations?.encoding.columns).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'remaining-percent', unit: 'percent' }),
+      expect.objectContaining({ field: 'used' })
+    ]));
     expect(page?.textContent).toContain('API and cache observations');
+    expect(page?.textContent).toContain('API type');
+    expect(page?.textContent).toContain('Remaining');
+    expect(page?.textContent).toContain('97.5 %');
+    expect(page?.textContent).toContain('10.0 %');
   });
 });
