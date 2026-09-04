@@ -212,7 +212,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend-pie small { color: var(--muted); }
 .chart-axis { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
 .line-chart-widget .chart-axis { width: 100%; }
-.histogram-chart-widget { grid-template-rows: minmax(0, 1fr) auto; align-content: center; padding: 16px 18px 12px; background: linear-gradient(180deg, var(--canvas) 0%, var(--canvas-subtle) 100%); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--fg) 4%, transparent); }
+.histogram-chart-widget { grid-template-rows: minmax(0, 1fr) auto; align-content: center; padding: 16px 18px 12px; background: var(--canvas-subtle); border-top: 1px solid var(--border-muted); }
 .histogram-chart-widget svg, .histogram-chart-widget .chart-axis { width: min(100%, 420px); }
 .histogram-chart-widget .chart-axis { margin-top: 0; padding-top: 6px; border-top: 1px solid var(--border-muted); }
 .chart-series-1 { stroke: var(--success); }
