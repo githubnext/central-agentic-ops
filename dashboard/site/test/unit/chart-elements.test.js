@@ -89,6 +89,70 @@ describe('chart element helpers', () => {
     expect(singleCategoryPie.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
   });
 
+  it('renders categorical workflow runs as accessible swimlanes without connecting marks', () => {
+    const points = [
+      {
+        x: '2026-08-28T08:00:00Z',
+        y: Number.NaN,
+        category: 'action-required',
+        color: 'action-required',
+        source: { run: '1840', 'started-at': '2026-08-28T08:00:00Z', 'ended-at': '2026-08-28T08:03:18Z' }
+      },
+      {
+        x: '2026-08-29T12:48:37Z',
+        y: Number.NaN,
+        category: 'failure',
+        color: 'failure',
+        source: { run: '1842', 'started-at': '2026-08-29T12:48:37Z', 'ended-at': '2026-08-29T12:51:55Z', branch: 'main' }
+      },
+      { x: '2026-08-30T08:00:00Z', y: Number.NaN, category: 'cancelled', color: 'cancelled', source: {} },
+      { x: '2026-08-30T12:00:00Z', y: Number.NaN, category: 'skipped', color: 'skipped', source: {} },
+      { x: '2026-08-31T08:00:00Z', y: Number.NaN, category: 'success', color: 'success', source: {} }
+    ];
+    const chart = renderChartWidget(
+      'swimlane',
+      points,
+      listChartSeries(points),
+      null,
+      'Total',
+      null,
+      { start: '2026-08-28T00:00:00Z', end: '2026-09-01T00:00:00Z' }
+    );
+
+    expect(chart.getAttribute('data-chart-widget')).toBe('swimlane');
+    expect(chart.querySelectorAll('.swimlane-label')).toHaveLength(5);
+    expect([...chart.querySelectorAll('.swimlane-label')].map((label) => label.textContent)).toEqual([
+      'Action required',
+      'Failure',
+      'Cancelled',
+      'Skipped',
+      'Success'
+    ]);
+    expect(chart.querySelectorAll('.swimlane-mark')).toHaveLength(5);
+    expect(chart.querySelector('polyline')).toBeNull();
+    expect(chart.querySelector('.swimlane-summary')?.textContent).toContain('5 runs');
+    expect(chart.querySelector('.swimlane-summary')?.textContent).toContain('20.0% success');
+    expect(chart.querySelector('.swimlane-mark-failure')?.getAttribute('aria-label')).toContain('Conclusion: failure');
+    expect(chart.querySelector('.swimlane-mark-failure')?.getAttribute('aria-label')).toContain('Run #1842');
+    expect(chart.querySelector('.swimlane-mark-failure')?.getAttribute('aria-label')).toContain('Branch: main');
+    expect(chart.querySelector('.swimlane-mark-failure')?.getAttribute('aria-label')).toContain('Duration: 3m 18s');
+    expect(chart.querySelector('[data-chart-axis="swimlane"]')).toBeNull();
+    expect(chart.textContent).toContain('Aug 28');
+  });
+
+  it('renders one swimlane observation without applying the multi-point chart empty state', () => {
+    const chart = renderChartWidget('swimlane', [{
+      x: '2026-08-31T12:48:37Z',
+      y: Number.NaN,
+      category: 'success',
+      color: 'success',
+      source: { run: '1842' }
+    }], []);
+
+    expect(chart.querySelectorAll('.swimlane-mark')).toHaveLength(1);
+    expect(chart.querySelector('[role="status"]')).toBeNull();
+  });
+
   it('DLS-VIEW-005 DLS-VIEW-006 DLS-VIEW-007 renders JSON-selected chart marks through one generic helper', () => {
     const points = [
       { x: '2026-08-29', y: 3, color: 'success' },

@@ -222,6 +222,26 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-widget .chart-series-4 { stroke: var(--accent); }
 .chart-widget .chart-series-5 { stroke: var(--muted); }
 .chart-widget .chart-series-6 { stroke: var(--purple); }
+.swimlane-chart-widget { display: block; min-height: 0; padding: 14px 16px 10px; }
+.swimlane-empty-state { min-height: 180px; display: grid; place-content: center; text-align: center; }
+.swimlane-empty-state p { margin: 4px 0 0; color: var(--muted); }
+.swimlane-chart-widget svg { width: 100%; max-height: 300px; overflow: visible; }
+.swimlane-summary { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 8px; padding: 0; color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; list-style: none; }
+.swimlane-summary li:first-child { color: var(--fg); font-weight: 600; }
+.swimlane-label, .swimlane-time-label { fill: var(--muted); font-size: 2.4px; }
+.swimlane-label { font-weight: 600; }
+.swimlane-separator { stroke: var(--border-muted); stroke-width: .45; }
+.swimlane-axis, .swimlane-tick { stroke: var(--border); stroke-width: .55; }
+.swimlane-hit-target { fill: transparent; }
+.swimlane-run-mark { stroke-width: 2.5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.swimlane-mark-action-required .swimlane-run-mark { stroke: var(--success); }
+.swimlane-mark-failure .swimlane-run-mark { stroke: var(--danger); }
+.swimlane-mark-cancelled .swimlane-run-mark { stroke: var(--attention); }
+.swimlane-mark-skipped .swimlane-run-mark { stroke: var(--accent); }
+.swimlane-mark-success .swimlane-run-mark { stroke: var(--muted); }
+.swimlane-mark:hover .swimlane-run-mark, .swimlane-mark:focus-visible .swimlane-run-mark { filter: brightness(1.2); stroke-width: 3.5; }
+.swimlane-tooltip text { font-size: 2.25px; }
+.swimlane-mark:focus-visible { outline: none; }
 .bar-chart-bar.chart-series-1 { fill: var(--success); }
 .bar-chart-bar.chart-series-2 { fill: var(--attention); }
 .bar-chart-bar.chart-series-3 { fill: var(--danger); }

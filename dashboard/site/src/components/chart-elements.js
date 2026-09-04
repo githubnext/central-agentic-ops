@@ -12,13 +12,29 @@ import { renderEmptyMessage } from './ui-primitives.js';
 const MAX_LINE_POINT_RADIUS = 2.5;
 const MIN_LINE_POINT_RADIUS = 0.5;
 const MIN_RADIUS_POINT_COUNT = 100;
+const SWIMLANE_DEFINITIONS = [
+  ['action-required', 'Action required'],
+  ['failure', 'Failure'],
+  ['cancelled', 'Cancelled'],
+  ['skipped', 'Skipped'],
+  ['success', 'Success']
+];
+const SWIMLANE_FAILURES = new Set(['failure', 'startup-failure', 'stale', 'timed-out']);
 
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
  */
 
 /**
- * @typedef {{ x: string, y: number, color: string | null }} ChartPointLike
+ * @typedef {{
+ *   x: string,
+ *   y: number,
+ *   color: string | null,
+ *   key?: string,
+ *   category?: string,
+ *   link?: { href: string, label: string } | null,
+ *   source?: Record<string, unknown>
+ * }} ChartPointLike
  */
 
 /**
@@ -108,17 +124,18 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
 /**
  * Renders a declaratively selected chart using normalized dashboard points.
  * @param {string} chartType
- * @param {Array<{ x: string, y: number, color: string | null }>} points
+ * @param {ChartPointLike[]} points
  * @param {ChartSeriesDescriptor[]} series
  * @param {{ entries: Array<[string, number]>, total: number } | null} [pieSummary]
  * @param {string} [totalLabel]
  * @param {{ name: string, symbol: string, significant: number } | null} [unit]
+ * @param {Record<string, unknown> | null} [timeRange]
  * @returns {HTMLElement}
  */
-export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null) {
+export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null, timeRange = null) {
   const pieData = chartType === 'pie' ? pieSummary ?? pieChartEntries(points) : null;
   const entryCount = pieData ? pieData.entries.length : points.length;
-  if (entryCount < 2) {
+  if (entryCount < 2 && chartType !== 'swimlane') {
     return h(
       'div',
       { className: `chart-widget ${chartType}-chart-widget`, 'data-chart-widget': chartType },
@@ -319,6 +336,10 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     );
   }
 
+  if (chartType === 'swimlane') {
+    return renderSwimlaneChart(points, timeRange);
+  }
+
   const finiteValues = points.map((point) => toNumber(point.y)).filter(Number.isFinite);
   const maximum = Math.max(...finiteValues, 1);
   const barWidth = points.length > 0 ? Math.min(14, 80 / points.length) : 14;
@@ -346,6 +367,185 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       })
     )
   );
+}
+
+/**
+ * @param {Array<Record<string, any>>} points
+ * @param {Record<string, unknown> | null} timeRange
+ * @returns {HTMLElement}
+ */
+function renderSwimlaneChart(points, timeRange) {
+  const plotted = points.flatMap((point) => {
+    const timestamp = Date.parse(String(point.x));
+    const lane = swimlaneConclusion(point.category ?? point.color);
+    return Number.isFinite(timestamp) && lane
+      ? [{ ...point, lane, timestamp }]
+      : [];
+  });
+  const observedTimes = plotted.map((point) => point.timestamp);
+  let start = Date.parse(String(timeRange?.start ?? ''));
+  let end = Date.parse(String(timeRange?.end ?? ''));
+  if (!Number.isFinite(start)) start = Math.min(...observedTimes);
+  if (!Number.isFinite(end)) end = Math.max(...observedTimes);
+  if (start === end) {
+    start -= 43_200_000;
+    end += 43_200_000;
+  }
+  const span = Math.max(end - start, 1);
+  const counts = Object.fromEntries(SWIMLANE_DEFINITIONS.map(([lane]) => [lane, 0]));
+  for (const point of plotted) counts[point.lane] += 1;
+  const successes = counts.success;
+  const summary = [
+    `${plotted.length.toLocaleString('en')} runs`,
+    `${plotted.length > 0 ? ((successes / plotted.length) * 100).toFixed(1) : '0.0'}% success`,
+    `${counts.failure.toLocaleString('en')} failed`,
+    `${counts.skipped.toLocaleString('en')} skipped`,
+    `${counts['action-required'].toLocaleString('en')} action required`
+  ];
+  const ticks = Array.from({ length: 4 }, (_, index) => start + ((span * index) / 3));
+  /** @param {number} timestamp */
+  const xCoordinate = (timestamp) => 25 + (Math.min(1, Math.max(0, (timestamp - start) / span)) * 92);
+
+  return h(
+    'div',
+    { className: 'chart-widget swimlane-chart-widget', 'data-chart-widget': 'swimlane' },
+    h(
+      'ul',
+      { className: 'swimlane-summary', 'aria-label': 'Run summary' },
+      summary.map((value) => h('li', null, value))
+    ),
+    h(
+      'svg',
+      {
+        viewBox: '0 0 120 62',
+        role: 'img',
+        'aria-label': `Categorical swimlane timeline with ${plotted.length} workflow runs`
+      },
+      ...SWIMLANE_DEFINITIONS.flatMap(([lane, label], laneIndex) => {
+        const y = 7 + (laneIndex * 10);
+        return [
+          h('text', { className: 'swimlane-label', x: 23, y: y + 1, 'text-anchor': 'end' }, label),
+          h('line', { className: 'swimlane-separator', x1: 25, y1: y, x2: 117, y2: y }),
+          ...plotted
+            .filter((point) => point.lane === lane)
+            .map((point) => renderSwimlaneMark(point, xCoordinate(point.timestamp), y))
+        ];
+      }),
+      h('line', { className: 'swimlane-axis', x1: 25, y1: 54, x2: 117, y2: 54 }),
+      ...ticks.map((instant, index) => {
+        const x = xCoordinate(instant);
+        return [
+          h('line', { className: 'swimlane-tick', x1: x, y1: 54, x2: x, y2: 56 }),
+          h('text', {
+            className: 'swimlane-time-label',
+            x,
+            y: 61,
+            'text-anchor': index === 0 ? 'start' : index === ticks.length - 1 ? 'end' : 'middle'
+          }, formatSwimlaneAxisTime(instant, span))
+        ];
+      })
+    )
+  );
+}
+
+/** @param {Record<string, any>} point @param {number} x @param {number} y */
+function renderSwimlaneMark(point, x, y) {
+  const lines = swimlaneTooltipLines(point);
+  const tooltipWidth = 48;
+  const tooltipHeight = 3 + (lines.length * 4);
+  const tooltipX = Math.min(Math.max(x - (tooltipWidth / 2), 25), 117 - tooltipWidth);
+  const tooltipY = y < 27 ? y + 3 : y - tooltipHeight - 3;
+  const label = lines.join(', ');
+  const mark = h(
+    'g',
+    {
+      className: `chart-point swimlane-mark swimlane-mark-${point.lane}`,
+      tabIndex: 0,
+      role: 'img',
+      'aria-label': label,
+      'data-swimlane-lane': point.lane
+    },
+    h('title', null, lines.join('\n')),
+    h('rect', { className: 'swimlane-hit-target', x: x - 1.75, y: y - 3.5, width: 3.5, height: 7 }),
+    h('line', { className: 'swimlane-run-mark', x1: x, y1: y - 2.25, x2: x, y2: y + 2.25 }),
+    h(
+      'g',
+      {
+        className: 'point-tooltip swimlane-tooltip',
+        transform: `translate(${tooltipX} ${tooltipY})`,
+        'aria-hidden': 'true'
+      },
+      h('rect', { width: tooltipWidth, height: tooltipHeight, rx: 1.5 }),
+      h('text', { x: 2.5, y: 4 }, lines.map((line, index) => h(
+        'tspan',
+        { x: 2.5, dy: index === 0 ? 0 : 4 },
+        line
+      )))
+    )
+  );
+  const bringTooltipToFront = () => mark.parentNode?.append(mark);
+  mark.addEventListener('pointerenter', bringTooltipToFront);
+  mark.addEventListener('focus', bringTooltipToFront);
+  return mark;
+}
+
+/** @param {Record<string, any>} point @returns {string[]} */
+function swimlaneTooltipLines(point) {
+  const source = point.source ?? {};
+  const lines = [
+    formatSwimlaneTooltipTime(point.timestamp),
+    `Conclusion: ${point.lane}`
+  ];
+  const run = String(source.run ?? '').trim();
+  const branch = String(source.branch ?? source.ref ?? source['head-branch'] ?? '').trim();
+  const started = Date.parse(String(source['started-at'] ?? ''));
+  const ended = Date.parse(String(source['ended-at'] ?? ''));
+  if (run) lines.push(`Run #${run}`);
+  if (branch) lines.push(`Branch: ${branch}`);
+  if (Number.isFinite(started) && Number.isFinite(ended) && ended >= started) {
+    lines.push(`Duration: ${formatSwimlaneDuration(ended - started)}`);
+  }
+  return lines;
+}
+
+/** @param {unknown} value @returns {string | null} */
+function swimlaneConclusion(value) {
+  const conclusion = String(value ?? '').toLowerCase();
+  if (SWIMLANE_FAILURES.has(conclusion)) return 'failure';
+  return SWIMLANE_DEFINITIONS.some(([lane]) => lane === conclusion) ? conclusion : null;
+}
+
+/** @param {number} instant @param {number} span */
+function formatSwimlaneAxisTime(instant, span) {
+  return new Intl.DateTimeFormat('en', span <= 86_400_000
+    ? { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }
+    : { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(instant));
+}
+
+/** @param {number} instant */
+function formatSwimlaneTooltipTime(instant) {
+  const parts = new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'
+  }).formatToParts(new Date(instant));
+  /** @param {string} type */
+  const value = (type) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${value('month')} ${value('day')}, ${value('year')} · ${value('hour')}:${value('minute')}:${value('second')}`;
+}
+
+/** @param {number} milliseconds */
+function formatSwimlaneDuration(milliseconds) {
+  const seconds = Math.round(milliseconds / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  return [hours ? `${hours}h` : '', minutes ? `${minutes}m` : '', `${remainder}s`].filter(Boolean).join(' ');
 }
 
 /**

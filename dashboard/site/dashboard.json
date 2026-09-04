@@ -1179,10 +1179,7 @@
             "description": "Daily conclusions show this workflow's execution health at a glance.",
             "data": {
               "source": "workflow-runs",
-              "route-field": "workflow-route",
-              "time": {
-                "range": "30d"
-              }
+              "route-field": "workflow-route"
             },
             "mark": "chart",
             "chart": "line",
@@ -1388,21 +1385,25 @@
               }
             },
             "mark": "chart",
-            "chart": "line",
+            "chart": "swimlane",
             "layout": "full",
             "encoding": {
               "x": {
                 "field": "started-at",
                 "type": "temporal",
-                "time-unit": "day"
+                "title": "Started"
               },
               "y": {
-                "field": "run",
-                "type": "quantitative",
-                "aggregate": "count"
+                "field": "run-conclusion",
+                "type": "ordinal",
+                "title": "Conclusion"
               },
               "color": {
                 "field": "run-conclusion",
+                "type": "nominal"
+              },
+              "href": {
+                "field": "run-link",
                 "type": "nominal"
               }
             }
@@ -2073,10 +2074,7 @@
               "title": "Workflow run health trend",
               "description": "Daily conclusions show whether authored workflows are operating reliably.",
               "data": {
-                "source": "runs",
-                "time": {
-                  "range": "30d"
-                }
+                "source": "runs"
               },
               "mark": "chart",
               "chart": "line",
@@ -2400,21 +2398,25 @@
               }
             },
             "mark": "chart",
-            "chart": "line",
+            "chart": "swimlane",
             "layout": "full",
             "encoding": {
               "x": {
                 "field": "started-at",
                 "type": "temporal",
-                "time-unit": "day"
+                "title": "Started"
               },
               "y": {
-                "field": "run",
-                "type": "quantitative",
-                "aggregate": "count"
+                "field": "run-conclusion",
+                "type": "ordinal",
+                "title": "Conclusion"
               },
               "color": {
                 "field": "run-conclusion",
+                "type": "nominal"
+              },
+              "href": {
+                "field": "run-link",
                 "type": "nominal"
               }
             }
