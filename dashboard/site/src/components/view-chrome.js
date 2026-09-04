@@ -36,7 +36,7 @@ export function renderPageSection(pageId, title, content, headingTag = 'h3', des
     },
     h(headingTag, { id: headingId }, title),
     ...content,
-    tooltip
+    ...(tooltip ? [tooltip] : [])
   );
 }
 
