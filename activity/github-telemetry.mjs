@@ -81,6 +81,7 @@ export async function recordGithubTelemetry({
     operation,
     outcome,
     tokenType,
+    credentialId: process.env.CAO_GITHUB_CREDENTIAL_ID || null,
     credentialRole: process.env.CAO_GITHUB_CREDENTIAL_ROLE || "read",
     repository: process.env.GITHUB_REPOSITORY || null,
     workflow: process.env.GITHUB_WORKFLOW || null,

@@ -117,6 +117,12 @@ export const FILTER_DIMENSION_VALUES = [
   'workflow-active',
   'admission-status',
   'resource',
+  'credential',
+  'operation',
+  'phase',
+  'risk-status',
+  'is-current',
+  'attribution-status',
   'run-status',
   'run-conclusion',
   'outcome-category',
@@ -275,6 +281,7 @@ export const SOURCE_VALUES = [
   'findings',
   'operational-values',
   'github-api-rate-limits',
+  'github-api-collector-health',
   'overview-status',
   'overview-vitals',
   'overview-execution-health',
@@ -339,7 +346,8 @@ export const SOURCE_FIELDS = {
   outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'run-conclusion', 'safe-output', 'outcome-number', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'outcome-warning', 'evidence-strength', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   findings: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   'operational-values': ['organization', 'repository', 'repository-name', 'workflow', 'run', 'run-attempt', 'observation-id', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'accepted-evidence-provenance', 'diagnostics', 'diagnostic-definitions', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
-  'github-api-rate-limits': ['observed-at', 'phase', 'operation', 'outcome', 'token-type', 'resource', 'limit', 'used', 'remaining', 'remaining-percent', 'reset-at', 'cache-hydrated', 'cache-bytes', 'cache-entries', 'cache-folders', 'rate-limit-error'],
+  'github-api-rate-limits': ['observation-id', 'operation-execution-id', 'observed-at', 'phase', 'operation', 'outcome', 'credential', 'credential-type', 'resource', 'bucket', 'history-series', 'limit', 'used', 'remaining', 'remaining-percent', 'reset-at', 'minutes-to-reset', 'consumed-since-previous', 'burn-rate-per-minute', 'projected-remaining-at-reset', 'projected-exhaustion-at', 'runway-ratio', 'risk-status', 'risk-order', 'is-current', 'attribution-status', 'operation-consumed'],
+  'github-api-collector-health': ['observed-at', 'operation-execution-id', 'phase', 'operation', 'outcome', 'credential', 'cache-hydrated', 'cache-bytes', 'cache-entries', 'cache-folders', 'rate-limit-error'],
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
   'readiness-activity': ['activity-hour', 'workflow-role', 'run-count'],
   'readiness-checks': ['check', 'readiness-state', 'detail'],
@@ -420,6 +428,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   outcomes: ['safe-output'],
   findings: ['finding'],
   'operational-values': ['operational-value-definition', 'operational-case', 'run'],
+  'github-api-rate-limits': ['observation-id'],
+  'github-api-collector-health': ['operation-execution-id', 'observed-at'],
   'repository-summary': ['label'],
   'repository-activity': ['repository'],
   'repository-detail-summary': ['repository'],
@@ -439,7 +449,9 @@ export const TEMPORAL_FIELD_NAMES = [
   'requested-evidence-at',
   'evidence-cutoff',
   'maturity-at',
-  'published-at'
+  'published-at',
+  'reset-at',
+  'projected-exhaustion-at'
 ];
 
 export const ADDITIVE_MEASURE_FIELDS = [
@@ -452,7 +464,20 @@ export const ADDITIVE_MEASURE_FIELDS = [
   'security-count'
 ];
 
-export const NON_ADDITIVE_MEASURE_FIELDS = ['value', 'operational-value'];
+export const NON_ADDITIVE_MEASURE_FIELDS = [
+  'value',
+  'operational-value',
+  'limit',
+  'used',
+  'remaining',
+  'remaining-percent',
+  'minutes-to-reset',
+  'consumed-since-previous',
+  'burn-rate-per-minute',
+  'projected-remaining-at-reset',
+  'runway-ratio',
+  'operation-consumed',
+];
 
 export const ERROR_CODES = {
   invalidYamlSyntax: 'DLS-E001',

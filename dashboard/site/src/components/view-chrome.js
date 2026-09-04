@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
-import { renderSectionHeading, renderTooltip } from './ui-primitives.js';
+import { formatUtcDateTime, renderSectionHeading, renderTooltip } from './ui-primitives.js';
 import { titleCase } from './count-formatters.js';
 
 /**
@@ -123,6 +123,12 @@ export function renderViewHeader(metadata) {
   return [h(
     'dl',
     { className: 'view-metadata view-metadata-summary', role: 'group', 'aria-label': 'Data status' },
+    h(
+      'div',
+      null,
+      h('dt', null, octicon('clock'), 'As of'),
+      h('dd', null, h('time', { dateTime: metadata['as-of'] }, formatUtcDateTime(metadata['as-of'])))
+    ),
     h(
       'div',
       null,

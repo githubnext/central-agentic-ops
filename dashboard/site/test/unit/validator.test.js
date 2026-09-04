@@ -3330,7 +3330,7 @@ dashboard:
     }
   });
 
-  it('DLS-AGG-009 DLS-AGG-010 rejects ambiguous aggregate output identifiers and invalid order-by references with DLS-E010', () => {
+  it('DLS-AGG-009 DLS-AGG-010 rejects ambiguous aggregate outputs and order fields absent from the output grain', () => {
     const ambiguousOutput = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: ambiguous-output-id
@@ -3389,7 +3389,6 @@ dashboard:
     if (!invalidOrderBy.ok) {
       expect(invalidOrderBy.errors).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.order-by[0].field' }),
           expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.order-by[1].field' })
         ])
       );
