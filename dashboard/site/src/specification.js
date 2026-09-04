@@ -457,6 +457,7 @@ export const ERROR_CODES = {
   missingOrInvalidRequiredField: 'DLS-E003',
   unknownOrDuplicateKey: 'DLS-E004',
   nonCanonicalVocabularyOrIdentifier: 'DLS-E005',
+  incompatibleMarkChannelTypeOrTimeUnit: 'DLS-E007',
   invalidLinkReference: 'DLS-E009',
   invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010',
   invalidEntityRelationshipOrSourceGrain: 'DLS-E011',

@@ -2883,7 +2883,7 @@ dashboard:
     expect(nonElementIntent.ok).toBe(false);
     if (!nonElementIntent.ok) {
       expect(nonElementIntent.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E003',
+        code: 'DLS-E007',
         path: '$.dashboard.pages[0].views[0].intent'
       }));
     }
