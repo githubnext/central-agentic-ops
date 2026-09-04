@@ -895,6 +895,9 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
     .toBeLessThanOrEqual((cardBox?.x ?? 0) + (cardBox?.width ?? 0));
   expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
     .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
+  expect(await chart.locator('.pie-chart-segment').evaluateAll(
+    (segments) => segments.map((segment) => segment.getAttribute('pathLength'))
+  )).toEqual(['100', '100']);
 
   const firstMark = chart.locator('.pie-chart-mark').first();
   expect(await firstMark.evaluate((mark) => {
