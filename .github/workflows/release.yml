@@ -239,17 +239,21 @@ jobs:
                 .addLink('View release', release.html_url);
               await core.summary.write();
             } catch (error) {
-              const { data: currentRef } = await github.rest.git.getRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref,
-              });
-              if (currentRef.object.sha === targetSha) {
-                await github.rest.git.deleteRef({
+              try {
+                const { data: currentRef } = await github.rest.git.getRef({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   ref,
                 });
+                if (currentRef.object.sha === targetSha) {
+                  await github.rest.git.deleteRef({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref,
+                  });
+                }
+              } catch (cleanupError) {
+                core.warning(`Could not clean up ${releaseTag}: ${cleanupError.message}`);
               }
               throw error;
             }
