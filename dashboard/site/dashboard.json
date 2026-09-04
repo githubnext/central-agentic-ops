@@ -325,9 +325,9 @@
             "description": "Current capacity and reset-safe forecasts are kept separate for each credential and quota resource.",
             "layout": "full",
             "views": [
+              "github-api-remaining-trend",
               "github-api-remaining-capacity",
               "github-api-at-risk",
-              "github-api-remaining-trend",
               "github-api-health"
             ]
           },
@@ -345,6 +345,38 @@
           }
         ],
         "views": [
+          {
+            "id": "github-api-remaining-trend",
+            "title": "Quota history",
+            "description": "Remaining capacity over the selected UTC time range. Resource and credential series remain independent so reset sawtooths are not combined across credentials.",
+            "data": {
+              "source": "github-api-rate-limits"
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "hour",
+                "title": "Observed (UTC)"
+              },
+              "y": {
+                "field": "remaining-percent",
+                "type": "quantitative",
+                "title": "Remaining capacity",
+                "unit": "percent"
+              },
+              "color": {
+                "field": "history-series",
+                "type": "nominal",
+                "title": "Resource and credential"
+              }
+            }
+          },
           {
             "id": "github-api-remaining-capacity",
             "title": "Remaining capacity",
@@ -412,38 +444,6 @@
                 "type": "quantitative",
                 "aggregate": "count",
                 "title": "Critical or warning buckets"
-              }
-            }
-          },
-          {
-            "id": "github-api-remaining-trend",
-            "title": "Quota history",
-            "description": "Remaining capacity over the selected UTC time range. Resource and credential series remain independent so reset sawtooths are not combined across credentials.",
-            "data": {
-              "source": "github-api-rate-limits"
-            },
-            "mark": "chart",
-            "chart": "line",
-            "table": true,
-            "layout": "full",
-            "disclosure": "essential",
-            "encoding": {
-              "x": {
-                "field": "observed-at",
-                "type": "temporal",
-                "time-unit": "hour",
-                "title": "Observed (UTC)"
-              },
-              "y": {
-                "field": "remaining-percent",
-                "type": "quantitative",
-                "title": "Remaining capacity",
-                "unit": "percent"
-              },
-              "color": {
-                "field": "history-series",
-                "type": "nominal",
-                "title": "Resource and credential"
               }
             }
           },

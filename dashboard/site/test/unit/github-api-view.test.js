@@ -152,6 +152,11 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential')).toHaveLength(4);
     expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'supplemental')).toHaveLength(4);
     expect(apiPage.views[0]).toMatchObject({
+      id: 'github-api-remaining-trend',
+      chart: 'line',
+      table: true
+    });
+    expect(apiPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-remaining-capacity')).toMatchObject({
       id: 'github-api-remaining-capacity',
       chart: 'bar',
       table: true
