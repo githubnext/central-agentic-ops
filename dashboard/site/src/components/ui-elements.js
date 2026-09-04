@@ -11,8 +11,9 @@ import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
-import { renderWorkflowRuntime } from './workflow-runtime.js';
+import { renderWorkflowRuntime, renderWorkflowRuntimeBody } from './workflow-runtime.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
+import { renderWorkflowPage } from './workflow-page.js';
 
 /**
  * @typedef {{
@@ -43,12 +44,20 @@ const ELEMENT_RENDERERS = new Map([
   ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
   ['package-dispatches', (context) => renderPackageNavigation(context, 'dispatches')],
   ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
+  ['workflow-route', (context) => {
+    const variant = routeVariant(context);
+    return renderWorkflowPage(
+      context,
+      variant,
+      variant === 'insights' ? ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow) : undefined
+    );
+  }],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
 
 /**
  * @param {string} name
@@ -65,6 +74,15 @@ export function renderUiElement(name, context) {
  */
 export function elementHandlesEmptyRows(name) {
   return EMPTY_AWARE_ELEMENTS.has(name);
+}
+
+/** @param {ElementRenderContext} context */
+function routeVariant(context) {
+  return context.pageId === 'workflow-runs'
+    ? 'runs'
+    : context.pageId === 'workflow-runtime'
+      ? 'insights'
+      : 'reports';
 }
 
 /**
