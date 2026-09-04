@@ -22,7 +22,7 @@ export function previousIndexCanRetainRuns(previousIndex, windowStart, context) 
     || !Number.isFinite(generatedAt)
     || !Number.isFinite(previousWindowStart)
     || previousWindowStart > windowStart.getTime()) return false;
-  return JSON.stringify(previousIndex.allowedRepositories || []) === JSON.stringify(context.allowedRepositories);
+  return JSON.stringify(previousIndex.allowedRepositories || []) === JSON.stringify(context.allowedRepositories || []);
 }
 
 export function previousIndexIsReusable(previousIndex, windowStart, context) {

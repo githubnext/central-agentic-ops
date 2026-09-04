@@ -81,4 +81,12 @@ test("run snapshots from a different collection scope are not retained", () => {
     previousIndexCanRetainRuns(snapshot, new Date("2026-08-28T13:00:00Z"), context),
     false,
   );
+  assert.equal(
+    previousIndexCanRetainRuns(
+      previousIndex({ allowedRepositories: undefined }),
+      new Date("2026-08-28T13:00:00Z"),
+      { ...context, allowedRepositories: undefined },
+    ),
+    true,
+  );
 });
