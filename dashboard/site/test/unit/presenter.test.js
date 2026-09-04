@@ -562,19 +562,20 @@ describe('presenter built-in and custom pages', () => {
       (section) => section.label === 'Control plane'
     );
     expect(labels).toEqual(['Attention', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
-    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, false, false, false]);
+    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, true, false, false, false]);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.closest('.nav-section')?.textContent).toContain('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.closest('.nav-section')?.textContent).toContain('Investigate');
+    expect(rendered.querySelector('[data-nav-page-id="preview"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
     expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
     expect(controlPlaneNavigation?.pages).toEqual(expect.arrayContaining(['github-api']));
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
-      'Preview',
       'Runtime',
       'Performance',
       'Security',
       'Value',
       'Cost',
+      'Preview',
       'Readiness',
       'Data health',
       'GitHub API',
@@ -783,12 +784,12 @@ describe('presenter built-in and custom pages', () => {
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
-      'Preview',
       'Runtime',
       'Performance',
       'Security',
       'Value',
       'Cost',
+      'Preview',
       'Readiness',
       'Data health',
       'GitHub API',
@@ -949,7 +950,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelectorAll('.dashboard-horizon .tooltip-content time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00.000Z');
   });
 
-  it('renders the restored Security assurance view with a findings summary table', () => {
+  it('renders the Security assurance view without a findings summary table', () => {
     const metadata = {
       'source-id': 'security-fixture',
       'source-kind': 'fixture',
@@ -1028,10 +1029,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();
     expect(page?.querySelector('.layout-section-header > strong')?.textContent).toBe('4 signals');
     expect(page?.querySelector('[data-chart-widget="pie"]')).toBeNull();
-    const summaryRows = [...(page?.querySelector('.custom-table')?.querySelectorAll('tbody tr') ?? [])];
-    expect(summaryRows).toHaveLength(1);
-    expect(summaryRows[0]?.textContent).toContain('high');
-    expect(summaryRows[0]?.textContent).toContain('2');
+    expect(page?.textContent).not.toContain('Security findings summary');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Approval gates2');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Explicit warnings2');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Package integrity gaps1');

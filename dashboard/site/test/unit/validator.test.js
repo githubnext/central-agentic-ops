@@ -112,20 +112,14 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('defines the restored security assurance view with a findings summary table', () => {
+  it('defines the security assurance view without a findings summary table', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const security = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'security');
     expect(security.sections.map((/** @type {{ views: string[] }} */ section) => section.views)).toEqual([
-      ['security-findings-summary', 'security-summary', 'security-signals'],
+      ['security-summary', 'security-signals'],
       ['security-output-ledger']
     ]);
-    const summary = security.views.find((/** @type {{ id: string }} */ view) => view.id === 'security-findings-summary');
-    expect(summary).toMatchObject({ mark: 'table' });
-    expect(summary).not.toHaveProperty('chart');
-    expect(summary.encoding.columns).toEqual(expect.arrayContaining([
-      expect.objectContaining({ field: 'finding-severity' }),
-      expect.objectContaining({ field: 'finding', aggregate: 'count' })
-    ]));
+    expect(security.views).not.toContainEqual(expect.objectContaining({ id: 'security-findings-summary' }));
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 

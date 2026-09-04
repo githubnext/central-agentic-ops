@@ -228,7 +228,8 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .timeline-chart-axis span:last-child::before { right: 0; left: auto; }
 .histogram-chart-widget { grid-template-rows: minmax(0, 1fr) auto; align-content: center; padding: 16px 18px 12px; background: var(--canvas-subtle); border-top: 1px solid var(--border-muted); }
 .histogram-chart-widget svg, .histogram-chart-widget .chart-axis { width: min(100%, 420px); }
-.histogram-chart-widget .chart-axis { margin-top: 0; padding-top: 6px; border-top: 1px solid var(--border-muted); }
+.histogram-chart-widget .chart-axis { box-sizing: border-box; margin-top: 0; padding: 6px 0 0 9%; border-top: 1px solid var(--border-muted); font-variant-numeric: tabular-nums; }
+.histogram-chart-y-label { fill: var(--muted); font-size: 2.5px; font-variant-numeric: tabular-nums; }
 .chart-series-1 { stroke: var(--success); }
 .chart-series-2 { stroke: var(--attention); }
 .chart-series-3 { stroke: var(--danger); }

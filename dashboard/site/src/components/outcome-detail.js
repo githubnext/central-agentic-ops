@@ -7,7 +7,7 @@ import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
 import { findLink, renderExternalLink, resolveTitleLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
-import { titleCase } from './count-formatters.js';
+import { text, titleCase } from './count-formatters.js';
 import { renderMetadataSection } from './view-chrome.js';
 import { createRouteView } from './route-empty-state.js';
 import { rowsFor } from './source-rows.js';
@@ -240,10 +240,5 @@ function outcomeDescription(outcome) {
     titleCase(text(outcome['outcome-category'])),
     titleCase(text(outcome['outcome-status']) || text(outcome['outcome-state']))
   ].filter(Boolean).join(' · ');
-}
-
-/** @param {unknown} value */
-function text(value) {
-  return value == null ? '' : String(value);
 }
 

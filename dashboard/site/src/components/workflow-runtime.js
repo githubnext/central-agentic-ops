@@ -9,7 +9,8 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderPanelHeader, renderVitalStat } from './ui-primitives.js';
+import { text } from './count-formatters.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
 import { workflowRouteValue } from './workflow-route.js';
@@ -262,10 +263,7 @@ function renderValueHistoryPanel({ className, headingId, heading, description, b
   return h(
     'section',
     { className: `value-history-panel ${className}`, 'aria-labelledby': headingId },
-    h('header', null,
-      h('h3', { id: headingId }, heading),
-      h('p', null, description)
-    ),
+    renderPanelHeader(headingId, heading, description),
     ...body
   );
 }
@@ -615,7 +613,6 @@ function qualifiedRepository(row) {
   return repository.includes('/') ? repository : `${text(row.organization)}/${repository}`.replace(/^\/|\/$/g, '');
 }
 
-
 /** @param {Record<string, unknown>} row */
 function rowTime(row) {
   const value = Date.parse(text(row['observed-at']));
@@ -632,11 +629,6 @@ function formatObservationDate(value) {
 function finiteNumber(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
-}
-
-/** @param {unknown} value */
-function text(value) {
-  return value == null ? '' : String(value);
 }
 
 /** @param {string} value */

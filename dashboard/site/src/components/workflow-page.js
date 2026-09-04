@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { text } from './count-formatters.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
@@ -109,7 +110,3 @@ function workflowName(workflow) {
   return text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
 }
 
-/** @param {unknown} value */
-function text(value) {
-  return value == null ? '' : String(value);
-}

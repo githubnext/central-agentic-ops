@@ -20,6 +20,7 @@ const BAR_CHART_LEFT = 12;
 const BAR_CHART_RIGHT = 100;
 const BAR_CHART_BOTTOM = 38;
 const BAR_CHART_HEIGHT = 34;
+const MAX_HISTOGRAM_X_TICKS = 5;
 const SWIMLANE_START_X = 25;
 const SWIMLANE_END_X = 117;
 const SWIMLANE_SECTION_WIDTH = 0.8;
@@ -274,7 +275,17 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
   if (chartType === 'histogram') {
     const bins = binHistogramValues(points.map((point) => toNumber(point.y)));
     const maximum = Math.max(...bins.map((bin) => bin.count), 1);
-    const barWidth = bins.length > 0 ? 100 / bins.length : 100;
+    const plotStart = 9;
+    const plotWidth = 100 - plotStart;
+    const barWidth = bins.length > 0 ? plotWidth / bins.length : plotWidth;
+    const xBoundaries = bins.length > 0
+      ? [...bins.map((bin) => bin.lower), bins[bins.length - 1].upper]
+      : [];
+    const xTickCount = Math.min(xBoundaries.length, MAX_HISTOGRAM_X_TICKS);
+    const xTicks = Array.from({ length: xTickCount }, (_, index) => (
+      xBoundaries[Math.round((index * (xBoundaries.length - 1)) / Math.max(xTickCount - 1, 1))]
+    )).map((value) => formatNumber(value, unit))
+      .filter((value, index, values) => index === 0 || value !== values[index - 1]);
     /** @param {{ lower: number, upper: number }} bin */
     const binLabel = (bin) => {
       const lower = formatNumber(bin.lower, unit);
@@ -287,12 +298,25 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram with ${bins.length} automatically calculated bins` },
-        ...[4, 21, 38].map((y) => h('line', { className: 'histogram-chart-grid', x1: 0, y1: y, x2: 100, y2: y })),
-        h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
+        ...[
+          [4, maximum],
+          [21, maximum / 2],
+          [38, 0]
+        ].flatMap(([y, value]) => [
+          h('text', {
+            className: 'histogram-chart-y-label',
+            x: plotStart - 1.5,
+            y: y + 1,
+            'text-anchor': 'end',
+            'aria-hidden': 'true'
+          }, formatNumber(value, null)),
+          h('line', { className: 'histogram-chart-grid', x1: plotStart, y1: y, x2: 100, y2: y })
+        ]),
+        h('line', { className: 'bar-chart-axis', x1: plotStart, y1: 38, x2: 100, y2: 38 }),
         ...bins.map((bin, index) => {
           const height = Math.max(1, (bin.count / maximum) * 34);
           const label = `${binLabel(bin)}: ${bin.count} observation${pluralSuffix(bin.count)}`;
-          const x = index * barWidth;
+          const x = plotStart + (index * barWidth);
           const tooltipX = Math.min(Math.max(x + ((barWidth - 1) / 2) - 21, 1), 57);
           const mark = h('g', {
             className: 'chart-point histogram-chart-mark',
@@ -334,8 +358,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         ? h(
           'div',
           { className: 'chart-axis', 'data-chart-axis': 'histogram' },
-          h('span', null, formatNumber(bins[0].lower, unit)),
-          h('span', null, formatNumber(bins[bins.length - 1].upper, unit))
+          ...xTicks.map((value) => h('span', null, value))
         )
         : null
     );

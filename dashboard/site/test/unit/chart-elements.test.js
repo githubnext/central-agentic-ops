@@ -246,8 +246,9 @@ describe('chart element helpers', () => {
     const pie = renderChartWidget('pie', points, series);
     const histogram = renderChartWidget('histogram', [
       { x: 'run-1', y: 3, color: null },
-      { x: 'run-2', y: 4, color: null },
-      { x: 'run-3', y: 4, color: null }
+      { x: 'run-2', y: 6, color: null },
+      { x: 'run-3', y: 9, color: null },
+      { x: 'run-4', y: 9, color: null }
     ], series, null, 'AIC per run', {
       name: 'AI Credits',
       symbol: 'AIC',
@@ -302,6 +303,17 @@ describe('chart element helpers', () => {
     expect(histogram.querySelector('.histogram-chart-mark')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(histogram.querySelectorAll('.histogram-chart-mark .point-tooltip')).toHaveLength(3);
     expect(histogram.querySelectorAll('.histogram-chart-grid')).toHaveLength(3);
+    expect([...histogram.querySelectorAll('.histogram-chart-y-label')].map((tick) => tick.textContent)).toEqual([
+      '2',
+      '1',
+      '0'
+    ]);
+    expect([...histogram.querySelectorAll('[data-chart-axis="histogram"] span')].map((tick) => tick.textContent)).toEqual([
+      '3 AIC',
+      '5 AIC',
+      '7 AIC',
+      '9 AIC'
+    ]);
     expect(histogram.querySelector('.histogram-chart-bar')?.classList.contains('chart-series-1')).toBe(true);
     expect(histogram.querySelector('.histogram-chart-bar')?.getAttribute('rx')).toBe('0.75');
     expect(histogram.querySelector('.histogram-chart-tooltip text')?.getAttribute('lengthAdjust')).toBe('spacingAndGlyphs');
