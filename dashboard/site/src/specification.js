@@ -40,11 +40,12 @@ export const VIEW_ELEMENT_VALUES = [
   'package-detail',
   'package-dispatches',
   'package-reports',
+  'workflow-route',
   'workflow-detail',
   'workflow-runtime',
   'outcome-detail'
 ];
-export const VIEW_CHART_VALUES = ['bar', 'histogram', 'line', 'pie'];
+export const VIEW_CHART_VALUES = ['bar', 'histogram', 'line', 'pie', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
 export const VIEW_CONTROL_VALUES = ['interactive', 'static'];

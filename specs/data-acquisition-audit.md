@@ -11,7 +11,7 @@ editors:
 
 **Version:** 1.0.0  
 **Status:** Working Draft  
-**Audit date:** 2026-09-03 (refreshed)
+**Audit date:** 2026-09-04 (refreshed)
 
 ## Abstract
 
@@ -61,9 +61,9 @@ The former two-request Contents API bootstrap in `shared/control.md` has been re
 | Source | Requests and behavior | Existing mitigation or gap |
 | --- | --- | --- |
 | `activity/index.mjs` | Uses direct REST calls for Pages privacy, code search, workflow registries, repository metadata and trees, manifest/source/lock contents, organization counts, Actions runs, failed-run jobs, and latest gh-aw release. | Reuses a prior complete index and refreshes run history with a one-hour overlap. Requests are bounded and concurrency-limited. Code search has a separate, much smaller quota; size partitioning can multiply searches. Repository metadata and workflow source data are not persisted independently. |
-| `dashboard/report/records.mjs` | For every report repository, fetches up to ten pages each of all issues and issue comments, the first 100 Actions artifacts, and run metadata referenced by outputs. | Promise memoization deduplicates run metadata only within one process. A prior snapshot is retained on rate limit, but successful runs always rescan issue/comment history and artifact metadata. The artifact list is not paginated, so traffic is bounded at the cost of incomplete results beyond 100 artifacts. |
+| `dashboard/report/records.mjs` | For every report repository, fetches up to ten pages each of all issues and issue comments, the first 100 Actions artifacts, and run metadata referenced by outputs. | Promise memoization deduplicates run metadata only within one process. A prior snapshot is retained on rate limit, but successful runs always rescan issue/comment history and artifact metadata. The artifact list is not paginated, so traffic is bounded at the cost of incomplete results beyond 100 artifacts. Issue bodies now also carry a `gh-aw-workflow-id` marker that lets bundle/workflow attribution be resolved from the already-fetched issue body instead of an extra run-metadata lookup, but this only reduces per-record work when the marker is present; it does not change the fetch pattern above. |
 | `dashboard/report/operational-values.mjs` | Runs one operational-value report per eligible workflow. If unsupported or failed, downloads the `agent` artifact separately for each uncached fallback run and may regrade due observations. | Persistent observation and replay caches avoid already-observed fallback runs. Report collection still performs per-workflow history work, and artifact fallback has no batch API. |
-| `dashboard/dispatch-workflow.mjs` | Dispatches activity/dashboard workflows and polls every five seconds until discovery and completion. | The dispatch response can eliminate discovery polling when it contains run details. Completion polling has no ETag, backoff, or rate-limit-aware delay; a 120-minute run can make about 1,440 status requests. |
+| `dashboard/dispatch-workflow.mjs` | Dispatches activity/dashboard workflows and polls every five seconds until discovery and completion. | The dispatch response can eliminate discovery polling when it contains run details. Completion polling still has no ETag or backoff between requests; a 120-minute run can make about 1,440 status requests. A 403 rate-limit response now short-circuits into a `skipped` output that the calling workflow (`dashboard/dashboard.yml`, `.github/workflows/dashboard-build.yml`) uses to skip the downstream build/pages job, so a rate limit stops the chain instead of failing partway through a build. |
 | `dashboard/local-server.mjs` | Reads repository default branch, finds the latest dashboard-data artifact, validates its run, then downloads that artifact before serving. | One startup predownload and no repeated polling. There is no local reuse between server starts. |
 | `.github/workflows/activity.yml` and `.github/workflows/dashboard-build.yml` | Activity produces one coherent cache snapshot; the builder restores it and does not recollect. | Correctly centralizes dashboard collection. A live dashboard dispatch still forces an activity refresh even when the scheduled snapshot is fresh. |
 
@@ -112,7 +112,7 @@ The activity snapshot is the intended shared collection boundary. The main gap i
 
 | Priority | Bottleneck | Why it matters |
 | --- | --- | --- |
-| P0 | Five-second workflow completion polling | One long dashboard chain can consume more than a thousand core requests despite doing no new collection work. Multiple dispatchers multiply this linearly. |
+| P0 | Five-second workflow completion polling | One long dashboard chain can consume more than a thousand core requests despite doing no new collection work. Multiple dispatchers multiply this linearly. A 403 rate-limit response is now detected and short-circuits the chain (skipping build/pages), which bounds the *failure* cost but does not reduce the request volume of a normal successful run. |
 | P0 | Organization code-search partitioning | Authenticated code search has a much lower rate limit than the core REST API. A large organization or partitions still exceeding 1,000 results can exhaust it before ordinary collection begins. |
 | P1 | Cold, full issue/comment scans in `records.mjs` | Up to 20 core requests per report repository every 15 minutes, before artifact and run lookups. The cost grows linearly with enrolled repositories. |
 | P1 | Repeated `gh aw logs` windows | Dashboard, budget, workers, reports, and graders independently download overlapping Actions/log/artifact data. The 2,000-request reserve causes partial data sooner when they share a credential. |
@@ -125,7 +125,7 @@ The direct activity client retries 403 and 429 responses only when the advertise
 
 ## 7. Recommendations
 
-1. **Replace fixed completion polling with bounded backoff.** Start at the current responsive interval, increase it for long-running jobs, honor `Retry-After` and rate-limit reset headers, and prefer returned run details to discovery polling.
+1. **Replace fixed completion polling with bounded backoff.** Start at the current responsive interval, increase it for long-running jobs, honor `Retry-After` and rate-limit reset headers, and prefer returned run details to discovery polling. **(Partially addressed:** `dispatch-workflow.mjs` now detects a 403 rate-limit response and emits a `skipped` output so `dashboard/dashboard.yml` and `dashboard-build.yml` skip the downstream build/pages job; the fixed five-second interval and lack of proactive backoff on successful polling remain.)
 2. **Make the activity snapshot the reusable run-data boundary.** Persist a bounded raw gh-aw log cache beside derived AIC data, with repository, time-window, completeness, and credential-scope metadata. Permit consumers to reuse it only when those bounds satisfy their request.
 3. **Increment durable-record collection.** Retain per-repository update watermarks, request only changed issues/comments, and periodically perform a bounded reconciliation scan. Preserve the prior snapshot when completeness cannot be proven.
 4. **Cache month-to-date package usage.** Key it by package workflow set, repository, month, and latest observed run ID; invalidate it when the activity index observes a newer relevant run.

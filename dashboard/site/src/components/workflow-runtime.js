@@ -11,67 +11,37 @@ import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours, formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
-import { renderWorkflowIdentity } from './workflow-identity.js';
-import { renderLinkTabs } from './tab-nav.js';
-import { createRouteView } from './route-empty-state.js';
-import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
+import { renderWorkflowPage } from './workflow-page.js';
+import { workflowRouteValue } from './workflow-route.js';
+import { rowsFor } from './source-rows.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @returns {HTMLElement}
  */
 export function renderWorkflowRuntime(context) {
-  const root = createRouteView({
-    rootClassName: 'workflow-runtime',
-    routeParameter: context.routeParameter,
-    datasetKey: 'workflow',
-    selectMessage: 'Select a workflow to inspect its runtime.',
-    notFoundMessage: 'Workflow not found.',
-    hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
-    renderMatched: (routeValue) => {
-      const identity = parseWorkflowRoute(routeValue);
-      const workflow = rowsFor(context.sources, 'workflows')
-        .find((candidate) => identity && matchesWorkflow(candidate, identity.repository, identity.workflow));
-      if (!workflow || !identity) {
-        return null;
-      }
-      const repository = qualifiedRepository(workflow);
-      const workflowName = text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
-      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-        bubbles: true,
-        detail: {
-          title: workflowName,
-          description: `Run health, AI Credit usage, and operational value for ${text(workflow.workflow)} in ${repository}.`,
-          mode: ['review', 'live'].includes(text(workflow['rollout-mode'])) ? text(workflow['rollout-mode']) : '',
-          navigationPage: workflow.package ? 'packages' : 'repositories'
-        }
-      }));
-      return renderWorkflowRuntimeContent(context, workflow);
-    }
-  });
-  return root;
+  return renderWorkflowPage(context, 'insights', ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow));
 }
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @param {Record<string, unknown>} workflow
  */
-function renderWorkflowRuntimeContent(context, workflow) {
+function renderWorkflowRuntimeBody(context, workflow) {
   const repository = qualifiedRepository(workflow);
   const workflowPath = text(workflow.workflow);
-  const workflowName = text(workflow['workflow-name']) || workflowPath || 'Unknown workflow';
   const runs = matchingRows(context, 'runs', repository, workflowPath);
   const usage = matchingRows(context, 'usage', repository, workflowPath);
 
   return h(
     'div',
-    { className: 'workflow-runtime-content' },
-    renderWorkflowTabs(context.pageId, repository, workflowPath, workflowName),
-    renderWorkflowIdentity(workflow),
+    null,
     renderRuntimeMetrics(context, workflow, runs, usage),
     renderWorkflowValueReport(context, workflow)
   );
 }
+
+export { renderWorkflowRuntimeBody };
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -85,25 +55,6 @@ export function renderWorkflowValueReport(context, workflow) {
     matchingRows(context, 'operational-values', repository, workflowPath)
   );
   return renderValueReport(workflowName, repository, workflowPath, observations, context.sources['operational-values']?.metadata);
-}
-
-/**
- * @param {string} pageId
- * @param {string} repository
- * @param {string} workflow
- * @param {string} workflowName
- */
-function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
-  const route = workflowRouteValue(repository, workflow);
-  return renderLinkTabs({
-    className: 'repository-tabs',
-    ariaLabel: `${workflowName} views`,
-    tabs: [
-      { label: 'Insights', icon: 'graph', href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, current: true },
-      { label: 'Reports', icon: 'issue', href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
-      { label: 'Runs', icon: 'play', href: `#page-workflow-runs?workflow=${encodeURIComponent(route)}` }
-    ]
-  });
 }
 
 /**
@@ -277,6 +228,24 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
   );
 }
 
+/**
+ * Renders one titled, headed `value-history-panel` section shared by the
+ * outcome-diagnostics and weekly-attainment history views.
+ * @param {{ className: string, headingId: string, heading: string, description: string, body: Node[] }} options
+ * @returns {HTMLElement}
+ */
+function renderValueHistoryPanel({ className, headingId, heading, description, body }) {
+  return h(
+    'section',
+    { className: `value-history-panel ${className}`, 'aria-labelledby': headingId },
+    h('header', null,
+      h('h3', { id: headingId }, heading),
+      h('p', null, description)
+    ),
+    ...body
+  );
+}
+
 /** @param {Array<Record<string, unknown>>} observations */
 function renderValueHistory(observations) {
   const diagnostics = diagnosticSeries(observations);
@@ -284,28 +253,28 @@ function renderValueHistory(observations) {
   const outcomeSeries = diagnostics.length > 0 ? diagnostics : primaryChangeSeries(weekly);
   const sections = [];
   if (outcomeSeries.length > 0) {
-    sections.push(h(
-      'section',
-      { className: 'value-history-panel value-outcomes', 'aria-labelledby': 'value-outcomes-heading' },
-      h('header', null,
-        h('h3', { id: 'value-outcomes-heading' }, 'Outcome change from first observation'),
-        h('p', null, diagnostics.length > 0
-          ? 'Positive values mean improvement according to each diagnostic direction.'
-          : 'Positive values mean higher primary operational attainment.')
-      ),
-      renderOutcomeChangeChart(outcomeSeries),
-      h(
-        'ul',
-        { className: 'chart-legend value-diagnostic-legend' },
-        outcomeSeries.map((series, index) => h(
-          'li',
-          null,
-          h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
-          h('span', null, series.name),
-          h('strong', { className: series.latestChange > 0 ? 'value-gain' : series.latestChange < 0 ? 'value-loss' : '' }, formatPointChange(series.latestChange))
-        ))
-      )
-    ));
+    sections.push(renderValueHistoryPanel({
+      className: 'value-outcomes',
+      headingId: 'value-outcomes-heading',
+      heading: 'Outcome change from first observation',
+      description: diagnostics.length > 0
+        ? 'Positive values mean improvement according to each diagnostic direction.'
+        : 'Positive values mean higher primary operational attainment.',
+      body: [
+        renderOutcomeChangeChart(outcomeSeries),
+        h(
+          'ul',
+          { className: 'chart-legend value-diagnostic-legend' },
+          outcomeSeries.map((series, index) => h(
+            'li',
+            null,
+            h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+            h('span', null, series.name),
+            h('strong', { className: series.latestChange > 0 ? 'value-gain' : series.latestChange < 0 ? 'value-loss' : '' }, formatPointChange(series.latestChange))
+          ))
+        )
+      ]
+    }));
   }
   if (weekly.length > 0) {
     const primaryPoints = weekly.flatMap((week, index) => [
@@ -316,16 +285,16 @@ function renderValueHistory(observations) {
       { name: 'Weekly value', className: 'primary-weekly' },
       { name: '4-week rolling mean', className: 'primary-rolling' }
     ];
-    sections.push(h(
-      'section',
-      { className: 'value-history-panel value-attainment', 'aria-labelledby': 'value-attainment-heading' },
-      h('header', null,
-        h('h3', { id: 'value-attainment-heading' }, 'Weekly operational attainment'),
-        h('p', null, 'Weekly opportunity-adjusted values and their 4-week rolling mean; separate from outcome diagnostics.')
-      ),
-      renderChartWidget('line', primaryPoints, primarySeries),
-      renderChartLegend(primarySeries, 'line')
-    ));
+    sections.push(renderValueHistoryPanel({
+      className: 'value-attainment',
+      headingId: 'value-attainment-heading',
+      heading: 'Weekly operational attainment',
+      description: 'Weekly opportunity-adjusted values and their 4-week rolling mean; separate from outcome diagnostics.',
+      body: [
+        renderChartWidget('line', primaryPoints, primarySeries),
+        renderChartLegend(primarySeries, 'line')
+      ]
+    }));
   }
   return h('div', { className: 'value-history' }, sections);
 }
@@ -614,11 +583,6 @@ function matchingRows(context, sourceName, repository, workflow) {
 function matchesWorkflow(row, repository, workflow) {
   return qualifiedRepository(row).toLowerCase() === repository.toLowerCase()
     && text(row.workflow) === workflow;
-}
-
-/** @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources @param {string} source */
-function rowsFor(sources, source) {
-  return Array.isArray(sources[source]?.rows) ? sources[source].rows : [];
 }
 
 /** @param {Record<string, unknown>} row */

@@ -3429,6 +3429,49 @@ dashboard:
     expect(result.ok).toBe(true);
   });
 
+  it('accepts unbucketed categorical swimlanes and rejects quantitative or aggregated lanes', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const overview = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'overview');
+    const overviewSwimlane = overview.definition.views.find((/** @type {{ id: string }} */ view) => view.id === 'overview-run-health');
+    const workflowRuntime = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runtime');
+    const swimlane = workflowRuntime.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-health');
+    const routeChrome = workflowRuntime.views.find((/** @type {{ id: string, element?: string }} */ view) => view.id === 'workflow-runtime-insights');
+
+    expect(overviewSwimlane).toMatchObject({
+      chart: 'swimlane',
+      encoding: {
+        x: { field: 'started-at', type: 'temporal' },
+        y: { field: 'run-conclusion', type: 'ordinal' },
+        href: { field: 'run-link' }
+      }
+    });
+    expect(swimlane).toMatchObject({
+      chart: 'swimlane',
+      encoding: {
+        x: { field: 'started-at', type: 'temporal' },
+        y: { field: 'run-conclusion', type: 'ordinal' },
+        href: { field: 'run-link' }
+      }
+    });
+    expect(routeChrome).toMatchObject({
+      mark: 'element',
+      element: 'workflow-route'
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    swimlane.encoding.y = { field: 'run', type: 'quantitative', aggregate: 'count' };
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          code: 'DLS-E010',
+          path: expect.stringContaining('.encoding.y')
+        })
+      ]));
+    }
+  });
+
   it('DLS-VIEW-005 DLS-VIEW-006 rejects incompatible chart widgets and unknown layout hints', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
