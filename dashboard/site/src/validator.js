@@ -1395,6 +1395,16 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   validateOptionalStringField(view.title, `${path}.title`, errors);
   validateOptionalStringField(view.description, `${path}.description`, errors);
+  if (view.intent !== undefined) {
+    validateStringField(view.intent, `${path}.intent`, true, errors);
+    if (view.mark !== 'element') {
+      errors.push(createError(
+        ERROR_CODES.incompatibleMarkChannelTypeOrTimeUnit,
+        'intent is allowed only when mark is "element".',
+        `${path}.intent`
+      ));
+    }
+  }
   validateCallout(
     view.callout,
     getValueNodeByKey(viewNode, 'callout'),
@@ -2291,7 +2301,7 @@ function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data,
   const markValue = typeof mark === 'string' ? mark : null;
   const displayForbiddenChannels = markValue === 'table'
     ? ['href']
-    : ['value', 'x', 'y', 'color', 'href'];
+    : ['value', 'x', 'y', 'color', 'reference', 'href'];
   for (const channel of displayForbiddenChannels) {
     if (isPlainObject(encoding[channel]) && encoding[channel].display !== undefined) {
       errors.push(createError(
@@ -2324,11 +2334,18 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
   if (chart === undefined) {
     return;
   }
-  if (chart === 'line' && isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'temporal') {
+  if (['dot', 'line'].includes(String(chart)) && isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'temporal') {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
-      'line chart x encoding must be temporal when explicitly typed.',
+      `${chart} chart x encoding must be temporal when explicitly typed.`,
       `${viewPath}.encoding.x.type`
+    ));
+  }
+  if (chart !== 'dot' && encoding.reference !== undefined) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'reference encoding is supported only by dot charts.',
+      `${viewPath}.encoding.reference`
     ));
   }
   if (chart === 'pie' && isPlainObject(encoding.x) && encoding.x.type !== undefined && !['nominal', 'ordinal'].includes(String(encoding.x.type))) {
@@ -2521,6 +2538,24 @@ function validateChartEncoding(encodingNode, encoding, chart, sourceName, path, 
     validateFieldDefinition(getValueNodeByKey(encodingNode, 'color'), encoding.color, sourceName, `${path}.color`, aggregateOutputIds, errors);
   }
 
+  if (encoding.reference !== undefined) {
+    validateFieldDefinition(getValueNodeByKey(encodingNode, 'reference'), encoding.reference, sourceName, `${path}.reference`, aggregateOutputIds, errors);
+    if (isPlainObject(encoding.reference) && encoding.reference.type !== undefined && encoding.reference.type !== 'quantitative') {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'chart reference encoding must be quantitative when explicitly typed.',
+        `${path}.reference.type`
+      ));
+    }
+    if (isPlainObject(encoding.reference) && encoding.reference.aggregate !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'chart reference encoding must not declare an aggregate.',
+        `${path}.reference.aggregate`
+      ));
+    }
+  }
+
   if (encoding.href !== undefined) {
     validateHrefFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
   }
@@ -2555,7 +2590,7 @@ function validateChartEncoding(encodingNode, encoding, chart, sourceName, path, 
   const xHasTimeUnit = isPlainObject(encoding.x) && encoding.x['time-unit'] !== undefined;
   const expectedDefault = xIsTemporal ? 'line' : 'bar';
 
-  if (expectedDefault === 'line' && chart !== 'swimlane' && !xHasTimeUnit) {
+  if (expectedDefault === 'line' && !['dot', 'swimlane'].includes(String(chart)) && !xHasTimeUnit) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
       'chart views with temporal x must declare a temporal bucket to realize the line time-series default conservatively.',

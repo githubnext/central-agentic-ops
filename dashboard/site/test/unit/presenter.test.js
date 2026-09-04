@@ -556,10 +556,15 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
+    const controlPlaneNavigation = authoritativeDashboardDocument.dashboard.navigation?.find(
+      /** @param {{ label?: string }} section */
+      (section) => section.label === 'Control plane'
+    );
     expect(labels).toEqual(['Attention', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
+    expect(controlPlaneNavigation?.pages).toEqual(expect.arrayContaining(['github-api']));
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
       'Preview',
@@ -567,10 +572,10 @@ describe('presenter built-in and custom pages', () => {
       'Performance',
       'Security',
       'Value',
-      'GitHub API',
       'Cost',
       'Readiness',
       'Data health',
+      'GitHub API',
       'Updates',
       'Dispatches',
       'Workflows',
@@ -764,10 +769,10 @@ describe('presenter built-in and custom pages', () => {
       'Performance',
       'Security',
       'Value',
-      'GitHub API',
       'Cost',
       'Readiness',
       'Data health',
+      'GitHub API',
       'Updates',
       'Dispatches',
       'Workflows',
@@ -1646,7 +1651,10 @@ describe('presenter built-in and custom pages', () => {
               { id: 'package-workflows', data: { source: 'workflows' } },
               { id: 'package-runs', data: { source: 'runs' } },
               { id: 'package-outcomes', data: { source: 'outcomes' } },
-              { id: 'package-usage', data: { source: 'usage' } }
+              { id: 'package-usage', data: { source: 'usage' } },
+              { id: 'packages-utilization', title: 'Package AIC utilization', data: { sources: ['workflows', 'usage'] }, mark: 'element', element: 'package-utilization' },
+              { id: 'packages-run-trend', title: 'All runs over time', data: { sources: ['workflows', 'runs', 'outcomes'] }, mark: 'element', element: 'package-run-trend' },
+              { id: 'packages-summary', title: 'All output by package', data: { sources: ['workflows', 'usage', 'findings', 'outcomes', 'runs'] }, mark: 'element', element: 'package-summary-table' }
             ]
           }
         }]
@@ -1735,20 +1743,6 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('.package-utilization')?.textContent).toContain('Partial usage coverage.');
     expect(/** @type {HTMLElement | null} */ (packagesPage?.querySelector('.data-state-summary'))?.hidden).toBe(true);
 
-    const allTab = /** @type {HTMLButtonElement | null} */ (packagesPage?.querySelector('[data-package-mode="all"]') ?? null);
-    const reviewTab = /** @type {HTMLButtonElement | null} */ (packagesPage?.querySelector('[data-package-mode="review"]') ?? null);
-    globalThis.document.body.append(rendered);
-    allTab?.focus();
-    allTab?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-    expect(reviewTab?.getAttribute('aria-selected')).toBe('true');
-    expect(globalThis.document.activeElement).toBe(reviewTab);
-    expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('10 of 100 AIC across 1 reported run');
-    const reviewSummaryCells = packagesPage?.querySelector('.package-summary-table tbody tr')?.children ?? [];
-    expect([...reviewSummaryCells].map((cell) => cell.textContent)).toEqual([
-      'Daily Ops', '1', '1', '0', '0', '2', '10', 'Aug 28, 2026, 10:00 AM'
-    ]);
-    expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('Review runs over time1');
-    rendered.remove();
   });
 
   it('DLS-SEM-022 DLS-SEM-023 DLS-PAGE-014 DLS-PAGE-015 keeps packages repository-scoped and distinguishes unknown or unavailable telemetry', () => {

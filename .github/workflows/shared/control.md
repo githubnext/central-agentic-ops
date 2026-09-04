@@ -95,21 +95,13 @@ jobs:
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "monthly_credit_budget=0" >> "$GITHUB_OUTPUT"
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          ### Central Agentic Ops admission
+          <details>
+          <summary><h3>Central Agentic Ops admission</h3></summary>
 
           Skipped: $reason
 
-          <details>
-          <summary>❌ Runtime revision</summary>
-
-          The control and policy modules could not be read or executed from the exact \`github.workflow_sha\` commit.
-
-          </details>
-
-          <details>
-          <summary>Policy and authorization checks</summary>
-
-          The remaining admission checks could not run because the authoritative control modules were unavailable.
+          - ❌ Runtime revision — The control and policy modules could not be read or executed from the exact \`github.workflow_sha\` commit.
+          - Policy and authorization checks — The remaining admission checks could not run because the authoritative control modules were unavailable.
 
           </details>
           EOF

@@ -139,6 +139,33 @@ function renderRunHealthMetric(health, available, coverage, label) {
 }
 
 /**
+ * Renders the shared `<header>` used by both the empty and populated
+ * `value-report` states: a titled identity block plus a trailing status
+ * element (a badge or a score summary).
+ * @param {string} headingId
+ * @param {string} workflowName
+ * @param {string} repository
+ * @param {string} workflowPath
+ * @param {HTMLElement} trailing
+ * @param {string} [tagline]
+ * @returns {HTMLElement}
+ */
+function renderValueReportHeader(headingId, workflowName, repository, workflowPath, trailing, tagline) {
+  return h(
+    'header',
+    null,
+    h(
+      'div',
+      null,
+      h('h2', { id: headingId }, workflowName),
+      h('p', null, `${repository} - ${workflowPath}`),
+      tagline ? h('p', null, tagline) : null
+    ),
+    trailing
+  );
+}
+
+/**
  * @param {string} workflowName
  * @param {string} repository
  * @param {string} workflowPath
@@ -152,10 +179,11 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
     return h(
       'section',
       { className: 'value-report value-report-empty', 'aria-labelledby': headingId },
-      h(
-        'header',
-        null,
-        h('div', null, h('h2', { id: headingId }, workflowName), h('p', null, `${repository} - ${workflowPath}`)),
+      renderValueReportHeader(
+        headingId,
+        workflowName,
+        repository,
+        workflowPath,
         renderStatusBadge(unavailable ? 'Unavailable' : 'Not evaluated')
       ),
       h(
@@ -180,17 +208,13 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
   return h(
     'section',
     { className: 'value-report', 'aria-labelledby': headingId },
-    h(
-      'header',
-      null,
-      h(
-        'div',
-        null,
-        h('h2', { id: headingId }, workflowName),
-        h('p', null, `${repository} - ${workflowPath}`),
-        h('p', null, "Run-scoped attainment from the workflow's frozen operational-value evaluator.")
-      ),
-      h('div', { className: 'value-score' }, h('strong', null, formatPercent(latest['operational-value'])), h('span', null, 'Latest observation'))
+    renderValueReportHeader(
+      headingId,
+      workflowName,
+      repository,
+      workflowPath,
+      h('div', { className: 'value-score' }, h('strong', null, formatPercent(latest['operational-value'])), h('span', null, 'Latest observation')),
+      "Run-scoped attainment from the workflow's frozen operational-value evaluator."
     ),
     h(
       'div',

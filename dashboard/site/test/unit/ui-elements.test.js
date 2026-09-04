@@ -198,4 +198,77 @@ describe('UI elements', () => {
     expect(cards[1]?.querySelector('.package-status-activity')?.getAttribute('aria-label')).not.toContain('warning');
   });
 
+  it('renders package activity primitives as independently reusable elements', () => {
+    const sources = {
+      workflows: {
+        source: 'workflows',
+        rows: [
+          { package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-inventory-warnings': 2 },
+          { package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-inventory-warnings': 2 }
+        ],
+        metadata
+      },
+      runs: {
+        source: 'runs',
+        rows: [
+          { workflow: '.github/workflows/daily.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' }
+        ],
+        metadata
+      },
+      outcomes: {
+        source: 'outcomes',
+        rows: [
+          { package: 'daily-ops', run: '1', 'run-conclusion': 'success', 'rollout-mode': 'review', 'published-at': '2026-08-28T10:00:00Z', 'observed-at': '2026-08-28T10:00:00Z' }
+        ],
+        metadata
+      },
+      usage: {
+        source: 'usage',
+        rows: [
+          { workflow: '.github/workflows/daily.md', run: '1', invocation: 'a', aic: 10, 'rollout-mode': 'review' }
+        ],
+        metadata: { ...metadata, completeness: /** @type {'partial'} */ ('partial') }
+      },
+      findings: {
+        source: 'findings',
+        rows: [
+          { workflow: '.github/workflows/daily-worker.md', run: '1', finding: 'warning-1', 'finding-kind': 'authored-warning', 'observed-at': '2026-08-28T10:05:00Z' }
+        ],
+        metadata
+      }
+    };
+
+    const utilization = renderUiElement('package-utilization', {
+      pageId: 'packages',
+      title: 'Package AIC utilization',
+      sourceNames: ['workflows', 'usage'],
+      sources,
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+    const trend = renderUiElement('package-run-trend', {
+      pageId: 'packages',
+      title: 'All runs over time',
+      sourceNames: ['workflows', 'runs', 'outcomes'],
+      sources,
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+    const summary = renderUiElement('package-summary-table', {
+      pageId: 'packages',
+      title: 'All output by package',
+      sourceNames: ['workflows', 'usage', 'findings', 'outcomes', 'runs'],
+      sources,
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+
+    expect(utilization?.querySelector('.package-utilization-card')).not.toBeNull();
+    expect(utilization?.textContent).toContain('10 of 100 AIC across 1 reported run');
+    expect(trend?.querySelector('.package-chart-point')).not.toBeNull();
+    expect(trend?.querySelector('h3')?.textContent).toBe('All runs over time');
+    expect(summary?.querySelector('.package-summary-table')).not.toBeNull();
+    expect(summary?.textContent).toContain('Daily Ops');
+  });
+
 });

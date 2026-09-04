@@ -159,11 +159,11 @@ test("CAO admission authorizes a declared package before activation", () => {
     "",
   ].join("\n"));
   assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "0" });
-  assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
-  assert.match(summary, /<details>\n<summary>✅ Runtime revision<\/summary>/);
-  assert.match(summary, /<summary>✅ Run limits<\/summary>/);
-  assert.equal((summary.match(/<details>/g) ?? []).length, 11);
-  assert.equal((summary.match(/<summary>✅ /g) ?? []).length, 11);
+  assert.match(summary, /<details>\n<summary><h3>Central Agentic Ops admission<\/h3><\/summary>\n\nAuthorized package `dependabot` as `orchestrator`/);
+  assert.match(summary, /- ✅ Runtime revision — The control and policy modules/);
+  assert.match(summary, /- ✅ Run limits — Any supplied `max_repos`/);
+  assert.equal((summary.match(/<details>/g) ?? []).length, 1);
+  assert.equal((summary.match(/^- ✅ /gm) ?? []).length, 11);
 });
 
 test("CAO admission emits plain logs outside GitHub Actions", () => {
@@ -200,10 +200,10 @@ test("CAO admission denies a disabled package without failing the workflow", () 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(output, { authorized: "false", reason: "package-disabled", monthly_credit_budget: "0" });
   assert.match(summary, /Skipped package `dependabot` as `orchestrator`: package-disabled/);
-  assert.match(summary, /<summary>✅ Workflow identity<\/summary>/);
-  assert.match(summary, /<summary>❌ Package<\/summary>/);
-  assert.match(summary, /<summary>Worker<\/summary>/);
-  assert.doesNotMatch(summary, /<summary>[✅❌] Worker<\/summary>/);
+  assert.match(summary, /- ✅ Workflow identity —/);
+  assert.match(summary, /- ❌ Package —/);
+  assert.match(summary, /- Worker —/);
+  assert.doesNotMatch(summary, /- [✅❌] Worker —/);
 });
 
 test("CAO admission denies a requested mode that exceeds checked-in policy and marks Mode input", () => {
@@ -218,12 +218,12 @@ test("CAO admission denies a requested mode that exceeds checked-in policy and m
     monthly_credit_budget: "0",
   });
   assert.match(summary, /Skipped package `dependabot` as `orchestrator`: safe_output_mode exceeds checked-in policy/);
-  assert.match(summary, /<summary>✅ Package<\/summary>/);
-  assert.match(summary, /<summary>✅ Worker<\/summary>/);
-  assert.match(summary, /<summary>✅ Target input<\/summary>/);
-  assert.match(summary, /<summary>❌ Mode input<\/summary>/);
-  assert.match(summary, /<summary>Run limits<\/summary>/);
-  assert.doesNotMatch(summary, /<summary>[✅❌] Run limits<\/summary>/);
+  assert.match(summary, /- ✅ Package —/);
+  assert.match(summary, /- ✅ Worker —/);
+  assert.match(summary, /- ✅ Target input —/);
+  assert.match(summary, /- ❌ Mode input —/);
+  assert.match(summary, /- Run limits —/);
+  assert.doesNotMatch(summary, /- [✅❌] Run limits —/);
 });
 
 test("CAO admission fails closed when policy validation fails", () => {
@@ -373,8 +373,8 @@ test("CAO admission blocks a runner without enough free disk space", () => {
   assert.equal(output.runner_disk_required_mb, "2048");
   assert.match(summary, /Blocked package `dependabot` as `orchestrator` before activation: insufficient runner disk space\./);
   assert.match(summary, /Runner free disk space is too low for this run: 512 MB free/);
-  assert.match(summary, /<summary>✅ GitHub API capacity<\/summary>/);
-  assert.match(summary, /<summary>❌ Runner disk capacity<\/summary>/);
+  assert.match(summary, /- ✅ GitHub API capacity —/);
+  assert.match(summary, /- ❌ Runner disk capacity —/);
 });
 
 test("CAO admission requires more free disk space for worker runs", () => {

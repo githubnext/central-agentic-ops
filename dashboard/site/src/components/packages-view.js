@@ -15,6 +15,9 @@ const MODES = ['all', 'review', 'live'];
 const DAY_IN_MILLISECONDS = 86_400_000;
 
 /**
+ * Declarative host for the built-in packages page that composes reusable
+ * package activity sections under the existing mode tabs.
+ *
  * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @param {string} [pageId]
  * @returns {HTMLElement}
@@ -24,21 +27,6 @@ export function renderPackagesView(sources, pageId = 'packages') {
   let selectedMode = requestedMode && MODES.includes(requestedMode) ? requestedMode : 'all';
   const panelId = `${pageId}-mode-panel`;
   const content = h('div', { className: 'packages-mode-content', id: panelId, role: 'tabpanel' });
-  /**
-   * @param {string} mode
-   * @param {boolean} [focus]
-   */
-  const selectMode = (mode, focus = false) => {
-    if (mode !== selectedMode) {
-      selectedMode = mode;
-      renderMode();
-    }
-    if (focus) {
-      /** @type {HTMLButtonElement | null} */
-      const activeTab = tabs.querySelector(`[role="tab"][data-tab-value="${mode}"]`);
-      activeTab?.focus();
-    }
-  };
   const tabs = renderInteractiveTabs({
     className: 'package-mode-tabs',
     ariaLabel: 'Filter package activity by mode',
@@ -52,19 +40,35 @@ export function renderPackagesView(sources, pageId = 'packages') {
     }))
   });
 
-  const renderMode = () => {
+  /**
+   * @param {string} mode
+   * @param {boolean} [focus]
+   */
+  function selectMode(mode, focus = false) {
+    if (mode !== selectedMode) {
+      selectedMode = mode;
+      renderMode();
+    }
+    if (focus) {
+      /** @type {HTMLButtonElement | null} */
+      const activeTab = tabs.querySelector(`[role="tab"][data-tab-value="${mode}"]`);
+      activeTab?.focus();
+    }
+  }
+
+  function renderMode() {
     updateInteractiveTabSelection(tabs, selectedMode);
     content.setAttribute('aria-labelledby', `${pageId}-${selectedMode}-tab`);
     content.replaceChildren(
-      renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`),
-      renderRunTrend(sources, selectedMode, `${pageId}-trend-heading`),
-      renderPackageSummary(sources, selectedMode, `${pageId}-summary-heading`)
+      renderPackageUtilization(sources, selectedMode),
+      renderRunTrend(sources, selectedMode),
+      renderPackageSummary(sources, selectedMode)
     );
     content.dispatchEvent(new CustomEvent('package-mode-change', {
       bubbles: true,
       detail: { pageId, mode: selectedMode }
     }));
-  };
+  }
 
   renderMode();
   return h('div', { className: 'packages-view' }, tabs, content);
@@ -73,13 +77,13 @@ export function renderPackagesView(sources, pageId = 'packages') {
 /**
  * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @param {string} mode
- * @param {string} headingId
  * @returns {HTMLElement}
  */
-function renderPackageSummary(sources, mode, headingId) {
+export function renderPackageSummary(sources, mode = 'all') {
   const packages = summarizePackages(rowsFor(sources, 'workflows'));
   const summaries = summarizePackageActivity(packages, sources, mode);
   const modeLabel = titleCase(mode);
+  const headingId = 'packages-summary-heading';
 
   return h(
     'section',
@@ -346,10 +350,9 @@ function laterDate(left, right) {
 /**
  * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @param {string} mode
- * @param {string} headingId
  * @returns {HTMLElement}
  */
-function renderPackageUtilization(sources, mode, headingId) {
+export function renderPackageUtilization(sources, mode = 'all') {
   const workflows = rowsFor(sources, 'workflows');
   const usage = rowsFor(sources, 'usage');
   const packages = summarizePackages(workflows);
@@ -359,6 +362,7 @@ function renderPackageUtilization(sources, mode, headingId) {
   const completeness = usageMetadata?.completeness ?? 'unknown';
   const windowLabel = sourceWindowLabel(usageMetadata);
   const modeLabel = mode;
+  const headingId = 'packages-utilization-heading';
 
   return h(
     'section',
@@ -453,15 +457,15 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
 /**
  * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @param {string} mode
- * @param {string} headingId
  * @returns {HTMLElement}
  */
-function renderRunTrend(sources, mode, headingId) {
+export function renderRunTrend(sources, mode = 'all') {
   const packages = summarizePackages(rowsFor(sources, 'workflows'));
   const activity = packageActivityRuns(packages, sources, mode);
   const runsSource = activity.source;
   const modeLabel = titleCase(mode);
   const heading = `${modeLabel} runs over time`;
+  const headingId = 'packages-trend-heading';
   if (!runsSource || runsSource.metadata?.availability === 'unavailable') {
     return renderUnavailableRunTrend(heading, headingId, 'Package run data is unavailable.');
   }

@@ -22,7 +22,7 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'des
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter', 'navigation-page'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range'];
 
-export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'callout', 'chart', 'table', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
+export const VIEW_KEYS = ['id', 'title', 'description', 'intent', 'data', 'mark', 'element', 'callout', 'chart', 'table', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'route-field', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_TITLE_LINK_KEYS = ['href-field', 'identifier-field'];
 export const CALLOUT_KEYS = ['label', 'icon'];
@@ -36,6 +36,9 @@ export const VIEW_ELEMENT_VALUES = [
   'anomaly-readiness',
   'signal-list',
   'package-activity',
+  'package-utilization',
+  'package-run-trend',
+  'package-summary-table',
   'package-insights',
   'package-detail',
   'package-dispatches',
@@ -46,12 +49,12 @@ export const VIEW_ELEMENT_VALUES = [
   'workflow-runtime',
   'outcome-detail'
 ];
-export const VIEW_CHART_VALUES = ['bar', 'histogram', 'line', 'pie', 'swimlane'];
+export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
 export const VIEW_CONTROL_VALUES = ['interactive', 'static'];
 export const MAX_ESSENTIAL_VIEWS_PER_PAGE = 4;
-export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'href', 'actions'];
+export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'reference', 'href', 'actions'];
 export const TABLE_ACTION_KEYS = ['intent', 'presentation', 'icon', 'label', 'context', 'when'];
 export const TABLE_ACTION_PRESENTATION_VALUES = ['copy-prompt'];
 export const TABLE_ACTION_WHEN_KEYS = ['field', 'equals'];
@@ -457,6 +460,7 @@ export const ERROR_CODES = {
   missingOrInvalidRequiredField: 'DLS-E003',
   unknownOrDuplicateKey: 'DLS-E004',
   nonCanonicalVocabularyOrIdentifier: 'DLS-E005',
+  incompatibleMarkChannelTypeOrTimeUnit: 'DLS-E007',
   invalidLinkReference: 'DLS-E009',
   invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010',
   invalidEntityRelationshipOrSourceGrain: 'DLS-E011',
