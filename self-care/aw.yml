@@ -1,6 +1,6 @@
 name: SelfCare
 description: Repository-local live checks for dashboard quality, accessibility, build performance, component reuse, acquisition efficiency, and Primer brand alignment in Central Agentic Ops.
-min-version: v0.88.2
+min-version: v0.88.4
 experimental: true
 includes:
   - .github/workflows/self-care-data-acquisition-audit.md

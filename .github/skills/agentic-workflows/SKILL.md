@@ -9,8 +9,6 @@ Use this skill when a user asks to design, create, update, debug, or upgrade Git
 
 This skill is a dispatcher: identify the task type, load the matching workflow prompt/skill file, and follow it directly. Keep responses concise and ask a clarifying question if the correct prompt is unclear.
 
-For service-account-triggered worker dispatches, use `on.bots: ["github-actions[bot]"]` inline in every worker workflow rather than placing it in shared imports or using `on.roles: all`.
-
 Repository overlay (optional):
 - If `.github/aw/instructions.md` exists, load it with `@.github/aw/instructions.md` after loading the matched prompt/skill.
 - Precedence: repository overlay instructions override upstream defaults when they conflict.
@@ -26,6 +24,7 @@ Load these files from `github/gh-aw` (they are not available locally).
 - `.github/aw/charts-trending.md`
 - `.github/aw/charts.md`
 - `.github/aw/cli-commands.md`
+- `.github/aw/compat.md`
 - `.github/aw/configure-agentic-engine.md`
 - `.github/aw/context.md`
 - `.github/aw/create-agentic-workflow-trigger-details.md`
