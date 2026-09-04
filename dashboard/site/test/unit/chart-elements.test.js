@@ -333,8 +333,9 @@ describe('chart element helpers', () => {
     expect(histogram.querySelector('.histogram-chart-mark:last-child')).toBe(firstHistogramMark);
     expect(unitPie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
     expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
-    expect(fullPie.querySelector('.pie-chart-segment')?.getAttribute('d')?.match(/ A /g)).toHaveLength(2);
-    expect(fullPie.querySelectorAll('.pie-chart-segment')[1]?.getAttribute('d')).toBe('M 21 5.0845');
+    const fullPieSegments = fullPie.querySelectorAll('.pie-chart-segment');
+    expect(fullPieSegments[0]?.getAttribute('d')?.match(/ A /g)).toHaveLength(2);
+    expect(fullPieSegments[1]?.getAttribute('d')).toBe('M 21 5.0845');
   });
 
   it('renders temporal dot observations with per-series reference lines', () => {
