@@ -897,9 +897,18 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
     .toBeLessThanOrEqual((cardBox?.x ?? 0) + (cardBox?.width ?? 0));
   expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
     .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
-  expect(await chart.locator('.pie-chart-segment').evaluateAll(
-    (segments) => segments.map((segment) => segment.getAttribute('pathLength'))
-  )).toEqual(['100', '100']);
+  const segmentGeometry = await chart.locator('.pie-chart-segment').evaluateAll((segments) => ({
+    lengths: segments.map((segment) => /** @type {SVGGeometryElement} */ (segment).getTotalLength()),
+    dashArrays: segments.map((segment) => getComputedStyle(segment).strokeDasharray),
+    transforms: segments.map((segment) => getComputedStyle(segment).transform),
+    vectorEffects: segments.map((segment) => getComputedStyle(segment).vectorEffect)
+  }));
+  expect(segmentGeometry.lengths[0]).toBeCloseTo(62.5, 1);
+  expect(segmentGeometry.lengths[1]).toBeCloseTo(37.5, 1);
+  expect(segmentGeometry.lengths.reduce((sum, length) => sum + length, 0)).toBeCloseTo(100, 1);
+  expect(segmentGeometry.dashArrays).toEqual(['none', 'none']);
+  expect(segmentGeometry.transforms).toEqual(['none', 'none']);
+  expect(segmentGeometry.vectorEffects).toEqual(['none', 'none']);
 
   const firstMark = chart.locator('.pie-chart-mark').first();
   expect(await firstMark.evaluate((mark) => {

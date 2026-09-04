@@ -259,6 +259,10 @@ describe('chart element helpers', () => {
       symbol: 'AIC',
       significant: 1
     });
+    const fullPie = renderChartWidget('pie', [], [], {
+      entries: [['success', 4], ['failure', 0]],
+      total: 4
+    });
     const chartHeight = String(38 - 4);
 
     expect(bar.getAttribute('data-chart-widget')).toBe('bar');
@@ -290,8 +294,13 @@ describe('chart element helpers', () => {
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('style')).toContain('--chart-entry-index: 0');
     expect(pie.querySelector('.pie-chart-track')?.getAttribute('stroke-width')).toBe('10');
+    expect(pie.querySelector('.pie-chart-segment')?.tagName).toBe('path');
     expect(pie.querySelector('.pie-chart-segment')?.getAttribute('stroke-width')).toBe('10');
-    expect([...pie.querySelectorAll('.pie-chart-segment')].map((segment) => segment.getAttribute('pathLength'))).toEqual(['100', '100']);
+    expect([...pie.querySelectorAll('.pie-chart-segment')].map((segment) => segment.getAttribute('d'))).toEqual([
+      'M 21 5.0845 A 15.9155 15.9155 0 1 1 5.0845 21',
+      'M 5.0845 21 A 15.9155 15.9155 0 0 1 21 5.0845'
+    ]);
+    expect(pie.querySelector('.pie-chart-segment')?.hasAttribute('stroke-dasharray')).toBe(false);
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3');
     expect(pie.querySelector('.pie-chart-tooltip rect')?.getAttribute('width')).toBe('21.25');
@@ -324,6 +333,8 @@ describe('chart element helpers', () => {
     expect(histogram.querySelector('.histogram-chart-mark:last-child')).toBe(firstHistogramMark);
     expect(unitPie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
     expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
+    expect(fullPie.querySelector('.pie-chart-segment')?.getAttribute('d')?.match(/ A /g)).toHaveLength(2);
+    expect(fullPie.querySelectorAll('.pie-chart-segment')[1]?.getAttribute('d')).toBe('M 21 5.0845');
   });
 
   it('renders temporal dot observations with per-series reference lines', () => {
