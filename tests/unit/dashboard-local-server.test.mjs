@@ -48,13 +48,21 @@ async function nextDashboard(socket) {
 }
 
 async function nextSocketMessage(socket, predicate = () => true) {
-  while (true) {
-    const message = await new Promise((resolve, reject) => {
-      socket.addEventListener("message", (event) => resolve(JSON.parse(event.data)), { once: true });
-      socket.addEventListener("error", reject, { once: true });
-    });
-    if (predicate(message)) return message;
-  }
+  return new Promise((resolve, reject) => {
+    const onMessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (!predicate(message)) return;
+      socket.removeEventListener("message", onMessage);
+      socket.removeEventListener("error", onError);
+      resolve(message);
+    };
+    const onError = (error) => {
+      socket.removeEventListener("message", onMessage);
+      reject(error);
+    };
+    socket.addEventListener("message", onMessage);
+    socket.addEventListener("error", onError, { once: true });
+  });
 }
 
 async function requestWithHost(url, host) {

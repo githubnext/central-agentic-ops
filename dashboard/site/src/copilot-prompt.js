@@ -60,6 +60,7 @@ export function renderCopilotPrompt(socket) {
     'aria-live': 'polite'
   });
   let sessionActive = false;
+  let activeViewName = '';
   let assistantResponse = '';
   let assistantMessageLogged = false;
   /** @type {HTMLElement | null} */
@@ -153,7 +154,10 @@ export function renderCopilotPrompt(socket) {
       dialogStatus.textContent = streamEvent.message;
       sessionActive = false;
       button.disabled = false;
-      console.error('Copilot dashboard update failed.', { error: streamEvent.message });
+      console.error('Copilot dashboard update failed.', {
+        view: activeViewName,
+        error: streamEvent.message
+      });
     }
   });
 
@@ -165,6 +169,7 @@ export function renderCopilotPrompt(socket) {
       || activeView?.getAttribute('data-nav-page-id')
       || location.hash.match(/^#page-([^?]+)/)?.[1]
       || 'overview';
+    activeViewName = view;
     const request = input.value;
     debugCopilotMessage('user', request);
     assistantResponse = '';

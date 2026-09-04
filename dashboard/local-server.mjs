@@ -293,6 +293,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
       editableDashboardPaths,
       viewDashboardPath,
       onEvent = () => {},
+      signal,
     }) {
       console.log("Creating Copilot dashboard session.", {
         view,
@@ -432,6 +433,10 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         },
       };
       activeSession = sessionHandle;
+      const stopOnAbort = () => {
+        void sessionHandle.stop();
+      };
+      signal?.addEventListener("abort", stopOnAbort, { once: true });
       const unsubscribe = session.on((event) => {
         console.log("Copilot dashboard session event.", { sessionId: session.sessionId, type: event.type });
         if (event.type === "assistant.message_delta") {
@@ -452,6 +457,10 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         }
       });
       try {
+        if (signal?.aborted) {
+          await sessionHandle.stop();
+          return { aborted: true };
+        }
         console.log("Sending Copilot dashboard request.", {
           sessionId: session.sessionId,
           view,
@@ -482,6 +491,7 @@ Built-in views come from the site's dashboard.json. Package views come from thei
         console.log("Copilot dashboard request completed.", { sessionId: session.sessionId, view });
         return { aborted };
       } finally {
+        signal?.removeEventListener("abort", stopOnAbort);
         unsubscribe();
         if (activeSession === sessionHandle) activeSession = null;
         await disconnect();
@@ -646,7 +656,7 @@ export async function startDashboardServer({
   let closed = false;
   let copilotRuntime;
   let copilotRequestActive = false;
-  let copilotSocket = null;
+  let copilotRequest = null;
 
   const broadcastDashboard = () => {
     console.log("Broadcasting dashboard preview update.", { socketCount: sockets.size });
@@ -682,7 +692,8 @@ export async function startDashboardServer({
     }
 
     copilotRequestActive = true;
-    copilotSocket = socket;
+    const controller = new AbortController();
+    copilotRequest = { socket, controller };
     try {
       const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
         resolvedCatalogRoot,
@@ -708,6 +719,7 @@ export async function startDashboardServer({
         editableDashboardPaths,
         viewDashboardPath,
         onEvent,
+        signal: controller.signal,
       });
       if (result?.aborted) {
         onEvent({
@@ -766,7 +778,7 @@ export async function startDashboardServer({
       });
     } finally {
       copilotRequestActive = false;
-      if (copilotSocket === socket) copilotSocket = null;
+      if (copilotRequest?.socket === socket) copilotRequest = null;
     }
   };
 
@@ -774,7 +786,10 @@ export async function startDashboardServer({
     if (command?.type === "copilot.start") {
       await runCopilotRequest(socket, command);
     } else if (command?.type === "copilot.stop") {
-      if (socket === copilotSocket) await copilotRuntime?.stop();
+      if (socket === copilotRequest?.socket) {
+        copilotRequest.controller.abort();
+        await copilotRuntime?.stop();
+      }
     }
   };
 
@@ -970,7 +985,10 @@ export async function startDashboardServer({
       if (removed) return;
       removed = true;
       sockets.delete(socket);
-      if (socket === copilotSocket) void copilotRuntime?.stop();
+      if (socket === copilotRequest?.socket) {
+        copilotRequest.controller.abort();
+        void copilotRuntime?.stop();
+      }
       console.log("Dashboard preview socket disconnected.", { socketCount: sockets.size });
     };
     socket.on("data", (data) => {
