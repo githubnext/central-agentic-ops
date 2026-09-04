@@ -8,6 +8,7 @@ import {
   performanceJobRecord,
   runFailureEvidence,
 } from "./failure-evidence.mjs";
+import { normalizeVersion, updateState } from "./version.mjs";
 
 (async () => {
 log.group`Discover deployed agentic workflows`;
@@ -221,35 +222,10 @@ function ghAwPayloads(source) {
   return payloads;
 }
 
-function isVersion(value) {
-  const text = String(value);
-  const parts = (text.startsWith("v") ? text.slice(1) : text).split(".");
-  return parts.length > 1 && parts.every((part) => part.length > 0 && [...part].every((character) => character >= "0" && character <= "9"));
-}
-
-function compareVersions(left, right) {
-  const parts = (value) => {
-    const text = String(value);
-    return (text.startsWith("v") ? text.slice(1) : text).split(".").map((part) => Number.parseInt(part, 10));
-  };
-  const [leftParts, rightParts] = [parts(left), parts(right)];
-  if ([...leftParts, ...rightParts].some((part) => !Number.isInteger(part))) return null;
-  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
-    const difference = (leftParts[index] || 0) - (rightParts[index] || 0);
-    if (difference !== 0) return difference;
-  }
-  return 0;
-}
-
-function updateState(version, latestVersion) {
-  const comparison = version && latestVersion ? compareVersions(version, latestVersion) : null;
-  return comparison === null ? "unknown" : comparison < 0 ? "update-available" : "up-to-date";
-}
-
 async function latestGhAwVersion() {
   try {
     const version = (await github("/repos/github/gh-aw/releases/latest")).body.tag_name;
-    return typeof version === "string" && isVersion(version) ? version : null;
+    return normalizeVersion(version);
   } catch (error) {
     log.warning`${error.message}; gh-aw update state will be unknown`;
     return null;
@@ -306,10 +282,7 @@ async function workflowCapabilities(repositoryName, lockPath, registryOnly) {
   const payloads = lock.status === "fulfilled"
     ? ghAwPayloads(lock.value)
     : { ghAwMetadata: null, ghAwManifest: null };
-  const ghAwVersion = typeof payloads.ghAwMetadata?.compiler_version === "string"
-    && isVersion(payloads.ghAwMetadata.compiler_version)
-    ? payloads.ghAwMetadata.compiler_version
-    : null;
+  const ghAwVersion = normalizeVersion(payloads.ghAwMetadata?.compiler_version);
   try {
     if (source.status !== "fulfilled") throw source.reason;
     const role = workflowRole(source.value);
@@ -690,6 +663,7 @@ const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8
     updatedAt: registered?.updated_at || null,
     runHealth: registered ? runHealth.totals.get(registered.id) || { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] } : null,
     ...capabilities,
+    currentGhAwVersion: latestVersion,
     updateState: updateState(capabilities.ghAwVersion, latestVersion),
   };
 });
@@ -737,6 +711,7 @@ const inventory = {
   includePrivate,
   repositoryCount: repositoryNames.length,
   organizationRepositories,
+  latestGhAwVersion: latestVersion,
   discovery: {
     workflowSearchAvailable,
     manifestSearchAvailable,

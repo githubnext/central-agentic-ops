@@ -71,6 +71,48 @@ describe('presenter built-in and custom pages', () => {
     rendered.remove();
   });
 
+  it('renders data-health diagnostics when a cached source is unavailable', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-03T12:00:00Z',
+            'retrieved-at': '2026-09-03T12:01:00Z',
+            completeness: 'unknown',
+            freshness: 'unknown',
+            availability: 'unavailable'
+          }
+        },
+        usage: {
+          source: 'usage',
+          rows: [{ run: '1', aic: 3 }],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-03T12:00:00Z',
+            'retrieved-at': '2026-09-03T12:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const page = activatePage(rendered, 'data-health');
+    expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
+    expect(page?.querySelector('[data-view-availability="unavailable"]')).toBeNull();
+    expect(page?.textContent).toContain('Sources needing attention');
+    expect(page?.textContent).toContain('runs');
+    expect(page?.textContent).toContain('unavailable');
+    rendered.remove();
+  });
+
   it('renders built-in models and agents page with model and engine AIC summaries', () => {
     const metadata = {
       'source-id': 'usage-fixture',
@@ -520,6 +562,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
+      'Preview',
       'Runtime',
       'Performance',
       'Security',
@@ -672,6 +715,7 @@ describe('presenter built-in and custom pages', () => {
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
+      'Preview',
       'Runtime',
       'Performance',
       'Security',

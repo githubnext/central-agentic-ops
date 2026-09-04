@@ -49,7 +49,7 @@ export function renderSectionHeading({
  * @returns {HTMLElement}
  */
 export function renderVitalStat(label, value, detail) {
-  return h('div', null, h('dt', null, label), h('dd', null, String(value)), detail ? h('p', null, detail) : null);
+  return h('div', null, h('dt', null, label), h('dd', null, value), detail ? h('p', null, detail) : null);
 }
 
 /**

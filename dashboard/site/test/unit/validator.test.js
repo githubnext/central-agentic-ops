@@ -38,6 +38,43 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('defines the Preview issue attribution views', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const preview = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'preview');
+
+    expect(preview).toMatchObject({
+      kind: 'custom',
+      title: 'Preview',
+      views: [
+        {
+          id: 'preview-issues-by-package',
+          mark: 'chart',
+          chart: 'pie',
+          data: {
+            source: 'outcomes',
+            filters: { 'outcome-category': ['issue'] }
+          }
+        },
+        {
+          id: 'preview-issue-ledger',
+          mark: 'table',
+          data: {
+            source: 'outcomes',
+            filters: { 'outcome-category': ['issue'] }
+          }
+        }
+      ]
+    });
+    expect(preview.views[1].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
+      'package',
+      'workflow-name',
+      'outcome-title',
+      'outcome-status',
+      'repository',
+      'observed-at'
+    ]);
+  });
+
   it('defines workflow update inventory and version distribution views', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const updates = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'updates');
@@ -45,25 +82,19 @@ describe('dashboard document validation', () => {
       kind: 'custom',
       views: [
         {
-          id: 'workflow-update-state',
-          mark: 'chart',
-          chart: 'pie',
-          data: { source: 'workflows' }
-        },
-        {
-          id: 'workflow-updates',
-          mark: 'table',
-          data: { source: 'workflows' }
-        },
-        {
           id: 'workflow-versions',
           mark: 'chart',
           chart: 'pie',
           data: { source: 'workflows' },
           encoding: {
-            x: { field: 'gh-aw-version' },
+            x: { field: 'gh-aw-version-label' },
             y: { field: 'workflow', aggregate: 'count' }
           }
+        },
+        {
+          id: 'workflow-updates',
+          mark: 'table',
+          data: { source: 'workflows' }
         }
       ]
     });
@@ -72,6 +103,7 @@ describe('dashboard document validation', () => {
       'workflow',
       'repository',
       'gh-aw-version',
+      'gh-aw-current-version',
       'gh-aw-update-state'
     ]);
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
