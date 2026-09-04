@@ -108,13 +108,13 @@ safe-outputs:
   noop:
 pre-agent-steps:
   - name: Install dashboard dependencies
-    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: npm ci --prefix dashboard/site --ignore-scripts
   - name: Install Chromium
-    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: npm exec --prefix dashboard/site -- playwright install --with-deps chromium
   - name: Validate dashboard baseline
-    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: |
       npm --prefix dashboard/site run typecheck
       npm --prefix dashboard/site run lint

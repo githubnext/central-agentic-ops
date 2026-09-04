@@ -97,13 +97,13 @@ safe-outputs:
   noop:
 pre-agent-steps:
   - name: Build expected control-plane inventory
-    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: |
       mkdir -p /tmp/gh-aw/agent/self-care-dashboard-review
       REPORT_INVENTORY=/tmp/gh-aw/agent/self-care-dashboard-review/expected-inventory.json \
         node dashboard/report/inventory.mjs
   - name: Download and grade the live dashboard artifact
-    if: ${{ inputs.target_repo == 'github/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     run: |

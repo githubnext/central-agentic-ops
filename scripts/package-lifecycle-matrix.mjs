@@ -99,11 +99,26 @@ function sourcePath(manifest, source) {
 }
 
 function packageSources(root, suite) {
-  const manifest = parse(readFileSync(join(root, suite.manifest), "utf8"));
-  const sources = [suite.manifest];
-  for (const entry of [...(manifest.includes ?? []), ...(manifest.resources ?? [])]) {
-    sources.push(sourcePath(suite.manifest, typeof entry === "string" ? entry : entry.source));
+  const sources = [];
+  const visited = new Set();
+  const collect = (manifestPath) => {
+    if (visited.has(manifestPath)) return;
+    visited.add(manifestPath);
+    sources.push(manifestPath);
+    const manifest = parse(readFileSync(join(root, manifestPath), "utf8"));
+    for (const entry of manifest.includes ?? []) {
+      const source = sourcePath(manifestPath, typeof entry === "string" ? entry : entry.source);
+      if (typeof entry === "string" && posix.basename(source) === "aw.yml") {
+        collect(source);
+      } else {
+        sources.push(source);
+      }
+    }
+    for (const entry of manifest.resources ?? []) {
+      sources.push(sourcePath(manifestPath, entry.source));
+    }
   }
+  collect(suite.manifest);
   return sources;
 }
 
