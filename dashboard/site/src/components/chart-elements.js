@@ -539,6 +539,7 @@ function buildSwimlaneSections(points, xCoordinate) {
   /** @type {Map<string, Array<{ lane: string, x1: number, x2: number, count: number, first: number, last: number, point: ChartPointLike & { lane: string, timestamp: number } }>>} */
   const sectionsByLane = new Map();
   for (const [lane, bins] of binsByLane) {
+    /** @type {Array<{ lane: string, x1: number, x2: number, count: number, first: number, last: number, point: ChartPointLike & { lane: string, timestamp: number } }>} */
     const sections = [];
     for (let index = 0; index < bins.length; index += 1) {
       const bin = bins[index];
@@ -546,7 +547,7 @@ function buildSwimlaneSections(points, xCoordinate) {
       const previous = sections.at(-1);
       const x1 = SWIMLANE_START_X + (index * SWIMLANE_SECTION_WIDTH);
       const x2 = Math.min(SWIMLANE_END_X, x1 + SWIMLANE_SECTION_WIDTH);
-      if (previous && previous.x2 === x1) {
+      if (previous && Math.abs(previous.x2 - x1) < Number.EPSILON * 100) {
         previous.x2 = x2;
         previous.count += bin.count;
         previous.first = Math.min(previous.first, bin.first);
