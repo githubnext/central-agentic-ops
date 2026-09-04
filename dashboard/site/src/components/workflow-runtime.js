@@ -13,6 +13,7 @@ import { coverageWindowHours, formatUtcDateTime, renderVitalStat } from './ui-pr
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowPage } from './workflow-page.js';
 import { workflowRouteValue } from './workflow-route.js';
+import { rowsFor } from './source-rows.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context

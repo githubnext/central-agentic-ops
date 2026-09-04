@@ -2,7 +2,6 @@
  * Route-aware workflow reports and runs chrome.
  */
 
-<<<<<<< HEAD
 import { renderWorkflowPage } from './workflow-page.js';
 
 /**
