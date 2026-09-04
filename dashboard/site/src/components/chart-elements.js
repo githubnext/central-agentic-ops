@@ -204,13 +204,14 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram with ${bins.length} automatically calculated bins` },
+        ...[4, 21, 38].map((y) => h('line', { className: 'histogram-chart-grid', x1: 0, y1: y, x2: 100, y2: y })),
         h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...bins.map((bin, index) => {
           const height = Math.max(1, (bin.count / maximum) * 34);
           const label = `${binLabel(bin)}: ${bin.count} observation${pluralSuffix(bin.count)}`;
           const x = index * barWidth;
           const tooltipX = Math.min(Math.max(x + ((barWidth - 1) / 2) - 21, 1), 57);
-          return h('g', {
+          const mark = h('g', {
             className: 'chart-point histogram-chart-mark',
             tabIndex: 0,
             role: 'img',
@@ -222,7 +223,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             x,
             y: 38 - height,
             width: Math.max(0, barWidth - 1),
-            height
+            height,
+            rx: 0.75
           }),
           h(
             'g',
@@ -238,6 +240,10 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               ...(label.length > 22 ? { textLength: 36, lengthAdjust: 'spacingAndGlyphs' } : {})
             }, label)
           ));
+          const bringTooltipToFront = () => mark.parentNode?.append(mark);
+          mark.addEventListener('pointerenter', bringTooltipToFront);
+          mark.addEventListener('focus', bringTooltipToFront);
+          return mark;
         })
       ),
       bins.length > 0
