@@ -370,11 +370,12 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 }
 
 /**
- * @param {Array<Record<string, any>>} points
+ * @param {ChartPointLike[]} points
  * @param {Record<string, unknown> | null} timeRange
  * @returns {HTMLElement}
  */
 function renderSwimlaneChart(points, timeRange) {
+  /** @type {Array<ChartPointLike & { lane: string, timestamp: number }>} */
   const plotted = points.flatMap((point) => {
     const timestamp = Date.parse(String(point.x));
     const lane = swimlaneConclusion(point.category ?? point.color);
@@ -405,6 +406,20 @@ function renderSwimlaneChart(points, timeRange) {
   const ticks = Array.from({ length: 4 }, (_, index) => start + ((span * index) / 3));
   /** @param {number} timestamp */
   const xCoordinate = (timestamp) => 25 + (Math.min(1, Math.max(0, (timestamp - start) / span)) * 92);
+  const positioned = plotted.map((point) => ({ point, x: xCoordinate(point.timestamp) }));
+  /** @type {Map<string, Array<{ point: ChartPointLike & { lane: string, timestamp: number }, x: number }>>} */
+  const collisionGroups = new Map();
+  for (const position of positioned) {
+    const key = `${position.point.lane}:${position.x.toFixed(1)}`;
+    const group = collisionGroups.get(key) ?? [];
+    group.push(position);
+    collisionGroups.set(key, group);
+  }
+  for (const group of collisionGroups.values()) {
+    group.forEach((position, index) => {
+      position.x = Math.min(117, Math.max(25, position.x + ((index - ((group.length - 1) / 2)) * 0.8)));
+    });
+  }
 
   return h(
     'div',
@@ -426,9 +441,9 @@ function renderSwimlaneChart(points, timeRange) {
         return [
           h('text', { className: 'swimlane-label', x: 23, y: y + 1, 'text-anchor': 'end' }, label),
           h('line', { className: 'swimlane-separator', x1: 25, y1: y, x2: 117, y2: y }),
-          ...plotted
-            .filter((point) => point.lane === lane)
-            .map((point) => renderSwimlaneMark(point, xCoordinate(point.timestamp), y))
+          ...positioned
+            .filter(({ point }) => point.lane === lane)
+            .map(({ point, x }) => renderSwimlaneMark(point, x, y))
         ];
       }),
       h('line', { className: 'swimlane-axis', x1: 25, y1: 54, x2: 117, y2: 54 }),
