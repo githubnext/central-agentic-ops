@@ -9,6 +9,7 @@ on:
     strategy: centralized
     name: matt
     events: [pull_request_comment, pull_request_review_comment]
+  reaction: none
 permissions:
   contents: read
   pull-requests: read
