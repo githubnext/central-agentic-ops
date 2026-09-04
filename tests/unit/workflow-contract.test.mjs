@@ -788,9 +788,12 @@ test("release computes an authorized semantic version bump before drafting and p
 
   assert.equal(config.on.workflow_dispatch.inputs.operation.default, "prepare");
   assert.deepEqual(config.on.workflow_dispatch.inputs.operation.options, ["prepare", "publish"]);
+  assert.equal(config.on.workflow_dispatch.inputs.bump.required, false);
   assert.equal(config.on.workflow_dispatch.inputs.bump.default, "patch");
   assert.deepEqual(config.on.workflow_dispatch.inputs.bump.options, ["patch", "minor", "major"]);
   assert.match(version, /RELEASE_BUMP: \$\{\{ inputs\.bump \}\}/);
+  assert.match(version, /const bump = \['patch', 'minor', 'major'\]\.includes\(requestedBump\) \? requestedBump : 'patch'/);
+  assert.match(version, /Unknown release bump.*defaulting to patch/);
   assert.match(version, /context\.payload\.repository\.fork/);
   assert.match(version, /getCollaboratorPermissionLevel/);
   assert.match(version, /const role = access\.role_name \|\| access\.permission/);
