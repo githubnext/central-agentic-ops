@@ -11,7 +11,7 @@ import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours, formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
-import { renderWorkflowPage } from './workflow-page.js';
+import { renderWorkflowRouteView } from './workflow-route-view.js';
 import { workflowRouteValue } from './workflow-route.js';
 import { rowsFor } from './source-rows.js';
 
@@ -20,7 +20,10 @@ import { rowsFor } from './source-rows.js';
  * @returns {HTMLElement}
  */
 export function renderWorkflowRuntime(context) {
-  return renderWorkflowPage(context, ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow));
+  return renderWorkflowRouteView({
+    ...context,
+    viewId: context.viewId ?? 'workflow-runtime-route'
+  });
 }
 
 /**
