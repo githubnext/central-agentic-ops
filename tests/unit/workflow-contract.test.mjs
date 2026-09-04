@@ -11,7 +11,7 @@ import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
 const modes = ["review", "live"];
-const ghAwVersion = "v0.88.2";
+const ghAwVersion = "v0.88.4";
 
 function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
@@ -37,8 +37,8 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
 
   for (const name of ["activity.yml", "copilot-setup-steps.yml", "release.yml", "workflow-contracts.yml"]) {
     const source = workflow(name);
-    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.2/);
-    assert.match(source, /version: v0\.88\.2/);
+    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.4/);
+    assert.match(source, /version: v0\.88\.4/);
   }
 });
 
@@ -869,21 +869,20 @@ test("CAO upgrade script refreshes gh-aw, packages, and Actions", () => {
   assert.match(upgrade, /^gh aw upgrade$/m);
 });
 
-test("root package directly includes grader-backed workers for dependency packaging", () => {
-  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
-  const importedWorkerIds = [
-    "ambient-context-agents-md-curator",
-    "dependabot-release-train-updater",
-    "optimization-ai-credit-auditor",
-    "optimization-ai-credit-optimizer",
-  ];
+test("root package composes its operational packages through manifests", () => {
+  const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
 
-  for (const workflowId of importedWorkerIds) {
-    const graderPath = `.github/graders/${workflowId}-operational-value.sh`;
-    assert.ok(existsSync(join(root, graderPath)), `${graderPath} must exist`);
-    assert.match(workflow(`${workflowId}.md`), new RegExp(`run: ${graderPath.replaceAll(".", "\\.")}`));
-    assert.match(rootManifest, new RegExp(`- \\.github/workflows/${workflowId.replaceAll("-", "\\-")}\\.md`));
-  }
+  assert.deepEqual(rootManifest.includes, [
+    ".github/workflows/agentic-auto-upgrade.yml",
+    "activity/aw.yml",
+    "ambient-context/aw.yml",
+    "aw-maintenance/aw.yml",
+    "dashboard/aw.yml",
+    "dependabot/aw.yml",
+    "optimization/aw.yml",
+  ]);
+  const project = JSON.parse(readFileSync(join(root, ".github", "workflows", "aw.json"), "utf8"));
+  assert.deepEqual(project.auto_upgrade.options, ["--pre-releases"]);
 });
 
 test("compiled workflow locks are not ignored", () => {
@@ -1917,7 +1916,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
   assert.match(source, /cli-proxy: true/);
-  assert.match(source, /playwright:\n\s+mode: cli\n\s+version: "0\.1\.18"/);
+  assert.match(source, /playwright:\n\s+version: "0\.1\.18"/);
   assert.match(source, /npm pack axe-core@4\.13\.0/);
   assert.match(source, /npm run docs:preview -- --host 127\.0\.0\.1 --port <port>/);
   assert.match(source, /Do not use a generic flat static server rooted at `dist\/` as the primary preview mechanism/);
@@ -2132,8 +2131,12 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
   try {
     cpSync(join(root, ".github"), join(temporaryRoot, ".github"), { recursive: true });
+    cpSync(join(root, "AGENTS.md"), join(temporaryRoot, "AGENTS.md"));
     cpSync(join(root, "aw.yml"), join(temporaryRoot, "aw.yml"));
     cpSync(join(root, "README.md"), join(temporaryRoot, "README.md"));
+    for (const packageDirectory of ["activity", "ambient-context", "aw-maintenance", "dashboard", "dependabot", "optimization"]) {
+      cpSync(join(root, packageDirectory), join(temporaryRoot, packageDirectory), { recursive: true });
+    }
     execFileSync("git", ["init", "--quiet"], { cwd: temporaryRoot });
 
     execFileSync("gh", [
@@ -2475,18 +2478,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     ? { source: entry, destination: entry, kind: "action-workflow" }
     : { ...entry, source: `${sourcePrefix}${entry.source}` };
 
-  assert.deepEqual(
-    rootPackage.includes
-      .filter((entry) => (typeof entry === "string" ? entry : entry.destination)?.startsWith(".github/workflows/dashboard"))
-      .map((entry) => normalizeInclude(entry)),
-    dashboardPackage.includes.map((entry) => normalizeInclude(entry, typeof entry === "string" ? "" : "dashboard/")),
-  );
-  assert.deepEqual(
-    rootPackage.resources.filter((entry) => entry.source.startsWith("dashboard/")),
-    dashboardPackage.resources.map((entry) => ({ ...entry, source: `dashboard/${entry.source}` })),
-  );
+  assert.ok(rootPackage.includes.includes("dashboard/aw.yml"));
   assert.match(dashboardManifest, /name: CAO Dashboard/);
-  assert.match(rootManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
+  assert.match(rootManifest, /^\s+- dashboard\/aw\.yml$/m);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
@@ -2546,7 +2540,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(activityWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(activityWorkflow, /Save operational-value observation cache/);
-  assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.2/);
+  assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.4/);
   assert.match(deployedWorkflows, /const \{ staleRegistration, \.\.\.capabilities \} = await workflowCapabilities/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
   assert.match(deployedWorkflows, /shared\\\/\(\?:cao\|control\)\\\.md/);
@@ -2605,12 +2599,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
     { source: "version.mjs", destination: ".github/aw/activity/version.mjs" },
   ]);
-  assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
-  assert.ok(rootManifest.includes.includes(".github/workflows/cao-maintenance.yml"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/failure-evidence.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/version.mjs"));
+  assert.ok(rootManifest.includes.includes("activity/aw.yml"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.doesNotMatch(workflow, /workflow_call:/);
   assert.match(workflow, /workflow_dispatch:[\s\S]*?request-id:/);

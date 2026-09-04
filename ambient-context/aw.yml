@@ -1,6 +1,6 @@
 name: Ambient Context
 description: Optional workflow for keeping repository ambient context — AGENTS.md and agent skills — small, accurate, and current.
-min-version: v0.88.2
+min-version: v0.88.4
 experimental: true
 includes:
   - .github/workflows/ambient-context.md
