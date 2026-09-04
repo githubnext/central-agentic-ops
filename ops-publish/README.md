@@ -9,13 +9,7 @@ Ops Publish deliberately recreates issues instead of using GitHub issue transfer
 
 ## Supported Output
 
-The first version supports bot-authored `create_issue` safe outputs from these Central Agentic Ops workers:
-
-- Ambient Context
-- AW Doctor / Failures
-- AW Doctor
-- Dependabot
-- Optimization
+The add-on supports bot-authored `create_issue` safe outputs from workers declared in the control repository's central `.github/workflows/cao.json` manifest. The resolved package and worker list is used when validating the originating run, so newly configured workers do not require publisher code changes.
 
 Pull requests, comments, and artifact-backed review bundles are not publishable by this add-on. Applying the label to those items has no supported publication path.
 
@@ -41,9 +35,9 @@ Copy the conventional workflow and script into the private control-plane or revi
 
 ```bash
 review_repository=/path/to/review-repository
-mkdir -p "$review_repository/.github/workflows" "$review_repository/.github/scripts/ops-publish" "$review_repository/.github/cao"
+mkdir -p "$review_repository/.github/workflows" "$review_repository/.github/cao" "$review_repository/ops-publish"
 cp ops-publish/ops-publish.yml "$review_repository/.github/workflows/ops-publish.yml"
-cp .github/scripts/ops-publish/ops-publish.mjs "$review_repository/.github/scripts/ops-publish/"
+cp ops-publish/ops-publish.mjs "$review_repository/ops-publish/"
 mkdir -p "$review_repository/.github/cao/src"
 cp .github/cao/src/control.mjs .github/cao/src/policy.mjs "$review_repository/.github/cao/src/"
 ```
