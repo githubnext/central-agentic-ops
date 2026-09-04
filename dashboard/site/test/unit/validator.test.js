@@ -60,7 +60,10 @@ describe('dashboard document validation', () => {
           mark: 'table',
           data: {
             source: 'outcomes',
-            filters: { 'outcome-category': ['issue'] }
+            filters: {
+              'outcome-category': ['issue'],
+              'workflow-role': ['worker']
+            }
           }
         }
       ]

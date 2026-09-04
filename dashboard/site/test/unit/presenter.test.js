@@ -584,6 +584,49 @@ describe('presenter built-in and custom pages', () => {
     window.history.replaceState(null, '', '/');
   });
 
+  it('shows only known-worker issues in Preview and filters them by open or closed state', () => {
+    const metadata = {
+      'source-id': 'outcomes-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-09-03T12:00:00Z',
+      'retrieved-at': '2026-09-03T12:01:00Z',
+      completeness: /** @type {'complete'} */ ('complete'),
+      freshness: /** @type {'fresh'} */ ('fresh'),
+      availability: /** @type {'available'} */ ('available')
+    };
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        outcomes: {
+          source: 'outcomes',
+          metadata,
+          rows: [
+            { package: 'daily', 'workflow-name': 'Open worker', 'workflow-role': 'worker', 'outcome-category': 'issue', 'outcome-title': 'Open issue', 'outcome-status': 'open', repository: 'control', 'observed-at': '2026-09-03T10:00:00Z' },
+            { package: 'daily', 'workflow-name': 'Closed worker', 'workflow-role': 'worker', 'outcome-category': 'issue', 'outcome-title': 'Closed issue', 'outcome-status': 'closed', repository: 'control', 'observed-at': '2026-09-03T09:00:00Z' },
+            { package: 'unknown', 'workflow-name': 'Unknown workflow', 'workflow-role': 'unknown', 'outcome-category': 'issue', 'outcome-title': 'Unattributed issue', 'outcome-status': 'open', repository: 'control', 'observed-at': '2026-09-03T08:00:00Z' }
+          ]
+        }
+      }
+    });
+
+    const page = activatePage(rendered, 'preview');
+    const rows = [...(page?.querySelectorAll('.custom-table tbody tr') ?? [])];
+    const status = /** @type {HTMLSelectElement | null} */ (
+      page?.querySelector('[data-table-facet="outcome-status"]') ?? null
+    );
+    expect(rows).toHaveLength(2);
+    expect(page?.textContent).not.toContain('Unattributed issue');
+    expect([...status?.options ?? []].map((option) => option.value)).toEqual(['', 'closed', 'open']);
+
+    if (status) {
+      status.value = 'closed';
+      status.dispatchEvent(new Event('input'));
+    }
+    expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);
+    rendered.remove();
+    window.history.replaceState(null, '', '/');
+  });
+
   it('renders conditional site-wide callouts and remembers dismissal only in memory', () => {
     localStorage.clear();
     sessionStorage.clear();

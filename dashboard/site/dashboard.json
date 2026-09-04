@@ -4568,6 +4568,9 @@
               "filters": {
                 "outcome-category": [
                   "issue"
+                ],
+                "workflow-role": [
+                  "worker"
                 ]
               },
               "limit": 100
