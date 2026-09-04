@@ -824,7 +824,7 @@ test("release computes an authorized semantic version bump before drafting and p
   assert.match(publish, /git\.deleteRef/);
   assert.match(publish, /catch \(cleanupError\)/);
   assert.match(publish, /throw error/);
-  assert.match(publish, /tag_name: releaseTag/);
+  assert.doesNotMatch(publish, /release_id: draft\.id,[\s\S]*?tag_name:/);
   assert.match(publish, /draft: false/);
   assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/release\.yml/);

@@ -222,7 +222,6 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 release_id: draft.id,
-                tag_name: releaseTag,
                 name: releaseTag,
                 draft: false,
                 make_latest: 'true',
