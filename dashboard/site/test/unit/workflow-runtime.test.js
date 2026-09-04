@@ -263,7 +263,7 @@ describe('renderWorkflowRuntime', () => {
     const rendered = renderWorkflowRouteView({
       ...context(),
       pageId: 'custom-workflow-page',
-      elementConfig: { variant: 'insights' }
+      elementConfig: { body: 'insights' }
     });
     selectWorkflow(rendered);
 
@@ -275,7 +275,7 @@ describe('renderWorkflowRuntime', () => {
     const rendered = renderWorkflowRouteView({
       ...context(),
       pageId: 'workflow-detail',
-      elementConfig: { variant: 'insights' }
+      elementConfig: { body: 'insights' }
     });
     selectWorkflow(rendered);
 

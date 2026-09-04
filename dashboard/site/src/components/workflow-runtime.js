@@ -23,7 +23,7 @@ import { rowsFor } from './source-rows.js';
 export function renderWorkflowRuntime(context) {
   return renderWorkflowRouteView({
     ...context,
-    elementConfig: context.elementConfig ?? { variant: 'insights' }
+    elementConfig: context.elementConfig ?? { body: 'insights' }
   });
 }
 

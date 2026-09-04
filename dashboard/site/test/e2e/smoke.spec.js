@@ -2053,7 +2053,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   data: { sources: ['workflows'] },
                   mark: 'element',
                   element: 'workflow-route',
-                  config: { variant: 'runs' }
+                  config: { body: 'runs' }
                 },
                 {
                   id: 'workflow-runs-table',
@@ -2088,7 +2088,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   data: { sources: ['workflows'] },
                   mark: 'element',
                   element: 'workflow-route',
-                  config: { variant: 'reports' }
+                  config: { body: 'reports' }
                 },
                 {
                   id: 'workflow-report-table',
@@ -2264,7 +2264,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   data: { sources: ['workflows'] },
                   mark: 'element',
                   element: 'workflow-route',
-                  config: { variant: 'runs' }
+                  config: { body: 'runs' }
                 },
                 {
                   id: 'workflow-runs-table',
@@ -2299,7 +2299,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   data: { sources: ['workflows'] },
                   mark: 'element',
                   element: 'workflow-route',
-                  config: { variant: 'reports' }
+                  config: { body: 'reports' }
                 },
                 {
                   id: 'workflow-report-table',
@@ -2447,7 +2447,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
               data: { sources: ['workflows', 'runs', 'usage', 'operational-values'] },
               mark: 'element',
               element: 'workflow-route',
-              config: { variant: 'insights' }
+              config: { body: 'insights' }
             }]
           }]
         }

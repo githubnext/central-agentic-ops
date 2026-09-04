@@ -250,19 +250,69 @@ describe('dashboard document validation', () => {
     expect(reportsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-reports-route')).toMatchObject({
       mark: 'element',
       element: 'workflow-route',
-      config: { variant: 'reports' }
+      config: { body: 'reports' }
     });
     expect(runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-route')).toMatchObject({
       mark: 'element',
       element: 'workflow-route',
-      config: { variant: 'runs' }
+      config: { body: 'runs' }
     });
     expect(runtimePage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-route')).toMatchObject({
       mark: 'element',
       element: 'workflow-route',
-      config: { variant: 'insights' }
+      config: { body: 'insights' }
     });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+  });
+
+  it('accepts workflow-route config.body and rejects unsupported values', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: workflow-route-config
+  title: Workflow route config
+  pages:
+    - id: workflow-page
+      kind: custom
+      title: Workflow page
+      route:
+        hash-query-parameter: workflow
+      views:
+        - id: workflow-shell
+          data:
+            sources: [workflows]
+          mark: element
+          element: workflow-route
+          config:
+            body: reports
+`);
+    expect(accepted.ok).toBe(true);
+
+    const invalidBody = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: workflow-route-config
+  title: Workflow route config
+  pages:
+    - id: workflow-page
+      kind: custom
+      title: Workflow page
+      route:
+        hash-query-parameter: workflow
+      views:
+        - id: workflow-shell
+          data:
+            sources: [workflows]
+          mark: element
+          element: workflow-route
+          config:
+            body: summary
+`);
+    expect(invalidBody.ok).toBe(false);
+    if (!invalidBody.ok) {
+      expect(invalidBody.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[0].views[0].config.body'
+      }));
+    }
   });
 
   it('accepts every package dashboard document', () => {
