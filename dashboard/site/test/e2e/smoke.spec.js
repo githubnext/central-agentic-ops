@@ -337,10 +337,10 @@ test('desktop navigation sections collapse and expand around the current view', 
   await expect(page.getByRole('heading', { name: 'Runs', level: 1 })).toBeVisible();
 });
 
-test('performance page leads with a workflow duration histogram', async ({ page }) => {
+test('performance page lays out runtime charts side by side', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1200, height: 844 });
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -381,6 +381,27 @@ test('performance page leads with a workflow duration histogram', async ({ page 
   await expect(pageRegion).toBeVisible();
   await expect(pageRegion.locator('.custom-view').first().locator('[data-chart-widget="histogram"]')).toBeVisible();
   await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(3);
+  const runtimeCharts = pageRegion.locator('.custom-view-grid > [data-view-layout="half"]');
+  await expect(runtimeCharts).toHaveCount(4);
+  const chartLayout = await runtimeCharts.evaluateAll((charts) => {
+    const bounds = charts.map((chart) => chart.getBoundingClientRect());
+    return {
+      firstRow: {
+        leftX: bounds[0].x,
+        rightX: bounds[1].x,
+        verticalOffset: Math.abs(bounds[0].y - bounds[1].y)
+      },
+      secondRow: {
+        leftX: bounds[2].x,
+        rightX: bounds[3].x,
+        verticalOffset: Math.abs(bounds[2].y - bounds[3].y)
+      }
+    };
+  });
+  expect(chartLayout.firstRow.leftX).toBeLessThan(chartLayout.firstRow.rightX);
+  expect(chartLayout.firstRow.verticalOffset).toBeLessThan(1);
+  expect(chartLayout.secondRow.leftX).toBeLessThan(chartLayout.secondRow.rightX);
+  expect(chartLayout.secondRow.verticalOffset).toBeLessThan(1);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
