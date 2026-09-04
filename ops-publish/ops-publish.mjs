@@ -1,21 +1,17 @@
 import { createHash } from "node:crypto";
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { parsePolicy } from "../../cao/src/policy.mjs";
+import { parsePolicy } from "../.github/cao/src/policy.mjs";
 
 export const PUBLISH_LABEL = "ops:publish-to-target";
 const API_TIMEOUT_MS = 30_000;
 
 const repositoryPattern = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
-const workerPackages = new Map([
-  ["ambient-context-agents-md-curator.lock.yml", "ambient-context"],
-  ["ambient-context-skills-curator.lock.yml", "ambient-context"],
-  ["aw-failures-investigator.lock.yml", "aw-doctor"],
-  ["aw-maintenance-upgrade.lock.yml", "aw-doctor"],
-  ["dependabot-release-train-updater.lock.yml", "dependabot"],
-  ["optimization-ai-credit-auditor.lock.yml", "optimization"],
-  ["optimization-ai-credit-optimizer.lock.yml", "optimization"],
-]);
+export function configuredWorkerPackages(packages) {
+  return new Map(Object.entries(packages || {}).flatMap(([packageName, policy]) => (
+    Object.keys(policy.worker_policies || {}).map((workflow) => [`${workflow}.lock.yml`, packageName])
+  )));
+}
 
 function normalized(value) {
   return String(value || "").trim().toLowerCase();
@@ -109,7 +105,14 @@ export function inspectPublishEvent({
   };
 }
 
-export function validateWorkflowRun({ run, inspection, reviewRepository, allowedOwners, allowedRepositories }) {
+export function validateWorkflowRun({
+  run,
+  inspection,
+  reviewRepository,
+  allowedOwners,
+  allowedRepositories,
+  packages,
+}) {
   if (String(run.id) !== String(inspection.runId)
       || normalized(run.repository?.full_name) !== normalized(inspection.controlRepository)
       || run.html_url !== inspection.runUrl) {
@@ -130,6 +133,7 @@ export function validateWorkflowRun({ run, inspection, reviewRepository, allowed
   }
   const workflowPath = String(run.path || "").split("@")[0];
   const workflowFile = workflowPath.split("/").at(-1);
+  const workerPackages = configuredWorkerPackages(packages);
   const packageName = workerPackages.get(workflowFile);
   if (!packageName || workflowPath !== `.github/workflows/${workflowFile}`) {
     throw new Error("workflow run is not from a supported Central Agentic Ops worker");
@@ -254,6 +258,7 @@ async function validateRunCommand() {
     reviewRepository: process.env.GITHUB_REPOSITORY,
     allowedOwners: settings.allowed_owners,
     allowedRepositories: settings.allowed_repositories,
+    packages: settings.packages,
   });
   writeOutputs({
     package: validated.packageName,
@@ -290,6 +295,7 @@ async function findPublicationComment(sourceToken, apiUrl, sourceRepository, sou
 }
 
 async function publishCommand() {
+  const settings = controlSettings();
   const apiUrl = process.env.GITHUB_API_URL;
   const serverUrl = process.env.GITHUB_SERVER_URL;
   const sourceRepository = requireRepository(process.env.GITHUB_REPOSITORY, "review repository");
@@ -299,8 +305,9 @@ async function publishCommand() {
   const expectedContentDigest = process.env.SOURCE_CONTENT_DIGEST || "";
   if (!Number.isInteger(sourceIssueNumber) || sourceIssueNumber < 1) throw new Error("source issue number is invalid");
   if (!/^[a-f0-9]{64}$/.test(expectedContentDigest)) throw new Error("approved source content digest is invalid");
-  if (!workerPackages.has(`${packageName === "ambient-context" ? "ambient-context-agents-md-curator" : packageName}.lock.yml`)
-      && ![...workerPackages.values()].includes(packageName)) throw new Error("package is unsupported");
+  if (![...configuredWorkerPackages(settings.packages).values()].includes(packageName)) {
+    throw new Error("package is unsupported");
+  }
 
   const sourceIssue = await apiRequest(process.env.SOURCE_TOKEN, apiUrl, `/repos/${sourceRepository}/issues/${sourceIssueNumber}`);
   if (sourceIssue.state !== "open" || sourceIssue.pull_request || sourceIssue.user?.type !== "Bot") {
