@@ -324,7 +324,7 @@ export const SOURCE_FIELDS = {
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'security-observations': ['organization', 'repository', 'workflow', 'run', 'security-observation', 'security-feature', 'security-analysis', 'security-signal', 'security-status', 'security-subject', 'security-count', 'observed-at', 'run-link'],
-  'coverage-diagnostics': ['kind', 'title', 'effect'],
+  'coverage-diagnostics': ['kind', 'title', 'effect', 'technical-detail', 'endpoint', 'rate-limit-reset', 'snapshot-age-seconds'],
   'repository-coverage': ['label', 'value'],
   'data-health-summary': ['label', 'value'],
   'data-health-sources': ['source', 'source-id', 'source-kind', 'as-of', 'retrieved-at', 'rows', 'fields', 'populated-fields', 'empty-fields', 'populated-cells', 'empty-cells', 'field-coverage', 'cell-coverage', 'status', 'completeness', 'freshness'],

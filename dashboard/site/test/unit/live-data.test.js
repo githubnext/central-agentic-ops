@@ -246,7 +246,8 @@ describe("live Dashboard Language sources", () => {
       expect(sources["coverage-diagnostics"].rows).toContainEqual(expect.objectContaining({
         kind: "github-api-rate-limit-403",
         title: "Durable output collection unavailable",
-        effect: rateLimitedReport.error,
+        effect: "Durable output evidence is partial because GitHub rate-limited collection.",
+        "technical-detail": rateLimitedReport.error,
       }));
       expect(sources.findings.metadata).toMatchObject({
         availability: "unavailable",

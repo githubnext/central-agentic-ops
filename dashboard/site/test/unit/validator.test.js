@@ -175,9 +175,20 @@ describe('dashboard document validation', () => {
     });
     expect(detailsView).toMatchObject({
       disclosure: 'supplemental',
-      controls: 'interactive',
+      controls: 'static',
       description: expect.any(String)
     });
+    expect(detailsView.description).toContain('after the run-status table answers the current state');
+    expect(detailsView.encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
+      'run',
+      'run-title',
+      'event',
+      'engine',
+      'requested-model',
+      'resolved-model',
+      'started-at',
+      'ended-at'
+    ]);
     expect(detailsView.encoding.actions).toEqual([{
       intent: 'Investigate this failed workflow run.',
       presentation: 'copy-prompt',

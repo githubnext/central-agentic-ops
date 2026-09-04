@@ -92,7 +92,10 @@ function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
   if (report.error) diagnostics.push({
     kind: report.errorStatus === 403 ? "github-api-rate-limit-403" : "durable-output-unavailable",
     title: "Durable output collection unavailable",
-    effect: report.error,
+    effect: report.errorStatus === 403
+      ? "Durable output evidence is partial because GitHub rate-limited collection."
+      : "Durable output evidence is unavailable for this dashboard build.",
+    "technical-detail": report.error,
     endpoint: report.errorEndpoint || "",
     "rate-limit-reset": report.rateLimitResetAt || "",
     "snapshot-age-seconds": report.snapshotAgeSeconds ?? "",
