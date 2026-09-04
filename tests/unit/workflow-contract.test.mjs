@@ -1848,7 +1848,11 @@ test("AW Maintenance compiler security worker runs the full validation suite", (
     assert.match(source, new RegExp(`${flag} \\\\`), flag);
   }
   assert.match(source, /gh aw mcp-server/);
-  assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.match(source, /Begin directly with a concise executive summary/);
+  assert.match(source, /\*\*Action:\*\* Assign this issue to Copilot/);
+  assert.match(source, /<details><summary><b>Failure details<\/b><\/summary>/);
+  assert.match(source, /<details><summary><b>Fix with an agent<\/b><\/summary>/);
+  assert.match(source, /<details><summary><b>Raw evidence<\/b><\/summary>/);
   assert.match(source, /never edit generated `\.lock\.yml` files/i);
   for (const viewId of ["aw-maintenance-attainment", "aw-maintenance-value-trend"]) {
     const view = dashboard.dashboard.pages[0].views.find(({ id }) => id === viewId);

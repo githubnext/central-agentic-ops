@@ -189,7 +189,13 @@ Provide only an unprefixed issue subject. The configured `title-prefix` is added
 
 Begin directly with a concise executive summary naming the target, compiler result, finding count by category, highest-severity finding supported by the tools, and recommended next action. Do not add a heading to this opening summary.
 
-Then include:
+Immediately after the summary, keep one action visible:
+
+**Action:** Assign this issue to Copilot and instruct it to follow **Fix with an agent** below; review its pull request and merge only after the full compiler and security scan passes.
+
+Put everything else behind these progressive-disclosure sections, in this order:
+
+<details><summary><b>Failure details</b></summary>
 
 - **Target repository**: `<owner/repo>`
 - **Compiler exit code**: `<exit-code>`
@@ -197,31 +203,31 @@ Then include:
 - **Generated lock files checked**: `<count>`
 - **Result**: `clean`, `findings`, or `incomplete`
 
-### Findings
+Use a compact findings table with tool, workflow or image, tool-reported severity, concise finding, and remediation. Preserve `unknown` when a tool did not assign severity. Deduplicate the same underlying finding reported by multiple tools while retaining all reporting tool names.
 
-Use a table with tool, workflow or image, tool-reported severity, concise finding, and remediation. Preserve `unknown` when a tool did not assign severity. Deduplicate the same underlying finding reported by multiple tools while retaining all reporting tool names.
+</details>
 
-### Local fixing loop
+<details><summary><b>Fix with an agent</b></summary>
 
-Give maintainers these repository-local steps:
+1. Assign this issue to Copilot.
+2. Give it the prompt below. Require the gh-aw MCP server's `fix` and `compile` tools; never allow direct edits to generated `.lock.yml` files.
+3. Review the resulting pull request and require the same full compiler and security scan to pass before merge. If a finding needs human action, require the agent to stop and explain it.
 
-1. Install or update the gh-aw extension, then configure the coding agent's MCP client to launch `gh aw mcp-server` over stdio from the target repository.
-2. Give the agent the prompt below and require it to use the `fix` and `compile` MCP tools rather than editing generated `.lock.yml` files.
-3. Require the agent to repeat the same full compiler validation and security scan until it passes, or stop and explain any finding that needs human action.
-
-Evaluate the possible follow-up actions and select the single action with the highest expected return on investment. Express it as a clear, imperative prompt using this exact progressive-disclosure structure:
-
-<details><summary><b>Agent prompt</b></summary>
+**Agent prompt**
 
 Fix the reported gh-aw compiler and security findings in this repository. Change only `.github/workflows/*.md` sources and directly related files; never edit generated `.lock.yml` files. Use the gh-aw MCP server's `fix` and `compile` tools, rerunning compilation with strict validation, model checks, actionlint, shellcheck, yamllint, zizmor, poutine, runner-guard, grant, grype, and syft until clean. Review generated lock-file diffs, preserve existing behavior, and stop with a concise explanation if a finding cannot be fixed safely.
 
 </details>
 
-Put the bounded raw compiler output, generated diff summary, and per-tool detail in `<details>` sections. Redact any token-like or credential-like values found in tool output; never reproduce secret values.
+<details><summary><b>Raw evidence</b></summary>
+
+Include the bounded raw compiler output, generated diff summary, and per-tool detail. Redact any token-like or credential-like values found in tool output; never reproduce secret values.
+
+</details>
 
 ## Control Plane
 
-When `correlation_id` is present, append a short `### Control Plane` section with the correlation ID, central repository, and control plane run URL.
+When `correlation_id` is present, append a final `<details><summary>Control plane context</summary>` section with the correlation ID, central repository, and control plane run URL.
 
 ## Incomplete Runs
 
