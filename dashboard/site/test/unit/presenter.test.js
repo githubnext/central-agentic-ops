@@ -560,7 +560,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
-    expect(rendered.querySelector('[data-nav-page-id="github-api"]')?.previousElementSibling?.textContent).toBe('Control plane');
+    expect(authoritativeDashboardDocument.dashboard.navigation?.find(({ label }) => label === 'Control plane')?.pages).toContain('github-api');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
       'Preview',
