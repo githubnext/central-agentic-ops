@@ -16,6 +16,9 @@ const program = controlProgram();
 const failures = [
   ["malformed target repository", { TARGET_REPO: "not-a-repository" }, "target_repo must use owner/repository form"],
   ["missing worker target repository", { TARGET_REPO: "" }, "worker target_repo is required"],
+  ["worker target outside the exact repository allowlist", { TARGET_REPO: "acme/other" }, "worker target_repo is not allowed", controlPolicy({
+    scope: { "allowed-repositories": ["acme/target"] },
+  })],
   ["disallowed target owner", { TARGET_REPO: "outside/target" }, "target_repo owner is outside control-plane.scope.allowed-owners"],
   ["malformed review repository", { SAFE_OUTPUT_REPO: "not-a-repository" }, "safe_output_repo must use owner/repository form"],
   ["disallowed review owner", { SAFE_OUTPUT_REPO: "outside/review" }, "safe_output_repo owner is outside control-plane.scope.allowed-owners"],
@@ -88,9 +91,9 @@ ${ghScript}
   }
 }
 
-for (const [name, overrides, expectedError] of failures) {
+for (const [name, overrides, expectedError, policy] of failures) {
   test(`control precompute rejects ${name}`, () => {
-    const result = runPrecompute(overrides);
+    const result = runPrecompute(overrides, undefined, policy);
 
     assert.notEqual(result.status, 0, `${name} unexpectedly succeeded`);
     assert.match(result.stderr, new RegExp(expectedError));

@@ -695,6 +695,10 @@ function validateOutputDestination({ mode, role, safeOutputRepository, targetRep
 
 function validateWorkerDispatch(context) {
   if (!context.targetRepository) throw new ControlError("worker target_repo is required");
+  if (context.policy.allowed_repositories.length > 0
+    && !context.policy.allowed_repositories.some((repository) => repositoryEqual(repository, context.targetRepository))) {
+    throw new ControlError("worker target_repo is not allowed");
+  }
   if (context.workerPolicy.enabled !== true) throw new ControlError("worker is disabled by its control-plane policy");
   requireMode(context.workerPolicy.maxMode, "worker_max_mode");
   if (context.mode === "live" && context.workerPolicy.maxMode !== "live") {
