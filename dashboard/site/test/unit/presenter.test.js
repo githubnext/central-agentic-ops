@@ -42,6 +42,19 @@ describe('presenter built-in and custom pages', () => {
             freshness: 'fresh',
             availability: 'available'
           }
+        },
+        usage: {
+          source: 'usage',
+          rows: [],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-03T12:00:00Z',
+            'retrieved-at': '2026-09-03T12:01:00Z',
+            completeness: 'unknown',
+            freshness: 'unknown',
+            availability: 'unavailable'
+          }
         }
       }
     });
@@ -50,8 +63,10 @@ describe('presenter built-in and custom pages', () => {
     const sourceView = [...(page?.querySelectorAll('.custom-view') ?? [])]
       .find((view) => view.querySelector('h4')?.textContent === 'Cached source shape');
     expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
-    expect(sourceView?.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(sourceView?.querySelectorAll('tbody tr')).toHaveLength(2);
     expect(sourceView?.querySelector('tbody')?.textContent).toContain('runs');
+    expect(sourceView?.querySelector('tbody')?.textContent).toContain('usage');
+    expect(sourceView?.querySelector('tbody')?.textContent).toContain('unavailable');
     expect(sourceView?.querySelector('tbody')?.textContent).not.toContain('overview');
     rendered.remove();
   });
