@@ -99,6 +99,7 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   page.on('pageerror', (error) => pageErrors.push(error));
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setViewportSize({ width: 1003, height: 900 });
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -157,7 +158,15 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await expect(readinessNavigation).toHaveAttribute('aria-current', 'page');
   await expect(readinessNavigation.locator('svg')).toHaveCount(1);
   await expect(page.locator('.nav-section-label').filter({ hasText: 'Control plane' })).toBeVisible();
-  await expect(readinessPage.locator('.custom-view').first().locator('[data-chart-widget="line"]')).toBeVisible();
+  const activityChart = readinessPage.locator('.custom-view').first().locator('[data-chart-widget="line"]');
+  await expect(activityChart).toBeVisible();
+  const [activityChartBox, activityAxisBox] = await Promise.all([
+    activityChart.boundingBox(),
+    activityChart.locator('.line-chart-axis').boundingBox()
+  ]);
+  expect(activityChartBox).not.toBeNull();
+  expect(activityAxisBox).not.toBeNull();
+  expect(activityAxisBox?.width).toBeGreaterThan((activityChartBox?.width ?? 0) * 0.95);
   await expect(readinessPage).toContainText('Not ready');
   await expect(readinessPage).toContainText('3 completed runs observed');
   await expect(readinessPage).toContainText('Worker failures');
