@@ -326,7 +326,7 @@ describe('dashboard document validation', () => {
       mark: 'callout',
       callout: { label: 'Evaluation boundary', icon: 'meter' }
     });
-    expect(callout.description).toContain('partial telemetry');
+    expect(callout.description).toContain('partial AI Credit telemetry');
     const valuePage = document.dashboard.pages.find(
       (/** @type {{ id: string }} */ page) => page.id === 'operational-value'
     );

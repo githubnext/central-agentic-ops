@@ -435,7 +435,7 @@
           {
             "id": "cost-evaluation-boundary",
             "title": "Budget and anomaly verdicts unavailable",
-            "description": "This answers whether observed AI Credit allocation supports a budget or anomaly decision; with partial telemetry, totals are allocation evidence, not complete spend or ROI. A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.",
+            "description": "This answers whether observed AI Credit allocation supports a budget or anomaly decision; with partial AI Credit telemetry, totals are allocation evidence, not complete spend or ROI. A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.",
             "mark": "callout",
             "callout": {
               "label": "Evaluation boundary",
