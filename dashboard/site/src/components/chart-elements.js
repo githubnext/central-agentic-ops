@@ -390,7 +390,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
                 className: `dot-chart-point ${seriesClassName}`,
                 cx: x,
                 cy: y,
-                r: pointRadius
+                r: pointRadius,
+                'aria-hidden': 'true'
               }))
               : []),
             ...(showInteractivePoints ? coordinates.map(({ point, x, y }, pointIndex) => h('g', {
