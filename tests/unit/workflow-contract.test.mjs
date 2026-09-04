@@ -881,11 +881,7 @@ test("root package composes its operational packages through manifests", () => {
     "dependabot/aw.yml",
     "optimization/aw.yml",
   ]);
-  assert.ok(rootManifest.resources.some(({ source, destination }) =>
-    source === "default-aw.jsonl" && destination === ".github/aw/default-aw.jsonl"));
   const project = JSON.parse(readFileSync(join(root, ".github", "workflows", "aw.json"), "utf8"));
-  const packagedProjects = readFileSync(join(root, "default-aw.jsonl"), "utf8").trim().split("\n").map(JSON.parse);
-  assert.deepEqual(packagedProjects, [project]);
   assert.deepEqual(project.auto_upgrade.options, ["--pre-releases"]);
 });
 
@@ -2137,7 +2133,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     cpSync(join(root, ".github"), join(temporaryRoot, ".github"), { recursive: true });
     cpSync(join(root, "AGENTS.md"), join(temporaryRoot, "AGENTS.md"));
     cpSync(join(root, "aw.yml"), join(temporaryRoot, "aw.yml"));
-    cpSync(join(root, "default-aw.jsonl"), join(temporaryRoot, "default-aw.jsonl"));
     cpSync(join(root, "README.md"), join(temporaryRoot, "README.md"));
     for (const packageDirectory of ["activity", "ambient-context", "aw-maintenance", "dashboard", "dependabot", "optimization"]) {
       cpSync(join(root, packageDirectory), join(temporaryRoot, packageDirectory), { recursive: true });
