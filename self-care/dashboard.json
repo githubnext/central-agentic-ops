@@ -3,14 +3,14 @@
   "dashboard": {
     "id": "self-care-dashboard",
     "title": "SelfCare",
-    "description": "Track dashboard build-time investigations, recommendations, and matured speed attainment.",
+    "description": "Track dashboard build-time investigations and clustered failures across represented public projects.",
     "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "self-care-dashboard",
         "kind": "custom",
         "title": "SelfCare",
-        "description": "Track whether build-time investigations run, produce actionable recommendations, and attain faster reliable dashboard generation.",
+        "description": "Track build-time investigations, speed attainment, and remediation findings for clustered public-project failures.",
         "icon": "check-circle",
         "views": [
           {

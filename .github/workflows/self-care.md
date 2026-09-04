@@ -98,7 +98,7 @@ source: githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d
 
 This operation is exclusively for `githubnext/gh-aw-cao`. Select that repository only when its precomputed candidate mode is `live`. Treat every other repository and every non-live candidate as ineligible, regardless of apparent need, and record the skip reason in the standard report.
 
-The single eligible repository contains the documentation site and dashboard maintained by the seven workers. Do not discover, rank, or dispatch work to any other repository.
+The single eligible repository contains the documentation site and dashboard maintained by the eight workers. Do not discover, rank, or dispatch work to any other repository.
 
 ## Workers
 
