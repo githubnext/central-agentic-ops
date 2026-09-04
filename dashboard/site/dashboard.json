@@ -213,6 +213,7 @@
           {
             "id": "readiness-verdict-summary",
             "title": "Readiness verdict",
+            "description": "Answers whether retained evidence supports releasing the control plane.",
             "data": {
               "sources": [
                 "readiness-summary"
@@ -377,6 +378,7 @@
           {
             "id": "cost-summary",
             "title": "Usage summary",
+            "description": "Answers how much measured AI Credit usage is retained for the current decision window.",
             "data": {
               "sources": [
                 "cost-summary"
@@ -520,6 +522,7 @@
           {
             "id": "security-summary",
             "title": "Assurance summary",
+            "description": "Answers which operational assurance gates and API capacity controls are represented in retained evidence.",
             "data": {
               "sources": [
                 "security-summary"
@@ -1220,6 +1223,52 @@
           {
             "id": "workflow-runs-table",
             "title": "Runs",
+            "description": "Answers which recent workflow runs succeeded, failed, or remain in progress.",
+            "data": {
+              "source": "workflow-runs",
+              "route-field": "workflow-route"
+            },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No runs have been observed for this workflow.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "run-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "run-conclusion",
+                  "type": "nominal",
+                  "title": "Conclusion",
+                  "display": "status"
+                },
+                {
+                  "field": "rollout-mode",
+                  "type": "nominal",
+                  "title": "Mode",
+                  "display": "mode"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "full"
+          },
+          {
+            "id": "workflow-run-details",
+            "title": "Run details",
+            "description": "Exposes filters, investigation controls, execution metadata, models, and timestamps for deeper evidence review.",
+            "disclosure": "supplemental",
             "data": {
               "source": "workflow-runs",
               "route-field": "workflow-route"
@@ -4406,20 +4455,20 @@
         "description": "Installed gh-aw compiler versions and whether a newer gh-aw release is available.",
         "views": [
           {
-            "id": "workflow-update-state",
-            "title": "Workflow update state",
-            "description": "The current update-state distribution highlights upgrade exposure across discovered workflows.",
+            "id": "workflow-versions",
+            "title": "Workflow versions",
+            "description": "Distribution of discovered workflows by compiled gh-aw version. The latest published release is marked current.",
             "data": {
               "source": "workflows"
             },
             "mark": "chart",
             "chart": "pie",
-            "layout": "full",
+            "table": false,
             "encoding": {
               "x": {
-                "field": "gh-aw-update-state",
+                "field": "gh-aw-version-label",
                 "type": "nominal",
-                "title": "Update state"
+                "title": "gh-aw version"
               },
               "y": {
                 "field": "workflow",
@@ -4427,7 +4476,8 @@
                 "aggregate": "count",
                 "title": "Workflows"
               }
-            }
+            },
+            "layout": "full"
           },
           {
             "id": "workflow-updates",
@@ -4457,7 +4507,12 @@
                 {
                   "field": "gh-aw-version",
                   "type": "nominal",
-                  "title": "gh-aw version"
+                  "title": "Installed version"
+                },
+                {
+                  "field": "gh-aw-current-version",
+                  "type": "nominal",
+                  "title": "Current version"
                 },
                 {
                   "field": "gh-aw-update-state",
@@ -4468,31 +4523,99 @@
               ]
             },
             "layout": "full"
-          },
+          }
+        ]
+      },
+      {
+        "id": "preview",
+        "kind": "custom",
+        "title": "Preview",
+        "icon": "issue-opened",
+        "description": "Current report issues attributed to the worker workflows and packages that produced them.",
+        "views": [
           {
-            "id": "workflow-versions",
-            "title": "Workflow versions",
-            "description": "Distribution of discovered workflows by their compiled gh-aw version.",
+            "id": "preview-issues-by-package",
+            "title": "Issues by package",
+            "description": "Distribution of retained issues across their producing packages.",
             "data": {
-              "source": "workflows"
+              "source": "outcomes",
+              "filters": {
+                "outcome-category": [
+                  "issue"
+                ]
+              }
             },
             "mark": "chart",
             "chart": "pie",
             "table": false,
+            "layout": "full",
             "encoding": {
               "x": {
-                "field": "gh-aw-version",
+                "field": "package",
                 "type": "nominal",
-                "title": "gh-aw version"
+                "title": "Package"
               },
               "y": {
-                "field": "workflow",
+                "field": "safe-output",
                 "type": "quantitative",
                 "aggregate": "count",
-                "title": "Workflows"
+                "title": "Issues"
               }
+            }
+          },
+          {
+            "id": "preview-issue-ledger",
+            "title": "Issues by worker and package",
+            "description": "Open an issue to inspect its full report and workflow provenance.",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "outcome-category": [
+                  "issue"
+                ]
+              },
+              "limit": 100
             },
-            "layout": "full"
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No issues were retained in the current report.",
+            "layout": "full",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "package",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                {
+                  "field": "workflow-name",
+                  "type": "nominal",
+                  "title": "Worker"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Issue",
+                  "display": "outcome-link"
+                },
+                {
+                  "field": "outcome-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal",
+                  "title": "Repository"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Updated"
+                }
+              ]
+            }
           }
         ]
       }
@@ -4501,7 +4624,8 @@
       {
         "label": "Attention",
         "pages": [
-          "overview"
+          "overview",
+          "preview"
         ]
       },
       {

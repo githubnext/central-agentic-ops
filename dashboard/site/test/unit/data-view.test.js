@@ -45,6 +45,32 @@ describe('data view renderer', () => {
     expect(renderDataView('unsupported', /** @type {any} */ ({}))).toBeNull();
   });
 
+  it('renders a view description in the shared explanation tooltip', () => {
+    const rendered = renderDataView('table', {
+      pageId: 'workflow-runs',
+      title: 'Runs',
+      view: {
+        mark: 'table',
+        description: 'Answers which recent workflow runs need attention.',
+        controls: 'static',
+        encoding: { columns: [{ field: 'run' }] }
+      },
+      sourceName: 'workflow-runs',
+      rows: [{ run: '42' }],
+      metadata,
+      contextDetails: [],
+      headingTag: 'h3',
+      prepareTableRows: (rows) => rows,
+      buildChartPoints: () => [],
+      prepareChartPoints: () => [],
+      toText: String
+    });
+
+    expect(rendered?.querySelector('.tooltip-trigger')?.getAttribute('aria-label')).toBe('Runs explanation');
+    expect(rendered?.querySelector('.tooltip-content')?.textContent).toBe('Answers which recent workflow runs need attention.');
+    expect(rendered?.querySelector('.view-description')).toBeNull();
+  });
+
   it('defaults pie, line, and histogram data tables to hidden while honoring explicit table visibility', () => {
     const context = /** @type {Parameters<typeof renderDataView>[1]} */ ({
       pageId: 'repositories',

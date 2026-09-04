@@ -317,6 +317,10 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
         ? "true"
         : String(workflow.state).startsWith("disabled") ? "false" : "unknown",
       "gh-aw-version": workflow.ghAwVersion || "unknown",
+      "gh-aw-current-version": workflow.currentGhAwVersion || deployed.latestGhAwVersion || "unknown",
+      "gh-aw-version-label": workflow.ghAwVersion
+        ? `${workflow.ghAwVersion}${workflow.ghAwVersion === (workflow.currentGhAwVersion || deployed.latestGhAwVersion) ? " (current)" : ""}`
+        : "unknown",
       "gh-aw-update-state": workflow.updateState || "unknown",
       "gh-aw-metadata": workflow.ghAwMetadata || null,
       "gh-aw-manifest": workflow.ghAwManifest || null,

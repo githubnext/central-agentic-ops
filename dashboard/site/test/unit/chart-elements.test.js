@@ -121,11 +121,15 @@ describe('chart element helpers', () => {
     expect(bar.querySelector('.bar-chart-bar:last-child')?.getAttribute('height')).toBe('1');
     expect(line.getAttribute('data-chart-widget')).toBe('line');
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
+    expect(line.querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
     expect(pie.getAttribute('data-chart-widget')).toBe('pie');
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3');
     expect(pie.querySelector('.pie-chart-tooltip rect')?.getAttribute('width')).toBe('21.25');
+    const firstPieMark = pie.querySelector('.pie-chart-mark');
+    firstPieMark?.dispatchEvent(new Event('pointerenter'));
+    expect(pie.querySelector('.pie-chart-mark:last-child')).toBe(firstPieMark);
     expect(histogram.getAttribute('data-chart-widget')).toBe('histogram');
     expect(histogram.querySelectorAll('.histogram-chart-bar')).toHaveLength(3);
     expect(histogram.querySelectorAll('.histogram-chart-mark .point-tooltip')).toHaveLength(3);
@@ -152,5 +156,22 @@ describe('chart element helpers', () => {
     expect(line.querySelector('.chart-point-context circle')?.getAttribute('r')).toBe('0.65');
     expect(line.querySelector('.chart-point-current circle')?.getAttribute('r')).toBe('0.65');
     expect(line.querySelector('.chart-window-key')?.textContent).toContain('Selected window');
+  });
+
+  it('reduces line-chart point radii linearly as the number of points increases', () => {
+    /** @param {number} count */
+    const renderPoints = (count) => {
+      const points = Array.from({ length: count }, (_, index) => ({
+        x: String(index),
+        y: index,
+        color: null
+      }));
+      return renderChartWidget('line', points, listChartSeries(points));
+    };
+
+    expect(renderPoints(2).querySelector('.line-chart-point')?.getAttribute('r')).toBe('2.5');
+    expect(renderPoints(51).querySelector('.line-chart-point')?.getAttribute('r')).toBe('1.5');
+    expect(renderPoints(100).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
+    expect(renderPoints(150).querySelector('.line-chart-point')?.getAttribute('r')).toBe('0.5');
   });
 });

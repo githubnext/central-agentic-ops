@@ -9,6 +9,10 @@ import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
 import { renderEmptyMessage } from './ui-primitives.js';
 
+const MAX_LINE_POINT_RADIUS = 2.5;
+const MIN_LINE_POINT_RADIUS = 0.5;
+const MIN_RADIUS_POINT_COUNT = 100;
+
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
  */
@@ -171,6 +175,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               ...(tooltipWidth === 40 ? { textLength: 35, lengthAdjust: 'spacingAndGlyphs' } : {})
             }, segmentLabel)
           ));
+          const bringTooltipToFront = () => segment.parentNode?.append(segment);
+          segment.addEventListener('pointerenter', bringTooltipToFront);
+          segment.addEventListener('focus', bringTooltipToFront);
           offset += percent;
           return segment;
         }),
@@ -251,6 +258,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const values = points.map((point) => toNumber(point.y));
     const finiteValues = values.filter(Number.isFinite);
     const maximum = Math.max(...finiteValues, 1);
+    const pointRadius = lineChartPointRadius(points.length);
     const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
     const highlightedIndexes = xValues
       .map((value, index) => points.some((point) => point.x === value && point.highlighted) ? index : -1)
@@ -312,7 +320,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               className: `line-chart-point ${seriesClassName}`,
               cx: x,
               cy: y,
-              r: hasWindowHighlight ? 0.65 : 1.5
+              r: hasWindowHighlight ? 0.65 : pointRadius
             }),
             h(
               'g',
@@ -370,6 +378,15 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       })
     )
   );
+}
+
+/**
+ * @param {number} pointCount
+ * @returns {number}
+ */
+function lineChartPointRadius(pointCount) {
+  const progress = Math.min(1, Math.max(0, (pointCount - 2) / (MIN_RADIUS_POINT_COUNT - 2)));
+  return MAX_LINE_POINT_RADIUS - (progress * (MAX_LINE_POINT_RADIUS - MIN_LINE_POINT_RADIUS));
 }
 
 /**

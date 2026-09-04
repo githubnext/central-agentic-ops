@@ -46,12 +46,16 @@ describe('data health sources', () => {
         status: 'unavailable'
       })
     ]);
+    expect(sources['data-health-sources'].metadata.availability).toBe('available');
+    expect(sources['data-health-summary'].metadata.availability).toBe('available');
     expect(sources['data-health-summary'].rows).toEqual(expect.arrayContaining([
       { label: 'Logical sources', value: '2' },
       { label: 'Healthy sources', value: '1' },
       { label: 'Sources needing attention', value: '1' },
       { label: 'Retained rows', value: '1' }
     ]));
+    expect(sources['data-health-summary'].metadata.availability).toBe('available');
+    expect(sources['data-health-sources'].metadata.availability).toBe('available');
   });
 
   it('does not report empty or unknown-state sources as healthy', () => {

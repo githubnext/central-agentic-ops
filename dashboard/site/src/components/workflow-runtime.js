@@ -248,10 +248,10 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
       h(
         'dl',
         null,
-        valueMetric('Latest', formatPercent(latest['operational-value'])),
-        valueMetric('Mature average', formatPercent(matureAverage)),
-        valueMetric('Opportunities', formatNumber(comparable.length)),
-        valueMetric('Evaluator', text(latest['evaluator-digest']) ? h('code', null, text(latest['evaluator-digest']).slice(0, 12)) : 'Unavailable')
+        renderVitalStat('Latest', formatPercent(latest['operational-value'])),
+        renderVitalStat('Mature average', formatPercent(matureAverage)),
+        renderVitalStat('Opportunities', formatNumber(comparable.length)),
+        renderVitalStat('Evaluator', text(latest['evaluator-digest']) ? h('code', null, text(latest['evaluator-digest']).slice(0, 12)) : 'Unavailable')
       )
     ),
     h(
@@ -505,11 +505,6 @@ function formatPointChange(value, signed = true) {
 function formatWeek(value) {
   if (!value || !Number.isFinite(Date.parse(value))) return 'Unknown';
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(value));
-}
-
-/** @param {string} label @param {string | HTMLElement} value */
-function valueMetric(label, value) {
-  return h('div', null, h('dt', null, label), h('dd', null, value));
 }
 
 /** @param {Array<Record<string, unknown>>} observations */

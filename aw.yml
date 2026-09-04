@@ -37,6 +37,8 @@ resources:
     destination: .github/aw/activity/failure-evidence.mjs
   - source: activity/index.mjs
     destination: .github/aw/activity/index.mjs
+  - source: activity/version.mjs
+    destination: .github/aw/activity/version.mjs
   - source: dashboard/report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: dashboard/report/text-utils.mjs

@@ -1444,7 +1444,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     }
   }
 
-  return renderUiElement(elementName, {
+  const rendered = renderUiElement(elementName, {
     pageId,
     title,
     description: typeof view.description === 'string' ? view.description : undefined,
@@ -1455,7 +1455,13 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     titleLink: isPlainObject(view['title-link']) ? view['title-link'] : undefined,
     routeParameter,
     headingTag
-  }) ?? renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
+  });
+  if (!rendered) {
+    return renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
+  }
+  return ['summary-grid', 'readiness-verdict'].includes(elementName)
+    ? renderPageSection(pageId, title, [rendered], headingTag, typeof view.description === 'string' ? view.description : undefined)
+    : rendered;
 }
 
 /**

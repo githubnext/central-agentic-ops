@@ -38,6 +38,43 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('defines the Preview issue attribution views', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const preview = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'preview');
+
+    expect(preview).toMatchObject({
+      kind: 'custom',
+      title: 'Preview',
+      views: [
+        {
+          id: 'preview-issues-by-package',
+          mark: 'chart',
+          chart: 'pie',
+          data: {
+            source: 'outcomes',
+            filters: { 'outcome-category': ['issue'] }
+          }
+        },
+        {
+          id: 'preview-issue-ledger',
+          mark: 'table',
+          data: {
+            source: 'outcomes',
+            filters: { 'outcome-category': ['issue'] }
+          }
+        }
+      ]
+    });
+    expect(preview.views[1].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
+      'package',
+      'workflow-name',
+      'outcome-title',
+      'outcome-status',
+      'repository',
+      'observed-at'
+    ]);
+  });
+
   it('defines workflow update inventory and version distribution views', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const updates = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'updates');
@@ -45,25 +82,19 @@ describe('dashboard document validation', () => {
       kind: 'custom',
       views: [
         {
-          id: 'workflow-update-state',
-          mark: 'chart',
-          chart: 'pie',
-          data: { source: 'workflows' }
-        },
-        {
-          id: 'workflow-updates',
-          mark: 'table',
-          data: { source: 'workflows' }
-        },
-        {
           id: 'workflow-versions',
           mark: 'chart',
           chart: 'pie',
           data: { source: 'workflows' },
           encoding: {
-            x: { field: 'gh-aw-version' },
+            x: { field: 'gh-aw-version-label' },
             y: { field: 'workflow', aggregate: 'count' }
           }
+        },
+        {
+          id: 'workflow-updates',
+          mark: 'table',
+          data: { source: 'workflows' }
         }
       ]
     });
@@ -72,6 +103,7 @@ describe('dashboard document validation', () => {
       'workflow',
       'repository',
       'gh-aw-version',
+      'gh-aw-current-version',
       'gh-aw-update-state'
     ]);
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
@@ -125,7 +157,25 @@ describe('dashboard document validation', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');
     const runsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-table');
-    expect(runsView.encoding.actions).toEqual([{
+    const detailsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-run-details');
+    expect(runsView).toMatchObject({
+      description: expect.any(String),
+      controls: 'static',
+      encoding: {
+        columns: [
+          { field: 'run' },
+          { field: 'run-status' },
+          { field: 'run-conclusion' },
+          { field: 'rollout-mode' }
+        ]
+      }
+    });
+    expect(detailsView).toMatchObject({
+      disclosure: 'supplemental',
+      controls: 'interactive',
+      description: expect.any(String)
+    });
+    expect(detailsView.encoding.actions).toEqual([{
       intent: 'Investigate this failed workflow run.',
       presentation: 'copy-prompt',
       icon: 'search',
@@ -145,39 +195,39 @@ describe('dashboard document validation', () => {
     }]);
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
 
-    runsView.encoding.actions[0].presentation = 'copy-command';
+    detailsView.encoding.actions[0].presentation = 'copy-command';
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(false);
-    runsView.encoding.actions[0].presentation = 'copy-prompt';
+    detailsView.encoding.actions[0].presentation = 'copy-prompt';
 
-    runsView.encoding.actions[0].context.push('not-a-run-field');
+    detailsView.encoding.actions[0].context.push('not-a-run-field');
     const invalidContext = validateDashboardDocument(JSON.stringify(document));
     expect(invalidContext.ok).toBe(false);
     if (!invalidContext.ok) {
       expect(invalidContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[8].views[2].encoding.actions[0].context[9]'
+        path: '$.dashboard.pages[8].views[3].encoding.actions[0].context[9]'
       }));
     }
-    runsView.encoding.actions[0].context.pop();
+    detailsView.encoding.actions[0].context.pop();
 
-    runsView.encoding.actions[0].context.push('run');
+    detailsView.encoding.actions[0].context.push('run');
     const duplicateContext = validateDashboardDocument(JSON.stringify(document));
     expect(duplicateContext.ok).toBe(false);
     if (!duplicateContext.ok) {
       expect(duplicateContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[8].views[2].encoding.actions[0].context[9]'
+        path: '$.dashboard.pages[8].views[3].encoding.actions[0].context[9]'
       }));
     }
-    runsView.encoding.actions[0].context.pop();
+    detailsView.encoding.actions[0].context.pop();
 
-    runsView.encoding.actions[0].when.field = 'not-a-run-field';
+    detailsView.encoding.actions[0].when.field = 'not-a-run-field';
     const rejected = validateDashboardDocument(JSON.stringify(document));
     expect(rejected.ok).toBe(false);
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[8].views[2].encoding.actions[0].when.field'
+        path: '$.dashboard.pages[8].views[3].encoding.actions[0].when.field'
       }));
     }
   });

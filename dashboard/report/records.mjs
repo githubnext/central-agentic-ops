@@ -80,6 +80,11 @@ function markerFrom(body = "", marker) {
   return body.match(new RegExp(`<!--\\s*[\\w-]+:${marker}=([^>]+?)\\s*-->`, "i"))?.[1]?.trim() || "";
 }
 
+function workflowIdFrom(body = "") {
+  const marker = body.match(/<!--\s*gh-aw-workflow-id:\s*([a-z0-9_.-]{1,100})\s*-->/i)?.[1];
+  return marker?.replace(/\.md$/i, "") || "";
+}
+
 function generatedMetadataFrom(body = "") {
   const text = plainText(body);
   const generatedLine = text.match(/Generated (?:from|by|with)\b[^.]+/i)?.[0] || text;
@@ -133,6 +138,7 @@ function targetRepositoryFromRun(run, fallback, allowedRepositories, owner) {
 
 function recordFromIssue(issue, outputRepository, reportDefinitions) {
   const body = issue.body || "";
+  const workflowId = workflowIdFrom(body);
   const workflow = workflowFrom(body);
   const modelMetadata = modelMetadataFrom(body);
   const generatedSafeOutput = /Generated (?:from|with) \[[^\]]+\]\([^)]*\/actions\/runs\/\d+\)/.test(body);
@@ -153,6 +159,7 @@ function recordFromIssue(issue, outputRepository, reportDefinitions) {
     createdAt: issue.created_at,
     updatedAt: issue.updated_at,
     workflow,
+    workflowId,
     runUrl: runUrlFrom(body),
     repository: repositoryFrom(body) || outputRepository,
     outputRepository,
@@ -404,10 +411,21 @@ async function collectDashboardRecordsImpl({
     const metadata = record.mode && record.conclusion
       ? { mode: record.mode, conclusion: record.conclusion, runtimeRepository: "", workflowPath: "", workflowId: "", workflowName: "" }
       : await metadataFromRunUrl(record.runUrl);
-    const producerBundle = metadata.runtimeRepository?.toLowerCase() === repository.toLowerCase()
-      ? bundleDefinitions.find((definition) => definition.workers.some((worker) => worker.id === metadata.workflowId))
+    const workflowId = record.workflowId || metadata.workflowId;
+    const inventoryWorkflow = (inventory.workflows || []).find((workflow) => workflow.id === workflowId);
+    const markerBundle = record.workflowId ? bundleDefinitions.find((definition) => (
+      definition.id === record.workflowId
+      || definition.workers.some((worker) => worker.id === record.workflowId)
+    )) : null;
+    const runtimeBundle = metadata.runtimeRepository?.toLowerCase() === repository.toLowerCase()
+      ? bundleDefinitions.find((definition) => (
+        definition.id === workflowId
+        || definition.workers.some((worker) => worker.id === workflowId)
+      ))
       : null;
-    const bundle = bundleDefinitions.find((definition) => definition.id === record.bundle) || producerBundle;
+    const bundle = markerBundle
+      || bundleDefinitions.find((definition) => definition.id === record.bundle)
+      || runtimeBundle;
     const inferredMode = record.outputRepository?.toLowerCase() === record.repository?.toLowerCase() ? "live" : "review";
     return {
       ...record,
@@ -422,9 +440,9 @@ async function collectDashboardRecordsImpl({
       conclusion: record.conclusion || metadata.conclusion,
       repository: record.repository || metadata.repository || "",
       runtimeRepository: record.runtimeRepository || metadata.runtimeRepository || "",
-      workflowPath: record.workflowPath || metadata.workflowPath || "",
-      workflowId: record.workflowId || metadata.workflowId || "",
-      workflow: metadata.workflowName || record.workflow,
+      workflowPath: record.workflowPath || metadata.workflowPath || inventoryWorkflow?.sourcePath || "",
+      workflowId,
+      workflow: metadata.workflowName || inventoryWorkflow?.name || record.workflow,
     };
   }))).sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
   const scopedRecords = allowedRepositories.size === 0

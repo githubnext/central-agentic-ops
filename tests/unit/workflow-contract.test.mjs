@@ -639,18 +639,26 @@ test("workers inherit human-first progressive report disclosure", () => {
 
   assert.match(packageSkill, /begin every durable output directly with a concise, unheaded executive summary/);
   assert.doesNotMatch(packageSkill, /### Executive Summary/);
-  assert.match(packageSkill, /non-essential background, verbose evidence, logs, and per-item breakdowns in `<details>` sections/);
-  assert.match(sharedControl, /Begin directly with a concise executive summary/);
+  assert.match(packageSkill, /immediately expose one clear `\*\*Action:\*\*` with an owner and acceptance check/);
+  assert.match(packageSkill, /non-essential background, verbose evidence, logs, secondary metrics, and per-item breakdowns in clearly named `<details>` sections/);
+  assert.match(sharedControl, /Begin directly with a short, plain-language executive summary/);
   assert.match(sharedControl, /do not add a heading for this opening summary/);
+  assert.match(sharedControl, /Immediately follow it with one visible `\*\*Action:\*\*` sentence that says who should do what next and the acceptance check/);
+  assert.match(sharedControl, /tell the maintainer to assign the issue to Copilot/);
+  assert.match(sharedControl, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.match(sharedControl, /when no action is required, say `\*\*Action:\*\* None\.`/);
   assert.doesNotMatch(sharedControl, /### Executive Summary/);
-  assert.match(sharedControl, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/);
+  assert.match(sharedControl, /non-essential background, verbose supporting evidence, logs, secondary metrics, and per-item breakdowns inside clearly named `<details>/);
   assert.ok(workers.length > 0, "expected at least one worker workflow");
   for (const [name] of workers) {
     const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
-    assert.match(generated, /Begin directly with a concise executive summary/, name);
+    assert.match(generated, /Begin directly with a short, plain-language executive summary/, name);
     assert.match(generated, /do not add a heading for this opening summary/, name);
+    assert.match(generated, /Immediately follow it with one visible `\*\*Action:\*\*` sentence/, name);
+    assert.match(generated, /tell the maintainer to assign the issue to Copilot/, name);
+    assert.match(generated, /<details><summary><b>Agent prompt<\/b><\/summary>/, name);
     assert.doesNotMatch(generated, /### Executive Summary/, name);
-    assert.match(generated, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/, name);
+    assert.match(generated, /non-essential background, verbose supporting evidence, logs, secondary metrics, and per-item breakdowns inside clearly named `<details>/, name);
   }
 });
 
@@ -1848,7 +1856,11 @@ test("AW Maintenance compiler security worker runs the full validation suite", (
     assert.match(source, new RegExp(`${flag} \\\\`), flag);
   }
   assert.match(source, /gh aw mcp-server/);
+  assert.match(source, /Begin directly with a short, plain-language executive summary/);
+  assert.match(source, /\*\*Action:\*\* Assign this issue to Copilot/);
+  assert.match(source, /<details><summary><b>Failure details<\/b><\/summary>/);
   assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.match(source, /<details><summary><b>Raw evidence<\/b><\/summary>/);
   assert.match(source, /never edit generated `\.lock\.yml` files/i);
   for (const viewId of ["aw-maintenance-attainment", "aw-maintenance-value-trend"]) {
     const view = dashboard.dashboard.pages[0].views.find(({ id }) => id === viewId);
@@ -2548,12 +2560,14 @@ test("Activity package owns the shared collected-data cache contract", () => {
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
     { source: "failure-evidence.mjs", destination: ".github/aw/activity/failure-evidence.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
+    { source: "version.mjs", destination: ".github/aw/activity/version.mjs" },
   ]);
   assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
   assert.ok(rootManifest.includes.includes(".github/workflows/cao-maintenance.yml"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/failure-evidence.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/version.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.doesNotMatch(workflow, /workflow_call:/);
   assert.match(workflow, /workflow_dispatch:[\s\S]*?request-id:/);
