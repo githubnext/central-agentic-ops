@@ -198,11 +198,12 @@ describe('renderWorkflowDetail', () => {
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
   });
 
-  it('prefers declarative workflow elements over page identity', () => {
+  it('uses the declarative route view id instead of page identity', () => {
     const rendered = renderWorkflowDetail({
       ...context('workflow-detail'),
       pageId: 'totally-custom-page',
-      element: 'workflow-runs'
+      element: 'workflow-detail',
+      viewId: 'workflow-runs-route'
     });
 
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {

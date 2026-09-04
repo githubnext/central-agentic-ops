@@ -7,11 +7,9 @@ import { octicon } from '../octicons.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
-import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
-import { renderWorkflowRuntime } from './workflow-runtime.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
 
@@ -50,9 +48,9 @@ const ELEMENT_RENDERERS = new Map([
   ['package-dispatches', (context) => renderPackageNavigation(context, 'dispatches')],
   ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
   ['workflow-route', renderWorkflowRouteView],
-  ['workflow-detail', renderWorkflowDetail],
-  ['workflow-runs', renderWorkflowDetail],
-  ['workflow-runtime', renderWorkflowRuntime],
+  ['workflow-detail', renderWorkflowRouteView],
+  ['workflow-runs', renderWorkflowRouteView],
+  ['workflow-runtime', renderWorkflowRouteView],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 

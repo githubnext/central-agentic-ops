@@ -272,11 +272,12 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.workflow-runtime-metrics')).not.toBeNull();
   });
 
-  it('derives workflow insights composition from the declarative element name', () => {
+  it('uses the declarative route view id for workflow insights composition', () => {
     const rendered = renderWorkflowRouteView({
       ...context(),
       pageId: 'workflow-detail',
-      element: 'workflow-runtime'
+      element: 'workflow-runtime',
+      viewId: 'workflow-runtime-route'
     });
     selectWorkflow(rendered);
 

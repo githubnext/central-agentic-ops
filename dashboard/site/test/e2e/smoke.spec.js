@@ -2281,7 +2281,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
             title: 'Workflow runtime',
             route: { 'hash-query-parameter': 'workflow' },
             views: [{
-              id: 'workflow-runtime',
+              id: 'workflow-runtime-route',
               title: 'Workflow runtime',
               data: { sources: ['workflows', 'runs', 'usage', 'operational-values'] },
               mark: 'element',
