@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { text } from './count-formatters.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { renderWorkflowBadges } from './workflow-badges.js';
 
@@ -23,9 +24,4 @@ export function renderWorkflowIdentity(workflow) {
     ),
     sourceLink ? renderExternalLink(sourceLink) : null
   );
-}
-
-/** @param {unknown} value */
-function text(value) {
-  return value == null ? '' : String(value);
 }
