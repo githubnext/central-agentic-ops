@@ -67,24 +67,21 @@ test('production pages expose a responsive executive chart', async ({ page }) =>
   `);
 
   const firstView = page.locator('[data-page-id="overview"] .custom-view').first();
-  const chart = firstView.locator('[data-chart-widget="line"]');
+  const chart = firstView.locator('[data-chart-widget="swimlane"]');
   await expect(chart).toBeVisible();
-  const ticks = chart.locator('.timeline-chart-axis span');
-  await expect(ticks).toHaveCount(2);
+  const ticks = chart.locator('.swimlane-time-label');
+  await expect(ticks).toHaveCount(4);
   await expect(ticks.first()).toBeVisible();
   await expect(ticks.last()).toBeVisible();
-  const [chartBox, plotBox, axisBox] = await Promise.all([
+  await expect(chart.locator('.swimlane-label')).toHaveCount(5);
+  const [chartBox, plotBox] = await Promise.all([
     chart.boundingBox(),
-    chart.locator('svg').boundingBox(),
-    chart.locator('.timeline-chart-axis').boundingBox()
+    chart.locator('svg').boundingBox()
   ]);
   expect(chartBox).not.toBeNull();
   expect(plotBox).not.toBeNull();
-  expect(axisBox).not.toBeNull();
   expect(chartBox?.y).toBeGreaterThanOrEqual(0);
   expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
-  expect(axisBox?.x).toBeCloseTo(plotBox?.x ?? 0, 0);
-  expect(axisBox?.width).toBeCloseTo(plotBox?.width ?? 0, 0);
 
   await page.setViewportSize({ width: 1200, height: 844 });
   const [wideChartBox, widePlotBox] = await Promise.all([

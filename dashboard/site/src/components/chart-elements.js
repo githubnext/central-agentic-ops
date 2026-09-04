@@ -431,6 +431,13 @@ function renderSwimlaneChart(points, timeRange) {
       ? [{ ...point, lane, timestamp }]
       : [];
   });
+  if (plotted.length === 0) {
+    return h(
+      'div',
+      { className: 'chart-widget swimlane-chart-widget', 'data-chart-widget': 'swimlane' },
+      renderEmptyMessage('No workflow runs to show.', { role: 'status' })
+    );
+  }
   const observedTimes = plotted.map((point) => point.timestamp);
   let start = Date.parse(String(timeRange?.start ?? ''));
   let end = Date.parse(String(timeRange?.end ?? ''));

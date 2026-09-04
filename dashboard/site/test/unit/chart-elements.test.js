@@ -180,6 +180,14 @@ describe('chart element helpers', () => {
     expect(chart.querySelector('[role="status"]')).toBeNull();
   });
 
+  it('renders an empty swimlane without invalid timeline dates', () => {
+    const chart = renderChartWidget('swimlane', [], []);
+
+    expect(chart.getAttribute('data-chart-widget')).toBe('swimlane');
+    expect(chart.querySelector('[role="status"]')?.textContent).toBe('No workflow runs to show.');
+    expect(chart.querySelector('svg')).toBeNull();
+  });
+
   it('DLS-VIEW-005 DLS-VIEW-006 DLS-VIEW-007 renders JSON-selected chart marks through one generic helper', () => {
     const points = [
       { x: '2026-08-29', y: 3, color: 'success' },
