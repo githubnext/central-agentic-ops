@@ -20,6 +20,7 @@ const SWIMLANE_DEFINITIONS = [
   ['success', 'Success']
 ];
 const SWIMLANE_FAILURES = new Set(['failure', 'startup-failure', 'stale', 'timed-out']);
+const CHART_SERIES_COLOR_COUNT = 12;
 
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
@@ -30,6 +31,7 @@ const SWIMLANE_FAILURES = new Set(['failure', 'startup-failure', 'stale', 'timed
  *   x: string,
  *   y: number,
  *   color: string | null,
+ *   highlighted?: boolean | null,
  *   key?: string,
  *   category?: string,
  *   link?: { href: string, label: string } | null,
@@ -59,7 +61,7 @@ export function groupChartSeries(points) {
 export function listChartSeries(points) {
   return groupChartSeries(points).map(([name], index) => ({
     name,
-    className: `chart-series-${(index % 6) + 1}`
+    className: `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`
   }));
 }
 
@@ -112,7 +114,7 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
       return h(
         'li',
         null,
-        h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+        h('i', { className: `chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`, 'aria-hidden': 'true' }),
         h('span', null, renderSafeLink(label, link)),
         h('strong', null, formatNumber(value, unit)),
         h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
@@ -152,7 +154,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       h(
         'svg',
         { viewBox: '0 0 42 42', role: 'img', 'aria-label': `Pie chart: ${entries.map(([label, value]) => `${label} ${formatNumber(value, unit)}`).join(', ') || 'no data'}` },
-        h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 8 }),
+        h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 10 }),
         ...entries.map(([label, value], index) => {
           const percent = total > 0 ? (value / total) * 100 : 0;
           const segmentLabel = `${label}: ${formatNumber(value, unit)}`;
@@ -168,12 +170,12 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           },
           h('title', null, segmentLabel),
           h('circle', {
-            className: `pie-chart-segment chart-series-${(index % 6) + 1}`,
+            className: `pie-chart-segment chart-series-${(index % CHART_SERIES_COLOR_COUNT) + 1}`,
             cx: 21,
             cy: 21,
             r: 15.9155,
             fill: 'none',
-            'stroke-width': 8,
+            'stroke-width': 10,
             'stroke-dasharray': `${percent} ${100 - percent}`,
             'stroke-dashoffset': String(-offset),
             'data-chart-category': label
@@ -220,13 +222,14 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram with ${bins.length} automatically calculated bins` },
+        ...[4, 21, 38].map((y) => h('line', { className: 'histogram-chart-grid', x1: 0, y1: y, x2: 100, y2: y })),
         h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...bins.map((bin, index) => {
           const height = Math.max(1, (bin.count / maximum) * 34);
           const label = `${binLabel(bin)}: ${bin.count} observation${pluralSuffix(bin.count)}`;
           const x = index * barWidth;
           const tooltipX = Math.min(Math.max(x + ((barWidth - 1) / 2) - 21, 1), 57);
-          return h('g', {
+          const mark = h('g', {
             className: 'chart-point histogram-chart-mark',
             tabIndex: 0,
             role: 'img',
@@ -238,7 +241,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             x,
             y: 38 - height,
             width: Math.max(0, barWidth - 1),
-            height
+            height,
+            rx: 0.75
           }),
           h(
             'g',
@@ -254,6 +258,10 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               ...(label.length > 22 ? { textLength: 36, lengthAdjust: 'spacingAndGlyphs' } : {})
             }, label)
           ));
+          const bringTooltipToFront = () => mark.parentNode?.append(mark);
+          mark.addEventListener('pointerenter', bringTooltipToFront);
+          mark.addEventListener('focus', bringTooltipToFront);
+          return mark;
         })
       ),
       bins.length > 0
@@ -269,6 +277,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 
   if (chartType === 'line') {
     const groupedSeries = groupChartSeries(points);
+    const hasWindowHighlight = points.some((point) => typeof point.highlighted === 'boolean');
     const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
     const xValues = [...new Set(points.map((point) => point.x))];
     const values = points.map((point) => toNumber(point.y));
@@ -276,12 +285,30 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const maximum = Math.max(...finiteValues, 1);
     const pointRadius = lineChartPointRadius(points.length);
     const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
+    const highlightedIndexes = xValues
+      .map((value, index) => points.some((point) => point.x === value && point.highlighted) ? index : -1)
+      .filter((index) => index >= 0);
+    const xStep = xValues.length > 1 ? 100 / (xValues.length - 1) : 100;
+    const windowBand = highlightedIndexes.length > 0
+      ? {
+        start: Math.max(0, (Math.min(...highlightedIndexes) - 0.5) * xStep),
+        end: Math.min(100, (Math.max(...highlightedIndexes) + 0.5) * xStep)
+      }
+      : null;
     return h(
       'div',
       { className: 'chart-widget line-chart-widget', 'data-chart-widget': 'line' },
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
+        windowBand ? h('rect', {
+          className: 'line-chart-window-band',
+          x: windowBand.start,
+          y: 0,
+          width: Math.max(windowBand.end - windowBand.start, 1),
+          height: 38,
+          'aria-hidden': 'true'
+        }) : null,
         ...gridLines,
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...groupedSeries.flatMap(([seriesName, seriesPoints]) => {
@@ -294,23 +321,31 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           });
           return [
             h('polyline', {
-              className: `line-chart-series ${seriesClassName}`,
+              className: `line-chart-series ${seriesClassName}${hasWindowHighlight ? ' line-chart-context' : ''}`,
               points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
             }),
+            ...(hasWindowHighlight && coordinates.filter(({ point }) => point.highlighted).length > 1
+              ? [h('polyline', {
+                className: `line-chart-series line-chart-current ${seriesClassName}`,
+                points: coordinates.filter(({ point }) => point.highlighted).map(({ x, y }) => `${x},${y}`).join(' '),
+                fill: 'none',
+                'data-chart-window': 'current'
+              })]
+              : []),
             ...coordinates.map(({ point, x, y }) => h('g', {
-              className: 'chart-point',
+              className: `chart-point${point.highlighted === false ? ' chart-point-context' : point.highlighted ? ' chart-point-current' : ''}`,
               tabIndex: 0,
               role: 'img',
-              'aria-label': chartPointLabel(point, unit)
+              'aria-label': `${chartPointLabel(point, unit)}${point.highlighted === false ? ' (context)' : point.highlighted ? ' (selected window)' : ''}`
             },
             h('title', null, chartPointLabel(point, unit)),
             h('circle', {
               className: `line-chart-point ${seriesClassName}`,
               cx: x,
               cy: y,
-              r: pointRadius
+              r: hasWindowHighlight ? 0.65 : pointRadius
             }),
             h(
               'g',
@@ -325,6 +360,11 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           ];
         })
       ),
+      hasWindowHighlight
+        ? h('div', { className: 'chart-window-key', 'aria-label': 'Chart window key' },
+          h('span', { className: 'chart-window-context' }, 'Previous context'),
+          h('strong', null, 'Selected window'))
+        : null,
       xValues.length > 0
         ? h(
           'div',

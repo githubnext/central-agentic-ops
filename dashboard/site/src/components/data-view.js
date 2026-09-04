@@ -36,6 +36,7 @@ const RUN_LINK_FIELD = 'run-link';
  *   y: number,
  *   category?: string,
  *   color: string | null,
+ *   highlighted?: boolean | null,
  *   link: { href: string, label: string } | null,
  *   source?: Record<string, unknown>
  * }} ChartPoint
@@ -198,7 +199,12 @@ function renderTableView(context) {
       filterId: typeof view.id === 'string' ? view.id : `${pageId}-table`,
       filterFields: columns.flatMap((column, columnIndex) => (
         ['nominal', 'ordinal'].includes(String(column.type))
-          ? [{ key: typeof column.as === 'string' ? column.as : column.field, label: fieldTitle(column), columnIndex: actions.length + columnIndex }]
+          ? [{
+              key: typeof column.as === 'string' ? column.as : column.field,
+              label: fieldTitle(column),
+              columnIndex: actions.length + columnIndex,
+              always: column.display === 'status'
+            }]
           : []
       )),
       bodyRows,

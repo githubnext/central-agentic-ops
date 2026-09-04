@@ -139,6 +139,13 @@
         "icon": "check-circle",
         "class-name": "readiness-page",
         "description": "Fail-closed release readiness across evidence integrity, package inventory, policy controls, and recent runtime behavior.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "24h"
+        },
         "sections": [
           {
             "id": "readiness-verdict",
@@ -435,7 +442,7 @@
           {
             "id": "cost-evaluation-boundary",
             "title": "Budget and anomaly verdicts unavailable",
-            "description": "A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.",
+            "description": "This answers whether observed AI Credit allocation supports a budget or anomaly decision; with partial AI Credit telemetry, totals are allocation evidence, not complete spend or ROI. A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.",
             "mark": "callout",
             "callout": {
               "label": "Evaluation boundary",
@@ -4134,7 +4141,7 @@
           {
             "id": "experiment-evidence-boundary",
             "title": "Experiment comparisons unavailable",
-            "description": "The report does not retain authoritative experiment definitions, variant assignments, or assignment-to-run links. It therefore does not infer control or treatment groups from workflow names, timestamps, models, or outcomes.",
+            "description": "This answers whether observed outcomes support a reliable experiment comparison; partial AI Credit telemetry is allocation evidence, not complete spend or ROI. The report does not retain authoritative experiment definitions, variant assignments, or assignment-to-run links. It therefore does not infer control or treatment groups from workflow names, timestamps, models, or outcomes.",
             "mark": "callout",
             "callout": {
               "label": "Evidence boundary",
@@ -4570,6 +4577,9 @@
               "filters": {
                 "outcome-category": [
                   "issue"
+                ],
+                "workflow-role": [
+                  "worker"
                 ]
               },
               "limit": 100
