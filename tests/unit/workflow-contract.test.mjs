@@ -17,6 +17,10 @@ function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
 }
 
+function script(name, directory) {
+  return readFileSync(join(directory, name), "utf8").replace(/\r?\n$/, "");
+}
+
 test("packages and repository workflows pin the supported gh-aw version", () => {
   const manifests = [
     "aw.yml",
@@ -1027,8 +1031,8 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   assert.match(selfCareManifest, /\.github\/workflows\/self-care-data-acquisition-audit\.md/);
   assert.match(selfCareManifest, /\.github\/workflows\/self-care-docs-build-time-investigator\.md/);
   assert.equal(
-    readFileSync(join(root, "self-care", ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
-    readFileSync(join(root, ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
+    script("self-care-docs-build-time-investigator-operational-value.sh", join(root, "self-care", ".github", "graders")),
+    script("self-care-docs-build-time-investigator-operational-value.sh", join(root, ".github", "graders")),
     "focused SelfCare package must mirror its grader-backed worker evaluator",
   );
 
@@ -1088,8 +1092,8 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "aw-maintenance-compiler-security-operational-value.sh",
   ]) {
     assert.equal(
-      readFileSync(join(root, "aw-doctor", ".github", "graders", name), "utf8"),
-      readFileSync(join(gradersDirectory, name), "utf8"),
+      script(name, join(root, "aw-doctor", ".github", "graders")),
+      script(name, gradersDirectory),
       `focused AW Doctor package must mirror ${name}`,
     );
   }
@@ -1099,8 +1103,8 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "optimization-ai-credit-optimizer-operational-value.sh",
   ]) {
     assert.equal(
-      readFileSync(join(root, "optimization", ".github", "graders", name), "utf8").replace(/\n$/, ""),
-      readFileSync(join(gradersDirectory, name), "utf8").replace(/\n$/, ""),
+      script(name, join(root, "optimization", ".github", "graders")),
+      script(name, gradersDirectory),
       `focused AW Optimization package must mirror ${name}`,
     );
   }
