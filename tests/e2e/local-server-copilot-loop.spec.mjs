@@ -83,6 +83,13 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
     await expect(page.locator(".dashboard-copilot-message-assistant"))
       .toContainText("Updated the active view title.");
     await expect(page.getByText("Updated by Copilot", { exact: true }).first()).toBeVisible();
+    const nextView = page.locator("[data-nav-page-id]").filter({ visible: true }).nth(1);
+    await nextView.click();
+    await expect(page.locator(".org-sidebar #dashboard-copilot-prompt")).toBeVisible();
+    await expect.poll(async () => {
+      const box = await page.locator("#dashboard-copilot-prompt").boundingBox();
+      return box !== null && box.y + box.height <= (await page.viewportSize()).height;
+    }).toBe(true);
     expect(JSON.parse(await readFile(dashboardPath, "utf8")).dashboard.pages[0].title)
       .toBe("Updated by Copilot");
     await preview.close();

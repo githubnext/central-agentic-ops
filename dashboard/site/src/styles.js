@@ -99,6 +99,9 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .skip-link:focus { top: 8px; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); transition: grid-template-columns 120ms ease; }
 .org-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-right: 1px solid var(--border); background: var(--canvas-subtle); }
+.dashboard-copilot-enabled .org-sidebar { height: 100vh; position: sticky; top: 0; align-self: start; overflow: hidden; }
+.dashboard-copilot-enabled .primary-nav { min-height: 0; flex: 1; overflow-y: auto; scrollbar-width: thin; }
+.dashboard-copilot-enabled .sidebar-toggle { display: none; }
 .sidebar-header { min-width: 0; display: flex; align-items: center; gap: 8px; margin: 0 0 10px 8px; }
 .sidebar-brand { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; overflow: hidden; color: var(--fg); font-size: 1rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
 .sidebar-brand-mark { width: 24px; height: 24px; flex: 0 0 24px; overflow: visible; }
@@ -113,7 +116,6 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .sidebar-collapsed .nav-section-items { display: flex !important; }
 .sidebar-collapsed .primary-nav a { justify-content: center; gap: 0; padding-inline: 6px; }
 .sidebar-collapsed .primary-nav a[aria-current="page"]::before { left: -8px; }
-.sidebar-collapsed .dashboard-copilot-prompt { display: none; }
 .primary-nav { display: flex; flex-direction: column; gap: 2px; }
 .nav-section { display: flex; flex-direction: column; }
 .nav-section-toggle { min-height: 28px; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; color: var(--muted); cursor: pointer; list-style: none; }
@@ -1004,12 +1006,13 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   :is(.mode-badge, .mode-indicator) .octicon { display: none; }
   .app-shell { display: block; }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .dashboard-copilot-enabled .org-sidebar { height: auto; position: static; overflow: visible; }
+  .dashboard-copilot-enabled .primary-nav { overflow: visible; }
   .sidebar-header { margin: 0 0 8px; }
   .sidebar-brand { font-size: 1rem; }
   .sidebar-toggle { display: none; }
   .sidebar-collapsed .org-sidebar { padding: 14px 12px 10px; }
   .sidebar-collapsed .sidebar-brand > span, .sidebar-collapsed .nav-label { display: initial; }
-  .sidebar-collapsed .dashboard-copilot-prompt { display: grid; }
   .dashboard-copilot-prompt { margin-top: 12px; }
   .primary-nav { width: 100%; flex-direction: row; gap: 4px; }
   .nav-section { display: contents; }

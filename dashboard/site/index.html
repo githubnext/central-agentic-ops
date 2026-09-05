@@ -120,6 +120,12 @@
           dashboard.querySelector(".report-body")?.prepend(status);
         }
         if (copilotPrompt) {
+          const appShell = dashboard.querySelector(".app-shell");
+          const sidebarToggle = dashboard.querySelector(".sidebar-toggle");
+          if (appShell?.classList.contains("sidebar-collapsed") && sidebarToggle instanceof HTMLButtonElement) {
+            sidebarToggle.click();
+          }
+          dashboard.classList.add("dashboard-copilot-enabled");
           dashboard.querySelector(".org-sidebar")?.append(copilotPrompt);
         }
         root.replaceChildren(dashboard);
