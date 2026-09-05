@@ -668,11 +668,12 @@ function performanceRows(deployed, usage) {
       }
       for (const job of run.jobs || []) {
         const jobDuration = durationSeconds(job.startedAt, job.completedAt);
-        if (jobDuration === null) continue;
         const labels = Array.isArray(job.labels) ? job.labels.filter(Boolean) : [];
         jobs.push({
           ...common,
           job: job.name || "Unknown job",
+          "job-status": job.status || "unknown",
+          "job-conclusion": runConclusion(job.conclusion),
           runner: labels.join(", ") || job.runnerName || "unknown",
           "runner-name": job.runnerName || "unknown",
           "runner-group": job.runnerGroupName || "unknown",

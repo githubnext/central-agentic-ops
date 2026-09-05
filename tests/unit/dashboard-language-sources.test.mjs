@@ -505,9 +505,20 @@ test("dashboard source bridge exposes run and job performance dimensions", () =>
           updatedAt: "2026-09-03T05:10:00Z",
           jobs: [{
             name: "agent",
+            status: "completed",
+            conclusion: "success",
             startedAt: "2026-09-03T05:01:00Z",
             completedAt: "2026-09-03T05:08:30Z",
             runnerName: "GitHub Actions 2",
+            runnerGroupName: "GitHub Actions",
+            labels: ["ubuntu-latest"],
+          }, {
+            name: "detection",
+            status: "in_progress",
+            conclusion: null,
+            startedAt: "2026-09-03T05:09:00Z",
+            completedAt: null,
+            runnerName: "GitHub Actions 3",
             runnerGroupName: "GitHub Actions",
             labels: ["ubuntu-latest"],
           }],
@@ -554,10 +565,22 @@ test("dashboard source bridge exposes run and job performance dimensions", () =>
   assert.deepEqual(sources["job-performance"].rows[0], {
     ...commonPerformance,
     job: "agent",
+    "job-status": "completed",
+    "job-conclusion": "success",
     runner: "ubuntu-latest",
     "runner-name": "GitHub Actions 2",
     "runner-group": "GitHub Actions",
     "job-duration-seconds": 450,
+  });
+  assert.deepEqual(sources["job-performance"].rows[1], {
+    ...commonPerformance,
+    job: "detection",
+    "job-status": "in_progress",
+    "job-conclusion": "unknown",
+    runner: "ubuntu-latest",
+    "runner-name": "GitHub Actions 3",
+    "runner-group": "GitHub Actions",
+    "job-duration-seconds": null,
   });
 });
 
