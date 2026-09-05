@@ -261,6 +261,15 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .histogram-chart-widget svg, .histogram-chart-widget .chart-axis { width: min(100%, 420px); }
 .histogram-chart-widget .chart-axis { box-sizing: border-box; margin-top: 0; padding: 6px 0 0 9%; border-top: 1px solid var(--border-muted); font-variant-numeric: tabular-nums; }
 .histogram-chart-y-label { fill: var(--muted); font-size: 2.5px; font-variant-numeric: tabular-nums; }
+.heatmap-chart-widget { min-width: 0; padding: 16px; place-items: stretch; }
+.heatmap-scroll-region { overflow-x: auto; border-radius: 6px; }
+.heatmap-scroll-region:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.heatmap-chart { width: 100%; min-width: max-content; border-spacing: 3px; border-collapse: separate; font-size: .75rem; }
+.heatmap-chart th { max-width: 150px; padding: 5px 8px; color: var(--muted); font-weight: 600; text-align: center; overflow-wrap: anywhere; }
+.heatmap-chart tbody th { text-align: right; }
+.heatmap-cell { min-width: 72px; height: 44px; padding: 6px 8px; border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border)); border-radius: 6px; background: color-mix(in srgb, var(--accent) var(--heatmap-intensity, 18%), var(--canvas)); color: var(--fg); font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+.heatmap-cell-empty { border-color: var(--border-muted); background: var(--canvas-subtle); color: var(--muted); font-weight: 400; }
+.heatmap-cell:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .chart-series-1 { stroke: var(--success); }
 .chart-series-2 { stroke: var(--attention); }
 .chart-series-3 { stroke: var(--danger); }

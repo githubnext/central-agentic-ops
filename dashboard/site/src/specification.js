@@ -57,7 +57,7 @@ export const VIEW_ELEMENT_VALUES = [
   'configuration-policy',
   'experiments-evaluation'
 ];
-export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'scatter', 'swimlane'];
+export const VIEW_CHART_VALUES = ['bar', 'dot', 'heatmap', 'histogram', 'line', 'pie', 'scatter', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
 export const VIEW_CONTROL_VALUES = ['interactive', 'static'];

@@ -25,6 +25,8 @@ const BAR_CHART_RIGHT = 100;
 const BAR_CHART_BOTTOM = 38;
 const BAR_CHART_HEIGHT = 34;
 const MAX_HISTOGRAM_X_TICKS = 5;
+const MAX_HEATMAP_CELLS = 100;
+const MAX_HEATMAP_AXIS_CATEGORIES = 12;
 const PIE_CHART_CENTER = 21;
 const PIE_CHART_RADIUS = 15.9155;
 const SWIMLANE_START_X = 25;
@@ -244,7 +246,7 @@ function renderChartWidgetShell(chartType, extraAttrs, ...children) {
 export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null, timeRange = null, referenceField = null) {
   const pieData = chartType === 'pie' ? pieSummary ?? pieChartEntries(points) : null;
   const entryCount = pieData ? pieData.entries.length : points.length;
-  const minimumEntries = ['pie', 'scatter'].includes(chartType) ? 1 : 2;
+  const minimumEntries = ['heatmap', 'pie', 'scatter'].includes(chartType) ? 1 : 2;
   if (entryCount < minimumEntries && chartType !== 'swimlane') {
     return renderChartWidgetShell(
       chartType,
@@ -407,6 +409,10 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         )
         : null
     );
+  }
+
+  if (chartType === 'heatmap') {
+    return renderHeatmapChart(points, totalLabel, unit);
   }
 
   if (chartType === 'line' || chartType === 'dot' || chartType === 'scatter') {
@@ -685,6 +691,91 @@ function sampleLineCoordinates(coordinates, limit) {
   }
   sampled.push(coordinates[coordinates.length - 1]);
   return sampled;
+}
+
+/**
+ * @param {ChartPointLike[]} points
+ * @param {string} valueLabel
+ * @param {{ name: string, symbol: string, significant: number } | null} unit
+ * @returns {HTMLElement}
+ */
+function renderHeatmapChart(points, valueLabel, unit) {
+  const columns = [...new Set(points.map((point) => point.x))].sort((left, right) => left.localeCompare(right));
+  const rows = [...new Set(points.map((point) => point.color ?? 'unknown'))].sort((left, right) => left.localeCompare(right));
+  const cellCount = columns.length * rows.length;
+  if (
+    points.length > MAX_HEATMAP_CELLS
+    || cellCount > MAX_HEATMAP_CELLS
+    || columns.length > MAX_HEATMAP_AXIS_CATEGORIES
+    || rows.length > MAX_HEATMAP_AXIS_CATEGORIES
+  ) {
+    return renderChartWidgetShell(
+      'heatmap',
+      null,
+      renderEmptyMessage(
+        `This heatmap is too large to display. Limit it to ${MAX_HEATMAP_CELLS} cells and ${MAX_HEATMAP_AXIS_CATEGORIES} categories per axis.`,
+        { role: 'status' }
+      )
+    );
+  }
+
+  const cells = new Map(points.map((point) => [JSON.stringify([point.x, point.color ?? 'unknown']), point]));
+  const values = points.map((point) => toNumber(point.y)).filter(Number.isFinite);
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const span = maximum - minimum;
+
+  return renderChartWidgetShell(
+    'heatmap',
+    null,
+    h(
+      'div',
+      { className: 'heatmap-scroll-region', tabIndex: 0, role: 'region', 'aria-label': 'Heatmap chart' },
+      h(
+        'table',
+        { className: 'heatmap-chart' },
+        h('caption', { className: 'sr-only' }, `Heatmap of ${valueLabel}`),
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('td', { 'aria-hidden': 'true' }),
+            ...columns.map((column) => h('th', { scope: 'col' }, column))
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          ...rows.map((row) => h(
+            'tr',
+            null,
+            h('th', { scope: 'row' }, row),
+            ...columns.map((column) => {
+              const point = cells.get(JSON.stringify([column, row]));
+              if (!point) {
+                return h('td', { className: 'heatmap-cell heatmap-cell-empty', 'aria-label': `${column}, ${row}: no observation` }, '—');
+              }
+              const value = toNumber(point.y);
+              const formatted = formatNumber(value, unit);
+              const intensity = span > 0 ? 12 + (((value - minimum) / span) * 28) : 26;
+              return h(
+                'td',
+                {
+                  className: 'heatmap-cell',
+                  style: `--heatmap-intensity: ${intensity.toFixed(1)}%`,
+                  tabIndex: 0,
+                  'aria-label': `${column}, ${row}, ${valueLabel}: ${formatted}`
+                },
+                formatted
+              );
+            })
+          ))
+        )
+      )
+    )
+  );
 }
 
 /**
