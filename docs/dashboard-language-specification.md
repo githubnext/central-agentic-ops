@@ -224,7 +224,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Custom page `route` | `hash-query-parameter`, `navigation-page` |
 | View | `id`, `title`, `description`, `intent`, `locked`, `data`, `mark`, `element`, `config`, `callout`, `chart`, `table`, `layout`, `disclosure`, `controls`, `column-summaries`, `empty-message`, `title-link`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
-| View `config` | `body` |
+| View `config` | `body`, `layout` |
 | View `title-link` | `href-field`, `identifier-field` |
 | Table action | `intent`, `presentation`, `icon`, `label`, `context`, `when` |
 | Table action `when` | `field`, `equals` |
@@ -241,7 +241,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 - **DLS-DOC-007:** A validator **MUST** reject unknown keys, unknown enumerated values, and duplicate mapping keys.
 - **DLS-DOC-008:** `defaults`, when present, **MUST** be a mapping containing only `scope`, `time`, and `filters`.
 - **DLS-DOC-009:** Every page **MUST** set `kind` to `built-in` or `custom` and satisfy the corresponding page shape in Sections 10 or 11.
-- **DLS-DOC-009a:** `config`, when present, **MUST** appear only on `mark: element` views. Version 0.1.0 defines `config.body` only for the `workflow-route` element, where it **MUST** be one of `insights`, `reports`, or `runs`.
+- **DLS-DOC-009a:** `config`, when present, **MUST** appear only on `mark: element` views. Version 0.1.0 defines `config.body` only for the `workflow-route` element, where it **MUST** be one of `insights`, `reports`, or `runs`. Version 0.1.0 also defines `config.layout` only for the `workflow-route` element, where it **MUST** be one of `identity`, `metrics`, or `value-report`.
 - **DLS-DOC-010:** Titles and descriptions **MUST** be strings; IDs, references, and timestamps **MUST NOT** rely on YAML implicit type coercion.
 - **DLS-DOC-011:** `github-url-base`, when present, **MUST** be an absolute HTTPS URL without credentials, query, or fragment. It identifies the GitHub web URL base used to resolve GitHub-addressable entity links and defaults to `https://github.com`.
 - **DLS-DOC-012:** `repository`, when present, **MUST** be a non-empty `owner/repo` slug identifying the GitHub repository hosting the dashboard. A presenter **MUST NOT** fabricate a report action toolbar's GitHub repository link when `repository` is absent.

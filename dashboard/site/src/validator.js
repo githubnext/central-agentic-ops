@@ -75,6 +75,7 @@ import {
   VIEW_MARK_VALUES,
   VIEW_TITLE_LINK_KEYS,
   WORKFLOW_ROUTE_BODY_VALUES,
+  WORKFLOW_ROUTE_LAYOUT_VALUES,
   WORKFLOW_ACTIVE_VALUES,
   WORKFLOW_ROLE_VALUES
 } from './specification.js';
@@ -1562,21 +1563,42 @@ function validateView(view, viewNode, path, viewIds, errors) {
     } else {
       const configNode = getValueNodeByKey(viewNode, 'config');
       validateObjectKeys(configNode, VIEW_ELEMENT_CONFIG_KEYS, `${path}.config`, errors);
-      if (view.element === 'workflow-route' && view.config.body !== undefined) {
-        validateStringField(view.config.body, `${path}.config.body`, true, errors);
-        if (typeof view.config.body === 'string' && !WORKFLOW_ROUTE_BODY_VALUES.includes(view.config.body)) {
+      if (view.element === 'workflow-route') {
+        if (view.config.body !== undefined) {
+          validateStringField(view.config.body, `${path}.config.body`, true, errors);
+          if (typeof view.config.body === 'string' && !WORKFLOW_ROUTE_BODY_VALUES.includes(view.config.body)) {
+            errors.push(createError(
+              ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+              'workflow-route config.body must use one canonical route body value.',
+              `${path}.config.body`
+            ));
+          }
+        }
+        if (view.config.layout !== undefined) {
+          validateStringField(view.config.layout, `${path}.config.layout`, true, errors);
+          if (typeof view.config.layout === 'string' && !WORKFLOW_ROUTE_LAYOUT_VALUES.includes(view.config.layout)) {
+            errors.push(createError(
+              ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+              'workflow-route config.layout must use one canonical route layout value.',
+              `${path}.config.layout`
+            ));
+          }
+        }
+      } else {
+        if (view.config.body !== undefined) {
           errors.push(createError(
-            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
-            'workflow-route config.body must use one canonical route body value.',
+            ERROR_CODES.missingOrInvalidRequiredField,
+            'config.body is supported only for the workflow-route element.',
             `${path}.config.body`
           ));
         }
-      } else if (view.config.body !== undefined) {
-        errors.push(createError(
-          ERROR_CODES.missingOrInvalidRequiredField,
-          'config.body is supported only for the workflow-route element.',
-          `${path}.config.body`
-        ));
+        if (view.config.layout !== undefined) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            'config.layout is supported only for the workflow-route element.',
+            `${path}.config.layout`
+          ));
+        }
       }
     }
   }

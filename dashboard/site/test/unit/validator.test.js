@@ -262,6 +262,16 @@ describe('dashboard document validation', () => {
       element: 'workflow-route',
       config: { body: 'insights' }
     });
+    expect(runtimePage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-metrics')).toMatchObject({
+      mark: 'element',
+      element: 'workflow-route',
+      config: { layout: 'metrics' }
+    });
+    expect(runtimePage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runtime-value-report')).toMatchObject({
+      mark: 'element',
+      element: 'workflow-route',
+      config: { layout: 'value-report' }
+    });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
@@ -311,6 +321,56 @@ dashboard:
       expect(invalidBody.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
         path: '$.dashboard.pages[0].views[0].config.body'
+      }));
+    }
+  });
+
+  it('accepts workflow-route config.layout and rejects unsupported values', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: workflow-route-layout
+  title: Workflow route layout
+  pages:
+    - id: workflow-page
+      kind: custom
+      title: Workflow page
+      route:
+        hash-query-parameter: workflow
+      views:
+        - id: workflow-shell
+          data:
+            sources: [workflows]
+          mark: element
+          element: workflow-route
+          config:
+            layout: metrics
+`);
+    expect(accepted.ok).toBe(true);
+
+    const invalidLayout = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: workflow-route-layout
+  title: Workflow route layout
+  pages:
+    - id: workflow-page
+      kind: custom
+      title: Workflow page
+      route:
+        hash-query-parameter: workflow
+      views:
+        - id: workflow-shell
+          data:
+            sources: [workflows]
+          mark: element
+          element: workflow-route
+          config:
+            layout: summary
+`);
+    expect(invalidLayout.ok).toBe(false);
+    if (!invalidLayout.ok) {
+      expect(invalidLayout.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[0].views[0].config.layout'
       }));
     }
   });

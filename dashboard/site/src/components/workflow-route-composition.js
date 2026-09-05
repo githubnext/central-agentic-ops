@@ -9,6 +9,10 @@ import { renderWorkflowRuntimeBody } from './workflow-runtime.js';
  */
 
 /**
+ * @typedef {'identity'|'metrics'|'value-report'} WorkflowRouteLayout
+ */
+
+/**
  * @typedef {{
  *   rootClassName: string,
  *   contentClassName: string,
@@ -79,4 +83,46 @@ export function workflowRouteComposition(body) {
     ? /** @type {WorkflowRouteBody} */ (body)
     : DEFAULT_WORKFLOW_ROUTE_BODY;
   return WORKFLOW_ROUTE_BODY_COMPOSITIONS[key];
+}
+
+const WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRouteLayout, Pick<WorkflowRouteBodyComposition, 'rootClassName'|'contentClassName'|'selectMessage'|'description'|'navigationPage'|'breadcrumbs'|'currentTab'>>>} */ ({
+  identity: {
+    rootClassName: 'workflow-detail',
+    contentClassName: 'workflow-detail-content',
+    selectMessage: 'Select a workflow to inspect it.',
+    description: 'Workflow identity for {workflow} in {repository}.',
+    navigationPage: 'repositories',
+    breadcrumbs: [
+      { label: 'Repositories', href: '#page-repositories' },
+      { label: '{repository}', href: '#page-repository-detail?repository={repository-encoded}' }
+    ],
+    currentTab: 'reports'
+  },
+  metrics: {
+    rootClassName: 'workflow-runtime',
+    contentClassName: 'workflow-runtime-content',
+    selectMessage: 'Select a workflow to inspect its runtime.',
+    description: 'Run health and AI Credit usage for {workflow} in {repository}.',
+    navigationPage: 'packages',
+    breadcrumbs: undefined,
+    currentTab: 'insights'
+  },
+  'value-report': {
+    rootClassName: 'workflow-runtime',
+    contentClassName: 'workflow-runtime-content',
+    selectMessage: 'Select a workflow to inspect its operational value.',
+    description: 'Operational value for {workflow} in {repository}.',
+    navigationPage: 'packages',
+    breadcrumbs: undefined,
+    currentTab: 'insights'
+  }
+});
+
+/**
+ * @param {unknown} layout
+ * @returns {Pick<WorkflowRouteBodyComposition, 'rootClassName'|'contentClassName'|'selectMessage'|'description'|'navigationPage'|'breadcrumbs'|'currentTab'> | null}
+ */
+export function workflowRouteLayoutComposition(layout) {
+  if (typeof layout !== 'string' || !Object.hasOwn(WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS, layout)) return null;
+  return WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS[/** @type {WorkflowRouteLayout} */ (layout)];
 }

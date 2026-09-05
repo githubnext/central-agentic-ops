@@ -1947,6 +1947,54 @@
             }
           },
           {
+            "id": "workflow-runtime-identity",
+            "title": "Workflow identity",
+            "data": {
+              "sources": [
+                "workflows"
+              ]
+            },
+            "mark": "element",
+            "element": "workflow-route",
+            "config": {
+              "layout": "identity"
+            },
+            "layout": "full"
+          },
+          {
+            "id": "workflow-runtime-metrics",
+            "title": "Workflow runtime metrics",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "usage"
+              ]
+            },
+            "mark": "element",
+            "element": "workflow-route",
+            "config": {
+              "layout": "metrics"
+            },
+            "layout": "full"
+          },
+          {
+            "id": "workflow-runtime-value-report",
+            "title": "Workflow operational value",
+            "data": {
+              "sources": [
+                "workflows",
+                "operational-values"
+              ]
+            },
+            "mark": "element",
+            "element": "workflow-route",
+            "config": {
+              "layout": "value-report"
+            },
+            "layout": "full"
+          },
+          {
             "id": "workflow-runtime-route",
             "title": "Workflow runtime",
             "data": {
@@ -1962,7 +2010,8 @@
             "config": {
               "body": "insights"
             },
-            "layout": "full"
+            "layout": "full",
+            "disclosure": "supplemental"
           }
         ]
       },

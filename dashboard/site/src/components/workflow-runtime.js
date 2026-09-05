@@ -32,17 +32,24 @@ export function renderWorkflowRuntime(context) {
  * @param {Record<string, unknown>} workflow
  */
 function renderWorkflowRuntimeBody(context, workflow) {
+  return h(
+    'div',
+    null,
+    renderWorkflowRuntimeMetrics(context, workflow),
+    renderWorkflowValueReport(context, workflow)
+  );
+}
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {Record<string, unknown>} workflow
+ */
+export function renderWorkflowRuntimeMetrics(context, workflow) {
   const repository = qualifiedRepository(workflow);
   const workflowPath = text(workflow.workflow);
   const runs = matchingRows(context, 'runs', repository, workflowPath);
   const usage = matchingRows(context, 'usage', repository, workflowPath);
-
-  return h(
-    'div',
-    null,
-    renderRuntimeMetrics(context, workflow, runs, usage),
-    renderWorkflowValueReport(context, workflow)
-  );
+  return renderRuntimeMetrics(context, workflow, runs, usage);
 }
 
 export { renderWorkflowRuntimeBody };

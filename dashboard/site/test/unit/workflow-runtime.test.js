@@ -282,4 +282,26 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Insights');
     expect(rendered.querySelector('.workflow-runtime-metrics')).not.toBeNull();
   });
+
+  it('renders reusable metrics and value-report layouts declaratively', () => {
+    const metrics = renderWorkflowRouteView({
+      ...context(),
+      pageId: 'custom-workflow-metrics',
+      elementConfig: { layout: 'metrics' }
+    });
+    const valueReport = renderWorkflowRouteView({
+      ...context(),
+      pageId: 'custom-workflow-value',
+      elementConfig: { layout: 'value-report' }
+    });
+    selectWorkflow(metrics);
+    selectWorkflow(valueReport);
+
+    expect(metrics.querySelector('.workflow-identity')).not.toBeNull();
+    expect(metrics.querySelector('.workflow-runtime-metrics')).not.toBeNull();
+    expect(metrics.querySelector('.value-report')).toBeNull();
+    expect(valueReport.querySelector('.workflow-identity')).not.toBeNull();
+    expect(valueReport.querySelector('.workflow-runtime-metrics')).toBeNull();
+    expect(valueReport.querySelector('.value-report')).not.toBeNull();
+  });
 });

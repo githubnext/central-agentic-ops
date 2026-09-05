@@ -26,7 +26,7 @@ import { modeBadgeClassName } from './badge.js';
  *   titleLink?: Record<string, unknown>,
  *   element?: string,
  *   viewId?: string,
- *   elementConfig?: { body?: 'insights'|'reports'|'runs' },
+ *   elementConfig?: { body?: 'insights'|'reports'|'runs', layout?: 'identity'|'metrics'|'value-report' },
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */

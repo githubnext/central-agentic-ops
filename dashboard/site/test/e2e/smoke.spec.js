@@ -2522,6 +2522,120 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
   await expect(page.getByRole('heading', { name: 'No workflow observations yet' })).toBeVisible();
 });
 
+test('workflow runtime page composes identity, metrics, and value report declaratively', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.goto('about:blank#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md');
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const metadata = {
+        'source-id': 'workflow-runtime-layout-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-31T19:00:00Z',
+        'retrieved-at': '2026-08-31T19:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const workflow = '.github/workflows/multi-device-docs-tester.md';
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'workflow-runtime-layout',
+          title: 'Workflow runtime layout',
+          pages: [{
+            id: 'workflow-runtime',
+            kind: 'custom',
+            title: 'Workflow runtime',
+            route: { 'hash-query-parameter': 'workflow' },
+            views: [
+              {
+                id: 'workflow-runtime-identity',
+                title: 'Workflow identity',
+                data: { sources: ['workflows'] },
+                mark: 'element',
+                element: 'workflow-route',
+                config: { layout: 'identity' }
+              },
+              {
+                id: 'workflow-runtime-metrics',
+                title: 'Workflow runtime metrics',
+                data: { sources: ['workflows', 'runs', 'usage'] },
+                mark: 'element',
+                element: 'workflow-route',
+                config: { layout: 'metrics' }
+              },
+              {
+                id: 'workflow-runtime-value-report',
+                title: 'Workflow operational value',
+                data: { sources: ['workflows', 'operational-values'] },
+                mark: 'element',
+                element: 'workflow-route',
+                config: { layout: 'value-report' }
+              }
+            ]
+          }]
+        }
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'gh-aw-cao',
+            workflow,
+            'workflow-name': 'Multi-Device Docs Tester',
+            'workflow-role': 'standalone',
+            package: 'testing',
+            'package-name': 'Testing',
+            'package-memberships': [
+              { id: 'testing', name: 'Testing' },
+              { id: 'central-agentic-ops', name: 'Central Agentic Ops' }
+            ],
+            'workflow-active': 'true',
+            'rollout-mode': 'review'
+          }]
+        },
+        runs: {
+          source: 'runs',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'gh-aw-cao',
+            workflow,
+            run: '45',
+            'run-status': 'completed',
+            'run-conclusion': 'success'
+          }]
+        },
+        usage: {
+          source: 'usage',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'gh-aw-cao',
+            workflow,
+            run: '45',
+            aic: 962.7
+          }]
+        },
+        'operational-values': {
+          source: 'operational-values',
+          metadata,
+          rows: []
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.locator('.workflow-identity')).toHaveCount(3);
+  await expect(page.locator('.workflow-runtime-metrics')).toContainText('962.7 AIC');
+  await expect(page.locator('.value-report-empty')).toContainText('No workflow observations yet');
+});
+
 test('outcome page template follows its JSON-declared hash query route in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   await page.goto('about:blank#page-outcome-detail?outcome=outcome-1');

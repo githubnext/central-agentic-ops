@@ -25,7 +25,7 @@ export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'intent', 'locked', 'data', 'mark', 'element', 'config', 'callout', 'chart', 'table', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'route-field', 'limit', 'order-by', 'source-metadata'];
-export const VIEW_ELEMENT_CONFIG_KEYS = ['body'];
+export const VIEW_ELEMENT_CONFIG_KEYS = ['body', 'layout'];
 export const VIEW_TITLE_LINK_KEYS = ['href-field', 'identifier-field'];
 export const CALLOUT_KEYS = ['label', 'icon'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element', 'callout'];
@@ -49,6 +49,7 @@ export const VIEW_ELEMENT_VALUES = [
   'outcome-detail'
 ];
 export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
+export const WORKFLOW_ROUTE_LAYOUT_VALUES = ['identity', 'metrics', 'value-report'];
 export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
