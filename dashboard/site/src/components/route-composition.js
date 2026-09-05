@@ -4,10 +4,11 @@
 
 /**
  * @template {string} T
- * @param {Readonly<Record<T, unknown>>} compositions
+ * @template V
+ * @param {Readonly<Record<T, V>>} compositions
  * @param {unknown} selected
  * @param {T} fallback
- * @returns {unknown}
+ * @returns {V}
  */
 export function selectNamedComposition(compositions, selected, fallback) {
   const key = typeof selected === 'string' && Object.hasOwn(compositions, selected)
