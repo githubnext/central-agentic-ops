@@ -221,10 +221,10 @@ function safeHttpsUrl(value) {
 
 /**
  * @param {unknown} value
- * @returns {value is { section: string, body: string }}
+ * @returns {value is { body: OutcomeDetailSectionBody }}
  */
 export function isOutcomeDetailSectionConfig(value) {
   return isPlainObject(value)
-    && value.section === 'outcome-detail-section'
-    && typeof value.body === 'string';
+    && typeof value.body === 'string'
+    && (value.body === 'discussion' || value.body === 'metadata');
 }

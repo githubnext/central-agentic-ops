@@ -54,6 +54,7 @@ test("admission evidence validates and normalizes a matching structured record",
 
 test("admission evidence rejects mismatched provenance and unsupported check states", () => {
   assert.equal(normalizeAdmissionRecord(record, { runId: 43 }), null);
+  assert.equal(normalizeAdmissionRecord(record, { runId: 0 }), null);
   assert.equal(normalizeAdmissionRecord({
     ...record,
     checks: [{ check: "Package", status: "maybe" }],

@@ -26,9 +26,9 @@ export function normalizeAdmissionRecord(value, expected = {}) {
     !repository || !/^[^/\s]+\/[^/\s]+$/.test(repository)
     || !/^\d+$/.test(runId || "")
     || !Number.isSafeInteger(runAttempt) || runAttempt < 1
-    || expected.repository && repository.toLowerCase() !== expected.repository.toLowerCase()
-    || expected.runId && runId !== String(expected.runId)
-    || expected.runAttempt && runAttempt !== Number(expected.runAttempt)
+    || expected.repository !== undefined && repository.toLowerCase() !== expected.repository.toLowerCase()
+    || expected.runId !== undefined && runId !== String(expected.runId)
+    || expected.runAttempt !== undefined && runAttempt !== Number(expected.runAttempt)
     || typeof value.authorized !== "boolean"
     || !Array.isArray(value.checks) || value.checks.length === 0 || value.checks.length > 32
   ) return null;
