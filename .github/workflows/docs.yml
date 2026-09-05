@@ -46,6 +46,7 @@ jobs:
     timeout-minutes: 120
     outputs:
       run-id: ${{ steps.dispatch.outputs.run-id }}
+      run-attempt: ${{ steps.dispatch.outputs.run-attempt }}
     permissions:
       actions: write
       contents: read
