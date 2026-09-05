@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendList, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderEmptyTableRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendList, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -126,6 +126,15 @@ describe('ui primitives', () => {
     const empty = renderListWithFallback('my-list', [], (value) => `item ${value}`, 'No items.');
     expect(empty.querySelectorAll('li')).toHaveLength(1);
     expect(empty.textContent).toBe('No items.');
+  });
+
+  it('renders the shared empty-table-row placeholder spanning the given column count', () => {
+    const rendered = renderEmptyTableRow(8, 'No packages discovered.');
+
+    expect(rendered.tagName).toBe('TR');
+    const cell = rendered.querySelector('td');
+    expect(cell?.getAttribute('colspan')).toBe('8');
+    expect(rendered.textContent).toBe('No packages discovered.');
   });
 
   it('renders the shared decorative legend swatch with the requested class and aria-hidden', () => {
