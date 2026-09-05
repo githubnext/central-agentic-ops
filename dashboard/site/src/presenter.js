@@ -1215,7 +1215,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
       ? new URLSearchParams(root.ownerDocument.defaultView?.location.search ?? '').get('mode')
       : '';
     renderPageMode(pageMode, requestedMode === 'review' || requestedMode === 'live' ? requestedMode : '');
-    if (page) dispatchPageRoute(page, routeParameter ?? '', routeValue);
+    if (page && !populationDeferred) dispatchPageRoute(page, routeParameter ?? '', routeValue);
     if (!populationDeferred) restoreScroll(page);
 
   };
