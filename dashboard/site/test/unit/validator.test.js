@@ -326,7 +326,7 @@ describe('dashboard document validation', () => {
       expect.objectContaining({ field: 'job-duration-seconds', unit: 'human-duration' }),
       expect.objectContaining({ field: 'run' })
     ]));
-    expect(detection.views[3].encoding.href).toEqual({ field: 'run-link', type: 'nominal'     });
+    expect(detection.views[3].encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
