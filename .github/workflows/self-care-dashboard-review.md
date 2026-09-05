@@ -85,6 +85,7 @@ tools:
   timeout: 120
   playwright:
     version: "0.1.18"
+    browsers: [chromium]
   bash:
     - "*"
 safe-outputs:
@@ -98,21 +99,6 @@ safe-outputs:
     expires: 14d
   noop:
 pre-agent-steps:
-  - name: Install Chromium for dashboard review
-    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
-    env:
-      EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
-    run: |
-      mkdir -p "$EXPR_GITHUB_WORKSPACE/.playwright" "$PLAYWRIGHT_BROWSERS_PATH"
-      set +e
-      # This browser payload is validated with playwright-cli 0.1.18; update both together after a preflight check.
-      timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install --with-deps chromium \
-        > "$EXPR_GITHUB_WORKSPACE/.playwright/chromium-install.log" 2>&1
-      INSTALL_STATUS=$?
-      set -e
-      if [ $INSTALL_STATUS -ne 0 ]; then
-        echo "Chromium installation failed; agent will report the infrastructure blocker."
-      fi
   - name: Configure Playwright CLI launch options
     if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
