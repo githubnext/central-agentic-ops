@@ -118,6 +118,8 @@ resources:
     destination: .github/aw/dashboard/site/src/components/packages-view.js
   - source: site/src/components/route-empty-state.js
     destination: .github/aw/dashboard/site/src/components/route-empty-state.js
+  - source: site/src/components/route-composition.js
+    destination: .github/aw/dashboard/site/src/components/route-composition.js
   - source: site/src/components/route-tab-set.js
     destination: .github/aw/dashboard/site/src/components/route-tab-set.js
   - source: site/src/components/run-classification.js
@@ -146,6 +148,10 @@ resources:
     destination: .github/aw/dashboard/site/src/components/workflow-identity.js
   - source: site/src/components/workflow-route.js
     destination: .github/aw/dashboard/site/src/components/workflow-route.js
+  - source: site/src/components/workflow-route-bodies.js
+    destination: .github/aw/dashboard/site/src/components/workflow-route-bodies.js
+  - source: site/src/components/workflow-route-composition.js
+    destination: .github/aw/dashboard/site/src/components/workflow-route-composition.js
   - source: site/src/components/workflow-route-view.js
     destination: .github/aw/dashboard/site/src/components/workflow-route-view.js
   - source: site/src/components/workflow-runtime.js
