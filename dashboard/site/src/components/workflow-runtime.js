@@ -31,7 +31,7 @@ export function renderWorkflowRuntime(context) {
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @param {Record<string, unknown>} workflow
  */
-function renderWorkflowRuntimeBody(context, workflow) {
+export function renderWorkflowRuntimeBody(context, workflow) {
   const repository = qualifiedRepository(workflow);
   const workflowPath = text(workflow.workflow);
   const runs = matchingRows(context, 'runs', repository, workflowPath);
@@ -44,8 +44,6 @@ function renderWorkflowRuntimeBody(context, workflow) {
     renderWorkflowValueReport(context, workflow)
   );
 }
-
-export { renderWorkflowRuntimeBody };
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context

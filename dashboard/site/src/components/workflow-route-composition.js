@@ -2,7 +2,8 @@
  * Workflow route composition registry shared by declarative route views.
  */
 
-import { renderWorkflowRuntimeBody } from './workflow-runtime.js';
+import { selectNamedComposition } from './route-composition.js';
+import { WORKFLOW_ROUTE_BODY_RENDERERS } from './workflow-route-bodies.js';
 
 /**
  * @typedef {'insights'|'reports'|'runs'} WorkflowRouteBody
@@ -38,7 +39,7 @@ const WORKFLOW_ROUTE_BODY_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRout
     navigationPage: 'packages',
     breadcrumbs: undefined,
     currentTab: 'insights',
-    bodyRenderer: ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow)
+    bodyRenderer: WORKFLOW_ROUTE_BODY_RENDERERS.insights
   },
   reports: {
     rootClassName: 'workflow-detail',
@@ -75,8 +76,7 @@ const DEFAULT_WORKFLOW_ROUTE_BODY = 'reports';
  * @returns {WorkflowRouteBodyComposition}
  */
 export function workflowRouteComposition(body) {
-  const key = typeof body === 'string' && Object.hasOwn(WORKFLOW_ROUTE_BODY_COMPOSITIONS, body)
-    ? /** @type {WorkflowRouteBody} */ (body)
-    : DEFAULT_WORKFLOW_ROUTE_BODY;
-  return WORKFLOW_ROUTE_BODY_COMPOSITIONS[key];
+  return /** @type {WorkflowRouteBodyComposition} */ (
+    selectNamedComposition(WORKFLOW_ROUTE_BODY_COMPOSITIONS, body, DEFAULT_WORKFLOW_ROUTE_BODY)
+  );
 }
