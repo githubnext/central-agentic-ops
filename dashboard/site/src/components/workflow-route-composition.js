@@ -2,7 +2,11 @@
  * Workflow route composition registry shared by declarative route views.
  */
 
-import { renderWorkflowRuntimeBody } from './workflow-runtime.js';
+import {
+  renderWorkflowRuntimeBody,
+  renderWorkflowRuntimeMetrics,
+  renderWorkflowValueReport
+} from './workflow-runtime.js';
 
 /**
  * @typedef {'insights'|'reports'|'runs'} WorkflowRouteBody
@@ -85,7 +89,7 @@ export function workflowRouteComposition(body) {
   return WORKFLOW_ROUTE_BODY_COMPOSITIONS[key];
 }
 
-const WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRouteLayout, Pick<WorkflowRouteBodyComposition, 'rootClassName'|'contentClassName'|'selectMessage'|'description'|'navigationPage'|'breadcrumbs'|'currentTab'>>>} */ ({
+const WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRouteLayout, WorkflowRouteBodyComposition>>} */ ({
   identity: {
     rootClassName: 'workflow-detail',
     contentClassName: 'workflow-detail-content',
@@ -96,7 +100,8 @@ const WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRo
       { label: 'Repositories', href: '#page-repositories' },
       { label: '{repository}', href: '#page-repository-detail?repository={repository-encoded}' }
     ],
-    currentTab: 'reports'
+    currentTab: 'reports',
+    bodyRenderer: () => null
   },
   metrics: {
     rootClassName: 'workflow-runtime',
@@ -105,7 +110,8 @@ const WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRo
     description: 'Run health and AI Credit usage for {workflow} in {repository}.',
     navigationPage: 'packages',
     breadcrumbs: undefined,
-    currentTab: 'insights'
+    currentTab: 'insights',
+    bodyRenderer: ({ context, workflow }) => renderWorkflowRuntimeMetrics(context, workflow)
   },
   'value-report': {
     rootClassName: 'workflow-runtime',
@@ -114,13 +120,14 @@ const WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRo
     description: 'Operational value for {workflow} in {repository}.',
     navigationPage: 'packages',
     breadcrumbs: undefined,
-    currentTab: 'insights'
+    currentTab: 'insights',
+    bodyRenderer: ({ context, workflow }) => renderWorkflowValueReport(context, workflow)
   }
 });
 
 /**
  * @param {unknown} layout
- * @returns {Pick<WorkflowRouteBodyComposition, 'rootClassName'|'contentClassName'|'selectMessage'|'description'|'navigationPage'|'breadcrumbs'|'currentTab'> | null}
+ * @returns {WorkflowRouteBodyComposition | null}
  */
 export function workflowRouteLayoutComposition(layout) {
   if (typeof layout !== 'string' || !Object.hasOwn(WORKFLOW_ROUTE_LAYOUT_COMPOSITIONS, layout)) return null;
