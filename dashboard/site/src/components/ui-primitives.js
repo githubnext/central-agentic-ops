@@ -63,6 +63,18 @@ export function renderPanelHeader(headingId, heading, description, options = {})
 }
 
 /**
+ * Renders a `<tr>` of `<th scope="col">` header cells from plain label
+ * strings. Shared by the package summary table and the workflow
+ * operational-value observation table, which both build a single header
+ * row from a flat list of column labels.
+ * @param {string[]} labels
+ * @returns {HTMLElement}
+ */
+export function renderTableHeadRow(labels) {
+  return h('tr', null, ...labels.map((label) => h('th', { scope: 'col' }, label)));
+}
+
+/**
  * Renders a single `<div><dt>{term}</dt><dd>{description}</dd></div>` row for
  * use inside a `<dl>`, optionally followed by a trailing detail paragraph.
  * Shared by vital-stat metrics, metadata summary rows, and definition-list
