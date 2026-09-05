@@ -33,6 +33,9 @@ test("dashboard control settings retain successful policy resolution", () => {
 test("dashboard control settings report policy refusal without widening scope", () => {
   const settings = resolveDashboardControlSettings({
     ...options,
+    readPolicy: () => {
+      throw new Error("missing policy");
+    },
     execute: () => ({ status: 1, stdout: "", stderr: "control-plane is required\n" }),
   });
 
@@ -56,6 +59,9 @@ test("dashboard control settings report policy refusal without widening scope", 
 test("dashboard control settings report resolver crashes without widening scope", () => {
   const settings = resolveDashboardControlSettings({
     ...options,
+    readPolicy: () => {
+      throw new Error("missing policy");
+    },
     execute: () => {
       throw new Error("resolver crashed");
     },

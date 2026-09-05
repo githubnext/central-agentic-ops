@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { renderConfigurationView } from '../../src/components/configuration-view.js';
 
-const metadata = {
+const metadata = /** @type {import('../../src/presenter.js').SourceMetadata} */ ({
   'source-id': 'configuration-fixture',
   'source-kind': 'fixture',
   'as-of': '2026-09-05T09:00:00Z',
@@ -12,10 +12,11 @@ const metadata = {
   completeness: 'complete',
   freshness: 'fresh',
   availability: 'available'
-};
+});
 
+/** @param {Record<string, unknown>} row */
 function context(row) {
-  return {
+  return /** @type {import('../../src/components/ui-elements.js').ElementRenderContext} */ ({
     pageId: 'configuration',
     title: 'Control policy',
     description: 'Explained configuration.',
@@ -29,14 +30,14 @@ function context(row) {
     },
     contextDetails: [],
     headingTag: 'h3'
-  };
+  });
 }
 
 describe('Configuration dashboard view', () => {
   it('keeps Configuration in the Control plane group with a chart first', () => {
     const dashboard = JSON.parse(readFileSync(resolve('dashboard.json'), 'utf8')).dashboard;
-    const page = dashboard.pages.find((candidate) => candidate.id === 'configuration');
-    const group = dashboard.navigation.find((candidate) => candidate.label === 'Control plane');
+    const page = dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'configuration');
+    const group = dashboard.navigation.find((/** @type {{ label: string }} */ candidate) => candidate.label === 'Control plane');
 
     expect(group.pages).toContain('configuration');
     expect(page.views[0]).toMatchObject({ mark: 'chart', chart: 'pie' });
@@ -55,10 +56,11 @@ describe('Configuration dashboard view', () => {
         detail: 'Promote only after reviewing target authority.'
       }]
     }));
+    if (!rendered) throw new Error('configuration view did not render');
 
     expect(rendered.textContent).toContain('Package is review-only');
     expect(rendered.textContent).toContain('Sets the inherited execution mode.');
-    expect(rendered.querySelector('.configuration-raw code').textContent).toBe(raw);
+    expect(rendered.querySelector('.configuration-raw code')?.textContent).toBe(raw);
     expect(rendered.querySelectorAll('.configuration-entry')).not.toHaveLength(0);
   });
 
@@ -75,11 +77,14 @@ describe('Configuration dashboard view', () => {
         detail: 'Unexpected token'
       }]
     }));
+    if (!rendered) throw new Error('configuration view did not render');
 
     expect(rendered.textContent).toContain('The policy cannot be explained until it contains valid JSON.');
-    rendered.querySelector('.configuration-copy-button').click();
+    const copyButton = rendered.querySelector('.configuration-copy-button');
+    if (!(copyButton instanceof HTMLButtonElement)) throw new Error('copy button did not render');
+    copyButton.click();
     await Promise.resolve();
     expect(writeText).toHaveBeenCalledWith('{bad json');
-    expect(rendered.querySelector('.configuration-copy-status').textContent).toBe('Copied.');
+    expect(rendered.querySelector('.configuration-copy-status')?.textContent).toBe('Copied.');
   });
 });

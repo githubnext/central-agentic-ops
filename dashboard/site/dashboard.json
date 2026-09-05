@@ -5205,7 +5205,6 @@
               "y": {
                 "field": "count",
                 "type": "quantitative",
-                "aggregate": "sum",
                 "title": "Checks"
               },
               "color": {
@@ -5219,7 +5218,9 @@
             "title": "Control policy",
             "description": "Every declared entry is shown with its operational meaning. Defaults are identified where they affect rollout behavior.",
             "data": {
-              "source": "configuration-policy"
+              "sources": [
+                "configuration-policy"
+              ]
             },
             "mark": "element",
             "element": "configuration-policy",

@@ -2,6 +2,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { isPlainObject, renderSectionHeading } from './ui-primitives.js';
 
+/** @type {Record<string, string>} */
 const EXACT_EXPLANATIONS = {
   '$schema': 'Connects this file to the published policy schema for editor completion and validation.',
   version: 'Selects the policy contract version. Version 1 is currently required.',
@@ -31,6 +32,7 @@ const EXACT_EXPLANATIONS = {
   'target-authority.packages': 'Maps package identifiers to their authorized control repositories.'
 };
 
+/** @param {string} path @param {unknown} value */
 function explanation(path, value) {
   if (EXACT_EXPLANATIONS[path]) return EXACT_EXPLANATIONS[path];
   if (/^control-plane\.scope\.allowed-owners\.\d+$/.test(path)) return 'An owner included in the discovery boundary.';
@@ -59,12 +61,14 @@ function explanation(path, value) {
     : 'This entry is not recognized by the current policy vocabulary; validation should be reviewed.';
 }
 
+/** @param {unknown} value */
 function valueLabel(value) {
   if (Array.isArray(value)) return `${value.length} item${value.length === 1 ? '' : 's'}`;
   if (isPlainObject(value)) return `${Object.keys(value).length} entr${Object.keys(value).length === 1 ? 'y' : 'ies'}`;
   return JSON.stringify(value);
 }
 
+/** @param {string} name @param {unknown} value @param {string} path @param {number} [depth] */
 function renderEntry(name, value, path, depth = 0) {
   const children = Array.isArray(value)
     ? value.map((item, index) => [String(index), item])
@@ -90,6 +94,7 @@ function renderEntry(name, value, path, depth = 0) {
   );
 }
 
+/** @param {Array<Record<string, unknown>>} diagnostics */
 function renderDiagnostics(diagnostics) {
   return h('section', { className: 'configuration-diagnostics', 'aria-label': 'Policy diagnostics' },
     ...diagnostics.map((diagnostic) => h(
@@ -103,6 +108,7 @@ function renderDiagnostics(diagnostics) {
     )));
 }
 
+/** @param {string} raw */
 function renderRawPolicy(raw) {
   const copyStatus = h('output', { className: 'configuration-copy-status', 'aria-live': 'polite' });
   const copyButton = h('button', { type: 'button', className: 'configuration-copy-button' }, octicon('copy'), 'Copy JSON');
@@ -120,6 +126,7 @@ function renderRawPolicy(raw) {
     h('pre', null, h('code', null, raw || 'Raw policy is unavailable.')));
 }
 
+/** @param {import('./ui-elements.js').ElementRenderContext} context */
 export function renderConfigurationView(context) {
   const row = context.sources['configuration-policy']?.rows?.[0];
   if (!row) return null;
