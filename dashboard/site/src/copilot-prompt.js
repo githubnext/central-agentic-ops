@@ -119,7 +119,7 @@ export function renderCopilotPrompt(socket) {
     const label = active ? 'Cancel request' : 'Send message';
     sendButton.title = label;
     sendButton.setAttribute('aria-label', label);
-    sendButton.replaceChildren(octicon(active ? 'stop' : 'paper-airplane'));
+    sendButton.replaceChildren(octicon(active ? 'square-fill' : 'paper-airplane'));
     sendButton.disabled = socket.readyState !== 1;
   };
   const cancelSession = () => {

@@ -89,7 +89,7 @@ describe('Copilot dashboard prompt', () => {
     const actionButton = prompt.querySelector('.dashboard-copilot-action');
     if (!(actionButton instanceof HTMLButtonElement)) throw new Error('Expected Copilot action button');
     expect(actionButton.getAttribute('aria-label')).toBe('Cancel request');
-    expect(actionButton.querySelector('.octicon-stop')).not.toBeNull();
+    expect(actionButton.querySelector('.octicon-square-fill')).not.toBeNull();
     actionButton.click();
 
     const start = socket.sent.find((message) => message.type === 'copilot.start');

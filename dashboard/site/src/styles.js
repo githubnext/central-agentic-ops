@@ -82,7 +82,8 @@ body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5
 .dashboard-copilot-input input { min-width: 0; width: 100%; padding: 4px 5px; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: .75rem; }
 .dashboard-copilot-action { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: var(--copilot-accent); color: #fff; cursor: pointer; }
 .dashboard-copilot-action:hover { filter: brightness(1.14); }
-.dashboard-copilot-action.dashboard-copilot-cancel { background: var(--danger); }
+.dashboard-copilot-action.dashboard-copilot-cancel { border: 1px solid var(--border); background: var(--canvas-subtle); color: var(--fg); }
+.dashboard-copilot-action.dashboard-copilot-cancel:hover { background: var(--neutral-muted); filter: none; }
 .dashboard-copilot-action:disabled { background: var(--neutral-muted); color: var(--muted); cursor: not-allowed; filter: none; }
 .dashboard-copilot-prompt output { min-height: 1em; color: var(--muted); font-size: .6875rem; line-height: 1.25; }
 .dashboard-root { min-height: 100vh; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; }
