@@ -277,6 +277,8 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await expect(readinessPage).toContainText('Output warning');
   await expect(readinessPage).toContainText('Smoke regression');
 
+  await expect(readinessPage.locator('.time-window-control')).toBeHidden();
+  await readinessPage.getByRole('button', { name: /Filter/ }).click();
   const windowStart = readinessPage.locator('[aria-label="Window start time"]');
   const windowStop = readinessPage.locator('[aria-label="Window stop time"]');
   const [localStart, localStop] = await page.evaluate((values) => values.map((value) => {
@@ -295,8 +297,11 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await expect(readinessPage).not.toContainText('No failures observed');
   await expect(readinessPage).not.toContainText('No warnings observed');
   await expect(readinessPage).not.toContainText('No no-op reports observed');
+  await readinessPage.getByRole('button', { name: /Filter/ }).click();
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(readinessPage.locator('.time-window-control')).toBeHidden();
+  await readinessPage.getByRole('button', { name: /Filter/ }).click();
   await expect(readinessPage.locator('.time-window-control')).toBeVisible();
   await expect(readinessPage.locator('[aria-label="Window start time"]')).toBeVisible();
   await expect(readinessPage.locator('[aria-label="Window stop time"]')).toBeVisible();
@@ -1577,8 +1582,12 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
 
   const filterBar = page.getByLabel('Dashboard filters');
   await expect(filterBar).toBeVisible();
+  await expect(filterBar.locator('.filter-control > .dashboard-horizon')).toHaveCount(1);
+  await expect(page.locator('.report-actions > .dashboard-horizon')).toHaveCount(0);
   const filterInput = filterBar.getByRole('searchbox', { name: 'Current filters' });
   await expect(filterInput).toHaveValue('mode:review mode:live');
+  await expect(filterBar.locator('.time-window-control')).toBeHidden();
+  await filterBar.getByRole('button', { name: /Filter/ }).click();
   await expect(filterBar.getByRole('combobox', { name: 'Time window' })).toHaveValue('all');
   await expect(filterBar.getByRole('link', { name: 'Export JSON' })).toHaveCount(0);
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
@@ -1588,11 +1597,14 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await page.waitForTimeout(200);
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('1');
+  await filterBar.getByRole('button', { name: /Filter/ }).click();
 
   await page.setViewportSize({ width: 400, height: 900 });
   const filterControlBox = await filterBar.locator('.filter-control').boundingBox();
-  const timeRangeBox = await filterBar.locator('.time-window-control').boundingBox();
   expect(filterControlBox).not.toBeNull();
+  await expect(filterBar.locator('.time-window-control')).toBeHidden();
+  await filterBar.getByRole('button', { name: /Filter/ }).click();
+  const timeRangeBox = await filterBar.locator('.time-window-control').boundingBox();
   expect(timeRangeBox?.y).toBeGreaterThan(filterControlBox?.y ?? 0);
 });
 

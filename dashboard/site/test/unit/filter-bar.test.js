@@ -45,11 +45,31 @@ describe('time-window filter bar', () => {
     start.value = '2026-09-04T08:00';
     end.value = '2026-09-04T10:00';
     start.dispatchEvent(new Event('change'));
-    filterBar.querySelector('button')?.click();
+    [...filterBar.querySelectorAll('button')].find((button) => button.textContent === 'Apply')?.click();
 
     const selected = onChange.mock.calls.at(-1)?.[1];
     expect(selected.range).toBe('custom');
     expect(Date.parse(selected.end) - Date.parse(selected.start)).toBe(2 * 3_600_000);
     expect(new URLSearchParams(window.location.search).get('readiness.window')).toBe('custom');
+  });
+
+  it('toggles the mobile time-window controls from the filter label', () => {
+    const filterBar = renderFilterBar({ filters: ['mode:review', 'mode:live'], 'time-range': '24h' }, vi.fn());
+    document.body.append(filterBar);
+    const toggle = filterBar.querySelector('.filter-toggle');
+
+    expect(toggle?.textContent).toContain('Filter');
+    expect(toggle?.querySelector('.count-badge')?.textContent).toBe('2');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(filterBar.classList.contains('time-window-expanded')).toBe(false);
+
+    toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(filterBar.classList.contains('time-window-expanded')).toBe(true);
+
+    filterBar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(filterBar.classList.contains('time-window-expanded')).toBe(false);
+    expect(document.activeElement).toBe(toggle);
   });
 });

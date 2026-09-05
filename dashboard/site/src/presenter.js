@@ -1000,6 +1000,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
   const pageTitleLink = root.querySelector('[data-page-title-link]');
   const pageDescription = root.querySelector('.overview-header [data-page-description]');
   const pageMode = root.querySelector('[data-page-mode]');
+  const reportActions = root.querySelector('.report-actions');
   const defaultBreadcrumbs = [breadcrumbRoot, breadcrumbDashboard].map((link) => ({
     label: link?.textContent ?? '',
     href: link instanceof HTMLAnchorElement ? link.getAttribute('href') ?? '' : '',
@@ -1072,9 +1073,11 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
    * @param {URLSearchParams} [parameters]
    */
   const activate = (pageId, parameters = new URLSearchParams()) => {
+    const dashboardHorizon = root.querySelector('.dashboard-horizon');
     if (activePageId && activePageId !== pageId) {
       const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
       if (activePage) {
+        if (dashboardHorizon && activePage.contains(dashboardHorizon)) dashboardHorizon.remove();
         pageState.set(activePageId, {
           details: [...activePage.querySelectorAll('details')].map((details) => details.open),
           scrollTop: root.ownerDocument.scrollingElement?.scrollTop ?? root.ownerDocument.documentElement.scrollTop
@@ -1115,6 +1118,12 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     updateNavigationLinks(links, pageId);
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
+    const filterInput = page?.querySelector('.filter-control input');
+    if (dashboardHorizon && filterInput) {
+      filterInput.before(dashboardHorizon);
+    } else if (dashboardHorizon && reportActions) {
+      reportActions.prepend(dashboardHorizon);
+    }
     const routeNavigationPage = page?.dataset.routeNavigationPage;
     if (routeNavigationPage && availableIds.has(routeNavigationPage)) {
       const navigationLink = links.find((link) => getNavigationPageId(link) === routeNavigationPage);

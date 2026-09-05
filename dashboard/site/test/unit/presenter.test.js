@@ -958,8 +958,11 @@ describe('presenter built-in and custom pages', () => {
 
     for (const pageId of ['runtime', 'security', 'firewall', 'operational-value']) {
       const filterBar = activatePage(rendered, pageId)?.querySelector('.filter-bar');
-      expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
-      expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
+      const expectedFilters = pageId === 'firewall'
+        ? 'mode:review mode:live mode:unknown'
+        : 'mode:review mode:live';
+      expect(filterBar?.querySelector('input')?.value).toBe(expectedFilters);
+      expect(filterBar?.querySelector('.count-badge')?.textContent).toBe(pageId === 'firewall' ? '3' : '2');
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
       expect(filterBar?.querySelector('.export-control')).toBeNull();
     }
