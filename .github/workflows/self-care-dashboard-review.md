@@ -35,7 +35,6 @@ env:
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
-  PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gh-aw/playwright-browsers
 environment: central-agentic-ops
 
 jobs:
@@ -119,6 +118,7 @@ pre-agent-steps:
     if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gh-aw/playwright-browsers
     run: |
       set +e
       playwright-cli -s=preflight-chrome open about:blank \

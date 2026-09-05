@@ -2123,6 +2123,8 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(compiled, /npm install -g @playwright\/cli@0\.1\.18/);
   assert.match(compiled, /install_playwright_browsers\.sh" chromium/);
   assert.match(compiled, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
+  assert.doesNotMatch(source.match(/^env:\n(?:  .*\n)+/m)?.[0] ?? "", /PLAYWRIGHT_BROWSERS_PATH/);
+  assert.match(source, /name: Playwright browser launch preflight[\s\S]*?PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
   assert.doesNotMatch(compiled, /npx --yes playwright@.* install --with-deps chromium/);
   assert.match(source, /playwright-cli -s=preflight-chrome open about:blank[\s\S]*--browser=chromium/);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
