@@ -165,7 +165,8 @@ describe('presenter built-in and custom pages', () => {
     const page = await activatePage(rendered, 'data-health');
     expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
     expect(page?.querySelector('[data-view-availability="unavailable"]')).toBeNull();
-    expect(page?.textContent).toContain('Sources needing attention');
+    expect(page?.textContent).toContain('Overall confidence');
+    expect(page?.textContent).toContain('insufficient');
     expect(page?.textContent).toContain('runs');
     expect(page?.textContent).toContain('unavailable');
     rendered.remove();

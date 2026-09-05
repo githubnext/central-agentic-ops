@@ -5973,29 +5973,91 @@
         "kind": "custom",
         "title": "Data health",
         "navigation-label": "Data health",
-        "description": "Shape and retention diagnostics for the cached activity data used by this dashboard.",
+        "description": "Whether dashboard evidence is sufficiently complete, current, compatible, and consistent to represent the live agentic system.",
         "icon": "pulse",
         "class-name": "data-health-page",
         "sections": [
           {
-            "id": "data-health-summary",
-            "title": "Data health summary",
-            "description": "A source-level view of retained rows, observed fields, and independent data-state signals.",
+            "id": "dashboard-confidence",
+            "title": "Dashboard confidence",
+            "description": "Overall confidence, the primary reason, affected dashboard areas, and the next investigation step.",
             "layout": "full",
             "views": [
-              "data-health-status",
-              "data-health-summary",
+              "data-health-confidence",
+              "data-health-summary"
+            ]
+          },
+          {
+            "id": "what-can-i-trust",
+            "title": "What can I trust?",
+            "description": "Independent confidence by operator-facing dashboard domain.",
+            "layout": "full",
+            "views": [
+              "data-health-domains"
+            ]
+          },
+          {
+            "id": "live-system-coverage",
+            "title": "Live-system coverage",
+            "description": "Expected-versus-observed evidence with percentages only where an authoritative denominator exists.",
+            "layout": "full",
+            "views": [
+              "data-health-coverage"
+            ]
+          },
+          {
+            "id": "collection-integrity",
+            "title": "Collection integrity",
+            "description": "Collector completion, failures, evidence horizons, and stale fallback provenance.",
+            "layout": "full",
+            "views": [
+              "data-health-collections"
+            ]
+          },
+          {
+            "id": "producer-compatibility",
+            "title": "Producer compatibility",
+            "description": "Version-aware telemetry compatibility and expected versus unexpected missing fields.",
+            "layout": "full",
+            "views": [
+              "data-health-compatibility"
+            ]
+          },
+          {
+            "id": "consistency-and-reconciliation",
+            "title": "Consistency and reconciliation",
+            "description": "Stable-identifier reconciliation between authoritative evidence domains.",
+            "layout": "full",
+            "views": [
+              "data-health-reconciliation"
+            ]
+          },
+          {
+            "id": "source-diagnostics",
+            "title": "Source diagnostics",
+            "description": "Secondary cache-shape diagnostics; retained rows do not imply complete live-system coverage.",
+            "layout": "full",
+            "views": [
               "data-health-sources"
+            ]
+          },
+          {
+            "id": "provenance-and-technical-details",
+            "title": "Provenance and technical details",
+            "description": "Technical timestamps, source identity, fallback age, and collection provenance.",
+            "layout": "full",
+            "views": [
+              "data-health-provenance"
             ]
           }
         ],
         "views": [
           {
-            "id": "data-health-status",
-            "title": "Source health",
-            "description": "Current source availability, completeness, and freshness show where dashboard evidence can be trusted.",
+            "id": "data-health-confidence",
+            "title": "Overall confidence",
+            "description": "Confidence is derived from critical evidence domains without a numeric health score.",
             "data": {
-              "source": "data-health-sources"
+              "source": "data-health-summary"
             },
             "mark": "chart",
             "chart": "pie",
@@ -6003,18 +6065,18 @@
             "layout": "full",
             "encoding": {
               "x": {
-                "field": "status",
+                "field": "confidence",
                 "type": "nominal",
-                "title": "Health"
+                "title": "Confidence"
               },
               "y": {
-                "field": "source",
+                "field": "confidence",
                 "type": "quantitative",
                 "aggregate": "count",
-                "title": "Sources"
+                "title": "Dashboard"
               },
               "color": {
-                "field": "status",
+                "field": "confidence",
                 "type": "nominal"
               }
             }
@@ -6023,19 +6085,127 @@
             "id": "data-health-summary",
             "title": "Data health summary",
             "data": {
-              "sources": [
-                "data-health-summary"
+              "source": "data-health-summary"
+            },
+            "mark": "table",
+            "controls": "static",
+            "layout": "full",
+            "description": "Availability, completeness, and freshness remain independent even when overall confidence changes.",
+            "encoding": {
+              "columns": [
+                { "field": "confidence", "type": "nominal", "title": "Confidence", "display": "status" },
+                { "field": "reason", "type": "nominal", "title": "Primary reason" },
+                { "field": "affected-domains", "type": "nominal", "title": "Affected areas" },
+                { "field": "availability", "type": "nominal", "title": "Availability", "display": "status" },
+                { "field": "completeness", "type": "nominal", "title": "Completeness", "display": "status" },
+                { "field": "freshness", "type": "nominal", "title": "Freshness", "display": "status" },
+                { "field": "next-action", "type": "nominal", "title": "Next action" }
+              ]
+            }
+          },
+          {
+            "id": "data-health-domains",
+            "title": "Dashboard domain confidence",
+            "data": { "source": "data-health-domains" },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No dashboard domain contracts are available.",
+            "encoding": {
+              "columns": [
+                { "field": "domain", "type": "nominal", "title": "Dashboard area" },
+                { "field": "confidence", "type": "nominal", "title": "Confidence", "display": "status" },
+                { "field": "reason", "type": "nominal", "title": "Reason" },
+                { "field": "next-action", "type": "nominal", "title": "Next action" }
               ]
             },
-            "mark": "element",
-            "element": "summary-grid",
-            "layout": "full",
-            "description": "Counts retained logical sources and rows, highlighting source-level attention without implying missing feeds are healthy."
+            "layout": "full"
+          },
+          {
+            "id": "data-health-coverage",
+            "title": "Scope and evidence coverage",
+            "data": { "source": "data-health-coverage" },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No coverage contracts are available.",
+            "encoding": {
+              "columns": [
+                { "field": "area", "type": "nominal", "title": "Evidence area" },
+                { "field": "expected", "type": "nominal", "title": "Expected" },
+                { "field": "observed", "type": "nominal", "title": "Observed" },
+                { "field": "missing", "type": "nominal", "title": "Missing" },
+                { "field": "coverage-percent", "type": "nominal", "title": "Coverage" },
+                { "field": "state", "type": "nominal", "title": "State", "display": "status" },
+                { "field": "reason", "type": "nominal", "title": "Reason" }
+              ]
+            },
+            "layout": "full"
+          },
+          {
+            "id": "data-health-collections",
+            "title": "Collector state",
+            "data": { "source": "data-health-collections" },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No collection metadata is available.",
+            "encoding": {
+              "columns": [
+                { "field": "operation", "type": "nominal", "title": "Operation" },
+                { "field": "state", "type": "nominal", "title": "State", "display": "status" },
+                { "field": "failure-class", "type": "nominal", "title": "Failure class" },
+                { "field": "progress", "type": "nominal", "title": "Progress" },
+                { "field": "evidence-horizon", "type": "nominal", "title": "Evidence horizon" },
+                { "field": "fallback", "type": "nominal", "title": "Fallback" },
+                { "field": "reason", "type": "nominal", "title": "Reason" }
+              ]
+            },
+            "layout": "full"
+          },
+          {
+            "id": "data-health-compatibility",
+            "title": "Producer contracts",
+            "disclosure": "supplemental",
+            "data": { "source": "data-health-compatibility" },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No producer versions were observed.",
+            "encoding": {
+              "columns": [
+                { "field": "workflow", "type": "nominal", "title": "Workflow" },
+                { "field": "producer-version", "type": "nominal", "title": "Producer version" },
+                { "field": "compatibility", "type": "nominal", "title": "Compatibility", "display": "status" },
+                { "field": "missing-field-class", "type": "nominal", "title": "Missing fields" },
+                { "field": "reason", "type": "nominal", "title": "Reason" },
+                { "field": "next-action", "type": "nominal", "title": "Next action" }
+              ]
+            },
+            "layout": "full"
+          },
+          {
+            "id": "data-health-reconciliation",
+            "title": "Cross-source reconciliation",
+            "disclosure": "supplemental",
+            "data": { "source": "data-health-reconciliation" },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No reconciliation contracts are available.",
+            "encoding": {
+              "columns": [
+                { "field": "relationship", "type": "nominal", "title": "Relationship" },
+                { "field": "expected", "type": "nominal", "title": "Expected" },
+                { "field": "observed", "type": "nominal", "title": "Observed" },
+                { "field": "missing", "type": "nominal", "title": "Missing" },
+                { "field": "coverage", "type": "nominal", "title": "Coverage" },
+                { "field": "state", "type": "nominal", "title": "State", "display": "status" },
+                { "field": "reason", "type": "nominal", "title": "Reason" }
+              ]
+            },
+            "layout": "full"
           },
           {
             "id": "data-health-sources",
             "title": "Cached source shape",
-            "description": "Field population and source state help distinguish an empty dataset from a malformed or incomplete one.",
+            "description": "Secondary diagnostics distinguish cache population from live-system confidence.",
+            "disclosure": "supplemental",
             "data": {
               "source": "data-health-sources"
             },
@@ -6072,7 +6242,13 @@
                 {
                   "field": "status",
                   "type": "nominal",
-                  "title": "Health",
+                  "title": "Confidence",
+                  "display": "status"
+                },
+                {
+                  "field": "availability",
+                  "type": "nominal",
+                  "title": "Availability",
                   "display": "status"
                 },
                 {
@@ -6087,6 +6263,26 @@
                   "title": "Freshness",
                   "display": "status"
                 }
+              ]
+            },
+            "layout": "full"
+          },
+          {
+            "id": "data-health-provenance",
+            "title": "Collection provenance",
+            "disclosure": "supplemental",
+            "data": { "source": "data-health-collections" },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No provenance metadata is available.",
+            "encoding": {
+              "columns": [
+                { "field": "source", "type": "nominal", "title": "Source" },
+                { "field": "collector-completed-at", "type": "temporal", "title": "Collector completed" },
+                { "field": "retrieved-at", "type": "temporal", "title": "Retrieved" },
+                { "field": "source-as-of", "type": "temporal", "title": "Source as of" },
+                { "field": "snapshot-age", "type": "nominal", "title": "Snapshot age" },
+                { "field": "provenance", "type": "nominal", "title": "Provenance" }
               ]
             },
             "layout": "full"
