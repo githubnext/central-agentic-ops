@@ -15,15 +15,17 @@ export const SITE_CALLOUT_KEYS = ['id', 'title', 'description', 'icon', 'visible
 export const SITE_CALLOUT_VISIBILITY_KEYS = ['source', 'field', 'equals'];
 export const TOOLTIP_KEYS = ['label', 'description', 'icon'];
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
-export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant'];
+export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant', 'format'];
+export const UNIT_FORMAT_VALUES = ['duration'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];
 export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'filter-bar', 'definition'];
 export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'filter-bar', 'route', 'views', 'sections'];
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter', 'navigation-page'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range'];
 
-export const VIEW_KEYS = ['id', 'title', 'description', 'intent', 'locked', 'data', 'mark', 'element', 'callout', 'chart', 'table', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
+export const VIEW_KEYS = ['id', 'title', 'description', 'intent', 'locked', 'data', 'mark', 'element', 'config', 'callout', 'chart', 'table', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'route-field', 'limit', 'order-by', 'source-metadata'];
+export const VIEW_ELEMENT_CONFIG_KEYS = ['body'];
 export const VIEW_TITLE_LINK_KEYS = ['href-field', 'identifier-field'];
 export const CALLOUT_KEYS = ['label', 'icon'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element', 'callout'];
@@ -46,6 +48,7 @@ export const VIEW_ELEMENT_VALUES = [
   'workflow-route',
   'outcome-detail'
 ];
+export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
 export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];

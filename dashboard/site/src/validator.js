@@ -59,6 +59,7 @@ import {
   TIME_KEYS,
   TOOLTIP_KEYS,
   UNIT_DEFINITION_KEYS,
+  UNIT_FORMAT_VALUES,
   BUILT_IN_PAGE_REQUIRED_SOURCES,
   BUILT_IN_PAGE_REQUIRED_FIELDS,
   TIME_UNIT_VALUES,
@@ -67,11 +68,13 @@ import {
   VIEW_CONTROL_VALUES,
   VIEW_DISCLOSURE_VALUES,
   VIEW_ENCODING_KEYS,
+  VIEW_ELEMENT_CONFIG_KEYS,
   VIEW_ELEMENT_VALUES,
   VIEW_KEYS,
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
   VIEW_TITLE_LINK_KEYS,
+  WORKFLOW_ROUTE_BODY_VALUES,
   WORKFLOW_ACTIVE_VALUES,
   WORKFLOW_ROLE_VALUES
 } from './specification.js';
@@ -97,7 +100,7 @@ import {
  */
 
 /**
- * @typedef {{ name: string, symbol: string, significant: number }} UnitDefinition
+ * @typedef {{ name: string, symbol: string, significant: number, format?: string }} UnitDefinition
  */
 
 /**
@@ -608,6 +611,23 @@ function validateDashboard(dashboard, dashboardNode, errors) {
           'unit significant must be a finite positive number.',
           `${path}.significant`
         ));
+      }
+      if (definition.format !== undefined) {
+        validateStringField(definition.format, `${path}.format`, true, errors);
+        if (typeof definition.format === 'string' && !UNIT_FORMAT_VALUES.includes(definition.format)) {
+          errors.push(createError(
+            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+            'unit format must use one canonical unit format value.',
+            `${path}.format`
+          ));
+        }
+        if (definition.format === 'duration' && (definition.symbol !== 's' || definition.significant !== 1)) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            'duration units must use symbol "s" and significant 1.',
+            path
+          ));
+        }
       }
     }
     return unitIds;
@@ -1524,6 +1544,41 @@ function validateView(view, viewNode, path, viewIds, errors) {
       'element views must name one canonical UI element.',
       `${path}.element`
     ));
+  }
+
+  if (view.config !== undefined) {
+    if (!isPlainObject(view.config)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'config must be a mapping.',
+        `${path}.config`
+      ));
+    } else if (view.mark !== 'element') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'config is allowed only when mark is "element".',
+        `${path}.config`
+      ));
+    } else {
+      const configNode = getValueNodeByKey(viewNode, 'config');
+      validateObjectKeys(configNode, VIEW_ELEMENT_CONFIG_KEYS, `${path}.config`, errors);
+      if (view.element === 'workflow-route' && view.config.body !== undefined) {
+        validateStringField(view.config.body, `${path}.config.body`, true, errors);
+        if (typeof view.config.body === 'string' && !WORKFLOW_ROUTE_BODY_VALUES.includes(view.config.body)) {
+          errors.push(createError(
+            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+            'workflow-route config.body must use one canonical route body value.',
+            `${path}.config.body`
+          ));
+        }
+      } else if (view.config.body !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'config.body is supported only for the workflow-route element.',
+          `${path}.config.body`
+        ));
+      }
+    }
   }
 
   if (view.chart !== undefined) {

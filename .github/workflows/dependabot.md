@@ -4,6 +4,7 @@ name: "Dependabot"
 run-name: "${{ github.event_name == 'schedule' && 'Dependabot · scheduled' || format('Dependabot · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
 
 max-ai-credits: 250
+max-daily-ai-credits: -1
 timeout-minutes: 15
 
 concurrency:
@@ -52,13 +53,13 @@ jobs:
 if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
-  - uses: shared/cao.md
+  - uses: shared/control.md
     with:
       package: dependabot
       role: orchestrator
-      dispatch_max: "50"
-      orchestrator_credits: "250"
-      worker_credits_per_target: "600"
+      dispatch_max: 50
+      orchestrator_credits: 250
+      worker_credits_per_target: 600
 
 permissions:
   contents: read

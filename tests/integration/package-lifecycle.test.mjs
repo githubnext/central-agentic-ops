@@ -45,7 +45,6 @@ const awDoctorExpectedFiles = [
   ".github/workflows/aw-maintenance-compiler-security.md",
   ".github/workflows/aw-maintenance-upgrade.md",
   ".github/workflows/aw-doctor.md",
-  ".github/workflows/shared/cao.md",
   ".github/workflows/shared/control.md",
 ];
 const ukAiAdvisoryExpectedFiles = [
@@ -66,7 +65,7 @@ const craExpectedFiles = [
   ".github/graders/eu-cra-compliance-security-requirements-auditor-operational-value.sh",
   ".github/graders/eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
   ".github/graders/eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
-  ".github/workflows/cao.md",
+  ".github/workflows/control.md",
   ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
   ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
   ".github/workflows/eu-cra-compliance-package-maintainer.md",
@@ -90,6 +89,7 @@ const selfCareExpectedFiles = [
   ".github/graders/self-care-docs-build-time-investigator-operational-value.sh",
   ".github/workflows/self-care-accessibility-checker.md",
   ".github/workflows/self-care-code-improvement.md",
+  ".github/workflows/self-care-dashboard-performance.md",
   ".github/workflows/self-care-data-acquisition-audit.md",
   ".github/workflows/self-care-dashboard-language-refactor.md",
   ".github/workflows/self-care-dashboard-review.md",
@@ -167,7 +167,6 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
       assert.ok(existsSync(join(consumer, relativePath)), `root package omitted dashboard file ${relativePath}`);
     }
     for (const workflowId of [
-      "ambient-context",
       "aw-doctor",
       "dependabot",
       "optimization",
@@ -235,7 +234,7 @@ test("gh aw add installs the focused EU CRA package contract", { timeout: 180_00
         ".github/graders/eu-cra-compliance-security-requirements-auditor-operational-value.sh",
         ".github/graders/eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
         ".github/graders/eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
-        ".github/workflows/cao.md",
+        ".github/workflows/control.md",
         ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
         ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
         ".github/workflows/eu-cra-compliance-package-maintainer.md",
@@ -277,7 +276,7 @@ test("gh aw add installs the focused UK AI Advisory package contract", { timeout
         ".github/aw/uk-ai-advisory/implementation-status.md",
         ".github/aw/dashboards/uk-ai-advisory.json",
         ".github/workflows/uk-ai-advisory-package-maintainer.md",
-        ".github/workflows/cao.md",
+        ".github/workflows/control.md",
         ".github/workflows/uk-ai-advisory.md",
       ].toSorted(),
       "focused UK AI Advisory package manifest must own its entry workflows and ledger",
@@ -338,7 +337,7 @@ test("gh aw add installs the focused Software Development Practices package cont
         ".github/aw/software-development-practices/software-development-guidance-operational-value-runtime.bash",
         ".github/graders/software-development-practices-github-well-architected-operational-value.sh",
         ".github/graders/software-development-practices-nist-ssdf-operational-value.sh",
-        ".github/workflows/cao.md",
+        ".github/workflows/control.md",
         ".github/workflows/software-development-practices-github-well-architected.md",
         ".github/workflows/software-development-practices-nist-ssdf.md",
         ".github/workflows/software-development-practices.md",

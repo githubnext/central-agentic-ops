@@ -17,12 +17,15 @@ function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
 }
 
+function script(name, directory) {
+  return readFileSync(join(directory, name), "utf8").replace(/\r?\n$/, "");
+}
+
 test("packages and repository workflows pin the supported gh-aw version", () => {
   const manifests = [
     "aw.yml",
     "activity/aw.yml",
     "uk-ai-advisory/aw.yml",
-    "ambient-context/aw.yml",
     "aw-doctor/aw.yml",
     "dashboard/aw.yml",
     "dependabot/aw.yml",
@@ -47,7 +50,6 @@ test("catalog packages declare their current experimental maturity", () => {
     "aw.yml",
     "activity/aw.yml",
     "uk-ai-advisory/aw.yml",
-    "ambient-context/aw.yml",
     "aw-doctor/aw.yml",
     "dashboard/aw.yml",
     "dependabot/aw.yml",
@@ -64,16 +66,13 @@ test("catalog packages declare their current experimental maturity", () => {
 });
 
 test("operational workflows use the transitive CAO package bundle", () => {
-  const bundle = workflow("shared/cao.md");
   const control = workflow("shared/control.md");
-  assert.match(bundle, /imports:\n\s+- uses: control\.md/);
-  assert.match(bundle, /dispatch_max: \$\{\{ github\.aw\.import-inputs\.dispatch_max \}\}/);
   assert.match(control, /dispatch_max:\n\s+type: number/);
   assert.match(control, /orchestrator_credits:\n\s+type: number/);
   assert.match(control, /worker_credits_per_target:\n\s+type: number/);
 
   const operationWorkflows = readdirSync(workflowsDirectory)
-    .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
+    .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/control.md"));
   assert.equal(operationWorkflows.length, 33);
 });
 
@@ -91,9 +90,39 @@ test("AI Credit workers collect all workflow logs with bounded resources", () =>
   }
 });
 
+test("AW Optimization combines AI Credit and ambient-context workers", () => {
+  const orchestrator = workflow("optimization.md");
+  const manifest = parse(readFileSync(join(root, "optimization", "aw.yml"), "utf8"));
+  const dashboard = JSON.parse(readFileSync(join(root, "optimization", "dashboard.json"), "utf8"));
+  const policy = JSON.parse(readFileSync(join(root, ".github", "workflows", "cao.json"), "utf8"));
+  const workerNames = [
+    ["optimization-ai-credit-auditor.md", "AW Optimization / AI Credit Audit"],
+    ["optimization-ai-credit-optimizer.md", "AW Optimization / AI Credit Savings"],
+    ["optimization-agents-md-curator.md", "AW Optimization / AGENTS.md"],
+    ["optimization-skills-curator.md", "AW Optimization / Skills"],
+  ];
+
+  assert.equal(manifest.name, "AW Optimization");
+  assert.equal(dashboard.dashboard.title, "AW Optimization");
+  assert.match(orchestrator, /^name: "AW Optimization"$/m);
+  assert.match(orchestrator, /worker_credits_per_target: 1650/);
+  assert.match(
+    orchestrator,
+    /workflows: \[optimization-ai-credit-auditor, optimization-ai-credit-optimizer, optimization-agents-md-curator, optimization-skills-curator\]/,
+  );
+  assert.deepEqual(
+    Object.keys(policy["control-plane"].packages.optimization.workers).sort(),
+    ["ai-credit-auditor", "ai-credit-optimizer", "agents-md-curator", "skills-curator"].sort(),
+  );
+  assert.equal(policy["control-plane"].packages["ambient-context"], undefined);
+  for (const [name, displayName] of workerNames) {
+    assert.match(workflow(name), new RegExp(`^name: "${displayName.replace("/", "\\/")}"$`, "m"));
+  }
+});
+
 test("operational-value graders cap GitHub API usage while collecting logs", () => {
   for (const name of [
-    "ambient-context-agents-md-curator-operational-value.sh",
+    "optimization-agents-md-curator-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
   ]) {
@@ -380,8 +409,8 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
     rolloutPercent: 100,
     totalRepositories: 1_000_000,
     dispatchMax: 20,
-    eligibleWorkers: 2,
-  }).effectiveMaxRepos, 10, "two workers share the optimization dispatch budget");
+    eligibleWorkers: 4,
+  }).effectiveMaxRepos, 5, "four workers share the optimization dispatch budget");
   assert.equal(resolvePolicy({
     eventName: "schedule",
     configuredMode: "live",
@@ -398,15 +427,14 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "uk-ai-advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "uk-ai-advisory-package-maintainer.md": { credits: 200, timeout: 20 },
     "uk-ai-advisory-operational-resilience.md": { credits: 600, timeout: 30 },
-    "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "aw-doctor.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 3 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
-    "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 8, workers: 8 },
-    "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
-    "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
+    "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 4 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 9, workers: 9 },
+    "optimization-agents-md-curator.md": { credits: 400, timeout: 25 },
+    "optimization-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
     "aw-maintenance-compiler-security.md": { credits: 500, timeout: 45 },
     "aw-maintenance-upgrade.md": { credits: 500, timeout: 30 },
@@ -424,6 +452,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "software-development-practices-nist-ssdf.md": { credits: 400, timeout: 30 },
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
+    "self-care-dashboard-performance.md": { credits: 400, timeout: 30 },
     "self-care-data-acquisition-audit.md": { credits: 300, timeout: 20 },
     "self-care-dashboard-language-refactor.md": { credits: 400, timeout: 30 },
     "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
@@ -439,9 +468,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     assert.match(source, /concurrency:\n\s+group:.*\n\s+job-discriminator: \$\{\{ github\.run_id \}\}\n\s+cancel-in-progress: true/, name);
     assert.doesNotMatch(source, /^\s+(contents|actions|issues|pull-requests): write$/m, name);
     if (limits.dispatchMax) {
-      assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);
+      assert.match(source, new RegExp(`dispatch_max: ${limits.dispatchMax}`), name);
       assert.match(source, new RegExp(`dispatch-workflow:[\\s\\S]*?max: ${limits.dispatchMax}`), name);
-      assert.match(source, new RegExp(`orchestrator_credits: "${limits.credits}"`), name);
+      assert.match(source, new RegExp(`orchestrator_credits: ${limits.credits}`), name);
     }
   }
 
@@ -486,7 +515,7 @@ test("control workflows deny before activation through one shared admission cont
   const controlled = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && !name.endsWith(".lock.md"))
     .map((name) => [name, workflow(name)])
-    .filter(([, source]) => /^\s+- uses: shared\/cao\.md$/m.test(source));
+    .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
 
   assert.equal(controlled.length, 33, "unexpected shared control workflow count");
   assert.equal(
@@ -723,6 +752,7 @@ test("repository PR automation remains bounded and adapted to CAO", () => {
   assert.match(mattReviewer, /emitted < 3000/);
   assert.doesNotMatch(mattReviewer, /\|\s*head -n 3000/);
   assert.match(mattReviewer, /fromJSON\(github\.event\.inputs\.aw_context \|\| '\{\}'\)\.item_number/);
+  assert.match(mattReviewer, /reaction: none/);
 
   assert.match(decisionGate, /types: \[opened, reopened, synchronize, labeled, ready_for_review\]/);
   assert.match(decisionGate, /allowed-files:\n\s+- "docs\/adr\/\*\*"/);
@@ -856,7 +886,7 @@ test("release computes an authorized semantic version bump and creates a draft f
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("uk-ai-advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-doctor", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("uk-ai-advisory", "aw.yml"), join("aw-doctor", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -926,7 +956,6 @@ test("root package composes its operational packages through manifests", () => {
   assert.deepEqual(rootManifest.includes, [
     ".github/workflows/aw.json",
     "activity/aw.yml",
-    "ambient-context/aw.yml",
     "aw-doctor/aw.yml",
     "dashboard/aw.yml",
     "dependabot/aw.yml",
@@ -951,9 +980,8 @@ test("compiled workflow locks are not ignored", () => {
 
 test("root CAO workflows use organization-billed Copilot authentication", () => {
   const rootPackageWorkflowIds = [
-    "ambient-context-agents-md-curator",
-    "ambient-context-skills-curator",
-    "ambient-context",
+    "optimization-agents-md-curator",
+    "optimization-skills-curator",
     "aw-failures-investigator",
     "aw-maintenance-compiler-security",
     "aw-maintenance-upgrade",
@@ -986,6 +1014,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   const workflowIds = [
     "self-care-accessibility-checker",
     "self-care-code-improvement",
+    "self-care-dashboard-performance",
     "self-care-data-acquisition-audit",
     "self-care-dashboard-language-refactor",
     "self-care-dashboard-review",
@@ -1001,8 +1030,8 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   assert.match(selfCareManifest, /\.github\/workflows\/self-care-data-acquisition-audit\.md/);
   assert.match(selfCareManifest, /\.github\/workflows\/self-care-docs-build-time-investigator\.md/);
   assert.equal(
-    readFileSync(join(root, "self-care", ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
-    readFileSync(join(root, ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
+    script("self-care-docs-build-time-investigator-operational-value.sh", join(root, "self-care", ".github", "graders")),
+    script("self-care-docs-build-time-investigator-operational-value.sh", join(root, ".github", "graders")),
     "focused SelfCare package must mirror its grader-backed worker evaluator",
   );
 
@@ -1039,7 +1068,6 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
   const packageGraders = readdirSync(packageGradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
   assert.deepEqual([...graders, ...packageGraders].sort(), [
-    "ambient-context-agents-md-curator-operational-value.sh",
     "aw-failures-investigator-operational-value.sh",
     "aw-maintenance-compiler-security-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
@@ -1050,6 +1078,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "eu-cra-compliance-security-requirements-auditor-operational-value.sh",
     "eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
     "eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
+    "optimization-agents-md-curator-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
     "self-care-docs-build-time-investigator-operational-value.sh",
@@ -1062,9 +1091,20 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "aw-maintenance-compiler-security-operational-value.sh",
   ]) {
     assert.equal(
-      readFileSync(join(root, "aw-doctor", ".github", "graders", name), "utf8"),
-      readFileSync(join(gradersDirectory, name), "utf8"),
+      script(name, join(root, "aw-doctor", ".github", "graders")),
+      script(name, gradersDirectory),
       `focused AW Doctor package must mirror ${name}`,
+    );
+  }
+  for (const name of [
+    "optimization-agents-md-curator-operational-value.sh",
+    "optimization-ai-credit-auditor-operational-value.sh",
+    "optimization-ai-credit-optimizer-operational-value.sh",
+  ]) {
+    assert.equal(
+      script(name, join(root, "optimization", ".github", "graders")),
+      script(name, gradersDirectory),
+      `focused AW Optimization package must mirror ${name}`,
     );
   }
 
@@ -1297,9 +1337,8 @@ test("live workers require target-owned package authority before agent execution
   for (const [name, bundle] of [
     ["uk-ai-advisory.md", "uk-ai-advisory"],
     ["uk-ai-advisory-operational-resilience.md", "uk-ai-advisory"],
-    ["ambient-context.md", "ambient-context"],
-    ["ambient-context-agents-md-curator.md", "ambient-context"],
-    ["ambient-context-skills-curator.md", "ambient-context"],
+    ["optimization-agents-md-curator.md", "optimization"],
+    ["optimization-skills-curator.md", "optimization"],
     ["aw-failures-investigator.md", "aw-doctor"],
     ["aw-doctor.md", "aw-doctor"],
     ["aw-maintenance-upgrade.md", "aw-doctor"],
@@ -1321,6 +1360,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-dashboard-performance.md", "self-care"],
     ["self-care-data-acquisition-audit.md", "self-care"],
     ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
@@ -1335,7 +1375,6 @@ test("live workers require target-owned package authority before agent execution
 test("orchestrators use checked-in policy with independent manual narrowing", () => {
   for (const [name, packageName] of [
     ["uk-ai-advisory.md", "uk-ai-advisory"],
-    ["ambient-context.md", "ambient-context"],
     ["aw-doctor.md", "aw-doctor"],
     ["dependabot.md", "dependabot"],
     ["eu-cra-compliance.md", "eu-cra-compliance"],
@@ -1364,9 +1403,8 @@ test("operation workflows optionally load per-operation markdown steering", () =
   for (const [name, operation] of [
     ["uk-ai-advisory.md", "uk-ai-advisory"],
     ["uk-ai-advisory-operational-resilience.md", "uk-ai-advisory"],
-    ["ambient-context.md", "ambient-context"],
-    ["ambient-context-agents-md-curator.md", "ambient-context"],
-    ["ambient-context-skills-curator.md", "ambient-context"],
+    ["optimization-agents-md-curator.md", "optimization"],
+    ["optimization-skills-curator.md", "optimization"],
     ["aw-failures-investigator.md", "aw-doctor"],
     ["aw-doctor.md", "aw-doctor"],
     ["aw-maintenance-upgrade.md", "aw-doctor"],
@@ -1388,6 +1426,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-dashboard-performance.md", "self-care"],
     ["self-care-data-acquisition-audit.md", "self-care"],
     ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
@@ -1448,7 +1487,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
-  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-doctor.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md", "software-development-practices.md"]) {
+  for (const name of ["uk-ai-advisory.md", "aw-doctor.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md", "software-development-practices.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -1489,11 +1528,11 @@ test("orchestrators dispatch workers only through safe-output tools", () => {
   assert.match(precompute, /const item = inWorkflows/);
 });
 
-test("ambient context emits a no-op safe output when no workers are dispatched", () => {
-  const ambientContext = workflow("ambient-context.md");
+test("AW Optimization emits a no-op safe output when no workers are dispatched", () => {
+  const optimization = workflow("optimization.md");
 
   assert.match(
-    ambientContext,
+    optimization,
     /If no worker is dispatched and no incomplete condition applies, call `noop` exactly once with the complete orchestrator report as its message\./,
   );
 });
@@ -1501,8 +1540,8 @@ test("ambient context emits a no-op safe output when no workers are dispatched",
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
     ["uk-ai-advisory-operational-resilience.md", "uk-ai-advisory", "operational-resilience"],
-    ["ambient-context-agents-md-curator.md", "ambient-context", "agents-md-curator"],
-    ["ambient-context-skills-curator.md", "ambient-context", "skills-curator"],
+    ["optimization-agents-md-curator.md", "optimization", "agents-md-curator"],
+    ["optimization-skills-curator.md", "optimization", "skills-curator"],
     ["aw-failures-investigator.md", "aw-doctor", "failures-investigator"],
     ["aw-maintenance-compiler-security.md", "aw-doctor", "compiler-security"],
     ["aw-maintenance-upgrade.md", "aw-doctor", "upgrade"],
@@ -1519,6 +1558,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["software-development-practices-nist-ssdf.md", "software-development-practices", "nist-ssdf"],
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
+    ["self-care-dashboard-performance.md", "self-care", "dashboard-performance"],
     ["self-care-data-acquisition-audit.md", "self-care", "data-acquisition-audit"],
     ["self-care-dashboard-language-refactor.md", "self-care", "dashboard-language-refactor"],
     ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
@@ -1665,7 +1705,7 @@ test("EU CRA workflows preserve advisory and human-review boundaries", () => {
   assert.match(orchestrator, /plus at most two alternates per available slot/);
   assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
   assert.match(orchestrator, /Keep that total at or below 48/);
-  assert.match(orchestrator, /worker_credits_per_target: "600"/);
+  assert.match(orchestrator, /worker_credits_per_target: 600/);
 
   for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Maintenance"]]) {
     const source = workflow(name);
@@ -1958,7 +1998,6 @@ test("AW Doctor compiler security worker runs the full validation suite", () => 
 
 test("slower package orchestrators run hourly", () => {
   for (const name of [
-    "ambient-context.md",
     "dependabot.md",
     "eu-cra-compliance.md",
     "optimization.md",
@@ -2106,6 +2145,37 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
+test("SelfCare dashboard performance worker rotates trace-backed persona improvements", () => {
+  const source = workflow("self-care-dashboard-performance.md");
+  const dashboard = JSON.parse(readFileSync(join(root, "self-care", "dashboard.json"), "utf8"));
+  const views = dashboard.dashboard.pages[0].views;
+
+  assert.match(source, /^name: "SelfCare \/ Dashboard Performance"$/m);
+  assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: dashboard-performance/);
+  assert.match(source, /safe_output_mode` is `live`/);
+  assert.match(source, /skip-if-match: 'is:pr is:open "gh-aw-workflow-id: self-care-dashboard-performance" in:body'/);
+  assert.match(source, /cache-memory:\n\s+retention-days: 30\n\s+allowed-extensions: \["\.json"\]/);
+  assert.match(source, /dashboard-performance-rotation\.json/);
+  assert.match(source, /advance `cursor` to the position after the evaluated candidate/);
+  assert.match(source, /DASHBOARD_PERFORMANCE_OUTPUT_DIR="\$evidence_root\/before"/);
+  assert.match(source, /upload-artifact:[\s\S]*?self-care-dashboard-performance\/\*\*/);
+  assert.match(source, /labels: \[self-care, self-care:dashboard-performance\]/);
+  assert.match(source, /title-prefix: "\[self-care:dashboard-performance\] "/);
+  assert.match(source, /draft: true/);
+  assert.match(source, /dashboard\/site\/index\.html/);
+  assert.doesNotMatch(source, /allowed-files:[\s\S]*dashboard\/site\/test\/performance/);
+  for (const persona of ["CFO", "CTO", "CSO"]) {
+    assert.match(source, new RegExp(persona));
+  }
+  assert.ok(views.some(({ id }) => id === "self-care-dashboard-performance-runs"));
+  assert.ok(views.some(({ id }) => id === "self-care-dashboard-performance-outcomes"));
+  assert.ok(views
+    .filter(({ id }) => id.startsWith("self-care-dashboard-performance"))
+    .every((view) => view.data.filters.workflow.includes(".github/workflows/self-care-dashboard-performance.md")));
+  assert.doesNotMatch(source, /^evals:/m);
+  assert.doesNotMatch(source, /^graders:/m);
+});
+
 test("SelfCare docs build-time investigator rotates evidenced recommendations", () => {
   const source = workflow("self-care-docs-build-time-investigator.md");
 
@@ -2206,13 +2276,15 @@ test("dashboard CI runs the package quality gates", () => {
   const jobs = generatedJobs(source);
   const lintUnit = jobs.get("lint-unit");
   const playwrightIntegration = jobs.get("playwright-integration");
+  const lighthousePerformance = jobs.get("lighthouse-performance");
 
   assert.match(source, /dashboard\/site\/\*\*/);
   assert.match(source, /working-directory: dashboard\/site/);
   assert.match(source, /cache-dependency-path: dashboard\/site\/package-lock\.json/);
-  assert.deepEqual([...jobs.keys()], ["lint-unit", "playwright-integration"]);
+  assert.deepEqual([...jobs.keys()], ["lint-unit", "playwright-integration", "lighthouse-performance"]);
   assert.deepEqual(lintUnit.needs, []);
   assert.deepEqual(playwrightIntegration.needs, []);
+  assert.deepEqual(lighthousePerformance.needs, []);
   for (const command of ["npm run typecheck", "npm run lint", "npm test"]) {
     assert.match(lintUnit.block, new RegExp(`run: ${command.replaceAll(".", "\\.")}`));
   }
@@ -2223,6 +2295,11 @@ test("dashboard CI runs the package quality gates", () => {
   assert.match(playwrightIntegration.block, /npx playwright install --with-deps chromium/);
   assert.match(playwrightIntegration.block, /run: npm run test:e2e/);
   assert.doesNotMatch(playwrightIntegration.block, /run: npm (?:run (?:typecheck|lint)|test)$/m);
+  assert.match(lighthousePerformance.block, /run: npm run test:performance/);
+  assert.match(lighthousePerformance.block, /uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
+  assert.match(lighthousePerformance.block, /name: dashboard-lighthouse-performance/);
+  assert.match(lighthousePerformance.block, /path: dashboard\/site\/test-results\/lighthouse\//);
+  assert.match(lighthousePerformance.block, /if: always\(\)/);
 });
 
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
@@ -2233,7 +2310,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     cpSync(join(root, "AGENTS.md"), join(temporaryRoot, "AGENTS.md"));
     cpSync(join(root, "aw.yml"), join(temporaryRoot, "aw.yml"));
     cpSync(join(root, "README.md"), join(temporaryRoot, "README.md"));
-    for (const packageDirectory of ["activity", "ambient-context", "aw-doctor", "dashboard", "dependabot", "optimization"]) {
+    for (const packageDirectory of ["activity", "aw-doctor", "dashboard", "dependabot", "optimization"]) {
       cpSync(join(root, packageDirectory), join(temporaryRoot, packageDirectory), { recursive: true });
     }
     execFileSync("git", ["init", "--quiet"], { cwd: temporaryRoot });
@@ -2253,9 +2330,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const packageLockNames = [
       "uk-ai-advisory-operational-resilience.lock.yml",
       "uk-ai-advisory.lock.yml",
-      "ambient-context-agents-md-curator.lock.yml",
-      "ambient-context-skills-curator.lock.yml",
-      "ambient-context.lock.yml",
+      "optimization-agents-md-curator.lock.yml",
+      "optimization-skills-curator.lock.yml",
       "aw-failures-investigator.lock.yml",
       "aw-maintenance-compiler-security.lock.yml",
       "aw-maintenance-upgrade.lock.yml",
@@ -2274,6 +2350,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization.lock.yml",
       "self-care-accessibility-checker.lock.yml",
       "self-care-code-improvement.lock.yml",
+      "self-care-dashboard-performance.lock.yml",
       "self-care-data-acquisition-audit.lock.yml",
       "self-care-dashboard-language-refactor.lock.yml",
       "self-care-dashboard-review.lock.yml",
@@ -2338,7 +2415,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
     const orchestratorGates = new Map([
       ["uk-ai-advisory.lock.yml", "uk-ai-advisory"],
-      ["ambient-context.lock.yml", "ambient-context"],
       ["aw-doctor.lock.yml", "aw-doctor"],
       ["dependabot.lock.yml", "dependabot"],
       ["eu-cra-compliance.lock.yml", "eu-cra-compliance"],
@@ -2366,8 +2442,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
     const workerGates = new Map([
       ["uk-ai-advisory-operational-resilience.lock.yml", ["uk-ai-advisory", "operational-resilience"]],
-      ["ambient-context-agents-md-curator.lock.yml", ["ambient-context", "agents-md-curator"]],
-      ["ambient-context-skills-curator.lock.yml", ["ambient-context", "skills-curator"]],
+      ["optimization-agents-md-curator.lock.yml", ["optimization", "agents-md-curator"]],
+      ["optimization-skills-curator.lock.yml", ["optimization", "skills-curator"]],
       ["aw-failures-investigator.lock.yml", ["aw-doctor", "failures-investigator"]],
       ["aw-maintenance-compiler-security.lock.yml", ["aw-doctor", "compiler-security"]],
       ["aw-maintenance-upgrade.lock.yml", ["aw-doctor", "upgrade"]],
@@ -2382,6 +2458,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
+      ["self-care-dashboard-performance.lock.yml", ["self-care", "dashboard-performance"]],
       ["self-care-data-acquisition-audit.lock.yml", ["self-care", "data-acquisition-audit"]],
       ["self-care-dashboard-language-refactor.lock.yml", ["self-care", "dashboard-language-refactor"]],
       ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
@@ -2789,7 +2866,6 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
       id: bundle.id,
       workers: bundle.workers.map((worker) => worker.id),
     })), [
-      { id: "ambient-context", workers: ["ambient-context-agents-md-curator", "ambient-context-skills-curator"] },
       { id: "aw-doctor", workers: ["aw-maintenance-upgrade", "aw-failures-investigator", "aw-maintenance-compiler-security"] },
       { id: "dependabot", workers: ["dependabot-release-train-updater"] },
       {
@@ -2803,12 +2879,21 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
           "eu-cra-compliance-conformity-release-evidence",
         ],
       },
-      { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
+      {
+        id: "optimization",
+        workers: [
+          "optimization-ai-credit-auditor",
+          "optimization-ai-credit-optimizer",
+          "optimization-agents-md-curator",
+          "optimization-skills-curator",
+        ],
+      },
       {
         id: "self-care",
         workers: [
           "self-care-accessibility-checker",
           "self-care-code-improvement",
+          "self-care-dashboard-performance",
           "self-care-data-acquisition-audit",
           "self-care-dashboard-language-refactor",
           "self-care-dashboard-review",

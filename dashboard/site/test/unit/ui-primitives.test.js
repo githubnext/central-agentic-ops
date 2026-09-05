@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderIdentityLink, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIdentityLink, renderLabeledControl, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -42,6 +42,17 @@ describe('ui primitives', () => {
     expect(withDetail.querySelector('p')?.textContent).toBe('observed orchestrator runs');
     expect(withoutDetail.textContent).toBe('Measured AIC—');
     expect(withoutDetail.querySelector('p')).toBeNull();
+  });
+
+  it('renders the shared dt/dd row primitive used across metadata and stat lists', () => {
+    const row = renderDlRow('Freshness', 'Fresh', 'Updated moments ago');
+    expect(row.querySelector('dt')?.textContent).toBe('Freshness');
+    expect(row.querySelector('dd')?.textContent).toBe('Fresh');
+    expect(row.querySelector('p')?.textContent).toBe('Updated moments ago');
+
+    const compositeTerm = renderDlRow([document.createTextNode('!'), 'Label'], 'Value');
+    expect(compositeTerm.querySelector('dt')?.textContent).toBe('!Label');
+    expect(compositeTerm.querySelector('p')).toBeNull();
   });
 
   it('renders accessible tooltip semantics around arbitrary rich content', () => {
@@ -96,6 +107,17 @@ describe('ui primitives', () => {
     expect(rendered.textContent).toBe('No timestamps');
   });
 
+  it('renders the shared list-with-fallback pattern for populated and empty item sets', () => {
+    const populated = renderListWithFallback('my-list', [1, 2], (value) => `item ${value}`, 'No items.');
+    expect(populated.tagName).toBe('UL');
+    expect(populated.className).toBe('my-list');
+    expect([...populated.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['item 1', 'item 2']);
+
+    const empty = renderListWithFallback('my-list', [], (value) => `item ${value}`, 'No items.');
+    expect(empty.querySelectorAll('li')).toHaveLength(1);
+    expect(empty.textContent).toBe('No items.');
+  });
+
   it('renders the shared close/dismiss icon button with matching title and aria-label text', () => {
     const onClick = () => {};
     const rendered = renderCloseButton({
@@ -145,5 +167,26 @@ describe('ui primitives', () => {
     expect(isPlainObject('string')).toBe(false);
     expect(isPlainObject(42)).toBe(false);
     expect(isPlainObject(undefined)).toBe(false);
+  });
+
+  it('renders a labeled control wrapping the given control node', () => {
+    const input = document.createElement('input');
+    const rendered = renderLabeledControl('Filter rows', input);
+
+    expect(rendered.tagName).toBe('LABEL');
+    expect(rendered.className).toBe('');
+    expect(rendered.querySelector('span')?.textContent).toBe('Filter rows');
+    expect(rendered.querySelector('input')).toBe(input);
+  });
+
+  it('renders a labeled control with an optional class name and prefix node', () => {
+    const select = document.createElement('select');
+    const prefix = document.createElement('svg');
+    const rendered = renderLabeledControl('Window', select, { className: 'table-filter-facet', prefix });
+
+    expect(rendered.className).toBe('table-filter-facet');
+    expect(rendered.firstChild).toBe(prefix);
+    expect(rendered.querySelector('span')?.textContent).toBe('Window');
+    expect(rendered.querySelector('select')).toBe(select);
   });
 });

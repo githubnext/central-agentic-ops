@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
-import { findLink, renderExternalLink, resolveTitleLink } from './link-content.js';
+import { findLink, renderExternalLinkOrFallback, resolveTitleLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { text, titleCase } from './count-formatters.js';
 import { renderMetadataSection } from './view-chrome.js';
@@ -124,9 +124,7 @@ function renderOutcome(outcome) {
         h(
           'p',
           null,
-          workflowLink
-            ? renderExternalLink({ ...workflowLink, label: workflowName })
-            : workflowName
+          renderExternalLinkOrFallback(workflowLink, workflowName, workflowName)
         )
       ),
       renderMetadataSection(
@@ -134,9 +132,9 @@ function renderOutcome(outcome) {
         h(
           'p',
           null,
-          sourceLink ? renderExternalLink({ ...sourceLink, label: 'View source' }) : null,
+          renderExternalLinkOrFallback(sourceLink, 'View source'),
           sourceLink && runLink ? h('br') : null,
-          runLink ? renderExternalLink({ ...runLink, label: 'View workflow run' }) : null,
+          renderExternalLinkOrFallback(runLink, 'View workflow run'),
           !sourceLink && !runLink ? 'Unavailable' : null
         )
       )

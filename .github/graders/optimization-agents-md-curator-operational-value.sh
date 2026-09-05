@@ -3,26 +3,26 @@
 set -euo pipefail
 export LC_ALL=C
 
-WORKFLOW_NAME="Ambient Context / AGENTS.md"
+WORKFLOW_NAME="AW Optimization / AGENTS.md"
 MATURATION_SECONDS=2592000
 MIN_TOKEN_REDUCTION=0.10
 PROPOSAL_WINDOW_SECONDS=21600
 COMPARISON_WINDOW_SECONDS=2592000
 MAX_INSPECTED_PULLS=50
 
-tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/ambient-context-agents-md-value.XXXXXX")
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/optimization-agents-md-value.XXXXXX")
 trap 'rm -rf "$tmp_dir"' EXIT HUP INT TERM
 
 definition() {
     cat <<'JSON'
 {
   "schemaVersion": 4, "grader": "operational-value",
-  "repository": "githubnext/gh-aw-cao", "workflowName": "Ambient Context / AGENTS.md",
-  "sourcePath": ".github/workflows/ambient-context-agents-md-curator.md",
+  "repository": "githubnext/gh-aw-cao", "workflowName": "AW Optimization / AGENTS.md",
+  "sourcePath": ".github/workflows/optimization-agents-md-curator.md",
   "adoption": {"commit": "ae39923baa7cb8bfa57dfcc158534adc24c2b793", "adoptedAt": "2026-08-26T23:22:08Z"},
   "operationalValue": "Make the dispatched target's agents at least ten percent cheaper to run for the same delivered outcome quality by leaning out its always-loaded AGENTS.md.",
   "evidence": {
-    "opportunity": "The dispatched target repository's root AGENTS.md at the time of the run, provided the run filed an ambient-context proposal issue for it.",
+    "opportunity": "The dispatched target repository's root AGENTS.md at the time of the run, provided the run filed an optimization proposal issue for it.",
     "assignment": "Bind targetRepo from workflow_dispatch inputs and freeze the proposal issue this run created in the safe-output repository; key agents-md:<targetRepo>:<runId>.",
     "accepted": "Within thirty days of the proposal, a merged pull request changes the target's root AGENTS.md, and the target's completed agentic-workflow runs after that merge show a median successful-run token usage at least ten percent below the pre-merge median with no higher completed-run failure rate. Ten percent matches the minimum gain the curator is required to estimate before it is allowed to file a proposal at all.",
     "repositories": ["githubnext/gh-aw-cao"],
@@ -68,7 +68,7 @@ find_proposal() {
       | jq -s 'add // []' >"$tmp_dir/issues.json" 2>/dev/null || return 1
     jq -ce --arg target "$target_repo" --arg from "$created_at" --arg to "$window_end" '
       [.[] | select((.pull_request | not)
-        and ((.title // "") | startswith("[ambient-context:agents-md] "))
+        and ((.title // "") | startswith("[optimization:agents-md-curator] "))
         and ((.body // "") | contains($target))
         and .created_at >= $from and .created_at < $to)]
       | first // empty | {number, createdAt: .created_at}

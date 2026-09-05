@@ -216,14 +216,15 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Dashboard `horizon` | `label`, `tooltip` |
 | Tooltip | `label`, `description`, `icon` |
 | `defaults` | `scope`, `time`, `filters` |
-| Unit definition | `name`, `symbol`, `significant` |
+| Unit definition | `name`, `symbol`, `significant`, `format` |
 | Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `definition` |
 | Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `route`, `views`, `sections` |
 | Page `filter-bar` | `filters`, `time-range` |
 | Page section | `id`, `title`, `description`, `layout`, `views`, `count-source`, `count-label` |
 | Custom page `route` | `hash-query-parameter`, `navigation-page` |
-| View | `id`, `title`, `description`, `intent`, `locked`, `data`, `mark`, `element`, `callout`, `chart`, `table`, `layout`, `disclosure`, `controls`, `column-summaries`, `empty-message`, `title-link`, `encoding` |
+| View | `id`, `title`, `description`, `intent`, `locked`, `data`, `mark`, `element`, `config`, `callout`, `chart`, `table`, `layout`, `disclosure`, `controls`, `column-summaries`, `empty-message`, `title-link`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
+| View `config` | `body` |
 | View `title-link` | `href-field`, `identifier-field` |
 | Table action | `intent`, `presentation`, `icon`, `label`, `context`, `when` |
 | Table action `when` | `field`, `equals` |
@@ -240,10 +241,11 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 - **DLS-DOC-007:** A validator **MUST** reject unknown keys, unknown enumerated values, and duplicate mapping keys.
 - **DLS-DOC-008:** `defaults`, when present, **MUST** be a mapping containing only `scope`, `time`, and `filters`.
 - **DLS-DOC-009:** Every page **MUST** set `kind` to `built-in` or `custom` and satisfy the corresponding page shape in Sections 10 or 11.
+- **DLS-DOC-009a:** `config`, when present, **MUST** appear only on `mark: element` views. Version 0.1.0 defines `config.body` only for the `workflow-route` element, where it **MUST** be one of `insights`, `reports`, or `runs`.
 - **DLS-DOC-010:** Titles and descriptions **MUST** be strings; IDs, references, and timestamps **MUST NOT** rely on YAML implicit type coercion.
 - **DLS-DOC-011:** `github-url-base`, when present, **MUST** be an absolute HTTPS URL without credentials, query, or fragment. It identifies the GitHub web URL base used to resolve GitHub-addressable entity links and defaults to `https://github.com`.
 - **DLS-DOC-012:** `repository`, when present, **MUST** be a non-empty `owner/repo` slug identifying the GitHub repository hosting the dashboard. A presenter **MUST NOT** fabricate a report action toolbar's GitHub repository link when `repository` is absent.
-- **DLS-DOC-013:** `units`, when present, **MUST** be a non-empty mapping keyed by unique canonical identifiers. Each value **MUST** contain exactly the non-empty string `name`, the non-empty string `symbol`, and the finite positive number `significant`.
+- **DLS-DOC-013:** `units`, when present, **MUST** be a non-empty mapping keyed by unique canonical identifiers. Each value **MUST** contain the non-empty string `name`, the non-empty string `symbol`, and the finite positive number `significant`, and **MAY** contain `format`.
 - **DLS-DOC-014:** A tooltip **MUST** contain exactly the non-empty human-readable strings `label` and `description` and **MAY** contain one canonical Octicon `icon`. A presenter **MUST** expose a tooltip as a keyboard-focusable help control named by `label`, associate its explanatory content with the control, and make that content available on both pointer hover and keyboard focus. `horizon`, when present, **MUST** contain exactly a non-empty human-readable `label` and one `tooltip`; the presenter **MUST** render the horizon label beside the resolved duration and append the precise resolved start, exclusive end, and duration to the tooltip's configured description.
 - **DLS-DOC-015:** `callouts`, when present, **MUST** be a non-empty sequence of mappings with unique canonical `id` values and non-empty `title` and `description` strings. A callout **MAY** contain one canonical Octicon `icon`. `visible-when`, when present, **MUST** contain exactly one canonical `source`, one `field` declared by that source, and one scalar `equals` value; the callout is visible when at least one source row's field equals that value.
 
@@ -370,7 +372,7 @@ Entity counts are obtained with `count` or `distinct-count`; they are not stored
 
 ### 7.2.1 Units
 
-A dashboard may declare reusable units in `dashboard.units`. A field definition selects one declared unit by setting `unit` to its identifier. The unit `name` is its human-readable name, `symbol` is the compact label appended to presented values, and `significant` is the smallest presentation increment. Presenters round a unit-bearing value to the nearest multiple of `significant`, with halfway cases rounded away from zero, without changing the value used for filtering, aggregation, or ordering. The decimal places implied by `significant` are retained. For example:
+A dashboard may declare reusable units in `dashboard.units`. A field definition selects one declared unit by setting `unit` to its identifier. The unit `name` is its human-readable name, `symbol` is the compact label appended to presented values, and `significant` is the smallest presentation increment. Presenters round a unit-bearing value to the nearest multiple of `significant`, with halfway cases rounded away from zero, without changing the value used for filtering, aggregation, or ordering. The decimal places implied by `significant` are retained. The optional `format` selects a defined presentation format and defaults to ordinary numeric formatting when omitted. For example:
 
 ```yaml
 units:
@@ -378,13 +380,19 @@ units:
     name: AI Credits
     symbol: AIC
     significant: 1
+  human-duration:
+    name: Human-friendly duration
+    symbol: s
+    significant: 1
+    format: duration
 ```
 
-The AIC definition uses a significance of `1` because one AI Credit is the integral accounting unit worth one cent; AIC values are presented without a decimal fraction.
+The AIC definition uses a significance of `1` because one AI Credit is the integral accounting unit worth one cent; AIC values are presented without a decimal fraction. The `duration` format interprets values as seconds and presents compact cascading components. It presents values below one minute as seconds (`45s`), values below one hour as minutes and seconds (`1m 30s`), values below one day as hours and minutes (`1h 23m`), and longer values as days and hours (`1d 3h`). The lower component is retained when zero, and components below the selected precision are omitted.
 
 - **DLS-UNIT-001:** A field `unit`, when present, **MUST** reference exactly one unit declared by `dashboard.units`.
 - **DLS-UNIT-002:** Unit formatting **MUST** affect presentation only and **MUST NOT** change filtering, aggregation, ordering, limiting, source data, or provenance.
-- **DLS-UNIT-003:** A presenter **MUST** append the declared `symbol` to a unit-bearing value and round it to the nearest multiple of `significant`, with halfway cases rounded away from zero.
+- **DLS-UNIT-003:** For a unit without `format`, a presenter **MUST** append the declared `symbol` to a unit-bearing value and round it to the nearest multiple of `significant`, with halfway cases rounded away from zero.
+- **DLS-UNIT-004:** `format`, when present, **MUST** be `duration`. A `duration` unit **MUST** declare `symbol: s` and `significant: 1`. A presenter **MUST** round its value to the nearest whole second with halfway cases rounded away from zero, preserve the sign, and present its absolute components using the compact cascading form defined above. Component suffixes are intrinsic to this format, so the presenter **MUST NOT** append another `symbol`.
 
 ### 7.3 Aggregates
 
@@ -788,7 +796,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
 | DLS-PAGE-001–017 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, data states, page classes, and filter-bar configuration. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
-| DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–003 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units, time units, ordering, exclusions, operation order, exposed context, and link labels. |
+| DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–004 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units and compact duration formatting, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
 | DLS-VIEW-022–024, DLS-VIEW-026–035 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, title links, optional chart data tables, swimlane accessibility, and inert element intent and view-lock hints. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
@@ -967,6 +975,7 @@ dashboard:
 - Added route-aware human-readable title allocation and allowlisted `outcome-body-html` presentation through **DLS-SAFE-012**.
 - Added dashboard-level site-wide callouts, optional source-row visibility conditions, and volatile accessible dismissal through **DLS-DOC-015** and **DLS-SAFE-014**.
 - Updated the complete example to declare repository AIC distribution as a linked, ordered pie chart.
+- Added the optional unit `format` and deterministic compact `duration` presentation for human-friendly elapsed times.
 
 ---
 

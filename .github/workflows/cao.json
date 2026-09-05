@@ -32,17 +32,6 @@
           }
         }
       },
-      "ambient-context": {
-        "icon": "workflow",
-        "workers": {
-          "agents-md-curator": {
-            "workflow": "ambient-context-agents-md-curator"
-          },
-          "skills-curator": {
-            "workflow": "ambient-context-skills-curator"
-          }
-        }
-      },
       "aw-doctor": {
         "icon": "gear",
         "mode": "live",
@@ -98,6 +87,12 @@
           },
           "ai-credit-optimizer": {
             "workflow": "optimization-ai-credit-optimizer"
+          },
+          "agents-md-curator": {
+            "workflow": "optimization-agents-md-curator"
+          },
+          "skills-curator": {
+            "workflow": "optimization-skills-curator"
           }
         }
       },
@@ -128,6 +123,9 @@
           },
           "code-improvement": {
             "workflow": "self-care-code-improvement"
+          },
+          "dashboard-performance": {
+            "workflow": "self-care-dashboard-performance"
           },
           "data-acquisition-audit": {
             "workflow": "self-care-data-acquisition-audit"

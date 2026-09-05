@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { processRows, processTableSummaries } from '../data-processor.js';
 import { renderReactiveTableSummaryRow, renderTableSummaryRow } from './table-summary.js';
+import { renderLabeledControl } from './ui-primitives.js';
 
 /**
  * @typedef {{ key: string, label: string, allLabel?: string, columnIndex: number, always?: boolean }} TableFilterField
@@ -67,26 +68,20 @@ export function renderTableRegion(options) {
       ? h(
         'div',
         { className: 'table-filter' },
-        h(
-          'label',
-          null,
-          h('span', null, filterLabel),
-          h('input', {
-            type: 'search',
-            placeholder: filterPlaceholder,
-            'data-table-filter': ''
-          })
-        ),
-        ...facets.map((facet) => h(
-          'label',
-          { className: 'table-filter-facet' },
-          h('span', null, facet.label),
+        renderLabeledControl(filterLabel ?? '', h('input', {
+          type: 'search',
+          placeholder: filterPlaceholder,
+          'data-table-filter': ''
+        })),
+        ...facets.map((facet) => renderLabeledControl(
+          facet.label,
           h(
             'select',
             { 'data-table-facet': facet.key, 'data-table-column-index': String(facet.columnIndex) },
             h('option', { value: '' }, facet.allLabel ?? `All ${facet.label.toLocaleLowerCase('en')}`),
             ...facet.values.map((value) => h('option', { value }, value))
-          )
+          ),
+          { className: 'table-filter-facet' }
         )),
         h('output', { className: 'table-filter-result', 'aria-live': 'polite' }, formatResultCount(Math.min(rowCount, pageSize), rowCount, resultNoun, resultNounPlural))
       )

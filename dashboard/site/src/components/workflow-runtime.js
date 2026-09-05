@@ -7,7 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
-import { findLink, renderExternalLink } from './link-content.js';
+import { findLink, renderExternalLinkOrFallback } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours, formatUtcDateTime, renderPanelHeader, renderVitalStat } from './ui-primitives.js';
 import { text } from './count-formatters.js';
@@ -21,7 +21,10 @@ import { rowsFor } from './source-rows.js';
  * @returns {HTMLElement}
  */
 export function renderWorkflowRuntime(context) {
-  return renderWorkflowRouteView({ ...context, viewId: context.viewId ?? 'workflow-runtime-route' });
+  return renderWorkflowRouteView({
+    ...context,
+    elementConfig: context.elementConfig ?? { body: 'insights' }
+  });
 }
 
 /**
@@ -524,7 +527,7 @@ function renderObservationTable(observations) {
               'td',
               null,
               renderStatusBadge(text(row['maturity-status']) === 'matured' ? 'Mature' : 'As of run'),
-              evidenceLink ? h('span', null, ' ', renderExternalLink(evidenceLink)) : null
+              evidenceLink ? h('span', null, ' ', renderExternalLinkOrFallback(evidenceLink)) : null
             )
           );
         })

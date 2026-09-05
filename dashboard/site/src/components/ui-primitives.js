@@ -63,13 +63,27 @@ export function renderPanelHeader(headingId, heading, description, options = {})
 }
 
 /**
+ * Renders a single `<div><dt>{term}</dt><dd>{description}</dd></div>` row for
+ * use inside a `<dl>`, optionally followed by a trailing detail paragraph.
+ * Shared by vital-stat metrics, metadata summary rows, and definition-list
+ * rows across the dashboard.
+ * @param {Node | string | Array<Node | string | null>} term
+ * @param {unknown} description
+ * @param {string} [detail]
+ * @returns {HTMLElement}
+ */
+export function renderDlRow(term, description, detail) {
+  return h('div', null, h('dt', null, ...(Array.isArray(term) ? term : [term])), h('dd', null, description), detail ? h('p', null, detail) : null);
+}
+
+/**
  * @param {string} label
  * @param {unknown} value
  * @param {string} [detail]
  * @returns {HTMLElement}
  */
 export function renderVitalStat(label, value, detail) {
-  return h('div', null, h('dt', null, label), h('dd', null, value), detail ? h('p', null, detail) : null);
+  return renderDlRow(label, value, detail);
 }
 
 /**
@@ -191,6 +205,24 @@ export function renderEmptyMessage(message, extraAttrs) {
 }
 
 /**
+ * Renders the shared "`<ul>` of items, or a single fallback `<li>`" pattern
+ * used by summary and provenance lists when there is no data to display.
+ * @template T
+ * @param {string} className
+ * @param {T[]} items
+ * @param {(item: T) => Node | string} renderItem
+ * @param {string} fallbackMessage
+ * @returns {HTMLElement}
+ */
+export function renderListWithFallback(className, items, renderItem, fallbackMessage) {
+  return h(
+    'ul',
+    { className },
+    items.length > 0 ? items.map((item) => h('li', null, renderItem(item))) : [h('li', null, fallbackMessage)]
+  );
+}
+
+/**
  * Renders the shared "icon plus name" identity link used for package/entity
  * references (package summary rows, utilization cards, package status
  * cards), wrapping the label text in the caller-selected inline element.
@@ -219,6 +251,26 @@ export function renderCloseButton({ className, label, onClick }) {
       onClick
     },
     octicon('x')
+  ));
+}
+
+/**
+ * Renders the shared `<label><span>{label}</span>{control}</label>` pattern
+ * used to associate a visible text label with a form control (search
+ * inputs, facet selects, time-window inputs) across the filter bar and
+ * table region toolbars.
+ * @param {string} label
+ * @param {Node} control
+ * @param {{ className?: string, prefix?: Node }} [options]
+ * @returns {HTMLLabelElement}
+ */
+export function renderLabeledControl(label, control, options = {}) {
+  return /** @type {HTMLLabelElement} */ (h(
+    'label',
+    options.className ? { className: options.className } : null,
+    options.prefix,
+    h('span', null, label),
+    control
   ));
 }
 

@@ -8,7 +8,7 @@ import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
-import { renderSectionHeading, isPlainObject, renderIdentityLink } from './ui-primitives.js';
+import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -26,6 +26,7 @@ import { modeBadgeClassName } from './badge.js';
  *   titleLink?: Record<string, unknown>,
  *   element?: string,
  *   viewId?: string,
+ *   elementConfig?: { body?: 'insights'|'reports'|'runs' },
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */
@@ -396,12 +397,7 @@ function renderContextSummaryElement(context) {
   return h(
     'dl',
     { className: 'context-summary', 'aria-label': context.title },
-    ...rows.map((row) => h(
-      'div',
-      null,
-      h('dt', null, stringValue(row.label)),
-      h('dd', null, ...renderContextSummaryValue(row))
-    ))
+    ...rows.map((row) => renderDlRow(stringValue(row.label), renderContextSummaryValue(row)))
   );
 }
 

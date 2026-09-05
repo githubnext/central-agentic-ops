@@ -7,7 +7,7 @@
  * @param {string | null} fieldName
  * @param {string} aggregate
  * @param {(value: unknown) => string} toText
- * @param {{ name: string, symbol: string, significant: number } | null} [unit]
+ * @param {{ name: string, symbol: string, significant: number, format?: string } | null} [unit]
  * @returns {string}
  */
 export function formatAggregateValue(rows, fieldName, aggregate, toText, unit = null) {
@@ -86,7 +86,7 @@ export function toNumber(value) {
 
 /**
  * @param {number} value
- * @param {{ name: string, symbol: string, significant: number } | null} [unit]
+ * @param {{ name: string, symbol: string, significant: number, format?: string } | null} [unit]
  * @param {boolean} [includeUnit]
  * @returns {string}
  */
@@ -94,9 +94,28 @@ export function formatNumber(value, unit = null, includeUnit = true) {
   if (unit && Number.isFinite(unit.significant) && unit.significant > 0) {
     const quotient = value / unit.significant;
     const rounded = Math.sign(quotient) * Math.round(Math.abs(quotient)) * unit.significant;
+    if (unit.format === 'duration') {
+      return formatDurationSeconds(rounded);
+    }
     return `${rounded.toFixed(fractionDigits(unit.significant))}${includeUnit ? ` ${unit.symbol}` : ''}`;
   }
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+/**
+ * @param {number} seconds
+ * @returns {string}
+ */
+function formatDurationSeconds(seconds) {
+  const sign = seconds < 0 ? '-' : '';
+  const absoluteSeconds = Math.abs(seconds);
+  if (absoluteSeconds < 60) return `${sign}${absoluteSeconds}s`;
+  const minutes = Math.floor(absoluteSeconds / 60);
+  if (minutes < 60) return `${sign}${minutes}m ${absoluteSeconds % 60}s`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${sign}${hours}h ${minutes % 60}m`;
+  const days = Math.floor(hours / 24);
+  return `${sign}${days}d ${hours % 24}h`;
 }
 
 /**

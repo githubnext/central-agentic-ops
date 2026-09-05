@@ -5,21 +5,20 @@
 import { renderWorkflowRuntimeBody } from './workflow-runtime.js';
 
 /**
- * @typedef {'insights'|'reports'|'runs'} WorkflowRouteVariant
+ * @typedef {'insights'|'reports'|'runs'} WorkflowRouteBody
  */
 
 /**
  * @typedef {{
- *   variant: WorkflowRouteVariant,
  *   rootClassName: string,
  *   contentClassName: string,
  *   selectMessage: string,
  *   description: string,
  *   navigationPage: 'packages'|'repositories',
  *   breadcrumbs: Array<{ label: string, href: string }> | undefined,
- *   element: string,
+ *   currentTab: 'insights'|'reports'|'runs',
  *   bodyRenderer: WorkflowRouteBodyRenderer | undefined
- * }} WorkflowRouteComposition
+ * }} WorkflowRouteBodyComposition
  */
 
 /**
@@ -30,20 +29,18 @@ import { renderWorkflowRuntimeBody } from './workflow-runtime.js';
  * }) => HTMLElement | null} WorkflowRouteBodyRenderer
  */
 
-const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<string, WorkflowRouteComposition>>} */ ({
-  'workflow-runtime-route': {
-    variant: 'insights',
+const WORKFLOW_ROUTE_BODY_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRouteBody, WorkflowRouteBodyComposition>>} */ ({
+  insights: {
     rootClassName: 'workflow-runtime',
     contentClassName: 'workflow-runtime-content',
     selectMessage: 'Select a workflow to inspect its runtime.',
     description: 'Run health, AI Credit usage, and operational value for {workflow} in {repository}.',
     navigationPage: 'packages',
     breadcrumbs: undefined,
-    element: 'workflow-runtime',
+    currentTab: 'insights',
     bodyRenderer: ({ context, workflow }) => renderWorkflowRuntimeBody(context, workflow)
   },
-  'workflow-reports-route': {
-    variant: 'reports',
+  reports: {
     rootClassName: 'workflow-detail',
     contentClassName: 'workflow-detail-content',
     selectMessage: 'Select a workflow to view its reports.',
@@ -53,11 +50,10 @@ const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<string, WorkflowR
       { label: 'Repositories', href: '#page-repositories' },
       { label: '{repository}', href: '#page-repository-detail?repository={repository-encoded}' }
     ],
-    element: 'workflow-detail',
+    currentTab: 'reports',
     bodyRenderer: () => null
   },
-  'workflow-runs-route': {
-    variant: 'runs',
+  runs: {
     rootClassName: 'workflow-detail',
     contentClassName: 'workflow-detail-content',
     selectMessage: 'Select a workflow to view its runs.',
@@ -67,18 +63,20 @@ const WORKFLOW_ROUTE_COMPOSITIONS = /** @type {Readonly<Record<string, WorkflowR
       { label: 'Repositories', href: '#page-repositories' },
       { label: '{repository}', href: '#page-repository-detail?repository={repository-encoded}' }
     ],
-    element: 'workflow-runs',
+    currentTab: 'runs',
     bodyRenderer: () => null
   }
 });
 
-const DEFAULT_WORKFLOW_ROUTE_COMPOSITION = 'workflow-reports-route';
+const DEFAULT_WORKFLOW_ROUTE_BODY = 'reports';
 
 /**
- * @param {string | undefined} viewId
- * @returns {WorkflowRouteComposition}
+ * @param {unknown} body
+ * @returns {WorkflowRouteBodyComposition}
  */
-export function workflowRouteComposition(viewId) {
-  return WORKFLOW_ROUTE_COMPOSITIONS[String(viewId ?? DEFAULT_WORKFLOW_ROUTE_COMPOSITION)]
-    ?? WORKFLOW_ROUTE_COMPOSITIONS[DEFAULT_WORKFLOW_ROUTE_COMPOSITION];
+export function workflowRouteComposition(body) {
+  const key = typeof body === 'string' && Object.hasOwn(WORKFLOW_ROUTE_BODY_COMPOSITIONS, body)
+    ? /** @type {WorkflowRouteBody} */ (body)
+    : DEFAULT_WORKFLOW_ROUTE_BODY;
+  return WORKFLOW_ROUTE_BODY_COMPOSITIONS[key];
 }

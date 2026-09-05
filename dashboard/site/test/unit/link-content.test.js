@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderOutcomeLink, renderSafeLink, renderWorkflowRunLink, resolveTitleLink } from '../../src/components/link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderExternalLinkOrFallback, renderLinkedValue, renderOutcomeLink, renderSafeLink, renderWorkflowRunLink, resolveTitleLink } from '../../src/components/link-content.js';
 
 describe('link content helpers', () => {
   it('renderSafeLink renders a plain-text fallback and an internal or external anchor', () => {
@@ -125,5 +125,19 @@ describe('link content helpers', () => {
     expect(linked.getAttribute('href')).toBe('#page-outcome-detail?outcome=issue%2F42');
     expect(linked.textContent).toBe('Issue 42');
     expect(renderOutcomeLink({}, 'Unavailable')).toBe('Unavailable');
+  });
+
+  it('renderExternalLinkOrFallback renders a labeled external link or falls back when no link exists', () => {
+    const link = { href: 'https://example.com/run/4', label: 'Run 4' };
+
+    const withOverride = /** @type {HTMLElement} */ (renderExternalLinkOrFallback(link, 'View run'));
+    expect(withOverride.getAttribute('aria-label')).toBe('View run');
+    expect(withOverride.textContent).toContain('View run');
+
+    const withoutOverride = /** @type {HTMLElement} */ (renderExternalLinkOrFallback(link));
+    expect(withoutOverride.getAttribute('aria-label')).toBe('Run 4');
+
+    expect(renderExternalLinkOrFallback(null, 'View run', 'Unavailable')).toBe('Unavailable');
+    expect(renderExternalLinkOrFallback(null)).toBeNull();
   });
 });

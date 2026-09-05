@@ -1,5 +1,5 @@
 /**
- * Reusable workflow route page composition primitives.
+ * Shared workflow-route shell primitives for declarative composition.
  */
 
 import { h } from '../dom.js';
@@ -9,20 +9,40 @@ import { createRouteView } from './route-empty-state.js';
 import { renderRouteTabSet } from './route-tab-set.js';
 import { rowsFor } from './source-rows.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
-import { workflowRouteComposition } from './workflow-route-composition.js';
+
+/**
+ * @typedef {{
+ *   rootClassName: string,
+ *   contentClassName: string,
+ *   selectMessage: string,
+ *   description: string,
+ *   navigationPage: 'packages'|'repositories',
+ *   breadcrumbs: Array<{ label: string, href: string }> | undefined,
+ *   currentTab: 'insights'|'reports'|'runs',
+ *   bodyRenderer: WorkflowRouteBodyRenderer | undefined
+ * }} WorkflowRouteShellConfig
+ */
+
+/**
+ * @typedef {(args: {
+ *   context: import('./ui-elements.js').ElementRenderContext,
+ *   route: { repository: string, workflow: string },
+ *   workflow: Record<string, unknown>
+ * }) => HTMLElement | null} WorkflowRouteBodyRenderer
+ */
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {WorkflowRouteShellConfig} config
  * @returns {HTMLElement}
  */
-export function renderWorkflowPage(context) {
+export function renderWorkflowRouteShell(context, config) {
   const workflows = rowsFor(context.sources, 'workflows');
-  const composition = workflowRouteComposition(context.viewId);
   const root = createRouteView({
-    rootClassName: composition.rootClassName,
+    rootClassName: config.rootClassName,
     routeParameter: context.routeParameter,
     datasetKey: 'workflow',
-    selectMessage: composition.selectMessage,
+    selectMessage: config.selectMessage,
     notFoundMessage: 'Workflow not found.',
     hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
     renderMatched: (routeValue) => {
@@ -37,14 +57,14 @@ export function renderWorkflowPage(context) {
       const name = workflowName(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
-        detail: workflowRouteAllocation(composition, route, workflow, name)
+        detail: workflowRouteAllocation(config, route, workflow, name)
       }));
       return h(
         'div',
-        { className: composition.contentClassName },
-        renderWorkflowTabs(composition.variant, route, name),
+        { className: config.contentClassName },
+        renderWorkflowTabs(config.currentTab, route, name),
         renderWorkflowIdentity(workflow),
-        composition.bodyRenderer?.({ context, route, workflow }) ?? null
+        config.bodyRenderer?.({ context, route, workflow }) ?? null
       );
     }
   });
@@ -52,24 +72,24 @@ export function renderWorkflowPage(context) {
 }
 
 /**
- * @param {import('./workflow-route-composition.js').WorkflowRouteComposition} composition
+ * @param {WorkflowRouteShellConfig} config
  * @param {{ repository: string, workflow: string }} route
  * @param {Record<string, unknown>} workflow
  * @param {string} title
  */
-function workflowRouteAllocation(composition, route, workflow, title) {
+function workflowRouteAllocation(config, route, workflow, title) {
   return {
     title,
-    description: composition.description
+    description: config.description
       .replace('{workflow}', text(workflow.workflow))
       .replace('{repository}', route.repository),
     ...(['review', 'live'].includes(text(workflow['rollout-mode']))
       ? { mode: text(workflow['rollout-mode']) }
       : {}),
-    navigationPage: composition.navigationPage === 'packages' && workflow.package ? 'packages' : 'repositories',
-    ...(composition.breadcrumbs
+    navigationPage: config.navigationPage === 'packages' && workflow.package ? 'packages' : 'repositories',
+    ...(config.breadcrumbs
       ? {
-          breadcrumbs: composition.breadcrumbs.map((crumb) => ({
+          breadcrumbs: config.breadcrumbs.map((crumb) => ({
             label: crumb.label.replace('{repository}', route.repository),
             href: crumb.href.replace('{repository-encoded}', encodeURIComponent(route.repository))
           }))
@@ -79,17 +99,17 @@ function workflowRouteAllocation(composition, route, workflow, title) {
 }
 
 /**
- * @param {import('./workflow-route-composition.js').WorkflowRouteVariant} selectedView
+ * @param {'insights'|'reports'|'runs'} currentTab
  * @param {{ repository: string, workflow: string }} route
- * @param {string} workflowName
+ * @param {string} displayName
  */
-function renderWorkflowTabs(selectedView, route, workflowName) {
+function renderWorkflowTabs(currentTab, route, displayName) {
   const workflowQuery = `?workflow=${encodeURIComponent(workflowRouteValue(route.repository, route.workflow))}`;
-  const navigationLabel = selectedView === 'insights' ? workflowName : route.workflow;
+  const navigationLabel = currentTab === 'insights' ? displayName : route.workflow;
   return renderRouteTabSet({
     className: 'repository-tabs workflow-tabs',
     ariaLabel: `${navigationLabel} views`,
-    currentTab: selectedView,
+    currentTab,
     tabs: [
       { id: 'insights', label: 'Insights', icon: 'graph', href: `#page-workflow-runtime${workflowQuery}` },
       { id: 'reports', label: 'Reports', icon: 'issue', href: `#page-workflow-detail${workflowQuery}` },

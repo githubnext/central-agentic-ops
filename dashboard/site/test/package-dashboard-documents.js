@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 export const packageDashboardNames = [
   'uk-ai-advisory',
-  'ambient-context',
   'aw-doctor',
   'dependabot',
   'eu-cra-compliance',

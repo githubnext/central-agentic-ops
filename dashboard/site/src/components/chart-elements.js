@@ -232,11 +232,15 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
 export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null, timeRange = null, referenceField = null) {
   const pieData = chartType === 'pie' ? pieSummary ?? pieChartEntries(points) : null;
   const entryCount = pieData ? pieData.entries.length : points.length;
-  if (entryCount < 2 && chartType !== 'swimlane') {
+  const minimumEntries = chartType === 'pie' ? 1 : 2;
+  if (entryCount < minimumEntries && chartType !== 'swimlane') {
     return h(
       'div',
       { className: `chart-widget ${chartType}-chart-widget`, 'data-chart-widget': chartType },
-      renderEmptyMessage('Not enough data to show this visualization.', { role: 'status' })
+      renderEmptyMessage(
+        entryCount === 0 ? 'No data is available for this visualization.' : 'Not enough data to show this visualization.',
+        { role: 'status' }
+      )
     );
   }
 

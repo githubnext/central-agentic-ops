@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
-import { formatUtcDateTime, renderSectionHeading, renderTooltip } from './ui-primitives.js';
+import { formatUtcDateTime, renderDlRow, renderListWithFallback, renderSectionHeading, renderTooltip } from './ui-primitives.js';
 import { titleCase } from './count-formatters.js';
 
 /**
@@ -68,13 +68,7 @@ export function renderSummaryRegion(pageId, title, listClassName, counts) {
  */
 export function renderSummaryList(listClassName, counts) {
   const entries = [...counts.entries()];
-  return h(
-    'ul',
-    { className: listClassName },
-    entries.length > 0
-      ? entries.map(([name, count]) => h('li', null, `${name}: ${count}`))
-      : [h('li', null, 'No data available.')]
-  );
+  return renderListWithFallback(listClassName, entries, ([name, count]) => `${name}: ${count}`, 'No data available.');
 }
 
 /**
@@ -99,12 +93,7 @@ export function renderDefinitionList(className, rows) {
  * @returns {HTMLElement[]}
  */
 export function renderDefinitionListRows(rows) {
-  return rows.map((row) => h(
-    'div',
-    null,
-    h('dt', null, String(row.label ?? '')),
-    h('dd', null, String(row.value ?? ''))
-  ));
+  return rows.map((row) => renderDlRow(String(row.label ?? ''), String(row.value ?? '')));
 }
 
 /**
@@ -125,12 +114,7 @@ export function renderContextChrome(contextDetails) {
  * @returns {HTMLElement}
  */
 function renderMetadataRow(icon, label, content) {
-  return h(
-    'div',
-    null,
-    h('dt', null, octicon(icon), label),
-    h('dd', null, content)
-  );
+  return renderDlRow([octicon(icon), label], content);
 }
 
 /**
@@ -195,16 +179,11 @@ export function renderCustomViewStateDetails(sourceName, contextDetails) {
  * @returns {HTMLElement}
  */
 export function renderProvenanceList(items) {
-  return h(
-    'ul',
-    { className: 'provenance-list' },
-    items.length > 0
-      ? items.map((item) => h(
-        'li',
-        null,
-        `${item.sourceName}: ${item.sourceId} (${item.sourceKind}) — as of ${item.asOf}`
-      ))
-      : [h('li', null, 'No source provenance available for this page.')]
+  return renderListWithFallback(
+    'provenance-list',
+    items,
+    (item) => `${item.sourceName}: ${item.sourceId} (${item.sourceKind}) — as of ${item.asOf}`,
+    'No source provenance available for this page.'
   );
 }
 

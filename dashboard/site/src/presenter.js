@@ -80,6 +80,20 @@ const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data
 const REFRESH_WORKFLOW_DESCRIPTION = 'Open the dashboard workflow on GitHub Actions';
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'central-agentic-ops.dashboard.sidebar-collapsed';
 
+/**
+ * @param {Document} document
+ * @param {() => void} update
+ */
+export function updateWithViewTransition(document, update) {
+  const transitionDocument = /** @type {Document & { startViewTransition?: (update: () => void) => unknown }} */ (document);
+  const prefersReducedMotion = document.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  if (typeof transitionDocument.startViewTransition !== 'function' || prefersReducedMotion) {
+    update();
+    return;
+  }
+  transitionDocument.startViewTransition(update);
+}
+
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
   builtInDashboard.dashboard.pages
@@ -1156,7 +1170,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     const pageId = getNavigationPageId(link);
     if (!pageId || !availableIds.has(pageId)) return;
     root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
-    activate(pageId, routeFromHash()?.parameters);
+    updateWithViewTransition(root.ownerDocument, () => activate(pageId, routeFromHash()?.parameters));
     if (pageTitle instanceof HTMLElement) pageTitle.focus();
   });
 
@@ -1168,7 +1182,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     const route = routeFromHash();
     if (route) {
-      activate(route.pageId, route.parameters);
+      updateWithViewTransition(root.ownerDocument, () => activate(route.pageId, route.parameters));
       if (pageTitle instanceof HTMLElement) pageTitle.focus();
     }
   };
@@ -1336,13 +1350,21 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   const filteredRows = filterRowsForView(sourceInput.rows, view.data);
   const metadata = sourceInput.metadata;
   const state = sourceInput.metadata?.availability ?? inferAvailability(filteredRows);
+  const emptyMessage = typeof view['empty-message'] === 'string' ? view['empty-message'] : undefined;
 
   if (state !== 'available' && !(state === 'empty' && view.mark === 'table')) {
-    return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
+    return renderCustomViewState(
+      pageId,
+      title,
+      sourceName,
+      state,
+      contextDetails,
+      headingTag,
+      state === 'empty' ? emptyMessage : undefined
+    );
   }
 
   if (filteredRows.length === 0 && view.mark !== 'table') {
-    const emptyMessage = typeof view['empty-message'] === 'string' ? view['empty-message'] : undefined;
     return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag, emptyMessage);
   }
 
@@ -1562,6 +1584,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     titleLink: isPlainObject(view['title-link']) ? view['title-link'] : undefined,
     routeParameter,
     viewId: typeof view.id === 'string' ? view.id : undefined,
+    elementConfig: isPlainObject(view.config) ? view.config : undefined,
     headingTag
   });
   if (!rendered) {
