@@ -2004,6 +2004,7 @@ test("AW Doctor failures worker closes target AW failure issues as duplicates", 
   assert.match(source, /required-labels: \[agentic-workflows\]/);
   assert.match(source, /required-title-prefix: "\[aw\]"/);
   assert.match(source, /state-reason: duplicate/);
+  assert.match(source, /'--label',\n\s+SOURCE_FAILURE_LABEL,\n\s+'--limit'/);
   assert.match(source, /source_failure_issues: sourceFailureIssues/);
   assert.match(source, /Only close target-repository issues whose title starts with `\[aw\]` and that have the `agentic-workflows` label/);
   assert.match(source, /set `duplicate_of` to the actual issue number returned for the newly created consolidated report/);

@@ -355,8 +355,6 @@ steps:
             'open',
             '--label',
             SOURCE_FAILURE_LABEL,
-            '--search',
-            `${SOURCE_FAILURE_PREFIX.replace(/[[\]]/g, '')} in:title`,
             '--limit',
             '100',
             '--json',
