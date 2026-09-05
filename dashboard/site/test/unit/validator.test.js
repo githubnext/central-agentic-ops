@@ -315,49 +315,44 @@ describe('dashboard document validation', () => {
     expect(document.dashboard.navigation.find(
       (/** @type {{ label: string }} */ section) => section.label === 'Explore'
     ).pages).toContain('detection');
-    expect(detection).toMatchObject({
-      kind: 'custom',
-      title: 'Detection',
-      views: [
-        {
-          id: 'detection-job-conclusions',
-          mark: 'chart',
-          chart: 'pie',
-          data: { source: 'job-performance', filters: { job: ['detection'] } }
-        },
-        {
-          id: 'detection-job-duration-trend',
-          mark: 'chart',
-          chart: 'line',
-          data: {
-            source: 'job-performance',
-            filters: { job: ['detection'], 'job-status': ['completed'] }
-          }
-        },
-        {
-          id: 'detection-job-runner-performance',
-          mark: 'chart',
-          chart: 'bar',
-          data: {
-            source: 'job-performance',
-            filters: { job: ['detection'], 'job-status': ['completed'] }
-          }
-        },
-        {
-          id: 'detection-job-ledger',
-          mark: 'table',
-          controls: 'interactive',
-          data: { source: 'job-performance', filters: { job: ['detection'] } }
-        }
-      ]
-    });
-    expect(detection.views[3].encoding.columns).toEqual(expect.arrayContaining([
+    expect(detection.description).toContain('Threat-detection verdicts');
+    expect(detection.sections.map((/** @type {{ id: string }} */ section) => section.id)).toEqual([
+      'detection-health',
+      'security-findings',
+      'requires-attention',
+      'reliability-performance'
+    ]);
+    expect(detection.views.slice(0, 5)).toMatchObject([
+      { id: 'detection-state-distribution', mark: 'chart', chart: 'pie', data: { source: 'detection-observations' }, disclosure: 'essential' },
+      { id: 'detection-verdict-coverage', mark: 'metric', data: { source: 'detection-observations' }, disclosure: 'essential' },
+      { id: 'detection-state-trend', mark: 'chart', chart: 'line', data: { source: 'detection-observations' }, disclosure: 'supplemental' },
+      { id: 'detection-security-findings', mark: 'chart', chart: 'bar', data: { source: 'security-observations' }, disclosure: 'essential' },
+      { id: 'detection-attention', mark: 'table', controls: 'interactive', data: { source: 'detection-observations' }, disclosure: 'essential' }
+    ]);
+    expect(detection.views.slice(5).map((/** @type {{ id: string }} */ view) => view.id)).toEqual([
+      'detection-job-conclusions',
+      'detection-job-duration-trend',
+      'detection-job-runner-performance',
+      'detection-job-ledger'
+    ]);
+    expect(detection.views.slice(5).every(
+      (/** @type {{ disclosure: string }} */ view) => view.disclosure === 'supplemental'
+    )).toBe(true);
+    expect(detection.views[4].encoding.columns).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'detection-state', display: 'status' }),
+      expect.objectContaining({ field: 'detection-signal' }),
+      expect.objectContaining({ field: 'inspection-warning' }),
+      expect.objectContaining({ field: 'run' })
+    ]));
+    expect(detection.views[4].encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
+    expect(detection.views[8].encoding.columns).toEqual(expect.arrayContaining([
       expect.objectContaining({ field: 'job-status', display: 'status' }),
       expect.objectContaining({ field: 'job-conclusion', display: 'status' }),
       expect.objectContaining({ field: 'job-duration-seconds', unit: 'human-duration' }),
       expect.objectContaining({ field: 'run' })
     ]));
-    expect(detection.views[3].encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
+    expect(detection.views[8].encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
   it('defines safe-output diagnostics and performance in Explore', () => {

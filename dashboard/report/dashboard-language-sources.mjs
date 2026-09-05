@@ -24,6 +24,7 @@ const sourceNames = [
   "mcp-calls",
   "mcp-servers",
   "security-observations",
+  "detection-observations",
   "firewall-observations",
   "firewall-policy-rules",
   "coverage-diagnostics",
@@ -855,313 +856,313 @@ function firewallRows(run) {
 }
 
 function parseDestination(value) {
-    const text = String(value || "").trim();
-    if (!text || text === "(unknown)") return { domain: "unknown", host: "unknown", port: null, protocol: "unknown" };
-    const explicitPort = text.match(/^(?:https?:\/\/)?(?:\[[^\]]+\]|[^/:]+):(\d+)(?:\/|$)/)?.[1];
-    try {
-      const parsed = new URL(text.includes("://") ? text : `https://${text}`);
-      const port = explicitPort ? Number(explicitPort) : parsed.port ? Number(parsed.port) : null;
-      return {
-        domain: parsed.hostname.toLowerCase(),
-        host: parsed.hostname.toLowerCase(),
-        port,
-        protocol: parsed.protocol === "http:" ? "http" : port === 443 || parsed.protocol === "https:" ? "https" : "unknown",
-      };
-    } catch {
-      return { domain: text.toLowerCase(), host: text.toLowerCase(), port: null, protocol: "unknown" };
-    }
+  const text = String(value || "").trim();
+  if (!text || text === "(unknown)") return { domain: "unknown", host: "unknown", port: null, protocol: "unknown" };
+  const explicitPort = text.match(/^(?:https?:\/\/)?(?:\[[^\]]+\]|[^/:]+):(\d+)(?:\/|$)/)?.[1];
+  try {
+    const parsed = new URL(text.includes("://") ? text : `https://${text}`);
+    const port = explicitPort ? Number(explicitPort) : parsed.port ? Number(parsed.port) : null;
+    return {
+      domain: parsed.hostname.toLowerCase(),
+      host: parsed.hostname.toLowerCase(),
+      port,
+      protocol: parsed.protocol === "http:" ? "http" : port === 443 || parsed.protocol === "https:" ? "https" : "unknown",
+    };
+  } catch {
+    return { domain: text.toLowerCase(), host: text.toLowerCase(), port: null, protocol: "unknown" };
   }
+}
 
 function firewallCoverage(usage) {
-    const requestedStart = Date.parse(usage.firewallRequestedHorizonStart);
-    const requestedEnd = Date.parse(usage.firewallRequestedHorizonEnd);
-    const observedStart = Date.parse(usage.firewallEvidenceHorizonStart);
-    const observedEnd = Date.parse(usage.firewallEvidenceHorizonEnd);
-    const requestedDuration = requestedEnd - requestedStart;
-    const observedDuration = Math.max(0, Math.min(requestedEnd, observedEnd) - Math.max(requestedStart, observedStart));
-    return requestedDuration > 0 && Number.isFinite(observedDuration)
-      ? rounded((observedDuration / requestedDuration) * 100, 1)
-      : null;
-  }
+  const requestedStart = Date.parse(usage.firewallRequestedHorizonStart);
+  const requestedEnd = Date.parse(usage.firewallRequestedHorizonEnd);
+  const observedStart = Date.parse(usage.firewallEvidenceHorizonStart);
+  const observedEnd = Date.parse(usage.firewallEvidenceHorizonEnd);
+  const requestedDuration = requestedEnd - requestedStart;
+  const observedDuration = Math.max(0, Math.min(requestedEnd, observedEnd) - Math.max(requestedStart, observedStart));
+  return requestedDuration > 0 && Number.isFinite(observedDuration)
+    ? rounded((observedDuration / requestedDuration) * 100, 1)
+    : null;
+}
 
 export function firewallRuleFor(manifest, observation) {
-    const rules = Array.isArray(manifest?.rules) ? [...manifest.rules].sort((a, b) => Number(a.order) - Number(b.order)) : [];
-    return rules.find((rule) => {
-      const rawAction = String(rule?.action || "").toLowerCase();
-      const action = rawAction === "allow" ? "allowed" : rawAction === "deny" ? "denied" : rawAction;
-      const protocol = String(rule?.protocol || "both").toLowerCase();
-      if (action !== observation.decision || (protocol !== "both" && protocol !== observation.protocol)) return false;
-      if (String(rule?.aclName || "").toLowerCase() === "all") return true;
-      return (rule?.domains || []).some((pattern) => {
-        const normalized = String(pattern).toLowerCase();
-        return normalized.startsWith(".")
-          ? observation.domain === normalized.slice(1) || observation.domain.endsWith(normalized)
-          : observation.domain === normalized;
-      });
+  const rules = Array.isArray(manifest?.rules) ? [...manifest.rules].sort((a, b) => Number(a.order) - Number(b.order)) : [];
+  return rules.find((rule) => {
+    const rawAction = String(rule?.action || "").toLowerCase();
+    const action = rawAction === "allow" ? "allowed" : rawAction === "deny" ? "denied" : rawAction;
+    const protocol = String(rule?.protocol || "both").toLowerCase();
+    if (action !== observation.decision || (protocol !== "both" && protocol !== observation.protocol)) return false;
+    if (String(rule?.aclName || "").toLowerCase() === "all") return true;
+    return (rule?.domains || []).some((pattern) => {
+      const normalized = String(pattern).toLowerCase();
+      return normalized.startsWith(".")
+        ? observation.domain === normalized.slice(1) || observation.domain.endsWith(normalized)
+        : observation.domain === normalized;
     });
-  }
+  });
+}
 
 function firewallRunBase(run, usage) {
-    const firewall = run.security?.firewall || {};
-    const evidenceStart = firewall.firewallEvidenceHorizonStart || usage.firewallEvidenceHorizonStart;
-    const evidenceEnd = firewall.firewallEvidenceHorizonEnd || usage.firewallEvidenceHorizonEnd;
-    return {
-      ...repositoryParts(run.repository),
-      workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
-      run: String(run.runId),
-      "run-conclusion": runConclusion(run.conclusion),
-      "rollout-mode": rolloutMode(run.mode),
-      "observed-at": evidenceEnd || run.createdAt || usage.generatedAt,
-      "firewall-expected": firewall.firewallExpected === true ? "yes" : firewall.firewallExpected === false ? "no" : "unknown",
-      "firewall-enabled": firewall.firewallEnabled === true ? "enabled" : firewall.firewallEnabled === false ? "disabled" : "unknown",
-      "firewall-evidence-available": firewall.firewallEvidenceAvailable === true ? "available" : "unavailable",
-      "evidence-state": firewall.firewallEvidenceState || "unknown",
-      "evidence-completeness": firewall.firewallEvidenceCompleteness || "unknown",
-      "evidence-freshness": firewall.firewallEvidenceFreshness || "unknown",
-      "evidence-error": firewall.firewallEvidenceError || "",
-      "evidence-source": firewall.firewallEvidenceSource || "none",
-      "evidence-reference": firewall.firewallEvidenceReference || "",
-      "evidence-horizon-start": evidenceStart,
-      "evidence-horizon-end": evidenceEnd,
-      "requested-horizon-start": usage.firewallRequestedHorizonStart,
-      "requested-horizon-end": usage.firewallRequestedHorizonEnd,
-      "evidence-coverage-percent": firewallCoverage(usage),
-      "last-successful-collection-at": usage.firewallLastSuccessfulCollectionAt,
-      "gh-aw-firewall-version": firewall.awfVersion || "unknown",
-      "policy-manifest-available": firewall.policyManifest ? "available" : "unavailable",
-      "policy-source": firewall.policyManifest ? "firewall-artifact" : "unavailable",
-      "policy-manifest-identity": firewall.policyManifest
-        ? `v${firewall.policyManifest.version ?? "unknown"}:${firewall.policyManifest.generatedAt || "unknown"}`
-        : "unavailable",
-      "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
-      "evidence-link": link("evidence", workflowRunUrl(run.repository, run.runId), `Firewall evidence for run ${run.runId}`),
-    };
-  }
+  const firewall = run.security?.firewall || {};
+  const evidenceStart = firewall.firewallEvidenceHorizonStart || usage.firewallEvidenceHorizonStart;
+  const evidenceEnd = firewall.firewallEvidenceHorizonEnd || usage.firewallEvidenceHorizonEnd;
+  return {
+    ...repositoryParts(run.repository),
+    workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
+    run: String(run.runId),
+    "run-conclusion": runConclusion(run.conclusion),
+    "rollout-mode": rolloutMode(run.mode),
+    "observed-at": evidenceEnd || run.createdAt || usage.generatedAt,
+    "firewall-expected": firewall.firewallExpected === true ? "yes" : firewall.firewallExpected === false ? "no" : "unknown",
+    "firewall-enabled": firewall.firewallEnabled === true ? "enabled" : firewall.firewallEnabled === false ? "disabled" : "unknown",
+    "firewall-evidence-available": firewall.firewallEvidenceAvailable === true ? "available" : "unavailable",
+    "evidence-state": firewall.firewallEvidenceState || "unknown",
+    "evidence-completeness": firewall.firewallEvidenceCompleteness || "unknown",
+    "evidence-freshness": firewall.firewallEvidenceFreshness || "unknown",
+    "evidence-error": firewall.firewallEvidenceError || "",
+    "evidence-source": firewall.firewallEvidenceSource || "none",
+    "evidence-reference": firewall.firewallEvidenceReference || "",
+    "evidence-horizon-start": evidenceStart,
+    "evidence-horizon-end": evidenceEnd,
+    "requested-horizon-start": usage.firewallRequestedHorizonStart,
+    "requested-horizon-end": usage.firewallRequestedHorizonEnd,
+    "evidence-coverage-percent": firewallCoverage(usage),
+    "last-successful-collection-at": usage.firewallLastSuccessfulCollectionAt,
+    "gh-aw-firewall-version": firewall.awfVersion || "unknown",
+    "policy-manifest-available": firewall.policyManifest ? "available" : "unavailable",
+    "policy-source": firewall.policyManifest ? "firewall-artifact" : "unavailable",
+    "policy-manifest-identity": firewall.policyManifest
+      ? `v${firewall.policyManifest.version ?? "unknown"}:${firewall.policyManifest.generatedAt || "unknown"}`
+      : "unavailable",
+    "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
+    "evidence-link": link("evidence", workflowRunUrl(run.repository, run.runId), `Firewall evidence for run ${run.runId}`),
+  };
+}
 
 function rawFirewallObservationRows(usage) {
-    return (usage.securityRuns || []).flatMap((run) => {
-      const firewall = run.security?.firewall || {};
-      const base = firewallRunBase(run, usage);
-      const collected = Array.isArray(firewall.observations) ? firewall.observations : [];
-      const observations = collected.length > 0
-        ? collected
-        : Object.entries(firewall.analysis?.requests_by_domain || {}).flatMap(([destination, counts]) => {
-          const parsed = parseDestination(destination);
-          return [
-            ...(positiveCount(counts?.allowed) > 0 ? [{ ...parsed, decision: "allowed", requestCount: positiveCount(counts.allowed), observedAt: base["observed-at"] }] : []),
-            ...(positiveCount(counts?.blocked) > 0 ? [{ ...parsed, decision: "denied", requestCount: positiveCount(counts.blocked), observedAt: base["observed-at"] }] : []),
-          ];
-        });
+  return (usage.securityRuns || []).flatMap((run) => {
+    const firewall = run.security?.firewall || {};
+    const base = firewallRunBase(run, usage);
+    const collected = Array.isArray(firewall.observations) ? firewall.observations : [];
+    const observations = collected.length > 0
+      ? collected
+      : Object.entries(firewall.analysis?.requests_by_domain || {}).flatMap(([destination, counts]) => {
+        const parsed = parseDestination(destination);
+        return [
+          ...(positiveCount(counts?.allowed) > 0 ? [{ ...parsed, decision: "allowed", requestCount: positiveCount(counts.allowed), observedAt: base["observed-at"] }] : []),
+          ...(positiveCount(counts?.blocked) > 0 ? [{ ...parsed, decision: "denied", requestCount: positiveCount(counts.blocked), observedAt: base["observed-at"] }] : []),
+        ];
+      });
+    const reviewState = base["firewall-enabled"] === "disabled"
+      ? "enforcement-disabled"
+      : ["partial", "unavailable", "malformed", "unknown"].includes(base["evidence-state"])
+        ? "evidence-missing"
+        : null;
+    const grouped = new Map();
+    for (const observation of observations) {
+      const destination = parseDestination(observation.host || observation.domain);
+      const domain = observation.domain || destination.domain;
+      const host = observation.host || destination.host;
+      const port = finite(observation.port) ?? destination.port;
+      const protocol = observation.protocol || destination.protocol;
+      const decision = observation.decision === "blocked" ? "denied" : observation.decision || "unknown";
+      const key = `${domain}\u0000${host}\u0000${port ?? ""}\u0000${protocol}\u0000${decision}`;
+      const row = grouped.get(key) || {
+        ...base,
+        domain,
+        host,
+        port,
+        protocol,
+        decision,
+        "request-count": 0,
+        "first-seen-at": observation.observedAt || base["observed-at"],
+        "last-seen-at": observation.observedAt || base["observed-at"],
+        "review-state": reviewState,
+      };
+      row["request-count"] += positiveCount(observation.requestCount ?? 1);
+      if (Date.parse(observation.observedAt) < Date.parse(row["first-seen-at"])) row["first-seen-at"] = observation.observedAt;
+      if (Date.parse(observation.observedAt) > Date.parse(row["last-seen-at"])) row["last-seen-at"] = observation.observedAt;
+      const rule = firewallRuleFor(firewall.policyManifest, { domain, protocol, decision });
+      row["policy-rule-id"] = rule?.id || "unavailable";
+      row["policy-rule-order"] = finite(rule?.order);
+      row["policy-rule-action"] = rule?.action || "unavailable";
+      row["policy-rule-protocol"] = rule?.protocol || "unavailable";
+      row["policy-domain-pattern"] = Array.isArray(rule?.domains) ? rule.domains.join(", ") : "unavailable";
+      row["policy-rule-description"] = rule?.description || "unavailable";
+      grouped.set(key, row);
+    }
+    if (grouped.size === 0) {
       const reviewState = base["firewall-enabled"] === "disabled"
         ? "enforcement-disabled"
-        : ["partial", "unavailable", "malformed", "unknown"].includes(base["evidence-state"])
-          ? "evidence-missing"
-          : null;
-      const grouped = new Map();
-      for (const observation of observations) {
-        const destination = parseDestination(observation.host || observation.domain);
-        const domain = observation.domain || destination.domain;
-        const host = observation.host || destination.host;
-        const port = finite(observation.port) ?? destination.port;
-        const protocol = observation.protocol || destination.protocol;
-        const decision = observation.decision === "blocked" ? "denied" : observation.decision || "unknown";
-        const key = `${domain}\u0000${host}\u0000${port ?? ""}\u0000${protocol}\u0000${decision}`;
-        const row = grouped.get(key) || {
-          ...base,
-          domain,
-          host,
-          port,
-          protocol,
-          decision,
-          "request-count": 0,
-          "first-seen-at": observation.observedAt || base["observed-at"],
-          "last-seen-at": observation.observedAt || base["observed-at"],
-          "review-state": reviewState,
-        };
-        row["request-count"] += positiveCount(observation.requestCount ?? 1);
-        if (Date.parse(observation.observedAt) < Date.parse(row["first-seen-at"])) row["first-seen-at"] = observation.observedAt;
-        if (Date.parse(observation.observedAt) > Date.parse(row["last-seen-at"])) row["last-seen-at"] = observation.observedAt;
-        const rule = firewallRuleFor(firewall.policyManifest, { domain, protocol, decision });
-        row["policy-rule-id"] = rule?.id || "unavailable";
-        row["policy-rule-order"] = finite(rule?.order);
-        row["policy-rule-action"] = rule?.action || "unavailable";
-        row["policy-rule-protocol"] = rule?.protocol || "unavailable";
-        row["policy-domain-pattern"] = Array.isArray(rule?.domains) ? rule.domains.join(", ") : "unavailable";
-        row["policy-rule-description"] = rule?.description || "unavailable";
-        grouped.set(key, row);
-      }
-      if (grouped.size === 0) {
-        const reviewState = base["firewall-enabled"] === "disabled"
-          ? "enforcement-disabled"
-          : base["evidence-state"] === "no-traffic" ? "stable"
-            : ["unavailable", "malformed", "unknown"].includes(base["evidence-state"]) ? "evidence-missing" : "unknown";
-        return [{
-          ...base,
-          domain: "unknown",
-          host: "unknown",
-          port: null,
-          protocol: "unknown",
-          decision: "unknown",
-          "request-count": null,
-          "policy-rule-id": "unavailable",
-          "policy-rule-order": null,
-          "policy-rule-action": "unavailable",
-          "policy-rule-protocol": "unavailable",
-          "policy-domain-pattern": "unavailable",
-          "policy-rule-description": "unavailable",
-          "first-seen-at": null,
-          "last-seen-at": null,
-          "review-state": reviewState,
-          "review-priority": {
-            "enforcement-disabled": 1,
-            "evidence-missing": 2,
-            unknown: 8,
-            stable: 9,
-          }[reviewState] ?? 8,
-        }];
-      }
-      return [...grouped.values()];
-    });
-  }
+        : base["evidence-state"] === "no-traffic" ? "stable"
+          : ["unavailable", "malformed", "unknown"].includes(base["evidence-state"]) ? "evidence-missing" : "unknown";
+      return [{
+        ...base,
+        domain: "unknown",
+        host: "unknown",
+        port: null,
+        protocol: "unknown",
+        decision: "unknown",
+        "request-count": null,
+        "policy-rule-id": "unavailable",
+        "policy-rule-order": null,
+        "policy-rule-action": "unavailable",
+        "policy-rule-protocol": "unavailable",
+        "policy-domain-pattern": "unavailable",
+        "policy-rule-description": "unavailable",
+        "first-seen-at": null,
+        "last-seen-at": null,
+        "review-state": reviewState,
+        "review-priority": {
+          "enforcement-disabled": 1,
+          "evidence-missing": 2,
+          unknown: 8,
+          stable: 9,
+        }[reviewState] ?? 8,
+      }];
+    }
+    return [...grouped.values()];
+  });
+}
 
 function firewallObservationRows(usage) {
-    const rows = rawFirewallObservationRows(usage);
-    const scopes = Object.groupBy(rows, (row) => `${row.organization}/${row.repository}\u0000${row.workflow}`);
-    const result = [];
-    for (const scopedRows of Object.values(scopes)) {
-      const runs = Object.values(Object.groupBy(scopedRows, (row) => row.run))
-        .sort((left, right) => Date.parse(left[0]["observed-at"]) - Date.parse(right[0]["observed-at"]));
-      let previous = null;
-      for (const current of runs) {
-        const previousByDomain = new Map((previous || []).filter((row) => row.domain !== "unknown").map((row) => [`${row.domain}:${row.port ?? ""}:${row.protocol}`, row]));
-        const currentKeys = new Set();
-        for (const row of current) {
-          const key = `${row.domain}:${row.port ?? ""}:${row.protocol}`;
-          currentKeys.add(key);
-          const baseline = previousByDomain.get(key);
-          row["baseline-request-count"] = baseline?.["request-count"] ?? null;
-          row["request-volume-change"] = baseline && Number.isFinite(row["request-count"])
-            ? row["request-count"] - baseline["request-count"]
-            : null;
-          row["previous-decision"] = baseline?.decision || "unknown";
-          row["current-decision"] = row.decision;
-          row["is-new-destination"] = Boolean(previous && row.domain !== "unknown" && !baseline);
-          row["is-removed-destination"] = false;
-          row["decision-changed"] = Boolean(baseline && baseline.decision !== row.decision);
-          if (row["review-state"] || row["evidence-completeness"] !== "complete") row["drift-state"] = "unknown";
-          else if (!previous) row["drift-state"] = "unknown";
-          else if (!baseline) row["drift-state"] = row.decision === "allowed" ? "newly-allowed" : row.decision === "denied" ? "newly-denied" : "unknown";
-          else if (row["decision-changed"]) row["drift-state"] = "decision-changed";
-          else if (Math.abs(row["request-volume-change"] || 0) >= Math.max(5, baseline["request-count"] * 0.5)) row["drift-state"] = "volume-change";
-          else row["drift-state"] = "stable";
-          row["review-state"] ||= row.decision === "denied"
-            && row["drift-state"] === "stable"
-            && row["run-conclusion"] === "failure"
-            ? "repeated-denial"
-            : ["newly-allowed", "newly-denied", "decision-changed", "volume-change"].includes(row["drift-state"])
-              ? row["drift-state"]
-              : "stable";
-          row["review-priority"] = {
-            "enforcement-disabled": 1,
-            "evidence-missing": 2,
-            "newly-allowed": 3,
-            "decision-changed": 4,
-            "newly-denied": 5,
-            "volume-change": 6,
-            "repeated-denial": 7,
-            unknown: 8,
-            stable: 9,
-          }[row["review-state"]] ?? 8;
-          result.push(row);
-        }
-        if (previous) {
-          for (const [key, row] of previousByDomain) {
-            if (currentKeys.has(key)) continue;
-            result.push({
-              ...row,
-              run: current[0].run,
-              "observed-at": current[0]["observed-at"],
-              "run-link": current[0]["run-link"],
-              "evidence-link": current[0]["evidence-link"],
-              decision: "unknown",
-              "current-decision": "unknown",
-              "previous-decision": row.decision,
-              "request-count": null,
-              "baseline-request-count": row["request-count"],
-              "request-volume-change": null,
-              "is-new-destination": false,
-              "is-removed-destination": true,
-              "decision-changed": false,
-              "drift-state": "removed",
-              "review-state": "stable",
-              "review-priority": 9,
-            });
-          }
-        }
-        previous = current[0]?.["evidence-completeness"] === "complete"
-          ? current.filter((row) => row.domain !== "unknown")
+  const rows = rawFirewallObservationRows(usage);
+  const scopes = Object.groupBy(rows, (row) => `${row.organization}/${row.repository}\u0000${row.workflow}`);
+  const result = [];
+  for (const scopedRows of Object.values(scopes)) {
+    const runs = Object.values(Object.groupBy(scopedRows, (row) => row.run))
+      .sort((left, right) => Date.parse(left[0]["observed-at"]) - Date.parse(right[0]["observed-at"]));
+    let previous = null;
+    for (const current of runs) {
+      const previousByDomain = new Map((previous || []).filter((row) => row.domain !== "unknown").map((row) => [`${row.domain}:${row.port ?? ""}:${row.protocol}`, row]));
+      const currentKeys = new Set();
+      for (const row of current) {
+        const key = `${row.domain}:${row.port ?? ""}:${row.protocol}`;
+        currentKeys.add(key);
+        const baseline = previousByDomain.get(key);
+        row["baseline-request-count"] = baseline?.["request-count"] ?? null;
+        row["request-volume-change"] = baseline && Number.isFinite(row["request-count"])
+          ? row["request-count"] - baseline["request-count"]
           : null;
+        row["previous-decision"] = baseline?.decision || "unknown";
+        row["current-decision"] = row.decision;
+        row["is-new-destination"] = Boolean(previous && row.domain !== "unknown" && !baseline);
+        row["is-removed-destination"] = false;
+        row["decision-changed"] = Boolean(baseline && baseline.decision !== row.decision);
+        if (row["review-state"] || row["evidence-completeness"] !== "complete") row["drift-state"] = "unknown";
+        else if (!previous) row["drift-state"] = "unknown";
+        else if (!baseline) row["drift-state"] = row.decision === "allowed" ? "newly-allowed" : row.decision === "denied" ? "newly-denied" : "unknown";
+        else if (row["decision-changed"]) row["drift-state"] = "decision-changed";
+        else if (Math.abs(row["request-volume-change"] || 0) >= Math.max(5, baseline["request-count"] * 0.5)) row["drift-state"] = "volume-change";
+        else row["drift-state"] = "stable";
+        row["review-state"] ||= row.decision === "denied"
+          && row["drift-state"] === "stable"
+          && row["run-conclusion"] === "failure"
+          ? "repeated-denial"
+          : ["newly-allowed", "newly-denied", "decision-changed", "volume-change"].includes(row["drift-state"])
+            ? row["drift-state"]
+            : "stable";
+        row["review-priority"] = {
+          "enforcement-disabled": 1,
+          "evidence-missing": 2,
+          "newly-allowed": 3,
+          "decision-changed": 4,
+          "newly-denied": 5,
+          "volume-change": 6,
+          "repeated-denial": 7,
+          unknown: 8,
+          stable: 9,
+        }[row["review-state"]] ?? 8;
+        result.push(row);
       }
+      if (previous) {
+        for (const [key, row] of previousByDomain) {
+          if (currentKeys.has(key)) continue;
+          result.push({
+            ...row,
+            run: current[0].run,
+            "observed-at": current[0]["observed-at"],
+            "run-link": current[0]["run-link"],
+            "evidence-link": current[0]["evidence-link"],
+            decision: "unknown",
+            "current-decision": "unknown",
+            "previous-decision": row.decision,
+            "request-count": null,
+            "baseline-request-count": row["request-count"],
+            "request-volume-change": null,
+            "is-new-destination": false,
+            "is-removed-destination": true,
+            "decision-changed": false,
+            "drift-state": "removed",
+            "review-state": "stable",
+            "review-priority": 9,
+          });
+        }
+      }
+      previous = current[0]?.["evidence-completeness"] === "complete"
+        ? current.filter((row) => row.domain !== "unknown")
+        : null;
     }
-    const reviewLabels = {
-      "enforcement-disabled": "Enforcement disabled",
-      "evidence-missing": "Evidence missing",
-      "newly-allowed": "Newly allowed",
-      "newly-denied": "New denial",
-      "decision-changed": "Decision changed",
-      "volume-change": "Request volume changed",
-      "repeated-denial": "Repeated denial",
-      stable: "Stable",
-      unknown: "Unknown",
-    };
-    return result.map((row, index) => ({
-      ...row,
-      "firewall-observation": `${row.organization}/${row.repository}:${row.workflow}:${row.run}:${row.domain}:${row.port ?? ""}:${row.protocol}:${row.decision}:${index}`,
-      "enforcement-label": row["firewall-enabled"] === "enabled" ? "Enabled"
-        : row["firewall-enabled"] === "disabled" ? "Enforcement disabled" : "Unknown",
-      "evidence-label": row["evidence-state"] === "no-traffic" ? "No observed traffic"
-        : row["evidence-state"] === "disabled" ? "Enforcement disabled"
-          : ["unavailable", "malformed", "unknown"].includes(row["evidence-state"]) ? "Evidence missing"
-            : row["evidence-state"] === "partial" ? "Partial evidence" : "Evidence available",
-      "decision-label": row.decision === "allowed" ? "Allowed by policy"
-        : row.decision === "denied" ? "Denied by policy" : "Unknown",
-      "drift-label": reviewLabels[row["drift-state"]] || "Unknown",
-      "review-label": reviewLabels[row["review-state"]] || "Unknown",
-    }));
   }
+  const reviewLabels = {
+    "enforcement-disabled": "Enforcement disabled",
+    "evidence-missing": "Evidence missing",
+    "newly-allowed": "Newly allowed",
+    "newly-denied": "New denial",
+    "decision-changed": "Decision changed",
+    "volume-change": "Request volume changed",
+    "repeated-denial": "Repeated denial",
+    stable: "Stable",
+    unknown: "Unknown",
+  };
+  return result.map((row, index) => ({
+    ...row,
+    "firewall-observation": `${row.organization}/${row.repository}:${row.workflow}:${row.run}:${row.domain}:${row.port ?? ""}:${row.protocol}:${row.decision}:${index}`,
+    "enforcement-label": row["firewall-enabled"] === "enabled" ? "Enabled"
+      : row["firewall-enabled"] === "disabled" ? "Enforcement disabled" : "Unknown",
+    "evidence-label": row["evidence-state"] === "no-traffic" ? "No observed traffic"
+      : row["evidence-state"] === "disabled" ? "Enforcement disabled"
+        : ["unavailable", "malformed", "unknown"].includes(row["evidence-state"]) ? "Evidence missing"
+          : row["evidence-state"] === "partial" ? "Partial evidence" : "Evidence available",
+    "decision-label": row.decision === "allowed" ? "Allowed by policy"
+      : row.decision === "denied" ? "Denied by policy" : "Unknown",
+    "drift-label": reviewLabels[row["drift-state"]] || "Unknown",
+    "review-label": reviewLabels[row["review-state"]] || "Unknown",
+  }));
+}
 
 function firewallPolicyRuleRows(usage) {
-    return (usage.securityRuns || []).flatMap((run) => {
-      const firewall = run.security?.firewall || {};
-      const base = firewallRunBase(run, usage);
-      const hitByRule = new Map((firewall.policyAnalysis?.rule_hits || []).map((entry) => [entry?.rule?.id, positiveCount(entry?.hits)]));
-      if (!Array.isArray(firewall.policyAnalysis?.rule_hits) && Array.isArray(firewall.observations)) {
-        for (const observation of firewall.observations) {
-          const destination = parseDestination(observation.host || observation.domain);
-          const normalized = {
-            domain: observation.domain || destination.domain,
-            protocol: observation.protocol || destination.protocol,
-            decision: observation.decision === "blocked" ? "denied" : observation.decision || "unknown",
-          };
-          const rule = firewallRuleFor(firewall.policyManifest, normalized);
-          if (rule?.id) hitByRule.set(rule.id, (hitByRule.get(rule.id) || 0) + positiveCount(observation.requestCount ?? 1));
-        }
+  return (usage.securityRuns || []).flatMap((run) => {
+    const firewall = run.security?.firewall || {};
+    const base = firewallRunBase(run, usage);
+    const hitByRule = new Map((firewall.policyAnalysis?.rule_hits || []).map((entry) => [entry?.rule?.id, positiveCount(entry?.hits)]));
+    if (!Array.isArray(firewall.policyAnalysis?.rule_hits) && Array.isArray(firewall.observations)) {
+      for (const observation of firewall.observations) {
+        const destination = parseDestination(observation.host || observation.domain);
+        const normalized = {
+          domain: observation.domain || destination.domain,
+          protocol: observation.protocol || destination.protocol,
+          decision: observation.decision === "blocked" ? "denied" : observation.decision || "unknown",
+        };
+        const rule = firewallRuleFor(firewall.policyManifest, normalized);
+        if (rule?.id) hitByRule.set(rule.id, (hitByRule.get(rule.id) || 0) + positiveCount(observation.requestCount ?? 1));
       }
-      return (firewall.policyManifest?.rules || []).flatMap((rule) => (rule.domains?.length ? rule.domains : ["all"]).map((domain) => ({
-        ...base,
-        "rule-id": rule.id || "unknown",
-        "rule-order": finite(rule.order),
-        action: rule.action || "unknown",
-        protocol: rule.protocol || "unknown",
-        "domain-pattern": domain,
-        description: rule.description || "",
-        "hit-count": hitByRule.get(rule.id) ?? 0,
-        "ssl-bump-enabled": firewall.policyManifest.sslBumpEnabled === true ? "enabled" : "disabled",
-        "dlp-enabled": firewall.policyManifest.dlpEnabled === true ? "enabled" : "disabled",
-        "host-access-enabled": firewall.policyManifest.hostAccessEnabled === true ? "enabled" : "disabled",
-      })));
-    });
-  }
+    }
+    return (firewall.policyManifest?.rules || []).flatMap((rule) => (rule.domains?.length ? rule.domains : ["all"]).map((domain) => ({
+      ...base,
+      "rule-id": rule.id || "unknown",
+      "rule-order": finite(rule.order),
+      action: rule.action || "unknown",
+      protocol: rule.protocol || "unknown",
+      "domain-pattern": domain,
+      description: rule.description || "",
+      "hit-count": hitByRule.get(rule.id) ?? 0,
+      "ssl-bump-enabled": firewall.policyManifest.sslBumpEnabled === true ? "enabled" : "disabled",
+      "dlp-enabled": firewall.policyManifest.dlpEnabled === true ? "enabled" : "disabled",
+      "host-access-enabled": firewall.policyManifest.hostAccessEnabled === true ? "enabled" : "disabled",
+    })));
+  });
+}
 function integrityRows(run) {
   const integrity = run.security?.integrity;
   if (!integrity?.available) return [unavailableSecurityObservation(run, "integrity-filtering")];
@@ -1218,6 +1219,114 @@ function securityObservationRows(usage) {
     ...integrityRows(run),
     ...threatDetectionRows(run),
   ]);
+}
+
+const DETECTION_FAILURE_CONCLUSIONS = new Set([
+  "failure", "cancelled", "timed-out", "action-required", "stale", "startup-failure",
+]);
+
+export function deriveDetectionState({ verdictAvailable, threatsDetected, warningCount, jobConclusion, telemetryAvailable = true }) {
+  // Precedence preserves security outcomes independently from job mechanics:
+  // threat > tooling failure > degraded > clean > skipped > unknown.
+  if (verdictAvailable && threatsDetected) return "threat";
+  if (!verdictAvailable && DETECTION_FAILURE_CONCLUSIONS.has(jobConclusion)) return "tooling-failure";
+  if (verdictAvailable && warningCount > 0) return "degraded";
+  if (verdictAvailable) return "clean";
+  if (jobConclusion === "skipped") return "skipped";
+  if (telemetryAvailable && jobConclusion === "success") return "tooling-failure";
+  return "unknown";
+}
+
+function detectionSignal(state, verdict, warningText) {
+  if (state === "threat") {
+    return [
+      verdict.promptInjection && "Prompt injection",
+      verdict.secretLeak && "Secret leak",
+      verdict.maliciousPatch && "Malicious patch",
+    ].filter(Boolean).join(", ");
+  }
+  if (state === "degraded") return warningText || "Inspection warning";
+  if (state === "tooling-failure") return "No usable verdict";
+  if (state === "skipped") return "Detection skipped";
+  if (state === "clean") return "Usable verdict; no threats";
+  return "Detection telemetry unavailable";
+}
+
+export function detectionObservationRows(usage, jobs = []) {
+  const securityRuns = Array.isArray(usage.securityRuns) ? usage.securityRuns : [];
+  const observationKey = (repository, run) => `${String(repository || "").trim().toLowerCase()}:${String(run)}`;
+  const securityByRun = new Map(securityRuns.map((run) => [
+    observationKey(run.repository, run.runId),
+    run,
+  ]));
+  const detectionJobs = jobs.filter((job) => String(job.job || "").toLowerCase() === "detection");
+  const jobByRun = new Map(detectionJobs.map((job) => [
+    observationKey([job.organization, job.repository].filter(Boolean).join("/"), job.run),
+    job,
+  ]));
+  const keys = new Set([...securityByRun.keys(), ...jobByRun.keys()]);
+  return [...keys].map((key) => {
+    const run = securityByRun.get(key);
+    const job = jobByRun.get(key);
+    const verdictAvailable = run?.security?.threatDetection?.available === true;
+    const verdict = run?.security?.threatDetection?.verdict || {};
+    const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
+    const threatsDetected = verdictAvailable && Boolean(
+      verdict.promptInjection || verdict.secretLeak || verdict.maliciousPatch,
+    );
+    const jobConclusion = job?.["job-conclusion"] || "unknown";
+    const normalizedJobConclusion = runConclusion(jobConclusion);
+    const state = deriveDetectionState({
+      verdictAvailable,
+      threatsDetected,
+      warningCount: warnings.length,
+      jobConclusion: normalizedJobConclusion,
+      telemetryAvailable: usage.securityAvailable === true,
+    });
+    const warningText = warnings
+      .map((warning) => [warning.field, warning.code].filter(Boolean).join(": "))
+      .filter(Boolean)
+      .join(", ");
+    const repository = run?.repository || [job?.organization, job?.repository].filter(Boolean).join("/");
+    const runId = String(run?.runId ?? job?.run ?? "");
+    return {
+      ...repositoryParts(repository),
+      workflow: run?.workflowPath?.replace(/\.lock\.yml$/, ".md") || run?.workflowName || job?.workflow || "",
+      run: runId,
+      "observed-at": run?.createdAt || job?.["started-at"] || usage.generatedAt,
+      "run-link": job?.["run-link"] || link("run", workflowRunUrl(repository, runId), `View run ${runId}`),
+      "rollout-mode": rolloutMode(run?.mode || job?.["rollout-mode"]),
+      "detection-expected": job ? "true" : "unknown",
+      "detection-applicable": normalizedJobConclusion === "skipped" ? "false" : job ? "true" : "unknown",
+      "detection-executed": normalizedJobConclusion === "skipped" ? "false" : (job || verdictAvailable) ? "true" : "unknown",
+      "verdict-available": verdictAvailable ? "true" : "false",
+      "usable-verdict-percent": verdictAvailable ? 100 : 0,
+      "detection-state": state,
+      "detection-state-label": state.split("-").map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(" "),
+      "detection-count": 1,
+      "prompt-injection-detected": verdict.promptInjection === true ? "true" : "false",
+      "secret-leak-detected": verdict.secretLeak === true ? "true" : "false",
+      "malicious-patch-detected": verdict.maliciousPatch === true ? "true" : "false",
+      "inspection-warning-count": warnings.length,
+      "inspection-warning": warningText,
+      "detection-signal": detectionSignal(state, verdict, warningText),
+      "attention-priority": {
+        threat: 1,
+        "tooling-failure": 2,
+        degraded: 3,
+        unknown: 4,
+        skipped: 5,
+        clean: 6,
+      }[state],
+      "job-status": job?.["job-status"] || "unknown",
+      "job-conclusion": normalizedJobConclusion,
+      "job-duration-seconds": job?.["job-duration-seconds"] ?? null,
+      runner: job?.runner || "unknown",
+      engine: run?.engine || job?.engine || "unknown",
+      "requested-model": run?.requestedModel || "unknown",
+      "resolved-model": run?.resolvedModel || job?.model || "unknown",
+    };
+  });
 }
 
 function mcpBase(run) {
@@ -1636,6 +1745,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const runs = runRows(deployed, usage);
   const admission = admissionRows(deployed);
   const performance = performanceRows(deployed, usage);
+  const detectionObservations = detectionObservationRows(usage, performance.jobs);
   const safeOutputPerformance = safeOutputPerformanceRows(usage);
   const records = report.records || [];
   const workflowRoleForRecord = recordWorkflowRoleResolver(workflows);
@@ -1749,6 +1859,13 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     usage.securityAvailable === true,
     usage.securityComplete === true,
   );
+  sources["detection-observations"] = source(
+    "detection-observations",
+    detectionObservations,
+    generatedAt,
+    usage.securityAvailable === true || detectionObservations.length > 0,
+    usage.securityAvailable === true && usage.securityComplete === true && runComplete,
+  );
   const firewallObservations = firewallObservationRows(usage);
   const firewallRuns = usage.securityRuns || [];
   const firewallComplete = firewallRuns.length > 0 && firewallRuns.every((run) => (
@@ -1785,6 +1902,10 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     // Usage and security telemetry come from the same gh aw logs collection window.
     sources["safe-output-performance"].metadata["coverage-end"] = generatedAt;
     sources["safe-output-performance"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
+    sources["security-observations"].metadata["coverage-end"] = generatedAt;
+    sources["security-observations"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
+    sources["detection-observations"].metadata["coverage-end"] = generatedAt;
+    sources["detection-observations"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",

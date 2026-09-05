@@ -25,6 +25,7 @@ import {
   FIELD_DISPLAY_VALUES,
   FIELD_TYPE_VALUES,
   FILTER_DIMENSION_VALUES,
+  DETECTION_STATE_VALUES,
   FINDING_SEVERITY_VALUES,
   FINDING_STATUS_VALUES,
   GRADER_STATUS_VALUES,
@@ -3181,6 +3182,7 @@ function looksSensitive(value) {
 /** @type {Record<string, string[]>} */
 const SEMANTIC_FILTER_VALUE_SETS = {
   'rollout-mode': ROLLOUT_MODE_VALUES,
+  'detection-state': DETECTION_STATE_VALUES,
   'workflow-active': WORKFLOW_ACTIVE_VALUES,
   'workflow-role': WORKFLOW_ROLE_VALUES,
   'run-status': RUN_STATUS_VALUES,
