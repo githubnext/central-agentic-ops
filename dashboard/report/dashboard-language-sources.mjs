@@ -1533,6 +1533,241 @@ function outcomeRows(records, workflowRoleFor = () => "unknown") {
   }));
 }
 
+function workItemKey(organization, repository, workflow) {
+  return `${organization}/${repository}:${workflow}`.toLowerCase();
+}
+
+function workItemLifecycle(latestRun) {
+  if (!latestRun) return "unknown";
+  if (latestRun["admission-status"] === "denied" || latestRun["admission-status"] === "blocked") return "blocked";
+  if (["failure", "timed-out", "startup-failure", "action-required"].includes(latestRun["run-conclusion"])) return "blocked";
+  if (latestRun["run-status"] === "queued") return "waiting";
+  if (latestRun["run-status"] === "in-progress") return "active";
+  if (["success", "cancelled", "skipped", "neutral", "stale"].includes(latestRun["run-conclusion"])) return "completed";
+  return "unknown";
+}
+
+function workItemNextAction(lifecycleState) {
+  return {
+    blocked: "Resolve the admission or run failure blocking this work",
+    waiting: "Await the next scheduled run",
+    active: "Monitor the in-progress run",
+    completed: "Review the produced outcome",
+  }[lifecycleState] || "Investigate missing run telemetry";
+}
+
+function workItemNextActor(lifecycleState) {
+  return {
+    blocked: "maintainer",
+    waiting: "scheduler",
+    active: "agent",
+    completed: "reviewer",
+  }[lifecycleState] || "unknown";
+}
+
+function workItemConsequenceTier(workflowRole) {
+  if (workflowRole === "orchestrator") return "high";
+  if (workflowRole === "worker") return "medium";
+  return "low";
+}
+
+function outcomeVerificationState(outcomeState) {
+  if (outcomeState === "accepted" || outcomeState === "lifecycle-close") return "accepted";
+  if (outcomeState === "rejected") return "rejected";
+  return "pending";
+}
+
+function latestByWorkItemKey(rows, keyFor, sortField) {
+  const grouped = new Map();
+  for (const row of rows) {
+    const key = keyFor(row);
+    if (!key) continue;
+    const list = grouped.get(key) || [];
+    list.push(row);
+    grouped.set(key, list);
+  }
+  for (const list of grouped.values()) {
+    list.sort((a, b) => Date.parse(b[sortField] || 0) - Date.parse(a[sortField] || 0));
+  }
+  return grouped;
+}
+
+function workItemRows(workflows, runs, outcomes) {
+  const runsByWorkItem = latestByWorkItemKey(
+    runs,
+    (run) => workItemKey(run.organization, run.repository, run.workflow),
+    "started-at",
+  );
+  const outcomesByWorkItem = latestByWorkItemKey(
+    outcomes,
+    (outcome) => workItemKey(
+      ...((outcome["runtime-repository"] || `${outcome.organization}/${outcome.repository}`).split("/")),
+      outcome.workflow,
+    ),
+    "observed-at",
+  );
+  return workflows.map((workflow) => {
+    const key = workItemKey(workflow.organization, workflow.repository, workflow.workflow);
+    const latestRun = runsByWorkItem.get(key)?.[0];
+    const latestOutcome = outcomesByWorkItem.get(key)?.[0];
+    const lifecycleState = workItemLifecycle(latestRun);
+    return {
+      "work-item-id": key,
+      objective: workflow["workflow-name"] || workflow.workflow,
+      organization: workflow.organization,
+      repository: workflow.repository,
+      scope: `${workflow.organization}/${workflow.repository}`,
+      domain: workflow["package-name"] || "standalone",
+      "work-type": workflow["workflow-role"] || "unknown",
+      "lifecycle-state": lifecycleState,
+      phase: latestRun?.["run-status"] || "unknown",
+      reason: latestRun?.["admission-reason"] || latestRun?.["failure-message"] || "No blocking condition observed",
+      "reason-evidence-class": latestRun ? "observed" : "inferred",
+      "next-action": workItemNextAction(lifecycleState),
+      "next-actor": workItemNextActor(lifecycleState),
+      "waiting-on": lifecycleState === "waiting" || lifecycleState === "blocked"
+        ? (latestRun?.resource || "scheduled run")
+        : "",
+      "waiting-since": latestRun?.["resource-reset-at"] || latestRun?.["started-at"] || "",
+      owner: workflow["package-name"] || workflow.organization,
+      "consequence-tier": workItemConsequenceTier(workflow["workflow-role"]),
+      "verification-state": outcomeVerificationState(latestOutcome?.["outcome-state"]),
+      "outcome-state": latestOutcome?.["outcome-state"] || "pending",
+      "observed-at": latestRun?.["started-at"] || workflow["observed-at"],
+      "evidence-link": latestOutcome?.["external-link"] || latestRun?.["run-link"],
+      "run-link": latestRun?.["run-link"],
+    };
+  });
+}
+
+function attentionSignalRows(workItems, generatedAt) {
+  const now = Date.parse(generatedAt) || Date.now();
+  return workItems
+    .filter((item) => item["lifecycle-state"] === "blocked" || item["lifecycle-state"] === "waiting")
+    .map((item) => {
+      const since = Date.parse(item["waiting-since"]);
+      const ageSeconds = Number.isFinite(since) ? Math.max(0, Math.round((now - since) / 1000)) : 0;
+      return {
+        "attention-signal-id": `${item["work-item-id"]}:${item["lifecycle-state"]}`,
+        "signal-type": item["lifecycle-state"],
+        "work-item-id": item["work-item-id"],
+        objective: item.objective,
+        scope: item.scope,
+        reason: item.reason,
+        action: item["next-action"],
+        "expected-actor": item["next-actor"],
+        "age-seconds": ageSeconds,
+        "consequence-tier": item["consequence-tier"],
+        priority: item["lifecycle-state"] === "blocked" ? (item["consequence-tier"] === "high" ? 0 : 1) : 2,
+        "observed-at": item["observed-at"],
+        "evidence-link": item["evidence-link"],
+        "repository-link": link("repository", `https://github.com/${item.organization}/${item.repository}`, `View ${item.organization}/${item.repository} on GitHub`),
+        "run-link": item["run-link"],
+      };
+    })
+    .sort((a, b) => a.priority - b.priority || b["age-seconds"] - a["age-seconds"]);
+}
+
+function agentAssignmentRows(workflows, runs, workItems) {
+  const runsByWorkItem = latestByWorkItemKey(
+    runs,
+    (run) => workItemKey(run.organization, run.repository, run.workflow),
+    "started-at",
+  );
+  const workItemsByKey = new Map(workItems.map((item) => [item["work-item-id"], item]));
+  const assignmentStateFor = {
+    active: "active",
+    waiting: "pending",
+    blocked: "blocked",
+    completed: "completed",
+    unknown: "unknown",
+  };
+  const rows = [];
+  const activeCountByWorkItem = new Map();
+  for (const workflow of workflows) {
+    const key = workItemKey(workflow.organization, workflow.repository, workflow.workflow);
+    const latestRun = runsByWorkItem.get(key)?.[0];
+    const engine = latestRun?.engine && latestRun.engine !== "unknown" ? latestRun.engine : null;
+    const model = latestRun?.["resolved-model"] && latestRun["resolved-model"] !== "unknown" ? latestRun["resolved-model"] : null;
+    if (!engine && !model) continue;
+    const workItem = workItemsByKey.get(key);
+    const lifecycleState = workItem?.["lifecycle-state"] || "unknown";
+    const assignmentState = assignmentStateFor[lifecycleState] || "unknown";
+    if (assignmentState === "active" || assignmentState === "pending") {
+      activeCountByWorkItem.set(key, (activeCountByWorkItem.get(key) || 0) + 1);
+    }
+    rows.push({
+      key,
+      row: {
+        "assignment-id": `${key}:${engine || "unknown-engine"}:${model || "unknown-model"}`,
+        "agent-id": `${engine || "unknown-engine"}:${model || "unknown-model"}`,
+        "agent-name": [engine, model].filter(Boolean).join(" · ") || "Unknown agent",
+        "agent-state": assignmentState,
+        "work-item-id": workItem?.["work-item-id"] || key,
+        objective: workItem?.objective || workflow["workflow-name"] || workflow.workflow,
+        "assignment-state": assignmentState,
+        "handoff-state": lifecycleState === "completed" ? "completed" : lifecycleState === "waiting" ? "pending" : "in-progress",
+        "dependency-state": workItem?.["waiting-on"] ? "waiting" : "resolved",
+        "conflict-state": "none",
+        "observed-at": latestRun?.["started-at"] || workItem?.["observed-at"],
+        "evidence-link": workItem?.["evidence-link"],
+        "repository-link": link("repository", `https://github.com/${workflow.organization}/${workflow.repository}`, `View ${workflow.organization}/${workflow.repository} on GitHub`),
+        "run-link": latestRun?.["run-link"],
+      },
+    });
+  }
+  return rows.map(({ key, row }) => ({
+    ...row,
+    "conflict-state": (activeCountByWorkItem.get(key) || 0) > 1 ? "contended" : "none",
+  }));
+}
+
+function evidenceRecordRows(outcomes, findings, workItems) {
+  const workItemsByKey = new Map(workItems.map((item) => [item["work-item-id"], item]));
+  const resolveWorkItem = (organization, repository, workflow) => workItemsByKey.get(workItemKey(organization, repository, workflow));
+  const outcomeRecords = outcomes.map((outcome) => {
+    const [organization, repository] = (outcome["runtime-repository"] || `${outcome.organization}/${outcome.repository}`).split("/");
+    const workItem = resolveWorkItem(organization, repository, outcome.workflow);
+    return {
+      "evidence-id": outcome["safe-output"],
+      "evidence-class": "outcome",
+      "evidence-kind": outcome["outcome-category"] || "unknown",
+      "work-item-id": workItem?.["work-item-id"] || workItemKey(organization, repository, outcome.workflow),
+      objective: workItem?.objective || outcome["workflow-name"] || "Unknown objective",
+      claim: outcome["outcome-title"] || outcome["outcome-summary"] || "",
+      "verification-state": outcomeVerificationState(outcome["outcome-state"]),
+      "provenance-state": outcome["evidence-strength"] === "durable" ? "durable" : "proposal",
+      "source-revision": outcome.run || "",
+      "observed-at": outcome["observed-at"],
+      "evidence-link": outcome["external-link"],
+      "repository-link": link("repository", `https://github.com/${organization}/${repository}`, `View ${organization}/${repository} on GitHub`),
+      "run-link": outcome["run-link"],
+    };
+  });
+  const findingRecords = findings.map((finding) => {
+    const organization = finding.organization;
+    const repository = finding.repository;
+    const workItem = resolveWorkItem(organization, repository, finding.workflow);
+    return {
+      "evidence-id": finding.finding,
+      "evidence-class": "finding",
+      "evidence-kind": finding["finding-kind"] || "unknown",
+      "work-item-id": workItem?.["work-item-id"] || workItemKey(organization, repository, finding.workflow),
+      objective: workItem?.objective || "Unknown objective",
+      claim: finding["finding-summary"] || "",
+      "verification-state": finding["finding-status"] === "resolved" ? "accepted"
+        : finding["finding-status"] === "dismissed" ? "rejected" : "pending",
+      "provenance-state": "durable",
+      "source-revision": finding.run || "",
+      "observed-at": finding["observed-at"],
+      "evidence-link": finding["external-link"],
+      "repository-link": link("repository", `https://github.com/${organization}/${repository}`, `View ${organization}/${repository} on GitHub`),
+      "run-link": finding["run-link"],
+    };
+  });
+  return [...outcomeRecords, ...findingRecords];
+}
+
 function operationalValueRows(values) {
   const definitions = new Map((values.definitions || []).map((definition) => [
     `${definition.repository}:${definition.workflowId}:${definition.evaluatorDigest || ""}`,
@@ -1753,6 +1988,14 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const outcomes = outcomeRows(records, workflowRoleForRecord);
   const reportAvailable = Array.isArray(report.records) && (report.error ? report.records.length > 0 : true);
   const reportComplete = !report.error;
+  const runComplete = deployed.runHealth?.complete === true;
+  const workItemsAvailable = workflows.length > 0;
+  const workItemsComplete = workItemsAvailable && runComplete;
+  const workItems = workItemRows(workflows, runs, outcomes);
+  const attentionSignals = attentionSignalRows(workItems, generatedAt);
+  const agentAssignments = agentAssignmentRows(workflows, runs, workItems);
+  const evidenceAvailable = workItemsAvailable || outcomes.length > 0 || findings.length > 0;
+  const evidenceRecords = evidenceRecordRows(outcomes, findings, workItems);
   const values = operationalValueRows(operationalValues);
   const graderObservations = operationalValueGraderRows(operationalValues);
   const repositories = new Map();
@@ -1774,7 +2017,6 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const discoveryAvailable = deployed.discovery?.complete !== false;
   const workflowsAvailable = discoveryAvailable || workflows.length > 0;
   const runAvailable = deployed.runHealth?.available === true || runs.length > 0;
-  const runComplete = deployed.runHealth?.complete === true;
   const usageAvailable = usage.available === true;
   const usageComplete = usage.complete === true;
   const valueAvailable = operationalValues.records !== undefined;
@@ -1928,6 +2170,16 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     sources.outcomes.metadata.freshness = "stale";
     sources.findings.metadata.freshness = "stale";
   }
+  sources["work-items"] = source("work-items", workItems, generatedAt, workItemsAvailable, workItemsComplete);
+  sources["attention-signals"] = source("attention-signals", attentionSignals, generatedAt, workItemsAvailable, workItemsComplete);
+  sources["agent-assignments"] = source("agent-assignments", agentAssignments, generatedAt, workItemsAvailable, workItemsComplete && usageComplete);
+  sources["evidence-records"] = source(
+    "evidence-records",
+    evidenceRecords,
+    generatedAt,
+    evidenceAvailable,
+    evidenceAvailable && workItemsComplete && reportComplete,
+  );
   sources["grader-observations"] = operationalValueSource("grader-observations", graderObservations, operationalValues, generatedAt, valueAvailable);
   sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
   const githubAsOf = telemetryAsOf(githubTelemetry, generatedAt);
