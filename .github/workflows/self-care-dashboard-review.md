@@ -105,6 +105,7 @@ pre-agent-steps:
     run: |
       mkdir -p "$EXPR_GITHUB_WORKSPACE/.playwright" "$PLAYWRIGHT_BROWSERS_PATH"
       set +e
+      # The installer package supplies the browser binary; its version is independent of the playwright-cli tool version.
       timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install --with-deps chromium \
         > "$EXPR_GITHUB_WORKSPACE/.playwright/chromium-install.log" 2>&1
       INSTALL_STATUS=$?
