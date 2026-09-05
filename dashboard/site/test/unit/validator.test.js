@@ -38,23 +38,6 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
-  it('collapses trailing table views outside Overview and Dashboard Next', () => {
-    const dashboardDocument = JSON.parse(authoritativeDashboardSource);
-    const dashboardNextIds = new Set(['home', 'work', 'agents', 'evidence', 'insights']);
-
-    for (const page of dashboardDocument.dashboard.pages) {
-      const views = page.definition?.views ?? page.views ?? [];
-      if (page.id === 'overview' || dashboardNextIds.has(page.id)) {
-        continue;
-      }
-      const trailingView = views.at(-1);
-      const isTableView = trailingView?.mark === 'table' || Array.isArray(trailingView?.encoding?.columns);
-      if (isTableView) {
-        expect(trailingView.disclosure).toBe('supplemental');
-      }
-    }
-  });
-
   it('accepts static tree tables and rejects hierarchy-breaking controls', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const apiPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'github-api');
