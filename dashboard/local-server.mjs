@@ -222,12 +222,9 @@ const copilotReadOnlyShellCommands = new Set([
   "basename",
   "cat",
   "cut",
-  "diff",
   "dirname",
   "du",
   "file",
-  "find",
-  "git",
   "grep",
   "head",
   "jq",
@@ -236,15 +233,54 @@ const copilotReadOnlyShellCommands = new Set([
   "readlink",
   "realpath",
   "rg",
-  "sed",
-  "sort",
   "stat",
   "tail",
-  "tree",
   "tr",
   "uniq",
   "wc",
 ]);
+
+function shellCommandDetails(permission) {
+  return {
+    commands: permission.commands.map((command) => ({
+      identifier: command.identifier,
+      readOnly: command.readOnly,
+    })),
+    commandSegments: (permission.commandSegments ?? []).map((segment) => ({
+      identifier: segment.identifier,
+      command: truncatedLogText(segment.fullCommandText, 300),
+    })),
+  };
+}
+
+function shellCommandIdentifiers(permission) {
+  const segmentIdentifiers = (permission.commandSegments ?? [])
+    .map((segment) => segment.identifier)
+    .filter(Boolean);
+  return segmentIdentifiers.length > 0
+    ? segmentIdentifiers
+    : permission.commands.map((command) => command.identifier);
+}
+
+function shellAbsolutePaths(permission) {
+  const commandPaths = permission.fullCommandText.match(/\/[^\s"'|;&<>]+/g) ?? [];
+  return [...new Set([...permission.possiblePaths, ...commandPaths])];
+}
+
+function shellPermissionRejection(permission) {
+  if (permission.hasWriteFileRedirection || /[<>]/.test(permission.fullCommandText)) {
+    return "shell command uses redirection";
+  }
+  if (permission.possibleUrls.length > 0) return "shell command may access a URL";
+  const identifiers = shellCommandIdentifiers(permission);
+  if (identifiers.length === 0) return "shell command could not be classified";
+  const deniedIdentifiers = identifiers.filter((identifier) =>
+    !copilotReadOnlyShellCommands.has(identifier));
+  if (deniedIdentifiers.length > 0) {
+    return `shell command not allowed: ${deniedIdentifiers.join(", ")}`;
+  }
+  return null;
+}
 
 function dashboardPageIndex(document, view) {
   return document?.dashboard?.pages?.findIndex((page) =>
@@ -277,6 +313,23 @@ function redactJsonSecrets(source) {
     return redactSecretValues(value);
   };
   return JSON.stringify(redact(JSON.parse(source)), null, 2);
+}
+
+function redactedLogValue(value) {
+  if (value === undefined) return undefined;
+  try {
+    return JSON.parse(redactJsonSecrets(JSON.stringify(value)));
+  } catch {
+    return "[unserializable]";
+  }
+}
+
+function truncatedLogText(value, maximumLength = 1000) {
+  if (typeof value !== "string") return undefined;
+  const redacted = redactSecretValues(value);
+  return redacted.length <= maximumLength
+    ? redacted
+    : `${redacted.slice(0, maximumLength)}… [truncated ${redacted.length - maximumLength} chars]`;
 }
 
 function browserSafeFileContent(path, content) {
@@ -653,11 +706,9 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
       ];
       let session;
       let aborted = false;
+      const toolExecutions = new Map();
       const handleSessionEvent = (event) => {
-        console.log("Copilot dashboard session event.", {
-          ...(session?.sessionId ? { sessionId: session.sessionId } : {}),
-          type: event.type,
-        });
+        const sessionId = session?.sessionId;
         if (event.type === "session.skills_loaded") {
           const skills = event.data.skills
             .filter((skill) => skill.enabled)
@@ -693,15 +744,91 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             reasoningId: event.data.reasoningId,
           });
         } else if (event.type === "tool.execution_start") {
+          toolExecutions.set(event.data.toolCallId, {
+            name: event.data.toolName,
+            startedAt: performance.now(),
+          });
+          console.log("Copilot tool execution started.", {
+            sessionId,
+            toolCallId: event.data.toolCallId,
+            toolName: event.data.toolName,
+            arguments: redactedLogValue(event.data.arguments),
+            shell: event.data.shellToolInfo
+              ? {
+                  hasWriteFileRedirection: event.data.shellToolInfo.hasWriteFileRedirection,
+                  possiblePaths: event.data.shellToolInfo.possiblePaths,
+                }
+              : undefined,
+          });
           onEvent({ type: "status", message: `Running ${event.data.toolName}…` });
         } else if (event.type === "tool.execution_complete") {
+          const execution = toolExecutions.get(event.data.toolCallId);
+          toolExecutions.delete(event.data.toolCallId);
+          const shellExit = event.data.result?.contents?.find((content) =>
+            content.type === "shell_exit" || content.type === "terminal");
+          console.log("Copilot tool execution completed.", {
+            sessionId,
+            toolCallId: event.data.toolCallId,
+            toolName: execution?.name ?? event.data.toolDescription?.name,
+            success: event.data.success,
+            durationMs: execution
+              ? Math.max(0, Math.round(performance.now() - execution.startedAt))
+              : undefined,
+            sandboxed: event.data.sandboxed,
+            error: event.data.error
+              ? {
+                  code: event.data.error.code,
+                  message: truncatedLogText(event.data.error.message),
+                }
+              : undefined,
+            shellExit: shellExit
+              ? {
+                  exitCode: shellExit.exitCode,
+                  cwd: shellExit.cwd,
+                  output: truncatedLogText(
+                    shellExit.type === "shell_exit" ? shellExit.outputPreview : shellExit.text,
+                  ),
+                  outputTruncated: shellExit.type === "shell_exit"
+                    ? shellExit.outputTruncated
+                    : undefined,
+                }
+              : undefined,
+            result: truncatedLogText(
+              event.data.result?.detailedContent ?? event.data.result?.content,
+            ),
+            telemetry: redactedLogValue(event.data.toolTelemetry),
+          });
           onEvent({
             type: "status",
             message: event.data.success
               ? "Applying dashboard update…"
               : "Copilot is retrying after a tool error…",
           });
+        } else if (event.type === "permission.requested") {
+          console.log("Copilot permission requested.", {
+            sessionId,
+            requestId: event.data.requestId,
+            resolved: event.data.resolved,
+            permission: event.data.permissionRequest.kind === "shell"
+              ? {
+                  ...redactedLogValue(event.data.permissionRequest),
+                  ...shellCommandDetails(event.data.permissionRequest),
+                }
+              : redactedLogValue(event.data.permissionRequest),
+            riskAssessment: redactedLogValue(event.data.riskAssessment),
+          });
+        } else if (event.type === "permission.completed") {
+          console.log("Copilot permission completed.", {
+            sessionId,
+            requestId: event.data.requestId,
+            toolCallId: event.data.toolCallId,
+            result: redactedLogValue(event.data.result),
+          });
         } else if (event.type === "session.error") {
+          console.log("Copilot dashboard session error.", {
+            sessionId,
+            error: redactedLogValue(event.data),
+          });
           onEvent({ type: "error", message: event.data.message });
         } else if (event.type === "session.idle" && event.data.aborted) {
           aborted = true;
@@ -733,31 +860,66 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           ],
           tools,
           onPermissionRequest: async (permission) => {
-            if (permission.kind === "read" && !permission.requestSandboxBypass) {
-              const requestedPath = await workspacePath(permission.path);
-              if (isWithin(workspaceRoot, requestedPath)) return { kind: "approved" };
-            }
-            if (permission.kind === "write" && !permission.requestSandboxBypass) {
-              const requestedPath = await workspacePath(permission.fileName);
-              if (isWithin(workspaceRoot, requestedPath)) return { kind: "approved" };
-            }
-            if (permission.kind === "shell"
-                && !permission.requestSandboxBypass
-                && !permission.hasWriteFileRedirection
-                && permission.possibleUrls.length === 0
-                && permission.commands.length > 0
-                && permission.commands.every((command) =>
-                  command.readOnly && copilotReadOnlyShellCommands.has(command.identifier))) {
-              const possiblePaths = await Promise.all(permission.possiblePaths.map(workspacePath));
-              if (possiblePaths.every((path) => isWithin(workspaceRoot, path))) {
-                return { kind: "approved" };
-              }
-            }
-            console.log("Denied non-read-only Copilot permission request.", { kind: permission.kind });
-            return {
+            let decision = {
               kind: "reject",
               feedback: "This session permits workspace file reads and writes, plus common read-only shell commands.",
             };
+            let reason = "unsupported permission kind";
+            try {
+              if (permission.requestSandboxBypass) {
+                reason = "sandbox bypass requested";
+              } else if (permission.managedApprovalRequired) {
+                reason = "managed policy requires human approval";
+              } else if (permission.kind === "read") {
+                const requestedPath = await workspacePath(permission.path);
+                if (isWithin(workspaceRoot, requestedPath)) {
+                  decision = { kind: "approve-once" };
+                  reason = "workspace read";
+                } else {
+                  reason = "read path is outside workspace";
+                }
+              } else if (permission.kind === "write") {
+                const requestedPath = await workspacePath(permission.fileName);
+                if (isWithin(workspaceRoot, requestedPath)) {
+                  decision = { kind: "approve-once" };
+                  reason = "workspace write";
+                } else {
+                  reason = "write path is outside workspace";
+                }
+              } else if (permission.kind === "shell") {
+                const rejection = shellPermissionRejection(permission);
+                if (rejection) {
+                  reason = rejection;
+                } else {
+                  const possiblePaths = await Promise.all(
+                    shellAbsolutePaths(permission).map(workspacePath),
+                  );
+                  if (possiblePaths.every((path) => isWithin(workspaceRoot, path))) {
+                    decision = { kind: "approve-once" };
+                    reason = "allowlisted read-only shell command";
+                  } else {
+                    reason = "shell path is outside workspace";
+                  }
+                }
+              }
+            } catch (error) {
+              reason = `permission path resolution failed: ${error instanceof Error ? error.message : String(error)}`;
+            }
+            console.log("Copilot permission decision.", {
+              sessionId: session?.sessionId,
+              toolCallId: permission.toolCallId,
+              kind: permission.kind,
+              decision: decision.kind,
+              reason: truncatedLogText(reason),
+              permission: permission.kind === "shell"
+                ? {
+                    ...redactedLogValue(permission),
+                    ...shellCommandDetails(permission),
+                    resolvedPaths: shellAbsolutePaths(permission),
+                  }
+                : redactedLogValue(permission),
+            });
+            return decision;
           },
           onEvent: handleSessionEvent,
         });
