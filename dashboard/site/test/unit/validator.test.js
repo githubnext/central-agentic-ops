@@ -135,22 +135,26 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('defines firewall review and assurance views on the security page', () => {
+  it('defines firewall activity in a dedicated Explore page', () => {
     const document = JSON.parse(authoritativeDashboardSource);
+    const firewall = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'firewall');
     const security = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'security');
     expect(security.sections.map((/** @type {{ views: string[] }} */ section) => section.views)).toEqual([
-      ['security-firewall-decisions', 'security-firewall-trend', 'security-firewall-domains'],
       ['security-summary', 'security-signals'],
       ['security-output-ledger']
     ]);
+    expect(security.views).not.toContainEqual(expect.objectContaining({ id: 'security-firewall-decisions' }));
     expect(security.views).not.toContainEqual(expect.objectContaining({ id: 'security-findings-summary' }));
-    const decisions = security.views.find(
+    expect(document.dashboard.navigation.find(
+      (/** @type {{ label: string }} */ section) => section.label === 'Explore'
+    ).pages).toContain('firewall');
+    const decisions = firewall.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-decisions'
     );
-    const trend = security.views.find(
+    const trend = firewall.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-trend'
     );
-    const domains = security.views.find(
+    const domains = firewall.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-domains'
     );
 
