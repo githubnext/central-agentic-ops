@@ -432,7 +432,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 4 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 8, workers: 8 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 9, workers: 9 },
     "optimization-agents-md-curator.md": { credits: 400, timeout: 25 },
     "optimization-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -452,6 +452,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "software-development-practices-nist-ssdf.md": { credits: 400, timeout: 30 },
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
+    "self-care-dashboard-performance.md": { credits: 400, timeout: 30 },
     "self-care-data-acquisition-audit.md": { credits: 300, timeout: 20 },
     "self-care-dashboard-language-refactor.md": { credits: 400, timeout: 30 },
     "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
@@ -1013,6 +1014,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   const workflowIds = [
     "self-care-accessibility-checker",
     "self-care-code-improvement",
+    "self-care-dashboard-performance",
     "self-care-data-acquisition-audit",
     "self-care-dashboard-language-refactor",
     "self-care-dashboard-review",
@@ -1358,6 +1360,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-dashboard-performance.md", "self-care"],
     ["self-care-data-acquisition-audit.md", "self-care"],
     ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
@@ -1423,6 +1426,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-dashboard-performance.md", "self-care"],
     ["self-care-data-acquisition-audit.md", "self-care"],
     ["self-care-dashboard-language-refactor.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
@@ -1554,6 +1558,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["software-development-practices-nist-ssdf.md", "software-development-practices", "nist-ssdf"],
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
+    ["self-care-dashboard-performance.md", "self-care", "dashboard-performance"],
     ["self-care-data-acquisition-audit.md", "self-care", "data-acquisition-audit"],
     ["self-care-dashboard-language-refactor.md", "self-care", "dashboard-language-refactor"],
     ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
@@ -2140,6 +2145,37 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
+test("SelfCare dashboard performance worker rotates trace-backed persona improvements", () => {
+  const source = workflow("self-care-dashboard-performance.md");
+  const dashboard = JSON.parse(readFileSync(join(root, "self-care", "dashboard.json"), "utf8"));
+  const views = dashboard.dashboard.pages[0].views;
+
+  assert.match(source, /^name: "SelfCare \/ Dashboard Performance"$/m);
+  assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: dashboard-performance/);
+  assert.match(source, /safe_output_mode` is `live`/);
+  assert.match(source, /skip-if-match: 'is:pr is:open "gh-aw-workflow-id: self-care-dashboard-performance" in:body'/);
+  assert.match(source, /cache-memory:\n\s+retention-days: 30\n\s+allowed-extensions: \["\.json"\]/);
+  assert.match(source, /dashboard-performance-rotation\.json/);
+  assert.match(source, /advance `cursor` to the position after the evaluated candidate/);
+  assert.match(source, /DASHBOARD_PERFORMANCE_OUTPUT_DIR="\$evidence_root\/before"/);
+  assert.match(source, /upload-artifact:[\s\S]*?self-care-dashboard-performance\/\*\*/);
+  assert.match(source, /labels: \[self-care, self-care:dashboard-performance\]/);
+  assert.match(source, /title-prefix: "\[self-care:dashboard-performance\] "/);
+  assert.match(source, /draft: true/);
+  assert.match(source, /dashboard\/site\/index\.html/);
+  assert.doesNotMatch(source, /allowed-files:[\s\S]*dashboard\/site\/test\/performance/);
+  for (const persona of ["CFO", "CTO", "CSO"]) {
+    assert.match(source, new RegExp(persona));
+  }
+  assert.ok(views.some(({ id }) => id === "self-care-dashboard-performance-runs"));
+  assert.ok(views.some(({ id }) => id === "self-care-dashboard-performance-outcomes"));
+  assert.ok(views
+    .filter(({ id }) => id.startsWith("self-care-dashboard-performance"))
+    .every((view) => view.data.filters.workflow.includes(".github/workflows/self-care-dashboard-performance.md")));
+  assert.doesNotMatch(source, /^evals:/m);
+  assert.doesNotMatch(source, /^graders:/m);
+});
+
 test("SelfCare docs build-time investigator rotates evidenced recommendations", () => {
   const source = workflow("self-care-docs-build-time-investigator.md");
 
@@ -2240,13 +2276,15 @@ test("dashboard CI runs the package quality gates", () => {
   const jobs = generatedJobs(source);
   const lintUnit = jobs.get("lint-unit");
   const playwrightIntegration = jobs.get("playwright-integration");
+  const lighthousePerformance = jobs.get("lighthouse-performance");
 
   assert.match(source, /dashboard\/site\/\*\*/);
   assert.match(source, /working-directory: dashboard\/site/);
   assert.match(source, /cache-dependency-path: dashboard\/site\/package-lock\.json/);
-  assert.deepEqual([...jobs.keys()], ["lint-unit", "playwright-integration"]);
+  assert.deepEqual([...jobs.keys()], ["lint-unit", "playwright-integration", "lighthouse-performance"]);
   assert.deepEqual(lintUnit.needs, []);
   assert.deepEqual(playwrightIntegration.needs, []);
+  assert.deepEqual(lighthousePerformance.needs, []);
   for (const command of ["npm run typecheck", "npm run lint", "npm test"]) {
     assert.match(lintUnit.block, new RegExp(`run: ${command.replaceAll(".", "\\.")}`));
   }
@@ -2257,6 +2295,11 @@ test("dashboard CI runs the package quality gates", () => {
   assert.match(playwrightIntegration.block, /npx playwright install --with-deps chromium/);
   assert.match(playwrightIntegration.block, /run: npm run test:e2e/);
   assert.doesNotMatch(playwrightIntegration.block, /run: npm (?:run (?:typecheck|lint)|test)$/m);
+  assert.match(lighthousePerformance.block, /run: npm run test:performance/);
+  assert.match(lighthousePerformance.block, /uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
+  assert.match(lighthousePerformance.block, /name: dashboard-lighthouse-performance/);
+  assert.match(lighthousePerformance.block, /path: dashboard\/site\/test-results\/lighthouse\//);
+  assert.match(lighthousePerformance.block, /if: always\(\)/);
 });
 
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
@@ -2307,6 +2350,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization.lock.yml",
       "self-care-accessibility-checker.lock.yml",
       "self-care-code-improvement.lock.yml",
+      "self-care-dashboard-performance.lock.yml",
       "self-care-data-acquisition-audit.lock.yml",
       "self-care-dashboard-language-refactor.lock.yml",
       "self-care-dashboard-review.lock.yml",
@@ -2414,6 +2458,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
+      ["self-care-dashboard-performance.lock.yml", ["self-care", "dashboard-performance"]],
       ["self-care-data-acquisition-audit.lock.yml", ["self-care", "data-acquisition-audit"]],
       ["self-care-dashboard-language-refactor.lock.yml", ["self-care", "dashboard-language-refactor"]],
       ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
@@ -2848,6 +2893,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
         workers: [
           "self-care-accessibility-checker",
           "self-care-code-improvement",
+          "self-care-dashboard-performance",
           "self-care-data-acquisition-audit",
           "self-care-dashboard-language-refactor",
           "self-care-dashboard-review",
