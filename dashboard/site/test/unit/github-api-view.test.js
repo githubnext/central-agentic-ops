@@ -112,7 +112,7 @@ function renderApiPage(rateLimitSource = {
     'stack-frame-id': 'run-1:after:0',
     'stack-parent-id': '',
     'stack-depth': 0,
-    'stack-frame': 'at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)'
+    'stack-frame': 'at main (activity/github-telemetry.mjs:150:9)'
   },
   {
     'observed-at': '2026-09-04T12:00:00Z',
@@ -124,7 +124,7 @@ function renderApiPage(rateLimitSource = {
     'stack-frame-id': 'run-1:after:1',
     'stack-parent-id': 'run-1:after:0',
     'stack-depth': 1,
-    'stack-frame': 'at main (activity/github-telemetry.mjs:150:9)'
+    'stack-frame': 'at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)'
   }
 ]) {
   const rendered = renderDashboard({
@@ -234,7 +234,7 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(stackTable?.querySelector('tbody tr:nth-child(2)')?.getAttribute('aria-level')).toBe('2');
     expect(stackTable?.querySelectorAll('.tree-table-cell')).toHaveLength(2);
     expect(stackTable?.querySelector('tbody tr:nth-child(2) .tree-table-cell')?.getAttribute('style')).toContain('--tree-depth: 1');
-    expect(stackTable?.textContent).toContain('activity/github-telemetry.mjs:150:9');
+    expect(stackTable?.textContent).toContain('activity/github-telemetry.mjs:100:16');
   });
 
   it('keeps call-stack rows with missing tree ids as independent roots', () => {

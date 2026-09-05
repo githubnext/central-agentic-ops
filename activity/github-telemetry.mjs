@@ -8,7 +8,27 @@ import { pathToFileURL } from "node:url";
 const DEFAULT_CACHE_ROOT = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-activity");
 const DEFAULT_LEDGER_PATH = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-gh", "cao-gh.jsonl");
 export const GITHUB_TELEMETRY_RETENTION_HOURS = 24;
+export const GITHUB_TELEMETRY_STACK_TRACE_LIMIT = 24;
 const EMPTY_RATE_LIMIT_ERROR = "GitHub API returned no valid rate-limit resources.";
+
+// Keep telemetry storage in the original capture order; tree-table rendering flips it to caller-first.
+export function normalizeGithubTelemetryStackTrace(stackTrace, limit = GITHUB_TELEMETRY_STACK_TRACE_LIMIT) {
+  const frames = Array.isArray(stackTrace)
+    ? stackTrace
+    : typeof stackTrace === "string"
+      ? stackTrace.split(/\r?\n/).slice(stackTrace.startsWith("Error") ? 1 : 0)
+      : [];
+  return frames
+    .map((frame) => String(frame ?? "").trim())
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
+export function defaultGithubTelemetryStackTrace(limit = GITHUB_TELEMETRY_STACK_TRACE_LIMIT) {
+  const stack = new Error().stack;
+  if (typeof stack !== "string") return [];
+  return normalizeGithubTelemetryStackTrace(stack.split(/\r?\n/).slice(2), limit);
+}
 
 export async function collectActivityCacheState(root = DEFAULT_CACHE_ROOT, execute = spawnSync) {
   const entries = await readdir(root, { withFileTypes: true }).catch((error) => {
@@ -92,8 +112,9 @@ export async function recordGithubTelemetry({
   ledgerPath = process.env.CAO_GH_LEDGER || DEFAULT_LEDGER_PATH,
   execute = spawnSync,
   now = () => new Date(),
-  stackTrace = String(new Error().stack ?? "").split(/\r?\n/).slice(1).map((frame) => frame.trim()).filter(Boolean),
+  stackTrace = defaultGithubTelemetryStackTrace(),
 }) {
+  const normalizedStackTrace = normalizeGithubTelemetryStackTrace(stackTrace);
   let rateLimit = {};
   let rateLimitError = null;
   try {
@@ -121,7 +142,7 @@ export async function recordGithubTelemetry({
     job: process.env.GITHUB_JOB || null,
     runId: process.env.GITHUB_RUN_ID || null,
     runAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
-    stackTrace,
+    stackTrace: normalizedStackTrace,
     rateLimit,
     rateLimitError,
     activityCache: await collectActivityCacheState(cacheRoot),

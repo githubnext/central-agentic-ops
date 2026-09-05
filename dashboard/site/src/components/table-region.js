@@ -33,7 +33,7 @@ const DEFAULT_PAGE_SIZE = 25;
  *   pageSize?: number,
  *   resultNoun?: string,
  *   resultNounPlural?: string,
- *   sortable?: boolean
+ *   sortable?: boolean,
  *   tableRole?: string
  * }} options
  * @returns {HTMLElement}

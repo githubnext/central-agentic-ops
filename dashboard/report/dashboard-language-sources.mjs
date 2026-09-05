@@ -291,21 +291,20 @@ export function githubStackTraceRows(entries = []) {
   return entries.flatMap((entry) => {
     const executionId = entry.pairId || "unknown";
     const traceId = `${executionId}:${entry.phase || "unknown"}:${entry.observedAt || "unknown"}`;
-    return (Array.isArray(entry.stackTrace) ? entry.stackTrace : []).flatMap((frame, index) => {
-      if (typeof frame !== "string" || !frame.trim()) return [];
-      return [{
-        "observed-at": entry.observedAt,
-        "operation-execution-id": executionId,
-        phase: entry.phase || "unknown",
-        operation: entry.operation || "unknown",
-        outcome: entry.outcome || "unknown",
-        credential: credential(entry),
-        "stack-frame-id": `${traceId}:${index}`,
-        "stack-parent-id": index > 0 ? `${traceId}:${index - 1}` : "",
-        "stack-depth": index,
-        "stack-frame": frame.trim(),
-      }];
-    });
+    const frames = Array.isArray(entry.stackTrace) ? entry.stackTrace.filter((frame) => typeof frame === "string" && frame.trim()) : [];
+    const orderedFrames = typeof frames.toReversed === "function" ? frames.toReversed() : [...frames].reverse();
+    return orderedFrames.map((frame, index) => ({
+      "observed-at": entry.observedAt,
+      "operation-execution-id": executionId,
+      phase: entry.phase || "unknown",
+      operation: entry.operation || "unknown",
+      outcome: entry.outcome || "unknown",
+      credential: credential(entry),
+      "stack-frame-id": `${traceId}:${index}`,
+      "stack-parent-id": index > 0 ? `${traceId}:${index - 1}` : "",
+      "stack-depth": index,
+      "stack-frame": frame.trim(),
+    }));
   });
 }
 

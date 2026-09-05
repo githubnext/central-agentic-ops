@@ -4,7 +4,9 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  GITHUB_TELEMETRY_STACK_TRACE_LIMIT,
   collectActivityCacheState,
+  normalizeGithubTelemetryStackTrace,
   prepareGithubTelemetryHistory,
   recordGithubTelemetry,
 } from "../../activity/github-telemetry.mjs";
@@ -109,6 +111,31 @@ test("activity cache state is explicit when the cache is absent", async () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+});
+
+test("GitHub telemetry caps captured frames to keep ledger growth bounded", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "cao-gh-stack-limit-"));
+  const frames = Array.from({ length: GITHUB_TELEMETRY_STACK_TRACE_LIMIT + 5 }, (_, index) => `at frame ${index} (activity/github-telemetry.mjs:${index}:1)`);
+  try {
+    const entry = await recordGithubTelemetry({
+      phase: "before",
+      operation: "refresh-activity",
+      cacheRoot: root,
+      ledgerPath: path.join(root, "cao-gh.jsonl"),
+      stackTrace: frames,
+      execute: () => ({ status: 0, stdout: JSON.stringify({ resources: {} }) }),
+    });
+    assert.deepEqual(entry.stackTrace, frames.slice(0, GITHUB_TELEMETRY_STACK_TRACE_LIMIT));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("GitHub telemetry strips the Error header from raw stack strings", () => {
+  assert.deepEqual(normalizeGithubTelemetryStackTrace("Error\n    at frameA (file.js:1:1)\n    at frameB (file.js:2:1)"), [
+    "at frameA (file.js:1:1)",
+    "at frameB (file.js:2:1)",
+  ]);
 });
 
 test("GitHub telemetry tolerates a missing default Error stack", async () => {
