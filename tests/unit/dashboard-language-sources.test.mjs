@@ -2,6 +2,48 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDashboardLanguageSources } from "../../dashboard/report/dashboard-language-sources.mjs";
 
+test("dashboard source bridge classifies safe-output performance and diagnostics", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+    usage: {
+      available: true,
+      complete: true,
+      securityAvailable: true,
+      generatedAt: "2026-09-05T12:00:00Z",
+      securityRuns: [{
+        repository: "githubnext/gh-aw-cao",
+        runId: 42,
+        workflowPath: ".github/workflows/review.lock.yml",
+        mode: "review",
+        conclusion: "success",
+        createdAt: "2026-09-05T11:00:00Z",
+        safeItemsCount: 3,
+        noopCount: 1,
+        missingDataCount: 2,
+        missingToolCount: 1,
+        reportIncompleteCount: 1,
+      }],
+    },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-05T12:00:00Z", records: [] },
+  });
+
+  assert.deepEqual(
+    sources["safe-output-performance"].rows.map((row) => ({
+      kind: row["safe-output-kind"],
+      status: row["safe-output-status"],
+      count: row["safe-output-count"],
+    })),
+    [
+      { kind: "output", status: "success", count: 3 },
+      { kind: "noop", status: "neutral", count: 1 },
+      { kind: "missing_data", status: "warning", count: 2 },
+      { kind: "missing_tool", status: "warning", count: 1 },
+      { kind: "report_incomplete", status: "warning", count: 1 },
+    ],
+  );
+});
+
 test("dashboard source bridge expands GitHub telemetry resources", () => {
   const sources = buildDashboardLanguageSources({
     deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },

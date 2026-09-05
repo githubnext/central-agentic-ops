@@ -11,6 +11,7 @@ const sourceNames = [
   "runs",
   "run-performance",
   "job-performance",
+  "safe-output-performance",
   "experiments",
   "experiment-assignments",
   "graders",
@@ -688,6 +689,38 @@ function positiveCount(value) {
   return Number.isFinite(count) && count > 0 ? count : 0;
 }
 
+function safeOutputPerformanceRows(usage) {
+  const runs = usage.securityRuns?.length > 0 ? usage.securityRuns : usage.runs || [];
+  const categories = [
+    ["output", "Output", "success", "safeItemsCount"],
+    ["noop", "No-op", "neutral", "noopCount"],
+    ["missing_data", "Missing data", "warning", "missingDataCount"],
+    ["missing_tool", "Missing tool", "warning", "missingToolCount"],
+    ["report_incomplete", "Report incomplete", "warning", "reportIncompleteCount"],
+  ];
+  return runs.flatMap((run) => {
+    const common = {
+      ...repositoryParts(run.repository),
+      workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
+      run: String(run.runId),
+      "run-conclusion": runConclusion(run.conclusion),
+      "rollout-mode": rolloutMode(run.mode),
+      "observed-at": run.createdAt || usage.generatedAt,
+      "run-link": link("run", workflowRunUrl(run.repository, run.runId), `View run ${run.runId}`),
+    };
+    return categories.flatMap(([kind, label, status, field]) => {
+      const count = positiveCount(run[field]);
+      return count > 0 ? [{
+        ...common,
+        "safe-output-kind": kind,
+        "safe-output-label": label,
+        "safe-output-status": status,
+        "safe-output-count": count,
+      }] : [];
+    });
+  });
+}
+
 function securityObservation(run, feature, analysis, signal, status, count, subject = "") {
   return {
     ...repositoryParts(run.repository),
@@ -1116,6 +1149,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed, usage);
   const performance = performanceRows(deployed, usage);
+  const safeOutputPerformance = safeOutputPerformanceRows(usage);
   const records = report.records || [];
   const workflowRoleForRecord = recordWorkflowRoleResolver(workflows);
   const findings = findingRows(records, workflowRoleForRecord);
@@ -1168,12 +1202,19 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     runAvailable,
     runComplete && usageComplete,
   );
+  sources["safe-output-performance"] = source(
+    "safe-output-performance",
+    safeOutputPerformance,
+    generatedAt,
+    usage.securityAvailable === true || usageAvailable,
+    usageComplete,
+  );
   if (Number.isFinite(deployed.runHealth?.windowHours) && deployed.runHealth.windowHours > 0) {
     sources.runs.metadata["coverage-end"] = generatedAt;
     sources.runs.metadata["coverage-start"] = new Date(
       Date.parse(generatedAt) - deployed.runHealth.windowHours * 3_600_000,
     ).toISOString();
-    for (const name of ["run-performance", "job-performance"]) {
+    for (const name of ["run-performance", "job-performance", "safe-output-performance"]) {
       sources[name].metadata["coverage-end"] = generatedAt;
       sources[name].metadata["coverage-start"] = sources.runs.metadata["coverage-start"];
     }
@@ -1191,6 +1232,8 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     sources.usage.metadata["coverage-start"] = new Date(
       Date.parse(generatedAt) - usage.windowHours * 3_600_000,
     ).toISOString();
+    sources["safe-output-performance"].metadata["coverage-end"] = generatedAt;
+    sources["safe-output-performance"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",

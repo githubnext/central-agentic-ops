@@ -232,6 +232,11 @@ async function main() {
             requestedModel: firstText(run.requested_model, run.requestedModel, run.model, run.model_name),
             resolvedModel: firstText(run.resolved_model, run.resolvedModel, run.model_resolved, run.model),
             agentRuntime: firstText(run.agent_runtime, run.agentRuntime),
+            safeItemsCount: Number(run.safe_items_count) || 0,
+            noopCount: Number(run.noop_count) || 0,
+            missingDataCount: Number(run.missing_data_count) || 0,
+            missingToolCount: Number(run.missing_tool_count) || 0,
+            reportIncompleteCount: Number(run.report_incomplete_count ?? run.incomplete_count) || 0,
             data: run.data ?? null,
           };
           if (Number.isFinite(aic)) runs.set(`${repository}:${runId}`, {
