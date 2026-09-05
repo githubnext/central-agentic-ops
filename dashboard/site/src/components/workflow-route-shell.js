@@ -5,8 +5,7 @@
 import { h } from '../dom.js';
 import { text } from './count-formatters.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
-import { createRouteView } from './route-empty-state.js';
-import { renderRouteTabSet } from './route-tab-set.js';
+import { createRoutePageShell } from './route-page-shell.js';
 import { rowsFor } from './source-rows.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
 
@@ -38,13 +37,19 @@ import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
  */
 export function renderWorkflowRouteShell(context, config) {
   const workflows = rowsFor(context.sources, 'workflows');
-  const root = createRouteView({
+  return createRoutePageShell(context, {
     rootClassName: config.rootClassName,
-    routeParameter: context.routeParameter,
     datasetKey: 'workflow',
     selectMessage: config.selectMessage,
     notFoundMessage: 'Workflow not found.',
     hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
+    currentTab: config.currentTab,
+    tabListClassName: 'repository-tabs workflow-tabs',
+    tabListAriaLabel: (title, routeValue) => {
+      const route = parseWorkflowRoute(routeValue);
+      return `${config.currentTab === 'insights' ? title : route?.workflow ?? title} views`;
+    },
+    tabs: ({ routeValue, title }) => workflowTabs(config.currentTab, routeValue, title),
     renderMatched: (routeValue) => {
       const route = parseWorkflowRoute(routeValue);
       const workflow = route
@@ -55,20 +60,12 @@ export function renderWorkflowRouteShell(context, config) {
         : null;
       if (!workflow || !route) return null;
       const name = workflowName(workflow);
-      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-        bubbles: true,
-        detail: workflowRouteAllocation(config, route, workflow, name)
-      }));
-      return h(
-        'div',
-        { className: config.contentClassName },
-        renderWorkflowTabs(config.currentTab, route, name),
-        renderWorkflowIdentity(workflow),
-        config.bodyRenderer?.({ context, route, workflow }) ?? null
-      );
+      return {
+        allocation: workflowRouteAllocation(config, route, workflow, name),
+        content: renderWorkflowContent(context, config, route, workflow)
+      };
     }
   });
-  return root;
 }
 
 /**
@@ -100,22 +97,33 @@ function workflowRouteAllocation(config, route, workflow, title) {
 
 /**
  * @param {'insights'|'reports'|'runs'} currentTab
- * @param {{ repository: string, workflow: string }} route
- * @param {string} displayName
+ * @param {string} routeValue
+ * @param {string} _displayName
  */
-function renderWorkflowTabs(currentTab, route, displayName) {
+function workflowTabs(currentTab, routeValue, _displayName) {
+  const route = parseWorkflowRoute(routeValue);
+  if (!route) return [];
   const workflowQuery = `?workflow=${encodeURIComponent(workflowRouteValue(route.repository, route.workflow))}`;
-  const navigationLabel = currentTab === 'insights' ? displayName : route.workflow;
-  return renderRouteTabSet({
-    className: 'repository-tabs workflow-tabs',
-    ariaLabel: `${navigationLabel} views`,
-    currentTab,
-    tabs: [
-      { id: 'insights', label: 'Insights', icon: 'graph', href: `#page-workflow-runtime${workflowQuery}` },
-      { id: 'reports', label: 'Reports', icon: 'issue', href: `#page-workflow-detail${workflowQuery}` },
-      { id: 'runs', label: 'Runs', icon: 'play', href: `#page-workflow-runs${workflowQuery}` }
-    ]
-  });
+  return [
+    { id: 'insights', label: 'Insights', icon: 'graph', href: `#page-workflow-runtime${workflowQuery}` },
+    { id: 'reports', label: 'Reports', icon: 'issue', href: `#page-workflow-detail${workflowQuery}` },
+    { id: 'runs', label: 'Runs', icon: 'play', href: `#page-workflow-runs${workflowQuery}` }
+  ];
+}
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {WorkflowRouteShellConfig} config
+ * @param {{ repository: string, workflow: string }} route
+ * @param {Record<string, unknown>} workflow
+ */
+function renderWorkflowContent(context, config, route, workflow) {
+  return h(
+    'div',
+    { className: config.contentClassName },
+    renderWorkflowIdentity(workflow),
+    config.bodyRenderer?.({ context, route, workflow }) ?? null
+  );
 }
 
 /** @param {Record<string, unknown>} row */
