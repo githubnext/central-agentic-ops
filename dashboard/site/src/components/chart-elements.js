@@ -420,8 +420,13 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const xValues = [...new Set(points.map((point) => point.x))];
     const xIndexes = new Map(xValues.map((value, index) => [value, index]));
     const parsedTimes = isScatterChart ? xValues.map((value) => Date.parse(value)) : [];
-    const minimumTime = parsedTimes.length > 0 ? Math.min(...parsedTimes) : 0;
-    const maximumTime = parsedTimes.length > 0 ? Math.max(...parsedTimes) : 0;
+    let minimumTime = Number.POSITIVE_INFINITY;
+    let maximumTime = Number.NEGATIVE_INFINITY;
+    for (const time of parsedTimes) {
+      if (!Number.isFinite(time)) continue;
+      minimumTime = Math.min(minimumTime, time);
+      maximumTime = Math.max(maximumTime, time);
+    }
     const timelineTicks = isScatterChart
       ? scatterChartTimelineTicks(parsedTimes, minimumTime, maximumTime)
       : lineChartTimelineTicks(xValues);
@@ -940,10 +945,10 @@ function lineChartTimelineTicks(values) {
  * @returns {string[]}
  */
 function scatterChartTimelineTicks(values, minimum, maximum) {
-  const validValues = values.filter(Number.isFinite);
+  const validValues = [...new Set(values.filter(Number.isFinite))];
   const tickCount = Math.min(validValues.length, MAX_TIMELINE_TICKS);
   if (tickCount === 0) return [];
-  if (tickCount === 1 || maximum <= minimum) return [new Date(minimum).toISOString()];
+  if (tickCount === 1 || maximum === minimum) return [new Date(minimum).toISOString()];
 
   return Array.from(
     { length: tickCount },
