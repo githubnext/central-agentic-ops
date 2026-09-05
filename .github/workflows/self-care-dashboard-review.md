@@ -35,6 +35,7 @@ env:
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
+  PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gh-aw/playwright-browsers
 environment: central-agentic-ops
 
 jobs:
@@ -83,6 +84,7 @@ tools:
     toolsets: [repos, issues, actions]
   timeout: 120
   playwright:
+    version: "0.1.18"
   bash:
     - "*"
 safe-outputs:
@@ -96,6 +98,52 @@ safe-outputs:
     expires: 14d
   noop:
 pre-agent-steps:
+  - name: Install Chromium for dashboard review
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    env:
+      EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
+    run: |
+      mkdir -p "$EXPR_GITHUB_WORKSPACE/.playwright" "$PLAYWRIGHT_BROWSERS_PATH"
+      set +e
+      timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install --with-deps chromium \
+        > "$EXPR_GITHUB_WORKSPACE/.playwright/chromium-install.log" 2>&1
+      INSTALL_STATUS=$?
+      set -e
+      if [ $INSTALL_STATUS -ne 0 ]; then
+        echo "Chromium installation failed; agent will report the infrastructure blocker."
+      fi
+  - name: Configure Playwright CLI launch options
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    env:
+      EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
+    run: |
+      mkdir -p "$EXPR_GITHUB_WORKSPACE/.playwright"
+      cat > "$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json" <<'EOF'
+      {
+        "browser": {
+          "launchOptions": {
+            "chromiumSandbox": false,
+            "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+          }
+        }
+      }
+      EOF
+  - name: Playwright browser launch preflight
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
+    env:
+      EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
+    run: |
+      set +e
+      playwright-cli -s=preflight-chrome open about:blank \
+        --browser=chrome \
+        --config="$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json" \
+        > "$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log" 2>&1
+      PREFLIGHT_STATUS=$?
+      playwright-cli -s=preflight-chrome close >> "$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log" 2>&1
+      set -e
+      if [ $PREFLIGHT_STATUS -ne 0 ]; then
+        echo "Playwright preflight failed; agent will report the infrastructure blocker."
+      fi
   - name: Build expected control-plane inventory
     if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: |
