@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { renderDashboard } from '../../src/presenter.js';
 import { primerStylesheet } from '../../src/styles.js';
@@ -19,15 +19,18 @@ const metadata = {
 };
 
 /** @param {HTMLElement} rendered */
-function activateCostPage(rendered) {
+async function activateCostPage(rendered) {
   const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="cost"]'));
   link?.click();
+  await vi.waitFor(() => {
+    expect(rendered.querySelector('[data-page-id="cost"]')?.hasAttribute('data-page-pending')).toBe(false);
+  });
   rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   return rendered.querySelector('[data-page-id="cost"]');
 }
 
 describe('Cost and efficiency dashboard view', () => {
-  it('renders measured usage, evidence boundaries, repository allocation, and evaluation readiness from JSON', () => {
+  it('renders measured usage, evidence boundaries, repository allocation, and evaluation readiness from JSON', async () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
@@ -43,7 +46,7 @@ describe('Cost and efficiency dashboard view', () => {
       }
     });
 
-    const page = activateCostPage(rendered);
+    const page = await activateCostPage(rendered);
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find(
       (/** @type {{ id: string }} */ candidate) => candidate.id === 'cost'
     );
@@ -107,7 +110,7 @@ describe('Cost and efficiency dashboard view', () => {
     expect(boundary?.getAttribute('data-section-id')).toBe('evaluation-boundary');
   });
 
-  it('does not report a telemetry coverage boundary for a complete usage source', () => {
+  it('does not report a telemetry coverage boundary for a complete usage source', async () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
@@ -122,7 +125,7 @@ describe('Cost and efficiency dashboard view', () => {
       }
     });
 
-    const page = activateCostPage(rendered);
+    const page = await activateCostPage(rendered);
     const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
       .find((region) => region.textContent?.includes('Budget boundary'));
     const signals = [...(evidenceBoundaries?.querySelectorAll('.signal-item') ?? [])];

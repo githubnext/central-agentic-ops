@@ -1107,6 +1107,20 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
    */
   const activate = (pageId, parameters = new URLSearchParams(), deferPopulation = false) => {
     const revision = ++activationRevision;
+    /**
+     * @param {HTMLElement | undefined} page
+     */
+    const restoreScroll = (page) => {
+      const sectionId = parameters.get('section')?.trim();
+      const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
+      if (section && page?.contains(section)) {
+        section.scrollIntoView?.();
+      } else if (pageState.has(pageId)) {
+        const scrollTop = pageState.get(pageId)?.scrollTop ?? 0;
+        const scrollingElement = root.ownerDocument.scrollingElement ?? root.ownerDocument.documentElement;
+        scrollingElement.scrollTop = scrollTop;
+      }
+    };
     if (activePageId && activePageId !== pageId) {
       const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
       if (activePage) {
@@ -1137,6 +1151,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
         pages[pageIndex] = renderedPage;
         if (deferPopulation) {
           dispatchPageRoute(renderedPage, renderedPage.dataset.routeParameter ?? '', renderedPage.dataset.routeValue);
+          restoreScroll(renderedPage);
         }
       };
       if (deferPopulation) {
@@ -1195,15 +1210,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
       : '';
     renderPageMode(pageMode, requestedMode === 'review' || requestedMode === 'live' ? requestedMode : '');
     if (page) dispatchPageRoute(page, routeParameter ?? '', routeValue);
-    const sectionId = parameters.get('section')?.trim();
-    const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
-    if (section && page?.contains(section)) {
-      section.scrollIntoView?.();
-    } else if (pageState.has(pageId)) {
-      const scrollTop = pageState.get(pageId)?.scrollTop ?? 0;
-      const scrollingElement = root.ownerDocument.scrollingElement ?? root.ownerDocument.documentElement;
-      scrollingElement.scrollTop = scrollTop;
-    }
+    if (!deferPopulation) restoreScroll(page);
 
   };
 
