@@ -22,4 +22,6 @@ The activity workflow runs `gh aw logs` for the control repository on its schedu
 
 Consumers should restore the prefix before downloading workflow-run history. If the cache is absent, stale for the consumer's evidence window, incomplete, or outside the required repository scope, they must fail closed or fetch only the missing evidence. The scheduled and manually dispatchable `.github/workflows/activity.yml` workflow is the only cache publisher. Dashboard builds consume the latest cache and perform all report-specific transformation themselves; they never dispatch the activity workflow.
 
+Dashboard builds retain their transformed data separately under immutable `cao-dashboard-data-${github.run_id}-${github.run_attempt}` cache keys. This preserves compatible run records for incremental indexing without mixing derived data into the raw activity cache. The build also preserves the existing `cao-gh` telemetry artifact and rate-limit history around each transformed collector.
+
 Run the `CAO Maintenance` workflow with the `clear-cache` command to delete CAO-managed cache entries, including entries that use legacy CAO cache keys.
