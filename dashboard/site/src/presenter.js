@@ -1125,6 +1125,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
         scrollingElement.scrollTop = scrollTop;
       }
     };
+    let populationDeferred = false;
     if (activePageId && activePageId !== pageId) {
       const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
       if (activePage) {
@@ -1159,6 +1160,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
         }
       };
       if (deferPopulation) {
+        populationDeferred = true;
         pendingPage.replaceChildren(renderPageSkeleton());
         pendingPage.setAttribute('aria-busy', 'true');
         schedulePopulation(populate);
@@ -1214,7 +1216,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
       : '';
     renderPageMode(pageMode, requestedMode === 'review' || requestedMode === 'live' ? requestedMode : '');
     if (page) dispatchPageRoute(page, routeParameter ?? '', routeValue);
-    if (!deferPopulation) restoreScroll(page);
+    if (!populationDeferred) restoreScroll(page);
 
   };
 
