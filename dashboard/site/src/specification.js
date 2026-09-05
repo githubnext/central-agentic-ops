@@ -47,7 +47,8 @@ export const VIEW_ELEMENT_VALUES = [
   'package-reports',
   'package-route',
   'workflow-route',
-  'outcome-detail'
+  'outcome-detail',
+  'configuration-policy'
 ];
 export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
 export const PACKAGE_ROUTE_BODY_VALUES = ['insights', 'workflows', 'dispatches', 'reports'];
@@ -287,6 +288,9 @@ export const SOURCE_VALUES = [
   'github-api-rate-limits',
   'github-api-collector-health',
   'github-api-call-stacks',
+  'configuration-summary',
+  'configuration-policy',
+  'configuration-actions',
   'overview-status',
   'overview-vitals',
   'overview-execution-health',
@@ -354,6 +358,9 @@ export const SOURCE_FIELDS = {
   'github-api-rate-limits': ['observation-id', 'operation-execution-id', 'observed-at', 'phase', 'operation', 'outcome', 'credential', 'credential-type', 'resource', 'bucket', 'history-series', 'has-history', 'limit', 'used', 'remaining', 'remaining-percent', 'reset-at', 'minutes-to-reset', 'consumed-since-previous', 'burn-rate-per-minute', 'projected-remaining-at-reset', 'projected-exhaustion-at', 'runway-ratio', 'risk-status', 'risk-order', 'is-current', 'attribution-status', 'operation-consumed'],
   'github-api-collector-health': ['observed-at', 'operation-execution-id', 'phase', 'operation', 'outcome', 'credential', 'cache-hydrated', 'cache-bytes', 'cache-entries', 'cache-folders', 'rate-limit-error'],
   'github-api-call-stacks': ['observed-at', 'operation-execution-id', 'phase', 'operation', 'outcome', 'credential', 'stack-frame-id', 'stack-parent-id', 'stack-depth', 'stack-frame'],
+  'configuration-summary': ['status', 'count'],
+  'configuration-policy': ['path', 'document', 'raw', 'diagnostics'],
+  'configuration-actions': ['action', 'path', 'current', 'recommended', 'prompt'],
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
   'readiness-activity': ['activity-hour', 'workflow-role', 'run-count'],
   'readiness-checks': ['check', 'readiness-state', 'detail'],

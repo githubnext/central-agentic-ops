@@ -813,6 +813,39 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .attention-success .attention-icon { color: var(--success); }
 .attention-item strong { font-size: .875rem; }
 .attention-item p { margin: 2px 0 0; color: var(--muted); font-size: .8125rem; }
+.configuration-view { display: grid; gap: 20px; }
+.configuration-diagnostics { display: grid; gap: 8px; }
+.configuration-diagnostic { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; padding: 12px 14px; border: 1px solid var(--border); border-left-width: 4px; border-radius: 6px; background: var(--canvas-subtle); }
+.configuration-diagnostic > .octicon { margin-top: 2px; color: var(--attention); }
+.configuration-diagnostic-valid { border-left-color: var(--success); }
+.configuration-diagnostic-valid > .octicon { color: var(--success); }
+.configuration-diagnostic-error { border-left-color: var(--danger); }
+.configuration-diagnostic-error > .octicon { color: var(--danger); }
+.configuration-diagnostic-warning, .configuration-diagnostic-guidance { border-left-color: var(--attention); }
+.configuration-diagnostic strong, .configuration-diagnostic code { display: block; }
+.configuration-diagnostic code { margin-top: 2px; color: var(--muted); font-size: .75rem; overflow-wrap: anywhere; }
+.configuration-diagnostic p { margin: 3px 0 0; color: var(--muted); }
+.configuration-entries > h3 { margin: 0 0 10px; font-size: 1rem; }
+.configuration-entry { min-width: 0; border-top: 1px solid var(--border-muted); }
+.configuration-entry:first-of-type { border: 1px solid var(--border); border-radius: 6px; }
+.configuration-entry > summary, .configuration-entry:not(details) { padding: 10px 12px; }
+.configuration-entry > summary { cursor: pointer; list-style-position: inside; }
+.configuration-entry > summary::marker { color: var(--muted); }
+.configuration-entry-heading { min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.configuration-entry-heading code { color: var(--fg); font-weight: 600; overflow-wrap: anywhere; }
+.configuration-entry-value { flex: none; color: var(--muted); font-size: .75rem; }
+.configuration-entry p { margin: 3px 0 0; color: var(--muted); font-size: .8125rem; }
+.configuration-entry-children { margin-left: 18px; border-left: 1px solid var(--border-muted); }
+.configuration-entry-children > .configuration-entry { padding-left: 8px; }
+.configuration-raw { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-inset); }
+.configuration-raw > summary { padding: 10px 14px; border-bottom: 1px solid transparent; background: var(--canvas-subtle); cursor: pointer; font-weight: 600; }
+.configuration-raw[open] > summary { border-bottom-color: var(--border); }
+.configuration-raw-actions { min-height: 42px; display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--border-muted); }
+.configuration-copy-button { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); font: inherit; cursor: pointer; }
+.configuration-copy-button:hover { background: var(--neutral-muted); }
+.configuration-copy-status { color: var(--muted); font-size: .75rem; }
+.configuration-raw pre { max-height: 520px; margin: 0; padding: 16px; overflow: auto; color: var(--fg); font-size: .75rem; line-height: 1.5; tab-size: 2; }
+.configuration-unavailable { padding: 16px; border: 1px dashed var(--danger); border-radius: 6px; color: var(--muted); }
 :is(.readiness-page, .runtime-page, .security-page, .value-page, .cost-page) .layout-section { padding: 0; border: 0; background: transparent; }
 :is(.readiness-page, .runtime-page, .security-page, .value-page, .cost-page) .layout-section-header { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 :is(.readiness-page, .runtime-page, .security-page, .value-page, .cost-page) .layout-section-header h3 { margin: 2px 0 0; font-size: 1.25rem; }
@@ -1120,6 +1153,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .attention-domain-card { min-height: 164px; }
   .package-status-grid { grid-template-columns: minmax(0, 1fr); }
   .outcome-meta { grid-template-columns: 1fr; }
+  .configuration-entry-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .configuration-entry-value { flex: initial; }
+  .configuration-entry-children { margin-left: 8px; }
   .markdown-body { padding: 20px 16px 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
