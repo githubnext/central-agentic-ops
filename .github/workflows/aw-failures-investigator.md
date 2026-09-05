@@ -424,7 +424,7 @@ For each bucket, decide whether an open issue in `existing_tracking_issues` alre
 
 - **Tracked** — an open issue already covers the bucket. Do not file another focused fix issue; consolidate its evidence into the report and retain its issue number for duplicate closure.
 - **Untracked** — no open issue covers the bucket. It is a candidate for a fix issue.
-- **Resolved** — an open issue describes a bucket that no longer appears in the window. List it in the report under resolved buckets with the evidence, so a maintainer can close it. Do not close issues from this worker.
+- **Resolved** — an open issue describes a bucket that no longer appears in the window. List it in the report under resolved buckets with the evidence, so a maintainer can close it. Do not close an issue solely because it is resolved; only close represented issues as duplicates under Phase 4.
 
 ## Phase 4 — Publish Outputs
 
