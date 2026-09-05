@@ -15,6 +15,11 @@ test("AI Credit usage collection preserves workflow data payloads", async () => 
   const outputPath = path.join(root, "aic-usage.json");
   const cachePath = path.join(root, "cache");
   await mkdir(bin);
+  await mkdir(path.join(cachePath, "run-42"), { recursive: true });
+  await writeFile(path.join(cachePath, "run-42", "run_summary.json"), JSON.stringify({
+    cli_version: "0.88.0",
+    mcp_failures: [],
+  }));
   await writeFile(inventoryPath, JSON.stringify({
     runHealth: { windowHours: 24 },
     workflows: [{
@@ -59,6 +64,7 @@ process.stdout.write(JSON.stringify({
     });
     const usage = JSON.parse(await readFile(outputPath, "utf8"));
     assert.equal(usage.schemaVersion, 3);
+    assert.equal(usage.mcpComplete, true);
     assert.deepEqual(usage.runs[0].data, {
       findings: [{ severity: "high", total: 3 }],
     });

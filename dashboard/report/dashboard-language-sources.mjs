@@ -1010,7 +1010,7 @@ function mcpServerRows(usage) {
         totalOutputSize: 0,
         maxOutputSize: 0,
       };
-      server.errorCount += 1;
+      if (!reportedServers.has(failure.serverName)) server.errorCount += 1;
       servers.set(failure.serverName, server);
     }
     return [...servers.values()].map((server) => ({

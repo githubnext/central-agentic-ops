@@ -736,7 +736,7 @@ test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavail
                 serverVersion: "1.0.0",
                 protocolVersion: "2025-06-18",
                 toolCallCount: 0,
-                errorCount: 0,
+                errorCount: 1,
                 totalOutputSize: 0,
                 maxOutputSize: 0,
               }],
