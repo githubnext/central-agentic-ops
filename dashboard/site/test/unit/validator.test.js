@@ -39,10 +39,10 @@ describe('dashboard document validation', () => {
   });
 
   it('collapses trailing table views outside Overview and Dashboard Next', () => {
-    const document = JSON.parse(authoritativeDashboardSource);
+    const dashboardDocument = JSON.parse(authoritativeDashboardSource);
     const dashboardNextIds = new Set(['home', 'work', 'agents', 'evidence', 'insights']);
 
-    for (const page of document.dashboard.pages) {
+    for (const page of dashboardDocument.dashboard.pages) {
       const views = page.definition?.views ?? page.views ?? [];
       if (page.id === 'overview' || dashboardNextIds.has(page.id)) {
         for (const view of views) {
