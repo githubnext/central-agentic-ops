@@ -339,6 +339,37 @@ describe('UI elements', () => {
     }));
 
     expect(rendered?.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Reports');
+  });
+
+  it('renders outcome-detail-section from declarative config and filtered outcome scope', () => {
+    const rendered = renderUiElement('outcome-detail-section', {
+      pageId: 'outcome-detail',
+      title: 'Outcome metadata',
+      sourceNames: ['outcomes'],
+      elementConfig: { section: 'outcome-detail-section', body: 'metadata' },
+      scope: { 'safe-output': 'outcome-1' },
+      headingTag: 'h3',
+      contextDetails: [],
+      sources: {
+        outcomes: {
+          source: 'outcomes',
+          metadata,
+          rows: [{
+            'safe-output': 'outcome-1',
+            'outcome-state': 'lifecycle-close',
+            'outcome-status': 'closed',
+            'rollout-mode': 'live',
+            'outcome-category': 'pull-request',
+            'workflow-name': 'Daily review',
+            'external-link': { relation: 'external', href: 'https://github.com/octo/repo/pull/1', label: 'View output' }
+          }]
+        }
+      }
+    });
+
+    expect(rendered?.className).toBe('outcome-meta');
+    expect(rendered?.textContent).toContain('Daily review');
+    expect(rendered?.textContent).toContain('Pull Request');
     expect(rendered?.querySelector('.workflow-runtime-metrics')).toBeNull();
   });
 });
