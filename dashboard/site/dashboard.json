@@ -6378,7 +6378,7 @@
             "mark": "table",
             "controls": "static",
             "empty-message": "No outcomes were retained in the selected scope.",
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "href": {
                 "field": "external-link",
@@ -6419,7 +6419,7 @@
             "mark": "chart",
             "chart": "pie",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "lifecycle-state",

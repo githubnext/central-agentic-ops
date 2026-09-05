@@ -668,8 +668,10 @@ describe('presenter built-in and custom pages', () => {
     document.body.append(rendered);
 
     const sections = [...rendered.querySelectorAll('.nav-section')];
-    expect(/** @type {HTMLDetailsElement} */ (sections[0]).open).toBe(true);
-    expect(/** @type {HTMLDetailsElement} */ (sections[2]).open).toBe(true);
+    const attentionSection = sections.find((section) => section.querySelector('summary')?.textContent?.trim() === 'Attention');
+    const investigateSection = sections.find((section) => section.querySelector('summary')?.textContent?.trim() === 'Investigate');
+    expect(/** @type {HTMLDetailsElement | undefined} */ (attentionSection)?.open).toBe(true);
+    expect(/** @type {HTMLDetailsElement | undefined} */ (investigateSection)?.open).toBe(true);
     expect(rendered.querySelector('[data-nav-page-id="security"]')?.getAttribute('aria-current')).toBe('page');
 
     rendered.remove();
@@ -869,11 +871,12 @@ describe('presenter built-in and custom pages', () => {
       'AW Optimization'
     ]);
 
+    const costLink = menuLinks.find((link) => link.textContent?.trim() === 'Cost');
     menu?.setAttribute('open', '');
-    /** @type {HTMLAnchorElement | undefined} */ (menuLinks[9])?.click();
+    /** @type {HTMLAnchorElement | undefined} */ (costLink)?.click();
 
     expect(menu?.hasAttribute('open')).toBe(false);
-    expect(menuLinks[9]?.getAttribute('aria-current')).toBe('page');
+    expect(costLink?.getAttribute('aria-current')).toBe('page');
     window.history.replaceState(null, '', '/');
   });
 
