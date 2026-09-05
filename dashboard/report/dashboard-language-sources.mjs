@@ -1089,7 +1089,11 @@ function configurationData(controlSettings) {
     diagnostics.reduce((counts, item) => {
       const label = item.severity === "error"
         ? "Errors"
-        : item.severity === "warning" ? "Warnings" : item.severity === "guidance" ? "Guidance" : "Valid";
+        : item.severity === "warning"
+          ? "Warnings"
+          : item.severity === "guidance"
+            ? "Guidance"
+            : item.severity === "valid" ? "Valid" : "Other";
       counts[label] = (counts[label] ?? 0) + 1;
       return counts;
     }, {}),

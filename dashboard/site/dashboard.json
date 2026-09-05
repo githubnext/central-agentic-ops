@@ -5395,8 +5395,8 @@
       {
         "label": "Control plane",
         "pages": [
-         "configuration",
-         "preview",
+          "configuration",
+          "preview",
           "readiness",
           "data-health",
           "github-api",
