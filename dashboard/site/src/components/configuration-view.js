@@ -71,7 +71,11 @@ function valueLabel(value) {
 /** @param {string} name @param {unknown} value @param {string} path @param {number} [depth] */
 function renderEntry(name, value, path, depth = 0) {
   const children = Array.isArray(value)
-    ? value.map((item, index) => [String(item), item, String(index)])
+    ? value.map((item, index) => [
+        ['string', 'number', 'boolean'].includes(typeof item) ? String(item) : String(index),
+        item,
+        String(index)
+      ])
     : isPlainObject(value) ? Object.entries(value).map(([childName, childValue]) => [childName, childValue, childName]) : [];
   const content = [
     h('div', { className: 'configuration-entry-heading' },

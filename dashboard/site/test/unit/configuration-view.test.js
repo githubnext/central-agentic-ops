@@ -70,7 +70,7 @@ describe('Configuration dashboard view', () => {
       document: {
         'control-plane': {
           scope: {
-            'allowed-owners': ['githubnext', 'octodemo']
+            'allowed-owners': ['githubnext', 'octodemo', { mode: 'review' }]
           }
         }
       },
@@ -85,6 +85,8 @@ describe('Configuration dashboard view', () => {
     expect(titles).toContain('octodemo');
     expect(titles).not.toContain('0');
     expect(titles).not.toContain('1');
+    expect(titles).toContain('2');
+    expect(titles).not.toContain('[object Object]');
     expect(rendered.textContent).toContain('An owner included in the discovery boundary.');
   });
 
