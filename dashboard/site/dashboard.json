@@ -3996,9 +3996,11 @@
         "id": "experiments",
         "kind": "built-in",
         "page": "experiments",
-        "title": "Experiments",
-        "icon": "server",
-        "description": "Observed associations are presented without implying causation.",
+        "title": "Experiments & Evaluation",
+        "navigation-label": "Experiments",
+        "icon": "beaker",
+        "class-name": "experiments-page",
+        "description": "Understand whether agent changes improve outcomes without regressions.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -4007,137 +4009,23 @@
           },
           "views": [
             {
-              "id": "experiment-outcomes",
-              "title": "Experiment outcomes",
-              "description": "Outcome disposition is the leading signal of whether experiments produce accepted effects.",
+              "id": "experiments-evaluation",
+              "title": "Experiment decisions and evidence",
+              "description": "Controlled comparisons retain distinct experiment, observation, grader or eval, run, and evidence semantics.",
               "data": {
-                "source": "outcomes"
-              },
-              "mark": "chart",
-              "chart": "pie",
-              "layout": "full",
-              "encoding": {
-                "x": {
-                  "field": "outcome-state",
-                  "type": "nominal",
-                  "title": "Disposition"
-                },
-                "y": {
-                  "field": "safe-output",
-                  "type": "quantitative",
-                  "aggregate": "count",
-                  "title": "Outcomes"
-                }
-              }
-            },
-            {
-              "id": "experiments-experiments-source",
-              "disclosure": "supplemental",
-              "data": {
-                "source": "experiments"
-              },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "experiment",
-                    "type": "nominal"
-                  }
+                "sources": [
+                  "experiments",
+                  "experiment-assignments",
+                  "graders",
+                  "grader-observations",
+                  "evals",
+                  "eval-observations",
+                  "runs"
                 ]
-              }
-            },
-            {
-              "id": "experiments-assignments-source",
-              "data": {
-                "source": "experiment-assignments"
               },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "run",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "variant",
-                    "type": "nominal"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "experiments-grader-observations-source",
-              "disclosure": "supplemental",
-              "data": {
-                "source": "grader-observations"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "grader",
-                  "type": "nominal",
-                  "aggregate": "count"
-                }
-              }
-            },
-            {
-              "id": "experiments-eval-observations-source",
-              "disclosure": "supplemental",
-              "data": {
-                "source": "eval-observations"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "eval",
-                  "type": "nominal",
-                  "aggregate": "count"
-                }
-              }
-            },
-            {
-              "id": "experiments-outcomes-source",
-              "data": {
-                "source": "outcomes"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "outcome-state",
-                  "type": "nominal",
-                  "aggregate": "count"
-                }
-              }
-            },
-            {
-              "id": "experiments-usage-source",
-              "disclosure": "supplemental",
-              "data": {
-                "source": "usage"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "aic",
-                  "type": "quantitative",
-                  "aggregate": "sum",
-                  "unit": "aic"
-                }
-              }
-            },
-            {
-              "id": "experiments-operational-values-source",
-              "data": {
-                "source": "operational-values"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "operational-value",
-                  "type": "quantitative",
-                  "aggregate": "count"
-                }
-              }
+              "mark": "element",
+              "element": "experiments-evaluation",
+              "layout": "full"
             }
           ]
         }
@@ -5864,7 +5752,13 @@
         "pages": [
           "runtime",
           "performance",
-          "security",
+          "security"
+        ]
+      },
+      {
+        "label": "Insights",
+        "pages": [
+          "experiments",
           "operational-value",
           "cost"
         ]

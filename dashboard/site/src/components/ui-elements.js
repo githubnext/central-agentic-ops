@@ -13,6 +13,7 @@ import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
 import { renderConfigurationView } from './configuration-view.js';
+import { renderExperimentsEvaluation } from './experiments-evaluation.js';
 import { modeBadgeClassName } from './badge.js';
 import { rowsFor as rowsForSource } from './source-rows.js';
 /**
@@ -53,10 +54,11 @@ const ELEMENT_RENDERERS = new Map([
   ['package-route', renderPackageRouteView],
   ['workflow-route', renderWorkflowRouteView],
   ['outcome-detail', renderOutcomeDetail],
-  ['configuration-policy', renderConfigurationView]
+  ['configuration-policy', renderConfigurationView],
+  ['experiments-evaluation', renderExperimentsEvaluation]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'package-route', 'workflow-route', 'outcome-detail', 'configuration-policy']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'package-route', 'workflow-route', 'outcome-detail', 'configuration-policy', 'experiments-evaluation']);
 
 /**
  * @param {string} name
