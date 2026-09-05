@@ -135,6 +135,15 @@ jobs:
             fi
           done
 
+      - name: Refresh authoritative control policy
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node "$DASHBOARD_REPORT_ROOT/control-settings.mjs" \
+            .github/cao/src/control.mjs \
+            .github/workflows/cao.json \
+            "$RUNNER_TEMP/cao-activity/control-settings.json"
+
       - name: Assemble Dashboard Language site
         env:
           REPORT_OUTPUT: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}
