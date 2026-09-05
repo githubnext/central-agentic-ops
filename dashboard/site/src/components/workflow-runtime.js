@@ -10,7 +10,7 @@ import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-e
 import { findLink, renderExternalLinkOrFallback } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours, formatUtcDateTime, renderLegendList, renderPanelHeader, renderTableHeadRow, renderVitalStat } from './ui-primitives.js';
-import { text } from './count-formatters.js';
+import { formatCount, text } from './count-formatters.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
 import { workflowRouteValue } from './workflow-route.js';
@@ -89,7 +89,7 @@ function renderRuntimeMetrics(context, workflow, runs, usage) {
         recentMetricLabel('AI Credits', usageMetadata),
         usageAvailable && usageMeasured ? formatNumber(usageTotal, { name: 'AI Credits', symbol: 'AIC', significant: 0.1 }) : '—',
         usageAvailable
-          ? `${usage.length.toLocaleString('en')} ${usage.length === 1 ? 'run' : 'runs'} with AIC telemetry; ${coverageLabel(usageMetadata)}`
+          ? `${formatCount(usage.length)} ${usage.length === 1 ? 'run' : 'runs'} with AIC telemetry; ${coverageLabel(usageMetadata)}`
           : 'AI Credit data unavailable'
       )
     )

@@ -4,7 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatNumber, toNumber } from '../view-formatters.js';
-import { pluralSuffix } from './count-formatters.js';
+import { formatCount, pluralSuffix } from './count-formatters.js';
 import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
 import { renderEmptyMessage, renderLegendList } from './ui-primitives.js';
@@ -822,11 +822,11 @@ function renderSwimlaneChart(points, timeRange) {
   for (const point of plotted) counts[point.lane] += 1;
   const successes = counts.success;
   const summary = [
-    `${plotted.length.toLocaleString('en')} runs`,
+    `${formatCount(plotted.length)} runs`,
     `${plotted.length > 0 ? ((successes / plotted.length) * 100).toFixed(1) : '0.0'}% success`,
-    `${counts.failure.toLocaleString('en')} failed`,
-    `${counts.skipped.toLocaleString('en')} skipped`,
-    `${counts['action-required'].toLocaleString('en')} action required`
+    `${formatCount(counts.failure)} failed`,
+    `${formatCount(counts.skipped)} skipped`,
+    `${formatCount(counts['action-required'])} action required`
   ];
   const ticks = Array.from({ length: 4 }, (_, index) => start + ((span * index) / 3));
   /** @param {number} timestamp */
@@ -927,7 +927,7 @@ function buildSwimlaneSections(points, xCoordinate) {
 function renderSwimlaneSection(section, y) {
   const label = section.count === 1
     ? swimlaneTooltipLines(section.point).join(', ')
-    : `${section.count.toLocaleString('en')} ${section.lane} runs, ${formatSwimlaneTooltipTime(section.first)} to ${formatSwimlaneTooltipTime(section.last)}`;
+    : `${formatCount(section.count)} ${section.lane} runs, ${formatSwimlaneTooltipTime(section.first)} to ${formatSwimlaneTooltipTime(section.last)}`;
   return h('line', {
     className: `chart-point swimlane-mark swimlane-run-mark swimlane-mark-${section.lane}`,
     x1: section.x1,
