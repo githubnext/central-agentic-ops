@@ -22,8 +22,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    env:
-      CAO_GH_LEDGER: ${{ runner.temp }}/cao-gh/cao-gh.jsonl
     permissions:
       actions: read
       contents: read
@@ -55,12 +53,10 @@ jobs:
             echo "DASHBOARD_LAYOUT=installed" >> "$GITHUB_ENV"
             echo "DASHBOARD_REPORT_ROOT=.github/aw/dashboard/report" >> "$GITHUB_ENV"
             echo "ACTIVITY_INDEXER=.github/aw/activity/index.mjs" >> "$GITHUB_ENV"
-            echo "GITHUB_TELEMETRY=.github/aw/activity/github-telemetry.mjs" >> "$GITHUB_ENV"
           elif [[ -f dashboard/report/records.mjs && -f dashboard/site/scripts/build.mjs && -f activity/index.mjs ]]; then
             echo "DASHBOARD_LAYOUT=source" >> "$GITHUB_ENV"
             echo "DASHBOARD_REPORT_ROOT=dashboard/report" >> "$GITHUB_ENV"
             echo "ACTIVITY_INDEXER=activity/index.mjs" >> "$GITHUB_ENV"
-            echo "GITHUB_TELEMETRY=activity/github-telemetry.mjs" >> "$GITHUB_ENV"
           else
             echo "Dashboard package sources are unavailable" >&2
             exit 1
@@ -100,20 +96,6 @@ jobs:
             exit 1
           fi
 
-      - name: Restore prior dashboard data
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/cao-dashboard-data
-          key: cao-dashboard-data-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            cao-dashboard-data-
-
-      - name: Restore recent GitHub API telemetry
-        # prepare reads prior history from dashboard data and writes the active ledger to CAO_GH_LEDGER.
-        run: |
-          mkdir -p "$(dirname "$CAO_GH_LEDGER")"
-          node "$GITHUB_TELEMETRY" prepare "$RUNNER_TEMP/cao-dashboard-data/cao-gh.jsonl"
-
       - name: Resolve authoritative control policy
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -121,37 +103,20 @@ jobs:
           node "$DASHBOARD_REPORT_ROOT/control-settings.mjs" \
             .github/cao/src/control.mjs \
             .github/workflows/cao.json \
-            "$RUNNER_TEMP/cao-dashboard-data/control-settings.json"
+            "$RUNNER_TEMP/cao-activity/control-settings.json"
 
       - name: Extract control-plane inventory
         env:
-          REPORT_INVENTORY: ${{ runner.temp }}/cao-dashboard-data/control-plane-inventory.json
+          REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
         run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
 
-      - name: Transform activity logs into the deployed workflow index
-        id: refresh-activity
+      - name: Discover deployed agentic workflows
         env:
           GITHUB_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-dashboard-data/control-settings.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-dashboard-data/deployed-workflows.json
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_RUN_WINDOW_HOURS: "168"
-        run: |
-          node "$GITHUB_TELEMETRY" before refresh-activity || true
-          node "$ACTIVITY_INDEXER"
-
-      - name: Record activity transformation GitHub API state
-        if: always()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          CAO_OPERATION_OUTCOME: ${{ steps.refresh-activity.outcome }}
-        run: node "$GITHUB_TELEMETRY" after refresh-activity
+        run: node "$ACTIVITY_INDEXER"
 
       - name: Install gh-aw CLI
         uses: github/gh-aw-actions/setup-cli@23e16337f3568b3c18bb04a976793f282a016755 # v0.88.4
@@ -169,57 +134,22 @@ jobs:
             ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-
 
       - name: Transform cached logs into AI Credit usage
-        id: collect-aic-usage
         env:
           GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          # gh-aw reuses the raw logs restored from the activity cache; derived outputs stay separate.
           REPORT_AIC_CACHE: ${{ runner.temp }}/cao-activity/logs
-          REPORT_AIC_USAGE: ${{ runner.temp }}/cao-dashboard-data/aic-usage.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-dashboard-data/deployed-workflows.json
-        run: |
-          node "$GITHUB_TELEMETRY" before collect-aic-usage || true
-          node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
-
-      - name: Record AI Credit transformation GitHub API state
-        if: always()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          CAO_OPERATION_OUTCOME: ${{ steps.collect-aic-usage.outcome }}
-        run: node "$GITHUB_TELEMETRY" after collect-aic-usage
+          REPORT_AIC_USAGE: ${{ runner.temp }}/cao-activity/aic-usage.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+        run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
 
       - name: Collect operational-value observations
-        id: collect-operational-values
         env:
           GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-dashboard-data/deployed-workflows.json
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-dashboard-data/operational-values.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-activity/operational-values.json
           REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
           REPORT_VALUE_REPLAY_CACHE: .cache/dashboard-operational-values/replay
-        run: |
-          node "$GITHUB_TELEMETRY" before collect-operational-values || true
-          node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
-
-      - name: Record operational-value transformation GitHub API state
-        if: always()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          CAO_OPERATION_OUTCOME: ${{ steps.collect-operational-values.outcome }}
-        run: node "$GITHUB_TELEMETRY" after collect-operational-values
+        run: node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
 
       - name: Save operational-value observation cache
         if: always()
@@ -229,51 +159,13 @@ jobs:
           key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Collect durable dashboard records
-        id: collect-dashboard-records
         env:
           GITHUB_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-dashboard-data/control-settings.json
-          REPORT_INVENTORY: ${{ runner.temp }}/cao-dashboard-data/control-plane-inventory.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-dashboard-data/deployed-workflows.json
-          REPORT_RECORDS: ${{ runner.temp }}/cao-dashboard-data/dashboard-records.json
-        run: |
-          node "$GITHUB_TELEMETRY" before collect-dashboard-records || true
-          node "$DASHBOARD_REPORT_ROOT/records.mjs"
-
-      - name: Record dashboard record transformation GitHub API state
-        if: always()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
-          CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
-          CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
-          CAO_OPERATION_OUTCOME: ${{ steps.collect-dashboard-records.outcome }}
-        run: node "$GITHUB_TELEMETRY" after collect-dashboard-records
-
-      - name: Preserve GitHub API telemetry
-        if: always()
-        continue-on-error: true
-        run: cp "$CAO_GH_LEDGER" "$RUNNER_TEMP/cao-dashboard-data/cao-gh.jsonl"
-
-      - name: Save dashboard data cache
-        # Do not replace the last complete transformed snapshot after a collector failure.
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/cao-dashboard-data
-          key: cao-dashboard-data-${{ github.run_id }}-${{ github.run_attempt }}
-
-      - name: Upload GitHub API telemetry
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: cao-gh
-          path: ${{ env.CAO_GH_LEDGER }}
-          if-no-files-found: warn
-          retention-days: 30
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
+          REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+          REPORT_RECORDS: ${{ runner.temp }}/cao-activity/dashboard-records.json
+        run: node "$DASHBOARD_REPORT_ROOT/records.mjs"
 
       - name: Assemble Dashboard Language site
         env:
@@ -282,13 +174,13 @@ jobs:
           if [[ "$DASHBOARD_LAYOUT" == "source" ]]; then
             node dashboard/site/scripts/build.mjs \
               "$REPORT_OUTPUT" \
-              "$RUNNER_TEMP/cao-dashboard-data/control-settings.json"
+              "$RUNNER_TEMP/cao-activity/control-settings.json"
           else
             mkdir -p "$REPORT_OUTPUT"
             cp -R .github/aw/dashboard/site/. "$REPORT_OUTPUT/"
             node "$DASHBOARD_REPORT_ROOT/configure-site.mjs" \
               "$REPORT_OUTPUT/index.html" \
-              "$RUNNER_TEMP/cao-dashboard-data/control-settings.json"
+              "$RUNNER_TEMP/cao-activity/control-settings.json"
             node "$DASHBOARD_REPORT_ROOT/bundle-dashboards.mjs" \
               "$REPORT_OUTPUT/dashboard.json" \
               .github/aw/dashboards
@@ -296,14 +188,14 @@ jobs:
 
       - name: Build Dashboard Language sources
         env:
-          REPORT_AIC_USAGE: ${{ runner.temp }}/cao-dashboard-data/aic-usage.json
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-dashboard-data/control-settings.json
+          REPORT_AIC_USAGE: ${{ runner.temp }}/cao-activity/aic-usage.json
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
           REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}/sources.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-dashboard-data/deployed-workflows.json
-          REPORT_INVENTORY: ${{ runner.temp }}/cao-dashboard-data/control-plane-inventory.json
-          REPORT_GITHUB_TELEMETRY: ${{ runner.temp }}/cao-dashboard-data/cao-gh.jsonl
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-dashboard-data/operational-values.json
-          REPORT_RECORDS: ${{ runner.temp }}/cao-dashboard-data/dashboard-records.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+          REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
+          REPORT_GITHUB_TELEMETRY: ${{ runner.temp }}/cao-activity/cao-gh.jsonl
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-activity/operational-values.json
+          REPORT_RECORDS: ${{ runner.temp }}/cao-activity/dashboard-records.json
         run: node "$DASHBOARD_REPORT_ROOT/dashboard-language-sources.mjs"
 
       - name: Upload dashboard data artifact
