@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIdentityLink, renderLabeledControl, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIdentityLink, renderLabeledControl, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -116,6 +116,14 @@ describe('ui primitives', () => {
     const empty = renderListWithFallback('my-list', [], (value) => `item ${value}`, 'No items.');
     expect(empty.querySelectorAll('li')).toHaveLength(1);
     expect(empty.textContent).toBe('No items.');
+  });
+
+  it('renders the shared decorative legend swatch with the requested class and aria-hidden', () => {
+    const rendered = renderLegendSwatch('chart-series-a');
+
+    expect(rendered.tagName).toBe('I');
+    expect(rendered.className).toBe('chart-series-a');
+    expect(rendered.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('renders the shared close/dismiss icon button with matching title and aria-label text', () => {
