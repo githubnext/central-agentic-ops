@@ -1508,7 +1508,7 @@ test("dashboard source bridge carries usage agent metadata into assignments", ()
         repository: "githubnext/gh-aw-cao",
         runId: 42,
         engine: "copilot",
-        resolvedModel: "gpt-5.6-sol",
+        requestedModel: "gpt-5.6-sol",
       }],
     },
     operationalValues: { records: [] },

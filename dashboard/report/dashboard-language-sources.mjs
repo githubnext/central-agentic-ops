@@ -1693,7 +1693,11 @@ function agentAssignmentRows(workflows, runs, workItems) {
     const key = workItemKey(workflow.organization, workflow.repository, workflow.workflow);
     const latestRun = runsByWorkItem.get(key)?.[0];
     const engine = latestRun?.engine && latestRun.engine !== "unknown" ? latestRun.engine : null;
-    const model = latestRun?.["resolved-model"] && latestRun["resolved-model"] !== "unknown" ? latestRun["resolved-model"] : null;
+    const model = latestRun?.["resolved-model"] && latestRun["resolved-model"] !== "unknown"
+      ? latestRun["resolved-model"]
+      : latestRun?.["requested-model"] && latestRun["requested-model"] !== "unknown"
+        ? latestRun["requested-model"]
+        : null;
     if (!engine && !model) continue;
     const workItem = workItemsByKey.get(key);
     const lifecycleState = workItem?.["lifecycle-state"] || "unknown";
