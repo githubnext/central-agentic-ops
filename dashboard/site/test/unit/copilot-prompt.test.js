@@ -27,12 +27,14 @@ describe('Copilot dashboard prompt', () => {
     const input = prompt.querySelector('input');
     if (!(input instanceof HTMLInputElement)) throw new Error('Expected prompt input');
     input.value = 'Add a trend';
+    expect(prompt.querySelector('label')?.hidden).toBe(false);
 
     prompt.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     expect(input.value).toBe('');
     socket.emit({ type: 'debug', message: 'Starting dashboard view update.', details: { view: 'Overview' } });
     socket.emit({ type: 'status', message: 'Reading the current view…' });
     socket.emit({ type: 'status', message: '' });
+    expect(prompt.querySelector('#dashboard-copilot-status')?.textContent).toBe('Working…');
     socket.emit({
       type: 'tool-refused',
       message: 'Refused python3: shell command not allowed.',
@@ -53,6 +55,7 @@ describe('Copilot dashboard prompt', () => {
     socket.emit({ type: 'done' });
 
     expect(prompt.querySelector('label')?.textContent).toBe('Modify this view');
+    expect(prompt.querySelector('label')?.hidden).toBe(true);
     expect(prompt.querySelector('#dashboard-copilot-title')?.textContent).toBe('Copilot');
     expect(prompt.querySelector('dialog')).toBeNull();
     expect(prompt.querySelector('.dashboard-copilot-message-user')?.textContent).toContain('Add a trend');
@@ -93,6 +96,7 @@ describe('Copilot dashboard prompt', () => {
 
     input.value = 'Add a second card';
     prompt.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(prompt.querySelector('label')?.hidden).toBe(true);
     socket.emit({ type: 'assistant-message', content: 'I found the active view.' });
     socket.emit({ type: 'assistant-message', content: 'Added a second card.' });
     socket.emit({

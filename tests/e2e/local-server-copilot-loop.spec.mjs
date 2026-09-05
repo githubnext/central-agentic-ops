@@ -100,7 +100,9 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
     await expect(page.locator(".dashboard-copilot-message-response"))
       .toContainText("Updated the active view title.");
     expect(await page.locator(".app-shell").evaluate((shell) =>
-      getComputedStyle(shell).gridTemplateColumns.split(" ")[0])).toBe("348px");
+      getComputedStyle(shell).gridTemplateColumns.split(" ")[0])).toBe("420px");
+    expect(await page.locator(".dashboard-copilot-conversation").evaluate((conversation) =>
+      Number.parseFloat(getComputedStyle(conversation).maxHeight))).toBeGreaterThan(180);
     await expect(page.getByText("Updated by Copilot", { exact: true }).first()).toBeVisible();
     const nextView = page.locator("[data-nav-page-id]").filter({ visible: true }).nth(1);
     await nextView.click();
@@ -158,6 +160,8 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
       expect.objectContaining({ source: "browser", event: "preview.rendered", traceId: request.traceId }),
       expect.objectContaining({ source: "browser", event: "copilot.request.completed", traceId: request.traceId }),
     ]));
+    expect(traces.filter(({ event }) => event === "preview.broadcast")).toHaveLength(1);
+    expect(traces.find(({ event }) => event === "preview.broadcast")?.traceId).toBe(request.traceId);
     expect(browserTraces.some((line) =>
       line.includes(request.traceId) && line.includes("copilot.request.completed"))).toBe(true);
   } finally {

@@ -61,8 +61,14 @@ export function renderCopilotPrompt(socket) {
     type: 'text',
     required: true,
     maxLength: 10000,
+    'aria-label': 'Modify this view',
     placeholder: 'Describe the change to this view'
   }));
+  const inputLabel = h(
+    'label',
+    { className: 'dashboard-copilot-label', htmlFor: input.id },
+    'Modify this view'
+  );
   const sendButton = /** @type {HTMLButtonElement} */ (h(
     'button',
     {
@@ -97,6 +103,7 @@ export function renderCopilotPrompt(socket) {
    */
   const appendAssistantMessage = (content = '', kind = 'response') => {
     if (!content.trim()) return null;
+    inputLabel.hidden = true;
     const message = h(
       'div',
       {
@@ -178,7 +185,7 @@ export function renderCopilotPrompt(socket) {
       h('h2', { id: 'dashboard-copilot-title' }, 'Copilot')
     ),
     conversation,
-    h('label', { className: 'dashboard-copilot-label', htmlFor: input.id }, 'Modify this view'),
+    inputLabel,
     h(
       'div',
       { className: 'dashboard-copilot-composer' },
@@ -257,7 +264,6 @@ export function renderCopilotPrompt(socket) {
       activeReasoningId = '';
       scrollConversation();
     } else if (streamEvent.type === 'status' && typeof streamEvent.message === 'string') {
-      toolbarStatus.textContent = streamEvent.message;
       appendStatusMessage(streamEvent.message);
     } else if (streamEvent.type === 'tool-refused' && typeof streamEvent.message === 'string') {
       if (!streamEvent.message.trim()) return;
@@ -314,6 +320,7 @@ export function renderCopilotPrompt(socket) {
     assistantContent = null;
     reasoningContent = null;
     activeReasoningId = '';
+    inputLabel.hidden = true;
     conversation.append(
       h(
         'div',

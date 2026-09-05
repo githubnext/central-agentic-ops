@@ -69,7 +69,7 @@ body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5
 .dashboard-copilot-header { display: flex; align-items: center; gap: 7px; color: var(--muted); }
 .dashboard-copilot-header > .octicon { color: var(--copilot-accent); }
 .dashboard-copilot-header h2 { margin: 0; font-size: .75rem; font-weight: 600; }
-.dashboard-copilot-conversation { max-height: 180px; display: flex; flex-direction: column; gap: 8px; overflow: auto; scrollbar-width: thin; }
+.dashboard-copilot-conversation { max-height: min(42vh, 360px); display: flex; flex-direction: column; gap: 8px; overflow: auto; scrollbar-width: thin; }
 .dashboard-copilot-conversation:empty { display: none; }
 .dashboard-copilot-message { display: grid; gap: 2px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: .75rem; line-height: 1.35; }
 .dashboard-copilot-message-user > strong { color: var(--muted); font-size: .6875rem; }
@@ -101,7 +101,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .skip-link { position: fixed; z-index: 10; top: -80px; left: 12px; padding: 7px 12px; border: 1px solid var(--focus); border-radius: 6px; background: var(--canvas); color: var(--accent); font-weight: 600; text-decoration: none; transition: top 120ms ease, color 120ms ease; }
 .skip-link:focus { top: 8px; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); transition: grid-template-columns 120ms ease; }
-.dashboard-copilot-enabled .app-shell { grid-template-columns: 348px minmax(0, 1fr); }
+.dashboard-copilot-enabled .app-shell { grid-template-columns: 420px minmax(0, 1fr); }
 .org-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-right: 1px solid var(--border); background: var(--canvas-subtle); }
 .dashboard-copilot-enabled .org-sidebar { height: 100vh; position: sticky; top: 0; align-self: start; overflow: hidden; }
 .dashboard-copilot-enabled .primary-nav { min-height: 0; flex: 1; overflow-y: auto; scrollbar-width: thin; }

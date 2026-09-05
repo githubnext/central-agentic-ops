@@ -1344,6 +1344,7 @@ export async function startDashboardServer({
     }
 
     copilotRequestActive = true;
+    clearTimeout(refreshTimer);
     const controller = new AbortController();
     copilotRequest = { socket, controller, traceId, sessionKey };
     try {
@@ -1660,6 +1661,9 @@ export async function startDashboardServer({
   };
 
   function scheduleRefresh() {
+    // The tracked Copilot rebuild includes every dashboard source change. Letting
+    // watchers rebuild concurrently can show an update before its acknowledgement.
+    if (copilotRequestActive) return;
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => {
       refreshPromise = refreshPromise.then(refresh, refresh);
