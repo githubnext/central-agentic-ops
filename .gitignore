@@ -2,10 +2,14 @@
 .astro/
 dist/
 node_modules/
+test-results/
 public/cao/
 
 # Local dashboard preview
 /.cao-dashboard-preview-*/
+/.cao-dashboard-e2e-*/
+/.cao-dashboard-traces/
+/.cao-dashboard-dev-server.json
 
 # SelfCare dashboard performance worker evidence (workspace-relative for upload_artifact)
 /self-care-dashboard-performance-evidence/
