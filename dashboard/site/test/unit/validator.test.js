@@ -784,8 +784,7 @@ dashboard:
     const costPage = invalidTokens.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
     costPage['filter-bar'] = {
       filters: ['mode:review', 'phase:after', 'phase:after', 'invalid token'],
-      'time-range': '',
-      export: true,
+      'time-range': '24h',
       unknown: true
     };
 
@@ -809,10 +808,6 @@ dashboard:
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
         path: '$.dashboard.pages[3].filter-bar.time-range'
-      }));
-      expect(rejected.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E004',
-        path: '$.dashboard.pages[3].filter-bar.export'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',

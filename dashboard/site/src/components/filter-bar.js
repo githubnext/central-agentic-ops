@@ -72,7 +72,6 @@ export function renderFilterBar(config, onChange, options = {}) {
   });
   filters.addEventListener('input', () => {
     const parsed = parseFilters(filters.value);
-    parsed.delete('mode');
     parsed.set('mode', horizonControl.modes());
     updateCount(parsed);
     applyFilters(parsed, horizonControl.value());
@@ -84,7 +83,6 @@ export function renderFilterBar(config, onChange, options = {}) {
     count.setAttribute('aria-label', `${filterCount} filters`);
   }
   const initialFilters = parseFilters(filters.value);
-  initialFilters.delete('mode');
   initialFilters.set('mode', horizonControl.modes());
   updateCount(initialFilters);
   queueMicrotask(emit);
