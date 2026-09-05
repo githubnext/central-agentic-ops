@@ -205,6 +205,52 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
+  it('defines detection diagnostics and performance in a dedicated Explore page', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const detection = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'detection');
+    expect(document.dashboard.navigation.find(
+      (/** @type {{ label: string }} */ section) => section.label === 'Explore'
+    ).pages).toContain('detection');
+    expect(detection).toMatchObject({
+      kind: 'custom',
+      title: 'Detection',
+      views: [
+        {
+          id: 'detection-job-conclusions',
+          mark: 'chart',
+          chart: 'pie',
+          data: { source: 'job-performance', filters: { job: ['detection'] } }
+        },
+        {
+          id: 'detection-job-duration-trend',
+          mark: 'chart',
+          chart: 'line',
+          data: { source: 'job-performance', filters: { job: ['detection'] } }
+        },
+        {
+          id: 'detection-job-runner-performance',
+          mark: 'chart',
+          chart: 'bar',
+          data: { source: 'job-performance', filters: { job: ['detection'] } }
+        },
+        {
+          id: 'detection-job-ledger',
+          mark: 'table',
+          controls: 'interactive',
+          data: { source: 'job-performance', filters: { job: ['detection'] } }
+        }
+      ]
+    });
+    expect(detection.views[3].encoding.columns).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'job-status', display: 'status' }),
+      expect.objectContaining({ field: 'job-conclusion', display: 'status' }),
+      expect.objectContaining({ field: 'job-duration-seconds', unit: 'human-duration' }),
+      expect.objectContaining({ field: 'run' })
+    ]));
+    expect(detection.views[3].encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+  });
+
   it('validates declarative table intents without author-defined context templating', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');
