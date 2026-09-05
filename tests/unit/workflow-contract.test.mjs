@@ -566,7 +566,7 @@ test("control workflows deny before activation through one shared admission cont
       /on:[\s\S]*?permissions:\n\s+(?:actions: read\n\s+contents: read|contents: read\n\s+actions: read)/,
       name,
     );
-    assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, name);
+    assert.match(source, /jobs:\n  pre_activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, name);
     assert.doesNotMatch(source, /^if: needs\.pre_activation\.outputs\.cao_authorized == 'true'$/m, name);
 
     const generatedName = name.replace(/\.md$/, ".lock.yml");
@@ -1310,7 +1310,7 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY \}\}/);
   assert.match(control, /ignore-if-missing: true/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
-  assert.match(control, /jobs:\n\s+pre_activation:[\s\S]*?secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token/);
+  assert.match(control, /jobs:\n\s+pre-activation:[\s\S]*?secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token/);
   assert.match(authentication, /runtime availability precedence, not permission to choose a PAT silently/);
   assert.match(authentication, /A PAT is not a substitute for repository or organization access/);
   assert.match(authentication, /A fine-grained PAT cannot access multiple organizations at once/);
