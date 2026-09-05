@@ -208,6 +208,7 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Repository health+25.0 pts');
     expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Oversized file share+30.0 pts');
     expect(rendered.querySelector('.value-outcomes')?.textContent).not.toContain('CurrentLines');
+    expect(rendered.querySelector('.value-diagnostic-legend i.chart-series-1[aria-hidden="true"]')).not.toBeNull();
     expect(rendered.querySelector('.value-attainment')?.textContent).toContain('Weekly operational attainment');
     expect(rendered.querySelector('.value-attainment')?.textContent).toContain('4-week rolling mean');
     expect(rendered.querySelector('.value-attainment .chart-axis')?.textContent).toBe('Aug 24Aug 31');

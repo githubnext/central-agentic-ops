@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLinkOrFallback } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatUtcDateTime, renderPanelHeader, renderTableHeadRow, renderVitalStat } from './ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderLegendSwatch, renderPanelHeader, renderTableHeadRow, renderVitalStat } from './ui-primitives.js';
 import { text } from './count-formatters.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -293,7 +293,7 @@ function renderValueHistory(observations) {
           outcomeSeries.map((series, index) => h(
             'li',
             null,
-            h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+            renderLegendSwatch(`chart-series-${(index % 6) + 1}`),
             h('span', null, series.name),
             h('strong', { className: series.latestChange > 0 ? 'value-gain' : series.latestChange < 0 ? 'value-loss' : '' }, formatPointChange(series.latestChange))
           ))
