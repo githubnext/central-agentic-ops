@@ -94,6 +94,7 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
     "credential-type": "app",
     resource: "core",
     bucket: "core · app",
+    "maximum-lane": "core · app · max 5000",
     "history-series": "core · app",
     "has-history": false,
     limit: 5_000,

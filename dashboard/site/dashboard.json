@@ -344,24 +344,20 @@
           {
             "id": "github-api-remaining-trend",
             "title": "Quota history",
-            "description": "Remaining capacity over the selected UTC time range. Resource and credential series remain independent so reset sawtooths are not combined across credentials.",
+            "description": "Individual remaining-capacity observations over the selected UTC time range, colored by resource, credential, and maximum quota.",
             "data": {
-              "source": "github-api-rate-limits",
-              "filters": {
-                "has-history": "true"
-              }
+              "source": "github-api-rate-limits"
             },
             "mark": "chart",
-            "chart": "line",
+            "chart": "scatter",
             "table": true,
             "layout": "full",
             "disclosure": "essential",
-            "empty-message": "Quota history is unavailable until at least two observations exist for the same resource and credential.",
+            "empty-message": "No quota observations are available for the selected time range.",
             "encoding": {
               "x": {
                 "field": "observed-at",
                 "type": "temporal",
-                "time-unit": "hour",
                 "title": "Observed (UTC)"
               },
               "y": {
@@ -371,9 +367,9 @@
                 "unit": "percent"
               },
               "color": {
-                "field": "history-series",
+                "field": "maximum-lane",
                 "type": "nominal",
-                "title": "Resource and credential"
+                "title": "Maximum lane"
               }
             }
           },

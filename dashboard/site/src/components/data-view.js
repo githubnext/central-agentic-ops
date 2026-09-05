@@ -13,6 +13,8 @@ import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.j
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 import { renderCloseButton, isPlainObject } from './ui-primitives.js';
+import { processScatterPoints } from '../data-processor.js';
+import { MAX_RENDERED_SCATTER_POINTS } from '../scatter-clustering.js';
 
 /** @type {Record<string, 'organization-link'|'repository-link'|'workflow-link'>} */
 const ENTITY_LINK_FIELDS = {
@@ -303,59 +305,101 @@ function renderChartView(context) {
     color,
     view.data
   );
-  const chartSeries = listChartSeries(points);
-  const pieSummary = chartType === 'pie' ? pieChartEntries(points) : null;
   const description = typeof view.description === 'string' && view.description.length > 0
     ? h('p', { className: 'view-description' }, view.description)
     : null;
-  const chartWidget = renderChartWidget(
-    chartType,
-    points,
-    chartSeries,
-    pieSummary,
-    y ? fieldTitle(y) : 'Total',
-    y ? fieldUnit(y, context.units ?? {}) : null,
-    isPlainObject(view.data) && isPlainObject(view.data.time) ? view.data.time : null,
-    reference?.field ?? null
-  );
   const showTable = typeof view.table === 'boolean' ? view.table : chartType === 'bar';
-  const table = showTable ? renderTableRegion({
-    tableClassName: 'custom-chart-table',
-    emptyMessage: 'No points available.',
-    colSpan: color ? 3 : 2,
-    headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
-    bodyRows: points.map((point) => h(
-      'tr',
-      { 'data-custom-point-key': point.key },
-      h('td', null, renderLinkedText(point.x, point.link)),
-      h('td', null, y ? formatNumber(point.y, fieldUnit(y, context.units ?? {})) : point.y),
-      color ? h('td', null, point.color ?? 'unknown') : null
-    ))
-  }) : null;
+  /** @param {ChartPoint[]} renderedPoints */
+  const renderVisualization = (renderedPoints) => {
+    const chartSeries = listChartSeries(renderedPoints);
+    const pieSummary = chartType === 'pie' ? pieChartEntries(renderedPoints) : null;
+    const chartWidget = renderChartWidget(
+      chartType,
+      renderedPoints,
+      chartSeries,
+      pieSummary,
+      y ? fieldTitle(y) : 'Total',
+      y ? fieldUnit(y, context.units ?? {}) : null,
+      isPlainObject(view.data) && isPlainObject(view.data.time) ? view.data.time : null,
+      reference?.field ?? null
+    );
+    const table = showTable ? renderTableRegion({
+      tableClassName: 'custom-chart-table',
+      emptyMessage: 'No points available.',
+      colSpan: color ? 3 : 2,
+      headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
+      bodyRows: renderedPoints.map((point) => h(
+        'tr',
+        { 'data-custom-point-key': point.key },
+        h('td', null, renderLinkedText(point.x, point.link)),
+        h('td', null, y ? formatNumber(point.y, fieldUnit(y, context.units ?? {})) : point.y),
+        color ? h('td', null, point.color ?? 'unknown') : null
+      ))
+    }) : null;
+    return {
+      chartContent: [
+        ...(color && !['pie', 'swimlane'].includes(chartType) ? [renderChartLegend(chartSeries, chartType)] : []),
+        ...(pieSummary
+          ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(
+              pieSummary.entries,
+              pieSummary.total,
+              chartCategoryLinks(renderedPoints),
+              y ? fieldUnit(y, context.units ?? {}) : null
+            ))]
+          : [chartWidget])
+      ],
+      table
+    };
+  };
 
-  const chartContent = [
-    ...(description ? [description] : []),
-    ...renderViewSectionChrome(metadata, contextDetails),
-    ...(color && !['pie', 'swimlane'].includes(chartType) ? [renderChartLegend(chartSeries, chartType)] : []),
-    ...(pieSummary
-      ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(
-          pieSummary.entries,
-          pieSummary.total,
-          chartCategoryLinks(points),
-          y ? fieldUnit(y, context.units ?? {}) : null
-        ))]
-      : [chartWidget])
-  ];
+  const clustering = chartType === 'scatter' && points.length > MAX_RENDERED_SCATTER_POINTS
+    ? processScatterPoints(points.map(({ key, x: pointX, y: pointY, color: pointColor, link }) => ({
+        key,
+        x: pointX,
+        y: pointY,
+        color: pointColor,
+        link
+      })), MAX_RENDERED_SCATTER_POINTS)
+    : points;
+  const pending = clustering instanceof Promise;
+  const initial = pending ? null : renderVisualization(clustering);
+  const visualization = pending
+    ? h(
+        'div',
+        { className: 'chart-clustering-progress', role: 'status', 'aria-live': 'polite', 'aria-busy': 'true' },
+        h('progress', null),
+        `Clustering ${points.length.toLocaleString('en')} scatter points…`
+      )
+    : null;
   const section = renderPageSection(
     pageId,
     title,
-    chartType === 'pie' ? chartContent : [...chartContent, ...(table ? [table] : [])],
+    [
+      ...(description ? [description] : []),
+      ...renderViewSectionChrome(metadata, contextDetails),
+      ...(pending
+        ? [/** @type {HTMLElement} */ (visualization)]
+        : chartType === 'pie'
+          ? initial?.chartContent ?? []
+          : [...(initial?.chartContent ?? []), ...(initial?.table ? [initial.table] : [])])
+    ],
     headingTag
   );
-  if (chartType === 'pie') {
+  if (pending) {
+    clustering.then((clustered) => {
+      const rendered = renderVisualization(clustered);
+      visualization?.replaceWith(...rendered.chartContent, ...(rendered.table ? [rendered.table] : []));
+    }).catch(() => {
+      visualization?.replaceWith(h(
+        'div',
+        { className: 'chart-widget scatter-chart-widget', role: 'status' },
+        'Unable to prepare this scatter visualization.'
+      ));
+    });
+  } else if (chartType === 'pie') {
     section.append(
       h('div', { className: 'pie-chart-card' }, ...Array.from(section.children)),
-      ...(table ? [table] : [])
+      ...(initial?.table ? [initial.table] : [])
     );
   }
   section.classList.add('chart-view', `chart-view-${chartType}`);
