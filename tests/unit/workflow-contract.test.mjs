@@ -2166,7 +2166,7 @@ test("SelfCare dashboard performance worker rotates trace-backed persona improve
   assert.match(source, /dashboard-performance-rotation\.json/);
   assert.match(source, /advance `cursor` to the position after the evaluated candidate/);
   assert.match(source, /DASHBOARD_PERFORMANCE_OUTPUT_DIR="\$evidence_root\/before"/);
-  assert.match(source, /upload-artifact:[\s\S]*?\/tmp\/gh-aw\/agent\/self-care-dashboard-performance\/\*\*/);
+  assert.match(source, /upload-artifact:[\s\S]*?self-care-dashboard-performance-evidence\/\*\*/);
   assert.match(source, /labels: \[self-care, self-care:dashboard-performance\]/);
   assert.match(source, /title-prefix: "\[self-care:dashboard-performance\] "/);
   assert.match(source, /draft: true/);

@@ -115,7 +115,7 @@ safe-outputs:
     max-uploads: 1
     retention-days: 14
     allowed-paths:
-      - "/tmp/gh-aw/agent/self-care-dashboard-performance/**"
+      - "self-care-dashboard-performance-evidence/**"
     defaults:
       if-no-files: ignore
   noop:
