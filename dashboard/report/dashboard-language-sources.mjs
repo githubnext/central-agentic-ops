@@ -690,7 +690,7 @@ function positiveCount(value) {
 }
 
 function safeOutputPerformanceRows(usage) {
-  const runs = usage.securityRuns?.length > 0 ? usage.securityRuns : usage.runs || [];
+  const runs = Array.isArray(usage.securityRuns) ? usage.securityRuns : usage.runs || [];
   const categories = [
     ["output", "Output", "success", "safeItemsCount"],
     ["noop", "No-op", "neutral", "noopCount"],
