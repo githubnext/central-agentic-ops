@@ -171,8 +171,8 @@ async function auditScenario(origin, scenario, directory, chromePath) {
     question: scenario.question,
     routes: scenario.routes,
     score,
-    targetScore: 1,
-    scoreThreshold,
+    aspirationalScore: 1,
+    passingScore: scoreThreshold,
     metrics,
     budgets: metricBudgets,
     failures

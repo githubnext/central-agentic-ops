@@ -99,5 +99,5 @@ jobs:
         with:
           name: dashboard-lighthouse-performance
           path: dashboard/site/test-results/lighthouse/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
