@@ -299,6 +299,8 @@ async function main() {
     });
 
     const securityRunValues = [...securityRuns.values()];
+    const mcpAvailable = collectionAvailable
+      && securityRunValues.some((run) => run.security.mcp.available);
     const usage = {
       schemaVersion: 3,
       generatedAt: new Date().toISOString(),
@@ -309,9 +311,8 @@ async function main() {
       securityAvailable: collectionAvailable,
       securityComplete: collectionAvailable
         && securityRunValues.every((run) => securityTelemetryComplete(run.security)),
-      mcpAvailable: collectionAvailable
-        && securityRunValues.some((run) => run.security.mcp.available),
-      mcpComplete: collectionAvailable
+      mcpAvailable,
+      mcpComplete: mcpAvailable
         && repositories.every((entry) => entry.complete),
       repositories,
       runs: [...runs.values()],

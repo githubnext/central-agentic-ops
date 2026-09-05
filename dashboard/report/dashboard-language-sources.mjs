@@ -982,6 +982,7 @@ function mcpServerRows(usage) {
     const servers = new Map((mcp.servers || []).map((server) => [server.serverName, { ...server }]));
     const reportedServers = new Set(servers.keys());
     for (const call of mcp.calls || []) {
+      // Reported server metadata already summarizes its calls; aggregate raw calls only for unreported servers.
       const server = servers.get(call.serverName) || {
         serverName: call.serverName || "unknown",
         serverVersion: "",
