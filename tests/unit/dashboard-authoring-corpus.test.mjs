@@ -19,7 +19,7 @@ test("every production dashboard page starts with an executive summary or prescr
   const dashboardFiles = [
     join(root, "dashboard/site/dashboard.json"),
     ...readdirSync(root, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
       .map((entry) => join(root, entry.name, "dashboard.json"))
       .filter((path) => existsSync(path)),
   ];
@@ -36,8 +36,9 @@ test("every production dashboard page starts with an executive summary or prescr
       const isAttentionFirstHome = page.id === "home"
         && page["class-name"] === "dashboard-next-home-page"
         && summary.id === "home-attention"
-        && summary.mark === "table"
-        && summary.data?.source === "attention-signals";
+        && summary.mark === "element"
+        && summary.element === "signal-list"
+        && summary.data?.sources?.includes("attention-signals");
       if (isAttentionFirstHome) {
         assert.deepEqual(
           views.map((view) => view.id),

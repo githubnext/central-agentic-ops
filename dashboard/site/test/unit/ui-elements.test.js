@@ -70,6 +70,66 @@ describe('UI elements', () => {
     expect(rendered?.querySelectorAll('a')).toHaveLength(1);
   });
 
+  it('renders canonical attention as a complete priority-first action region', () => {
+    const rendered = renderUiElement('signal-list', {
+      pageId: 'home',
+      title: 'Need attention',
+      description: 'Unresolved conditions that require an authorized person to act or investigate.',
+      sourceNames: ['attention-signals'],
+      sources: {
+        'attention-signals': {
+          source: 'attention-signals',
+          rows: [
+            {
+              'attention-signal-id': 'verification:dependabot:74',
+              'signal-type': 'verification-review',
+              objective: 'Update the Dependabot release train',
+              scope: 'github/gh-aw',
+              reason: 'Security verification requires human review.',
+              action: 'Review dependency evidence',
+              'expected-actor': 'security-reviewers',
+              'age-seconds': 4800,
+              'consequence-tier': 'high',
+              priority: 1,
+              'evidence-link': {
+                relation: 'evidence',
+                href: 'https://example.com/evidence/release-train',
+                label: 'Review dependency evidence'
+              }
+            },
+            {
+              'attention-signal-id': 'authority:mona-tools:upgrade',
+              'signal-type': 'authority-gate',
+              objective: 'Upgrade agentic workflow dependencies',
+              scope: 'github/mona-tools',
+              reason: 'Live target authority is unavailable.',
+              action: 'Confirm authority or retain review mode',
+              'expected-actor': 'repository-owner',
+              'age-seconds': 9000,
+              'consequence-tier': 'medium',
+              priority: 2
+            }
+          ],
+          metadata
+        }
+      },
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+
+    expect(rendered?.getAttribute('aria-labelledby')).toBe('home-need-attention-heading');
+    expect(rendered?.querySelector('.view-metadata-summary')).not.toBeNull();
+    expect(rendered?.querySelector('.canonical-attention-item.signal-critical')).not.toBeNull();
+    expect(rendered?.querySelectorAll('.canonical-attention-item')).toHaveLength(1);
+    expect(rendered?.querySelector('.signal-priority-rank strong')?.textContent).toBe('1');
+    expect(rendered?.textContent).toContain('high · verification review');
+    expect(rendered?.textContent).toContain('Update the Dependabot release train');
+    expect(rendered?.textContent).toContain('github/gh-aw · Security verification requires human review.');
+    expect(rendered?.textContent).toContain('security-reviewers · 1h 20m old');
+    expect(rendered?.textContent).toContain('Review dependency evidence');
+    expect(rendered?.querySelector('a')?.getAttribute('href')).toBe('https://example.com/evidence/release-train');
+  });
+
   it('renders a blocked readiness verdict with the next unblock action', () => {
     const rendered = renderUiElement('readiness-verdict', {
       pageId: 'readiness',

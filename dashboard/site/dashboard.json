@@ -6256,58 +6256,13 @@
             "title": "Need attention",
             "description": "Unresolved conditions that require an authorized person to act or investigate, ordered by deterministic priority.",
             "data": {
-              "source": "attention-signals",
-              "limit": 1
-            },
-            "mark": "table",
-            "controls": "static",
-            "empty-message": "No unresolved attention signals were observed in the selected scope.",
-            "layout": "full",
-            "encoding": {
-              "href": {
-                "field": "evidence-link",
-                "type": "nominal"
-              },
-              "columns": [
-                {
-                  "field": "objective",
-                  "type": "nominal",
-                  "title": "Work"
-                },
-                {
-                  "field": "scope",
-                  "type": "nominal",
-                  "title": "Scope"
-                },
-                {
-                  "field": "reason",
-                  "type": "nominal",
-                  "title": "Why"
-                },
-                {
-                  "field": "action",
-                  "type": "nominal",
-                  "title": "Next action"
-                },
-                {
-                  "field": "expected-actor",
-                  "type": "nominal",
-                  "title": "Actor"
-                },
-                {
-                  "field": "age-seconds",
-                  "type": "quantitative",
-                  "title": "Age",
-                  "unit": "human-duration"
-                },
-                {
-                  "field": "consequence-tier",
-                  "type": "ordinal",
-                  "title": "Consequence",
-                  "display": "status"
-                }
+              "sources": [
+                "attention-signals"
               ]
-            }
+            },
+            "mark": "element",
+            "element": "signal-list",
+            "layout": "full"
           },
           {
             "id": "home-work",

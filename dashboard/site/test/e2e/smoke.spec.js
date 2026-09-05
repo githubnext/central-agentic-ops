@@ -384,17 +384,34 @@ test('Dashboard Next preserves the Home decision hierarchy across desktop and mo
         },
         'attention-signals': {
           source: 'attention-signals',
-          rows: [{
-            'attention-signal-id': 'verification:dependabot:74',
-            objective: 'Update the Dependabot release train',
-            scope: 'github/gh-aw',
-            reason: 'Security verification requires human review.',
-            action: 'Review dependency evidence',
-            'expected-actor': 'security-reviewers',
-            'age-seconds': 4800,
-            'consequence-tier': 'high',
-            'evidence-link': evidenceLink
-          }],
+          rows: [
+            {
+              'attention-signal-id': 'verification:dependabot:74',
+              'signal-type': 'verification-review',
+              objective: 'Update the Dependabot release train',
+              scope: 'github/gh-aw',
+              reason: 'Security verification requires human review.',
+              action: 'Review dependency evidence',
+              'expected-actor': 'security-reviewers',
+              'age-seconds': 4800,
+              'consequence-tier': 'high',
+              priority: 2,
+              'evidence-link': evidenceLink
+            },
+            {
+              'attention-signal-id': 'authority:mona-tools:upgrade',
+              'signal-type': 'authority-gate',
+              objective: 'Upgrade agentic workflow dependencies',
+              scope: 'github/mona-tools',
+              reason: 'Live target authority is unavailable.',
+              action: 'Confirm authority or retain review mode',
+              'expected-actor': 'repository-owner',
+              'age-seconds': 9000,
+              'consequence-tier': 'medium',
+              priority: 1,
+              'evidence-link': evidenceLink
+            }
+          ],
           metadata
         },
         'agent-assignments': {
@@ -502,11 +519,15 @@ test('Dashboard Next preserves the Home decision hierarchy across desktop and mo
     'Operational pulse'
   ]);
   await expect(homePage.getByRole('columnheader')).toHaveText([
-    'Work', 'Scope', 'Why', 'Next action', 'Actor', 'Age', 'Consequence',
     'Work', 'Scope', 'Phase', 'Why', 'Next action', 'Owner',
     'Outcome', 'Repository', 'Disposition', 'Observed'
   ]);
+  await expect(homePage.locator('.canonical-attention-item')).toHaveCount(1);
+  await expect(homePage.locator('.signal-priority-rank strong')).toHaveText('1');
+  await expect(homePage.locator('.canonical-attention-item')).toContainText('Upgrade agentic workflow dependencies');
+  await expect(homePage.locator('.canonical-attention-item')).not.toContainText('Update the Dependabot release train');
   await expect(homePage.locator('a[href="https://example.com/evidence/release-train"]')).not.toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   for (const pageName of ['Work', 'Agents', 'Evidence', 'Insights']) {
     await dashboardNext.getByRole('link', { name: pageName }).click();
@@ -520,7 +541,7 @@ test('Dashboard Next preserves the Home decision hierarchy across desktop and mo
   await page.setViewportSize({ width: 305, height: 844 });
   await page.evaluate(() => { window.location.hash = '#page-home'; });
   await expect(homePage).toBeVisible();
-  await expect(homePage.locator('.custom-view').nth(0).locator('tbody tr').first()).toBeInViewport();
+  await expect(homePage.locator('.canonical-attention-item').first()).toBeInViewport();
   await expect(homePage.locator('.custom-view').nth(1).locator('tbody tr').first()).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await expect(homePage.locator('.table-scroll').first()).toBeVisible();
