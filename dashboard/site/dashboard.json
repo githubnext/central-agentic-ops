@@ -1089,57 +1089,19 @@
         ]
       },
       {
-        "id": "security",
+        "id": "firewall",
         "kind": "custom",
-        "title": "Security & data quality",
-        "navigation-label": "Security",
-        "icon": "shield",
-        "class-name": "security-page",
-        "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/gh-aw-cao repository.",
+        "title": "Firewall activity",
+        "navigation-label": "Firewall",
+        "icon": "globe",
+        "class-name": "firewall-page",
+        "description": "Review network decisions, changes over time, and domain-level evidence to identify suspicious destinations, policy misconfiguration, and operational drift.",
         "filter-bar": {
           "filters": [
             "mode:review",
             "mode:live"
           ]
         },
-        "sections": [
-          {
-            "id": "firewall-activity",
-            "title": "Firewall activity",
-            "description": "Review network decisions, changes over time, and domain-level evidence to identify suspicious destinations, policy misconfiguration, and operational drift.",
-            "layout": "full",
-            "count-source": "security-observations",
-            "count-label": "observations",
-            "views": [
-              "security-firewall-decisions",
-              "security-firewall-trend",
-              "security-firewall-domains"
-            ]
-          },
-          {
-            "id": "operational-assurance",
-            "title": "Needs attention",
-            "description": "Execution controls, package integrity, and explicit output warnings.",
-            "layout": "full",
-            "count-source": "security-signals",
-            "count-label": "signals",
-            "views": [
-              "security-summary",
-              "security-signals"
-            ]
-          },
-          {
-            "id": "security-output-evidence",
-            "title": "Retained output evidence",
-            "description": "Durable outputs remain inspectable with warning, severity, lifecycle, and source context.",
-            "layout": "full",
-            "count-source": "findings",
-            "count-label": "records",
-            "views": [
-              "security-output-ledger"
-            ]
-          }
-        ],
         "views": [
           {
             "id": "security-firewall-decisions",
@@ -1290,7 +1252,49 @@
                 "type": "nominal"
               }
             }
+          }
+        ]
+      },
+      {
+        "id": "security",
+        "kind": "custom",
+        "title": "Security & data quality",
+        "navigation-label": "Security",
+        "icon": "shield",
+        "class-name": "security-page",
+        "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/gh-aw-cao repository.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ]
+        },
+        "sections": [
+          {
+            "id": "operational-assurance",
+            "title": "Needs attention",
+            "description": "Execution controls, package integrity, and explicit output warnings.",
+            "layout": "full",
+            "count-source": "security-signals",
+            "count-label": "signals",
+            "views": [
+              "security-summary",
+              "security-signals"
+            ]
           },
+          {
+            "id": "security-output-evidence",
+            "title": "Retained output evidence",
+            "description": "Durable outputs remain inspectable with warning, severity, lifecycle, and source context.",
+            "layout": "full",
+            "count-source": "findings",
+            "count-label": "records",
+            "views": [
+              "security-output-ledger"
+            ]
+          }
+        ],
+        "views": [
           {
             "id": "security-summary",
             "title": "Assurance summary",
@@ -1303,7 +1307,7 @@
             "mark": "element",
             "element": "summary-grid",
             "layout": "full",
-            "disclosure": "supplemental"
+            "disclosure": "essential"
           },
           {
             "id": "security-signals",
@@ -5505,6 +5509,7 @@
         "label": "Explore",
         "pages": [
           "dispatches",
+          "firewall",
           "workflows",
           "repositories",
           "packages",
