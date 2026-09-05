@@ -341,6 +341,202 @@ test('desktop navigation sections collapse and expand around the current view', 
   await expect(page.getByRole('heading', { name: 'Runs', level: 1 })).toBeVisible();
 });
 
+test('Dashboard Next preserves the Home decision hierarchy across desktop and mobile', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = ${JSON.stringify(documentModel)};
+      const metadata = {
+        'source-id': 'dashboard-next-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T10:00:00Z',
+        'retrieved-at': '2026-08-29T10:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const evidenceLink = {
+        relation: 'evidence',
+        href: 'https://example.com/evidence/release-train',
+        label: 'Review dependency evidence'
+      };
+      const sources = {
+        'work-items': {
+          source: 'work-items',
+          rows: [{
+            'work-item-id': 'dependabot:github/gh-aw:release-train',
+            objective: 'Update the Dependabot release train',
+            scope: 'github/gh-aw',
+            'lifecycle-state': 'review',
+            phase: 'verifying',
+            reason: 'Security review remains pending.',
+            'next-action': 'Review the dependency update evidence',
+            'waiting-on': 'security-reviewers',
+            owner: 'dependency-automation',
+            'evidence-link': evidenceLink
+          }],
+          metadata
+        },
+        'attention-signals': {
+          source: 'attention-signals',
+          rows: [{
+            'attention-signal-id': 'verification:dependabot:74',
+            objective: 'Update the Dependabot release train',
+            scope: 'github/gh-aw',
+            reason: 'Security verification requires human review.',
+            action: 'Review dependency evidence',
+            'expected-actor': 'security-reviewers',
+            'age-seconds': 4800,
+            'consequence-tier': 'high',
+            'evidence-link': evidenceLink
+          }],
+          metadata
+        },
+        'agent-assignments': {
+          source: 'agent-assignments',
+          rows: [{
+            'assignment-id': 'assignment:release-train-updater:74',
+            'agent-name': 'Release train updater',
+            'agent-state': 'waiting',
+            objective: 'Update the Dependabot release train',
+            'handoff-state': 'waiting-for-review',
+            'dependency-state': 'clear',
+            'conflict-state': 'none',
+            'evidence-link': evidenceLink
+          }],
+          metadata
+        },
+        'evidence-records': {
+          source: 'evidence-records',
+          rows: [{
+            'evidence-id': 'evidence:dependabot:74:checks',
+            objective: 'Update the Dependabot release train',
+            'evidence-kind': 'verification',
+            'evidence-class': 'observed',
+            claim: 'Three required validations passed.',
+            'verification-state': 'pending',
+            'provenance-state': 'complete',
+            'observed-at': '2026-08-29T09:55:00Z',
+            'evidence-link': evidenceLink
+          }],
+          metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [{
+            'safe-output': 'dependabot-review',
+            'outcome-title': 'Dependabot review retained',
+            repository: 'gh-aw',
+            'outcome-state': 'accepted',
+            'observed-at': '2026-08-29T09:40:00Z',
+            'external-link': evidenceLink
+          }],
+          metadata
+        },
+        'operational-values': {
+          source: 'operational-values',
+          rows: [
+            {
+              'operational-value': 0.6,
+              'operational-value-definition': 'accepted-outcome',
+              'observed-at': '2026-08-01T09:45:00Z',
+              'evidence-link': evidenceLink
+            },
+            {
+              'operational-value': 0.8,
+              'operational-value-definition': 'accepted-outcome',
+              'observed-at': '2026-08-29T09:45:00Z',
+              'evidence-link': evidenceLink
+            }
+          ],
+          metadata
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            {
+              repository: 'gh-aw',
+              aic: 8,
+              'observed-at': '2026-08-01T09:50:00Z'
+            },
+            {
+              repository: 'gh-aw',
+              aic: 12,
+              'observed-at': '2026-08-29T09:50:00Z'
+            }
+          ],
+          metadata
+        },
+        'github-api-rate-limits': {
+          source: 'github-api-rate-limits',
+          rows: [{
+            credential: 'control-plane',
+            resource: 'core',
+            remaining: 4200,
+            'remaining-percent': 84,
+            'reset-at': '2026-08-29T11:00:00Z',
+            'risk-status': 'healthy'
+          }],
+          metadata
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const dashboardNext = page.locator('.nav-section').filter({ hasText: 'Dashboard Next' });
+  await dashboardNext.locator('summary').click();
+  await expect(dashboardNext.getByRole('link')).toHaveText(['Home', 'Work', 'Agents', 'Evidence', 'Insights']);
+
+  await dashboardNext.getByRole('link', { name: 'Home' }).click();
+  const homePage = page.locator('[data-page-id="home"]');
+  await expect(homePage.getByRole('heading', { level: 3 })).toHaveText([
+    'Need attention',
+    'Work in progress',
+    'Outcomes',
+    'Operational pulse'
+  ]);
+  await expect(homePage.getByRole('columnheader')).toHaveText([
+    'Work', 'Scope', 'Why', 'Next action', 'Actor', 'Age', 'Consequence',
+    'Work', 'Scope', 'Phase', 'Why', 'Next action', 'Owner',
+    'Outcome', 'Repository', 'Disposition', 'Observed'
+  ]);
+  await expect(homePage.locator('a[href="https://example.com/evidence/release-train"]')).not.toHaveCount(0);
+
+  for (const pageName of ['Work', 'Agents', 'Evidence', 'Insights']) {
+    await dashboardNext.getByRole('link', { name: pageName }).click();
+    await expect(page.getByRole('heading', { name: pageName, exact: true, level: 1 })).toBeVisible();
+    if (['Work', 'Agents', 'Evidence'].includes(pageName)) {
+      await expect(page.locator(`[data-page-id="${pageName.toLowerCase()}"] .table-summary-row`)).toHaveCount(0);
+    }
+  }
+
+  // A 320px window can leave 305px of layout width when the browser reserves a scrollbar gutter.
+  await page.setViewportSize({ width: 305, height: 844 });
+  await page.evaluate(() => { window.location.hash = '#page-home'; });
+  await expect(homePage).toBeVisible();
+  await expect(homePage.locator('.custom-view').nth(0).locator('tbody tr').first()).toBeInViewport();
+  await expect(homePage.locator('.custom-view').nth(1).locator('tbody tr').first()).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expect(homePage.locator('.table-scroll').first()).toBeVisible();
+
+  for (const pageName of ['home', 'work', 'agents', 'evidence', 'insights']) {
+    await page.evaluate((nextPage) => { window.location.hash = `#page-${nextPage}`; }, pageName);
+    const activePage = page.locator(`[data-page-id="${pageName}"]`);
+    await expect(activePage).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    for (const chart of await activePage.locator('[data-chart-widget]').all()) {
+      const box = await chart.boundingBox();
+      expect(box?.width).toBeGreaterThan(0);
+      expect(box?.height).toBeGreaterThan(0);
+    }
+  }
+});
+
 test('performance page lays out runtime charts side by side', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));

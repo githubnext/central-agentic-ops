@@ -323,7 +323,11 @@ export const SOURCE_VALUES = [
   'model-usage-summary',
   'engine-usage-summary',
   'data-health-summary',
-  'data-health-sources'
+  'data-health-sources',
+  'work-items',
+  'attention-signals',
+  'agent-assignments',
+  'evidence-records'
 ];
 
 export const SOURCE_FIELDS = {
@@ -386,7 +390,11 @@ export const SOURCE_FIELDS = {
   'run-aggregate-summary': ['engine', 'engine-version', 'requested-model', 'resolved-model', 'run-conclusion', 'runs', 'run-link'],
   'workflow-topology-summary': ['label', 'value'],
   'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'package-link', 'repository-link', 'workflow-link'],
-  'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link']
+  'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link'],
+  'work-items': ['work-item-id', 'objective', 'organization', 'repository', 'scope', 'domain', 'work-type', 'lifecycle-state', 'phase', 'reason', 'reason-evidence-class', 'next-action', 'next-actor', 'waiting-on', 'waiting-since', 'owner', 'consequence-tier', 'verification-state', 'outcome-state', 'observed-at', 'evidence-link', 'repository-link', 'run-link'],
+  'attention-signals': ['attention-signal-id', 'signal-type', 'work-item-id', 'objective', 'scope', 'reason', 'action', 'expected-actor', 'age-seconds', 'consequence-tier', 'priority', 'observed-at', 'evidence-link', 'repository-link', 'run-link'],
+  'agent-assignments': ['assignment-id', 'agent-id', 'agent-name', 'agent-state', 'work-item-id', 'objective', 'assignment-state', 'handoff-state', 'dependency-state', 'conflict-state', 'observed-at', 'evidence-link', 'repository-link', 'run-link'],
+  'evidence-records': ['evidence-id', 'evidence-class', 'evidence-kind', 'work-item-id', 'objective', 'claim', 'verification-state', 'provenance-state', 'source-revision', 'observed-at', 'evidence-link', 'repository-link', 'run-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
@@ -444,7 +452,11 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   'repository-workflows': ['repository', 'workflow'],
   'workflow-runs': ['workflow-route', 'run'],
   'workflow-reports': ['workflow-route', 'safe-output'],
-  'package-reports': ['package', 'safe-output']
+  'package-reports': ['package', 'safe-output'],
+  'work-items': ['work-item-id'],
+  'attention-signals': ['attention-signal-id'],
+  'agent-assignments': ['assignment-id'],
+  'evidence-records': ['evidence-id']
 };
 
 export const TEMPORAL_FIELD_NAMES = [
@@ -457,7 +469,8 @@ export const TEMPORAL_FIELD_NAMES = [
   'maturity-at',
   'published-at',
   'reset-at',
-  'projected-exhaustion-at'
+  'projected-exhaustion-at',
+  'waiting-since'
 ];
 
 export const ADDITIVE_MEASURE_FIELDS = [

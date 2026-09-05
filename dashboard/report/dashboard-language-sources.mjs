@@ -27,6 +27,10 @@ const sourceNames = [
   "github-api-rate-limits",
   "github-api-collector-health",
   "github-api-call-stacks",
+  "work-items",
+  "attention-signals",
+  "agent-assignments",
+  "evidence-records",
 ];
 const AIC_TO_USD = 0.01;
 export const GITHUB_RATE_LIMIT_THRESHOLDS = Object.freeze({

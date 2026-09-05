@@ -14,7 +14,7 @@ test("generate-dashboard-ir corpus is indexed and valid", () => {
   });
 });
 
-test("every production dashboard page starts with an executive summary", () => {
+test("every production dashboard page starts with an executive summary or prescribed attention view", () => {
   const executiveSummaryCharts = new Set(["pie", "line", "dot", "histogram", "swimlane"]);
   const dashboardFiles = [
     join(root, "dashboard/site/dashboard.json"),
@@ -33,9 +33,24 @@ test("every production dashboard page starts with an executive summary", () => {
       const isSummaryTable = summary.mark === "table"
         && summary.encoding?.columns?.some((column) => typeof column.aggregate === "string");
       const isSummaryGrid = summary.mark === "element" && summary.element === "summary-grid";
+      const isAttentionFirstHome = page.id === "home"
+        && page["class-name"] === "dashboard-next-home-page"
+        && summary.id === "home-attention"
+        && summary.mark === "table"
+        && summary.data?.source === "attention-signals";
+      if (isAttentionFirstHome) {
+        assert.deepEqual(
+          views.map((view) => view.id),
+          ["home-attention", "home-work", "home-outcomes", "home-operational-pulse"],
+          `${path}: page "home" must preserve its prescribed attention-first region order`,
+        );
+      }
       assert.ok(
-        (summary.mark === "chart" && executiveSummaryCharts.has(summary.chart)) || isSummaryTable || isSummaryGrid,
-        `${path}: page "${page.id}" must start with an executive-summary chart, aggregated table, or summary grid`,
+        (summary.mark === "chart" && executiveSummaryCharts.has(summary.chart))
+          || isSummaryTable
+          || isSummaryGrid
+          || isAttentionFirstHome,
+        `${path}: page "${page.id}" must start with an executive summary or its prescribed attention view`,
       );
     }
   }

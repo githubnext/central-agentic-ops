@@ -233,6 +233,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .view-disclosure > .page-section { padding: 0 14px 14px; }
 .chart-widget { min-height: 230px; display: grid; place-items: center; margin: 12px 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
+.line-chart-widget, .dot-chart-widget { min-width: 0; overflow: hidden; }
 .line-chart-widget svg, .dot-chart-widget svg { width: 100%; max-height: none; }
 .pie-chart-track { stroke: var(--border-muted); }
 .pie-chart-segment { stroke: var(--accent); }
@@ -1044,7 +1045,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .breadcrumb .shell > :is([data-breadcrumb-root], [data-breadcrumb-dashboard]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .report-actions { width: 100%; position: relative; margin-left: 0; }
   .report-actions .tooltip-help { position: static; }
-  .report-actions .tooltip-content { right: auto; left: 0; }
+  .report-actions .tooltip-content { width: min(320px, 100%); right: auto; left: 0; }
   .freshness { min-width: 0; flex: 1; }
   .refresh-button > span { display: none; }
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
@@ -1121,6 +1122,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .package-status-grid { grid-template-columns: minmax(0, 1fr); }
   .outcome-meta { grid-template-columns: 1fr; }
   .markdown-body { padding: 20px 16px 24px; }
+}
+@media (max-width: 340px) {
+  .primary-nav, .nav-section-items { gap: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

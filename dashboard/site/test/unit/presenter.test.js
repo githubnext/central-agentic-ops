@@ -602,8 +602,8 @@ describe('presenter built-in and custom pages', () => {
       /** @param {{ label?: string }} section */
       (section) => section.label === 'Control plane'
     );
-    expect(labels).toEqual(['Attention', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
-    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, true, false, false, false]);
+    expect(labels).toEqual(['Attention', 'Dashboard Next', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
+    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, true, false, false, false]);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.closest('.nav-section')?.textContent).toContain('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.closest('.nav-section')?.textContent).toContain('Investigate');
     expect(rendered.querySelector('[data-nav-page-id="preview"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
@@ -611,6 +611,11 @@ describe('presenter built-in and custom pages', () => {
     expect(controlPlaneNavigation?.pages).toEqual(expect.arrayContaining(['github-api']));
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
+      'Home',
+      'Work',
+      'Agents',
+      'Evidence',
+      'Insights',
       'Runtime',
       'Performance',
       'Security',
@@ -658,7 +663,7 @@ describe('presenter built-in and custom pages', () => {
 
     const sections = [...rendered.querySelectorAll('.nav-section')];
     expect(/** @type {HTMLDetailsElement} */ (sections[0]).open).toBe(true);
-    expect(/** @type {HTMLDetailsElement} */ (sections[1]).open).toBe(true);
+    expect(/** @type {HTMLDetailsElement} */ (sections[2]).open).toBe(true);
     expect(rendered.querySelector('[data-nav-page-id="security"]')?.getAttribute('aria-current')).toBe('page');
 
     rendered.remove();
@@ -825,6 +830,11 @@ describe('presenter built-in and custom pages', () => {
     expect(menuLinks.every((link) => link.querySelector('.octicon') !== null)).toBe(true);
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
+      'Home',
+      'Work',
+      'Agents',
+      'Evidence',
+      'Insights',
       'Runtime',
       'Performance',
       'Security',
@@ -848,10 +858,10 @@ describe('presenter built-in and custom pages', () => {
     ]);
 
     menu?.setAttribute('open', '');
-    /** @type {HTMLAnchorElement | undefined} */ (menuLinks[4])?.click();
+    /** @type {HTMLAnchorElement | undefined} */ (menuLinks[9])?.click();
 
     expect(menu?.hasAttribute('open')).toBe(false);
-    expect(menuLinks[4]?.getAttribute('aria-current')).toBe('page');
+    expect(menuLinks[9]?.getAttribute('aria-current')).toBe('page');
     window.history.replaceState(null, '', '/');
   });
 
