@@ -112,6 +112,14 @@ function renderTableView(context) {
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const tableRows = prepareTableRows(rows, columns, view.data);
+  const tree = isPlainObject(view.tree)
+    && typeof view.tree['id-field'] === 'string'
+    && typeof view.tree['parent-field'] === 'string'
+    ? view.tree
+    : null;
+  const displayedRows = tree
+    ? arrangeTreeRows(tableRows, tree['id-field'], tree['parent-field'])
+    : tableRows.map((row) => ({ row, depth: 0 }));
   const actions = tableActions(view);
   const renderCellValue = createEntityAwareCellRenderer(
     ENTITY_LINK_FIELDS,
@@ -125,9 +133,12 @@ function renderTableView(context) {
     ),
     toText
   );
-  const bodyRows = tableRows.map((row, rowIndex) => h(
+  const bodyRows = displayedRows.map(({ row, depth }, rowIndex) => h(
     'tr',
-    { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
+    {
+      'data-custom-row-key': `${pageId}-${title}-${rowIndex}`,
+      ...(tree ? { 'aria-level': String(depth + 1), 'data-tree-row': '' } : {})
+    },
     ...actions.map((action) => actionMatches(action, row)
       ? h('td', { className: 'table-intent-action' }, renderIntentAction(action, row))
       : h('td', { className: 'table-intent-action' })),
@@ -152,9 +163,13 @@ function renderTableView(context) {
       const constrainOutputEvidence = (content) => column.display === 'outcome-link'
         ? h('span', { className: 'table-output-evidence' }, content)
         : content;
+      /** @param {string | HTMLElement} content */
+      const renderCellContent = (content) => columnIndex === 0 && tree
+        ? h('span', { className: 'tree-table-cell', style: `--tree-depth: ${depth}` }, constrainOutputEvidence(content))
+        : constrainOutputEvidence(content);
       if (columnIndex === 0 && hrefField) {
         if (column.field === RUN_FIELD && hrefField === RUN_LINK_FIELD) {
-          return h('td', cellAttributes, constrainOutputEvidence(value));
+          return h('td', cellAttributes, renderCellContent(value));
         }
         const outputEvidenceText = toText(row[outputField]);
         const linkedValue = renderLinkedValue(
@@ -164,9 +179,9 @@ function renderTableView(context) {
         if (column.display === 'outcome-link' && linkedValue instanceof HTMLElement) {
           linkedValue.title = outputEvidenceText;
         }
-        return h('td', cellAttributes, constrainOutputEvidence(linkedValue));
+        return h('td', cellAttributes, renderCellContent(linkedValue));
       }
-      return h('td', cellAttributes, constrainOutputEvidence(value));
+      return h('td', cellAttributes, renderCellContent(value));
     })
   ));
 
@@ -175,6 +190,7 @@ function renderTableView(context) {
     ...renderViewSectionChrome(metadata, contextDetails),
     renderTableRegion({
       tableClassName: 'custom-table',
+      tableRole: tree ? 'treegrid' : undefined,
       regionClassName: interactive ? undefined : 'table-region-static',
       emptyMessage: typeof view['empty-message'] === 'string' ? view['empty-message'] : 'No rows available.',
       colSpan: Math.max(columns.length + actions.length, 1),
@@ -211,6 +227,48 @@ function renderTableView(context) {
       sortable: interactive
     })
   ], headingTag, view.description);
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {string} idField
+ * @param {string} parentField
+ * @returns {Array<{ row: Record<string, unknown>, depth: number }>}
+ */
+function arrangeTreeRows(rows, idField, parentField) {
+  const byId = new Map();
+  for (const row of rows) {
+    const id = String(row[idField] ?? '');
+    if (id) byId.set(id, row);
+  }
+  /** @type {Map<string, Array<Record<string, unknown>>>} */
+  const children = new Map();
+  /** @type {Array<Record<string, unknown>>} */
+  const roots = [];
+  for (const row of rows) {
+    const parentId = String(row[parentField] ?? '');
+    if (!parentId || !byId.has(parentId)) {
+      roots.push(row);
+      continue;
+    }
+    const siblings = children.get(parentId) || [];
+    siblings.push(row);
+    children.set(parentId, siblings);
+  }
+  /** @type {Array<{ row: Record<string, unknown>, depth: number }>} */
+  const result = [];
+  /** @type {Set<Record<string, unknown>>} */
+  const visited = new Set();
+  /** @param {Record<string, unknown>} row @param {number} depth */
+  const append = (row, depth) => {
+    if (visited.has(row)) return;
+    visited.add(row);
+    result.push({ row, depth });
+    for (const child of children.get(String(row[idField] ?? '')) || []) append(child, depth + 1);
+  };
+  for (const row of roots) append(row, 0);
+  for (const row of rows) append(row, 0);
+  return result;
 }
 
 /**
@@ -466,4 +524,3 @@ async function copyIntent(content) {
     return false;
   }
 }
-
