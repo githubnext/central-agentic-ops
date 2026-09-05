@@ -1073,13 +1073,11 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
    * @param {URLSearchParams} [parameters]
    */
   const activate = (pageId, parameters = new URLSearchParams()) => {
+    const dashboardHorizon = root.querySelector('.dashboard-horizon');
     if (activePageId && activePageId !== pageId) {
       const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
       if (activePage) {
-        const dashboardHorizon = root.querySelector('.dashboard-horizon');
-        if (dashboardHorizon && reportActions) {
-          reportActions.prepend(dashboardHorizon);
-        }
+        if (dashboardHorizon && activePage.contains(dashboardHorizon)) dashboardHorizon.remove();
         pageState.set(activePageId, {
           details: [...activePage.querySelectorAll('details')].map((details) => details.open),
           scrollTop: root.ownerDocument.scrollingElement?.scrollTop ?? root.ownerDocument.documentElement.scrollTop
@@ -1120,7 +1118,6 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     updateNavigationLinks(links, pageId);
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
-    const dashboardHorizon = root.querySelector('.dashboard-horizon');
     const filterInput = page?.querySelector('.filter-control input');
     if (dashboardHorizon && filterInput) {
       filterInput.before(dashboardHorizon);

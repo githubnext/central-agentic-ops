@@ -68,6 +68,7 @@ export function renderFilterBar(config, onChange, options = {}) {
       if (event.key !== 'Escape' || scopeLabel.getAttribute('aria-expanded') !== 'true') return;
       setExpanded(false);
       scopeLabel.focus();
+      event.stopPropagation();
     });
   }
   filters.addEventListener('input', () => {
