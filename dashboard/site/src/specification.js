@@ -149,7 +149,6 @@ export const FILTER_DIMENSION_VALUES = [
   'security-feature',
   'security-analysis',
   'security-status',
-  'detection-state',
   'detection-state'
 ];
 
