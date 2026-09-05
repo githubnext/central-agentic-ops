@@ -729,7 +729,7 @@ Role emphasis changes default ordering and visible supplemental information, not
 | Completeness | `complete`, `partial`, `unknown` |
 | Freshness | `fresh`, `stale`, `unknown` |
 
-`empty` means a valid query returned no observations. `Unavailable` means no usable result exists. Neither means zero unless the measured operation is a count over a valid empty selection.
+`empty` means a valid query returned no observations. `unavailable` means no usable result exists. Neither means zero unless the measured operation is a count over a valid empty selection.
 
 For a derived region, required inputs are those declared by the measure definition. Availability is `unavailable` if any required input is unavailable, `empty` if every required input is empty, and otherwise `available`. Completeness is `unknown` if any required input has unknown completeness, `partial` if none is unknown and any is partial, and otherwise `complete`. Freshness is `stale` if any required input is stale, `unknown` if none is stale and any has unknown freshness, and otherwise `fresh`.
 
