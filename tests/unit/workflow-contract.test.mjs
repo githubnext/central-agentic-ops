@@ -1996,6 +1996,18 @@ test("AW Doctor compiler security worker runs the full validation suite", () => 
   }
 });
 
+test("AW Doctor failures worker closes consolidated tracking issues as duplicates", () => {
+  const source = workflow("aw-failures-investigator.md");
+
+  assert.match(source, /intent: Reduce maintainer effort spent tracking recent agentic workflow failures/);
+  assert.match(source, /close-issue:\n\s+target: "\*"/);
+  assert.match(source, /required-labels: \[aw-doctor, aw-doctor:failures-investigator\]/);
+  assert.match(source, /required-title-prefix: "\[aw-doctor:failures-investigator\] "/);
+  assert.match(source, /state-reason: duplicate/);
+  assert.match(source, /`duplicate_of` set to the actual issue number returned for the consolidated report/);
+  assert.match(source, /In `review`, do not close target-repository issues/);
+});
+
 test("slower package orchestrators run hourly", () => {
   for (const name of [
     "dependabot.md",

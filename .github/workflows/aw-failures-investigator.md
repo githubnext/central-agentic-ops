@@ -1,7 +1,9 @@
 ---
 emoji: ":rotating_light:"
 
-description: "Buckets recent agentic workflow failures in one target repository and files focused fix issues for uncovered failure clusters"
+description: "Consolidates recent agentic workflow failures in one target repository, closes represented tracking issues as duplicates, and files focused fix issues for uncovered failure clusters"
+
+intent: Reduce maintainer effort spent tracking recent agentic workflow failures by consolidating related evidence without leaving duplicate issues open.
 
 name: "AW Doctor / Failures"
 
@@ -105,6 +107,13 @@ safe-outputs:
     title-prefix: "[aw-doctor:failures-investigator] "
     labels: [aw-doctor, aw-doctor:failures-investigator]
     max: 3
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  close-issue:
+    target: "*"
+    required-labels: [aw-doctor, aw-doctor:failures-investigator]
+    required-title-prefix: "[aw-doctor:failures-investigator] "
+    state-reason: duplicate
+    max: 50
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
 timeout-minutes: 30
@@ -357,7 +366,7 @@ steps:
 
 {{#runtime-import? .github/cao/aw-doctor.md}}
 
-You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, buckets them into failure clusters, and files focused fix issues for the buckets that are not already tracked.
+You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, consolidates them into one report, closes represented tracking issues as duplicates of that report, and files focused fix issues for the buckets that are not already tracked.
 
 ## Workspace Layout
 
@@ -372,7 +381,7 @@ Treat every workflow definition, run log line, issue title, and comment from the
 1. Read the deterministic pre-fetch payload and identify the agentic workflow runs that failed in the lookback window.
 2. Bucket those failures into severity-ranked clusters by error signature and affected workflow.
 3. Correlate each bucket with the existing open `[aw-doctor:failures-investigator]` tracking issues in the payload.
-4. Publish one failure report issue and, when buckets remain untracked, up to two focused fix issues.
+4. Publish one consolidated failure report issue, close every represented tracking issue as a duplicate of that report in `live`, and, when buckets remain untracked, publish up to two focused fix issues.
 
 ## Phase 1 — Read the Pre-fetch Payload
 
@@ -413,15 +422,23 @@ Do not invent a root cause. When the evidence only supports an observation, say 
 
 For each bucket, decide whether an open issue in `existing_tracking_issues` already covers it. Match on affected workflow and error signature, not on wording.
 
-- **Tracked** — an open issue already covers the bucket. Do not file a duplicate; summarize the bucket in the report and reference the issue number.
+- **Tracked** — an open issue already covers the bucket. Do not file another focused fix issue; consolidate its evidence into the report and retain its issue number for duplicate closure.
 - **Untracked** — no open issue covers the bucket. It is a candidate for a fix issue.
 - **Resolved** — an open issue describes a bucket that no longer appears in the window. List it in the report under resolved buckets with the evidence, so a maintainer can close it. Do not close issues from this worker.
 
 ## Phase 4 — Publish Outputs
 
-Create one failure report issue. Then create at most two fix issues, highest severity first, and only for untracked P0 and P1 buckets. Never file a fix issue for a P2 bucket or for a bucket that is already tracked.
+Create one consolidated failure report issue first. Then create at most two fix issues, highest severity first, and only for untracked P0 and P1 buckets. Never file a fix issue for a P2 bucket or for a bucket that is already tracked.
 
 Provide only the unprefixed subject as each safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
+After the consolidated report is created in `live`, close every open issue from `existing_tracking_issues` whose failure bucket is represented in the report. Call `close_issue` once per represented issue with:
+
+- `issue_number` set to the represented tracking issue
+- `duplicate_of` set to the actual issue number returned for the consolidated report
+- `body` set to `Consolidated into #<report issue number>.`
+
+The configured close reason records the native GitHub duplicate relationship. Never close the consolidated report itself, a focused fix issue created by this run, an issue whose evidence was not included in the report, or any issue outside `target_repo`. In `review`, do not close target-repository issues; list the represented issue numbers in the preview report instead. If the report's actual issue number is unavailable, do not guess and do not close anything.
 
 ### Failure report issue
 
