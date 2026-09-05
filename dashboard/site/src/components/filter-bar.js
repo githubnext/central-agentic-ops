@@ -92,7 +92,10 @@ export function renderFilterBar(config, onChange, options = {}) {
       .join(' ');
     if (nextValue !== filters.value) {
       filters.value = nextValue;
-      if (cursor !== null) filters.setSelectionRange(cursor, cursor);
+      if (cursor !== null) {
+        const nextCursor = Math.min(cursor, nextValue.length);
+        filters.setSelectionRange(nextCursor, nextCursor);
+      }
     }
   }
   /** @param {Map<string, string[]>} parsed */
