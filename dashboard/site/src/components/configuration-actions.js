@@ -44,10 +44,10 @@ export function renderConfigurationActions(context) {
     context.pageId,
     context.title,
     [
-    ...renderViewSectionChrome(source?.metadata, context.contextDetails),
-    rows.length > 0
-      ? h('ul', { className: 'configuration-action-list' }, ...rows.map(renderChange))
-      : h('p', { className: 'configuration-actions-empty' }, 'No configuration changes are currently suggested.')
+      ...renderViewSectionChrome(source?.metadata, context.contextDetails),
+      rows.length > 0
+        ? h('ul', { className: 'configuration-action-list' }, ...rows.map(renderChange))
+        : h('p', { className: 'configuration-actions-empty' }, 'No configuration changes are currently suggested.')
     ],
     context.headingTag,
     context.description
