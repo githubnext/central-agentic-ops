@@ -344,24 +344,20 @@
           {
             "id": "github-api-remaining-trend",
             "title": "Quota history",
-            "description": "Remaining capacity over the selected UTC time range. Resource and credential series remain independent so reset sawtooths are not combined across credentials.",
+            "description": "Individual remaining-capacity observations over the selected UTC time range, colored by resource, credential, and maximum quota.",
             "data": {
-              "source": "github-api-rate-limits",
-              "filters": {
-                "has-history": "true"
-              }
+              "source": "github-api-rate-limits"
             },
             "mark": "chart",
-            "chart": "line",
+            "chart": "scatter",
             "table": true,
             "layout": "full",
             "disclosure": "essential",
-            "empty-message": "Quota history is unavailable until at least two observations exist for the same resource and credential.",
+            "empty-message": "No quota observations are available for the selected time range.",
             "encoding": {
               "x": {
                 "field": "observed-at",
                 "type": "temporal",
-                "time-unit": "hour",
                 "title": "Observed (UTC)"
               },
               "y": {
@@ -371,9 +367,9 @@
                 "unit": "percent"
               },
               "color": {
-                "field": "history-series",
+                "field": "maximum-lane",
                 "type": "nominal",
-                "title": "Resource and credential"
+                "title": "Maximum lane"
               }
             }
           },
@@ -3757,6 +3753,211 @@
         }
       },
       {
+        "id": "detection",
+        "kind": "custom",
+        "title": "Detection",
+        "icon": "shield-check",
+        "class-name": "detection-page",
+        "description": "Diagnostics and execution performance for the threat-detection job.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "detection-job-conclusions",
+            "title": "Detection job conclusions",
+            "description": "Current conclusion distribution highlights failed, cancelled, and incomplete threat-detection jobs.",
+            "data": {
+              "source": "job-performance",
+              "filters": {
+                "job": [
+                  "detection"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "job-conclusion",
+                "type": "ordinal",
+                "title": "Conclusion"
+              },
+              "y": {
+                "field": "job",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Jobs"
+              }
+            }
+          },
+          {
+            "id": "detection-job-duration-trend",
+            "title": "Detection job duration trend",
+            "description": "Daily mean duration reveals performance regressions in completed threat-detection jobs.",
+            "data": {
+              "source": "job-performance",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "job": [
+                  "detection"
+                ],
+                "job-status": [
+                  "completed"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Started"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean duration",
+                "unit": "human-duration"
+              },
+              "color": {
+                "field": "job-conclusion",
+                "type": "ordinal",
+                "title": "Conclusion"
+              }
+            }
+          },
+          {
+            "id": "detection-job-runner-performance",
+            "title": "Detection time by runner",
+            "description": "Mean duration by runner identifies infrastructure-specific performance differences.",
+            "data": {
+              "source": "job-performance",
+              "filters": {
+                "job": [
+                  "detection"
+                ],
+                "job-status": [
+                  "completed"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "runner",
+                "type": "nominal",
+                "title": "Runner"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean duration",
+                "unit": "human-duration"
+              }
+            }
+          },
+          {
+            "id": "detection-job-ledger",
+            "title": "Detection job diagnostics",
+            "description": "Recent threat-detection jobs provide status, conclusion, duration, runner, workflow, and run evidence for investigation.",
+            "data": {
+              "source": "job-performance",
+              "filters": {
+                "job": [
+                  "detection"
+                ]
+              },
+              "order-by": [
+                {
+                  "field": "started-at",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No detection jobs were observed in the current run window.",
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "job-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "job-conclusion",
+                  "type": "nominal",
+                  "title": "Conclusion",
+                  "display": "status"
+                },
+                {
+                  "field": "job-duration-seconds",
+                  "type": "quantitative",
+                  "title": "Duration",
+                  "unit": "human-duration"
+                },
+                {
+                  "field": "runner",
+                  "type": "nominal",
+                  "title": "Runner"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "organization",
+                  "type": "nominal"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "title": "Started"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      },
+      {
         "id": "dispatches",
         "kind": "custom",
         "title": "Dispatches",
@@ -5445,6 +5646,180 @@
         ]
       },
       {
+        "id": "admission",
+        "kind": "custom",
+        "title": "Admission",
+        "icon": "shield-check",
+        "description": "Pre-activation decisions and gate behavior for control-plane orchestrators and workers.",
+        "filter-bar": {
+          "filters": [
+            "workflow-role:orchestrator",
+            "workflow-role:worker"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "admission-decision-distribution",
+            "title": "Admission decisions",
+            "description": "Authorized and denied pre-activation evaluations show whether control-plane work is clearing its safety boundary.",
+            "data": {
+              "source": "admissions"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "admission-status",
+                "type": "nominal",
+                "title": "Decision"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Evaluations"
+              }
+            }
+          },
+          {
+            "id": "admission-decision-trend",
+            "title": "Admission trend",
+            "description": "Daily decisions reveal changes in authorization behavior across orchestrators and workers.",
+            "data": {
+              "source": "admissions"
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Evaluations"
+              },
+              "color": {
+                "field": "admission-status",
+                "type": "nominal",
+                "title": "Decision"
+              }
+            }
+          },
+          {
+            "id": "admission-failed-gates",
+            "title": "Denied by gate",
+            "description": "Failed gate counts identify which pre-activation checks most often prevent execution.",
+            "data": {
+              "source": "admission-checks",
+              "filters": {
+                "check-status": [
+                  "failed"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "check",
+                "type": "nominal",
+                "title": "Gate"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Denied runs"
+              },
+              "color": {
+                "field": "workflow-role",
+                "type": "nominal",
+                "title": "Role"
+              }
+            }
+          },
+          {
+            "id": "admission-decision-ledger",
+            "title": "Admission evidence",
+            "description": "Latest structured pre-activation records preserve the decision, failing gate, reason, role, and run provenance.",
+            "data": {
+              "source": "admissions",
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                }
+              ],
+              "limit": 100
+            },
+            "mark": "table",
+            "layout": "full",
+            "empty-message": "No structured admission records were observed in the current run window.",
+            "encoding": {
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                },
+                {
+                  "field": "package",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                {
+                  "field": "workflow-role",
+                  "type": "nominal",
+                  "title": "Role"
+                },
+                {
+                  "field": "admission-status",
+                  "type": "nominal",
+                  "title": "Decision",
+                  "display": "status"
+                },
+                {
+                  "field": "failed-check",
+                  "type": "nominal",
+                  "title": "Failed gate"
+                },
+                {
+                  "field": "admission-reason",
+                  "type": "nominal",
+                  "title": "Reason"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal",
+                  "title": "Control repository"
+                },
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
         "id": "configuration",
         "kind": "custom",
         "title": "Configuration",
@@ -5663,6 +6038,7 @@
         "label": "Control plane",
         "pages": [
           "configuration",
+          "admission",
           "preview",
           "readiness",
           "data-health",
@@ -5673,6 +6049,7 @@
       {
         "label": "Explore",
         "pages": [
+          "detection",
           "dispatches",
           "firewall",
           "mcps",

@@ -80,6 +80,7 @@ echo "/dev/root 83886080 1048576 $MOCK_DISK_AVAILABLE_KB 12% /"
     });
     return {
       result,
+      admission: JSON.parse(readFileSync(join(directory, "cao", "admission.json"), "utf8")),
       output: Object.fromEntries(
         readFileSync(githubOutput, "utf8")
           .trim()
@@ -143,7 +144,7 @@ if (args[0] === "api" && args[1] === endpoint) {
 }
 
 test("CAO admission authorizes a declared package before activation", () => {
-  const { result, output, summary } = runAdmission();
+  const { result, admission, output, summary } = runAdmission();
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, [
@@ -164,6 +165,13 @@ test("CAO admission authorizes a declared package before activation", () => {
   assert.match(summary, /- ✅ Run limits — Any supplied `max_repos`/);
   assert.equal((summary.match(/<details>/g) ?? []).length, 1);
   assert.equal((summary.match(/^- ✅ /gm) ?? []).length, 11);
+  assert.equal(admission.schema_version, 1);
+  assert.equal(admission.authorized, true);
+  assert.equal(admission.reason, "authorized");
+  assert.equal(admission.failed_check, null);
+  assert.equal(admission.package, "dependabot");
+  assert.equal(admission.role, "orchestrator");
+  assert.deepEqual([...new Set(admission.checks.map(({ status }) => status))], ["passed"]);
 });
 
 test("CAO admission emits plain logs outside GitHub Actions", () => {
@@ -193,7 +201,7 @@ test("CAO admission exports the authorized package budget", () => {
 });
 
 test("CAO admission denies a disabled package without failing the workflow", () => {
-  const { result, output, summary } = runAdmission({
+  const { result, admission, output, summary } = runAdmission({
     policy: controlPolicy({ packagePolicy: { enabled: false } }),
   });
 
@@ -204,6 +212,11 @@ test("CAO admission denies a disabled package without failing the workflow", () 
   assert.match(summary, /- ❌ Package —/);
   assert.match(summary, /- Worker —/);
   assert.doesNotMatch(summary, /- [✅❌] Worker —/);
+  assert.equal(admission.authorized, false);
+  assert.equal(admission.failed_check, "Package");
+  assert.equal(admission.checks.find(({ check }) => check === "Workflow identity").status, "passed");
+  assert.equal(admission.checks.find(({ check }) => check === "Package").status, "failed");
+  assert.equal(admission.checks.find(({ check }) => check === "Worker").status, "not-evaluated");
 });
 
 test("CAO admission denies a requested mode that exceeds checked-in policy and marks Mode input", () => {

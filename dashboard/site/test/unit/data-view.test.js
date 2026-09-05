@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { renderDataView } from '../../src/components/data-view.js';
+import { processDataRequest } from '../../src/data-worker.js';
 
 const metadata = {
   'source-id': 'fixture',
@@ -160,6 +161,60 @@ describe('data view renderer', () => {
       view: { ...context.view, table: true }
     });
     expect(explicitTable?.querySelector('.custom-chart-table')).not.toBeNull();
+  });
+
+  it('shows worker progress while clustering large scatter plots and renders a bounded result', async () => {
+    class ScatterWorker extends EventTarget {
+      /** @param {Record<string, unknown>} request */
+      postMessage(request) {
+        setTimeout(() => this.dispatchEvent(new MessageEvent('message', {
+          data: { id: request.id, data: processDataRequest(request) }
+        })), 0);
+      }
+
+      terminate() {}
+    }
+    vi.stubGlobal('Worker', ScatterWorker);
+    const start = Date.parse('2026-09-01T00:00:00Z');
+    const points = Array.from({ length: 100_000 }, (_, index) => ({
+      key: `point-${index}`,
+      x: new Date(start + (index * 1_000)).toISOString(),
+      y: index % 101,
+      color: `lane-${index % 4}`,
+      link: null
+    }));
+    const rendered = renderDataView('chart', {
+      pageId: 'github-api',
+      title: 'Quota history',
+      view: {
+        mark: 'chart',
+        chart: 'scatter',
+        table: true,
+        encoding: {
+          x: { field: 'observed-at', type: 'temporal' },
+          y: { field: 'remaining-percent', type: 'quantitative' },
+          color: { field: 'maximum-lane', type: 'nominal' }
+        }
+      },
+      sourceName: 'github-api-rate-limits',
+      rows: [],
+      metadata,
+      contextDetails: [],
+      headingTag: 'h3',
+      prepareTableRows: () => [],
+      buildChartPoints: () => points,
+      prepareChartPoints: (prepared) => prepared,
+      toText: String
+    });
+
+    expect(rendered?.querySelector('.chart-clustering-progress')?.textContent).toContain('Clustering 100,000 scatter points');
+    expect(rendered?.querySelector('.chart-clustering-progress')?.getAttribute('aria-busy')).toBe('true');
+    await vi.waitFor(() => {
+      expect(rendered?.querySelector('.chart-clustering-progress')).toBeNull();
+      expect(rendered?.querySelectorAll('.scatter-chart-point')).toHaveLength(400);
+      expect(rendered?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(400);
+    });
+    vi.unstubAllGlobals();
   });
 
   it('renders workflow run IDs as links whenever a safe run link is available', () => {

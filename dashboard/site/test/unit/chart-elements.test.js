@@ -120,7 +120,7 @@ describe('chart element helpers', () => {
   });
 
   it('distinguishes missing chart data from an insufficient sample', () => {
-    for (const chartType of ['bar', 'histogram', 'line', 'pie']) {
+    for (const chartType of ['bar', 'histogram', 'line', 'pie', 'scatter']) {
       const chart = renderChartWidget(chartType, [], []);
 
       expect(chart.getAttribute('data-chart-widget')).toBe(chartType);
@@ -361,6 +361,47 @@ describe('chart element helpers', () => {
     expect(dot.querySelector('[data-chart-reference="core"]')?.getAttribute('data-chart-reference-value')).toBe('5000');
     expect(dot.querySelector('.line-chart-series')).toBeNull();
     expect(dot.querySelector('svg')?.getAttribute('aria-label')).toBe('Dot chart with 3 points and 2 reference lines');
+  });
+
+  it('renders temporal scatter observations at proportional timestamps without connecting them', () => {
+    const points = [
+      { x: '2026-09-04T10:00:00Z', y: 98, color: 'max 5000' },
+      { x: '2026-09-04T11:00:00Z', y: 50, color: 'max 5000' },
+      { x: '2026-09-04T14:00:00Z', y: 10, color: 'max 30' }
+    ];
+    const scatter = renderChartWidget('scatter', points, listChartSeries(points), null, 'Remaining', {
+      name: 'Percent',
+      symbol: '%',
+      significant: 0.1
+    });
+    const xCoordinates = [...scatter.querySelectorAll('.scatter-chart-point')]
+      .map((point) => Number(point.getAttribute('cx')))
+      .sort((left, right) => left - right);
+
+    expect(scatter.getAttribute('data-chart-widget')).toBe('scatter');
+    expect(xCoordinates).toEqual([0, 25, 100]);
+    expect([...scatter.querySelectorAll('.timeline-chart-axis span')].map((tick) => tick.getAttribute('title'))).toEqual([
+      '2026-09-04T10:00:00.000Z',
+      '2026-09-04T12:00:00.000Z',
+      '2026-09-04T14:00:00.000Z'
+    ]);
+    expect(scatter.querySelector('.line-chart-series')).toBeNull();
+    expect(scatter.querySelector('svg')?.getAttribute('aria-label')).toBe('Scatter chart with 3 points');
+  });
+
+  it('exposes scatter cluster sizes in accessible point labels', () => {
+    const scatter = renderChartWidget('scatter', [{
+      x: '2026-09-04T10:00:00Z',
+      y: 72,
+      color: 'max 5000',
+      source: { 'cluster-count': 250 }
+    }], [{ name: 'max 5000', className: 'chart-series-1' }], null, 'Remaining', {
+      name: 'Percent',
+      symbol: '%',
+      significant: 0.1
+    });
+
+    expect(scatter.querySelector('.chart-point')?.getAttribute('aria-label')).toContain('cluster of 250 observations');
   });
 
   it('dims historical line context and emphasizes the selected window', () => {
