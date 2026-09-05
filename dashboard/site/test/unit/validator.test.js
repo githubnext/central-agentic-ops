@@ -529,6 +529,56 @@ dashboard:
     }
   });
 
+  it('accepts outcome-detail-section config.body and rejects unsupported values', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: outcome-detail-section-config
+  title: Outcome detail section config
+  pages:
+    - id: outcome-page
+      kind: custom
+      title: Outcome page
+      route:
+        hash-query-parameter: outcome
+      views:
+        - id: outcome-metadata
+          data:
+            sources: [outcomes]
+          mark: element
+          element: outcome-detail-section
+          config:
+            body: metadata
+`);
+    expect(accepted.ok).toBe(true);
+
+    const invalidBody = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: outcome-detail-section-config
+  title: Outcome detail section config
+  pages:
+    - id: outcome-page
+      kind: custom
+      title: Outcome page
+      route:
+        hash-query-parameter: outcome
+      views:
+        - id: outcome-metadata
+          data:
+            sources: [outcomes]
+          mark: element
+          element: outcome-detail-section
+          config:
+            body: summary
+`);
+    expect(invalidBody.ok).toBe(false);
+    if (!invalidBody.ok) {
+      expect(invalidBody.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[0].views[0].config.body'
+      }));
+    }
+  });
+
   it('accepts every package dashboard document', () => {
     for (const source of packageDashboardSources) {
       expect(validateDashboardDocument(source).ok).toBe(true);
