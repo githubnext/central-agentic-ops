@@ -7,13 +7,15 @@ import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { parseRolloutMode } from "./dashboard-language-sources.mjs";
 import { firstText } from "./text-utils.mjs";
 
+const FIREWALL_HORIZON_DAYS = 30;
+
 function runGhAw(targets, maxRunsPerWorkflow, outputDirectory) {
   return new Promise((resolve, reject) => {
     const child = spawn("gh", [
       "aw", "logs", "--json",
       "--output", outputDirectory, "--summary-file", "",
-      "--artifacts", "usage,agent,detection",
-      "--start-date", "-7d", "--cache-before", "-7d",
+      "--artifacts", "usage,agent,detection,firewall",
+      "--start-date", `-${FIREWALL_HORIZON_DAYS}d`, "--cache-before", `-${FIREWALL_HORIZON_DAYS}d`,
       "--count", String(maxRunsPerWorkflow), "--timeout", "15",
       "--max-github-api-rate-limit", "-2000", "--max-storage", "1024",
       ...targets,
@@ -74,11 +76,207 @@ async function readBounded(file) {
 function emptySecurityTelemetry() {
   return {
     accessControl: { available: false, fileDenials: {}, toolDenials: {}, guardPolicy: null },
-    firewall: { available: false, analysis: null },
+    firewall: {
+      available: false,
+      analysis: null,
+      observations: [],
+      policyManifest: null,
+      policyAnalysis: null,
+      firewallExpected: null,
+      firewallEnabled: null,
+      firewallEvidenceAvailable: false,
+      firewallEvidenceState: "unknown",
+      firewallEvidenceCompleteness: "unknown",
+      firewallEvidenceFreshness: "unknown",
+      firewallEvidenceError: "",
+      firewallEvidenceSource: "none",
+      firewallEvidenceReference: "",
+      firewallEvidenceHorizonStart: null,
+      firewallEvidenceHorizonEnd: null,
+      awfVersion: "unknown",
+    },
     integrity: { available: false, summary: null, totalToolCalls: 0 },
     mcp: { available: false, cliVersion: null, servers: [], calls: [], failures: [] },
     threatDetection: { available: false, verdict: null },
   };
+}
+
+function relativeEvidencePath(runRoot, file) {
+  return file ? path.relative(runRoot, file).split(path.sep).join("/") : "";
+}
+
+function parseFirewallHost(value) {
+  const text = firstText(value);
+  if (!text || text === "-") return { domain: "unknown", host: "unknown", port: null };
+  const explicitPort = text.match(/^(?:https?:\/\/)?(?:\[[^\]]+\]|[^/:]+):(\d+)(?:\/|$)/)?.[1];
+  try {
+    const parsed = new URL(text.includes("://") ? text : `https://${text}`);
+    const port = explicitPort ? Number(explicitPort) : parsed.port ? Number(parsed.port) : null;
+    return { domain: parsed.hostname.toLowerCase(), host: parsed.hostname.toLowerCase(), port };
+  } catch {
+    const bracketed = text.match(/^\[([^\]]+)\](?::(\d+))?$/);
+    if (bracketed) return {
+      domain: bracketed[1].toLowerCase(),
+      host: bracketed[1].toLowerCase(),
+      port: bracketed[2] ? Number(bracketed[2]) : null,
+    };
+    const match = text.match(/^(.+?)(?::(\d+))?$/);
+    return {
+      domain: firstText(match?.[1]).toLowerCase() || "unknown",
+      host: firstText(match?.[1]).toLowerCase() || "unknown",
+      port: match?.[2] ? Number(match[2]) : null,
+    };
+  }
+}
+
+function firewallDecision(entry) {
+  const status = Number(entry?.status);
+  const decision = String(entry?.decision || "").toUpperCase();
+  if ([200, 206, 304].includes(status) || /TCP_(?:TUNNEL|HIT|MISS)/.test(decision)) return "allowed";
+  if ([403, 407].includes(status) || /TCP_DENIED/.test(decision)) return "denied";
+  return "unknown";
+}
+
+function firewallProtocol(entry, port) {
+  if (String(entry?.method || "").toUpperCase() === "CONNECT" || port === 443) return "https";
+  if (port === 80) return "http";
+  return "unknown";
+}
+
+async function parseFirewallAudit(file) {
+  const content = await readBounded(file);
+  if (content === null) return { entries: [], malformed: 0, error: "Firewall audit artifact could not be read." };
+  const entries = [];
+  let malformed = 0;
+  for (const line of content.split(/\r?\n/).filter((value) => value.trim())) {
+    try {
+      const raw = JSON.parse(line);
+      const host = parseFirewallHost(firstText(raw.host, raw.dest, raw.url));
+      const timestamp = Number(raw.ts);
+      if (!Number.isFinite(timestamp) || host.host === "unknown") {
+        malformed += 1;
+        continue;
+      }
+      entries.push({
+        observedAt: new Date(timestamp * 1000).toISOString(),
+        ...host,
+        protocol: firewallProtocol(raw, host.port),
+        decision: firewallDecision(raw),
+        status: Number.isFinite(Number(raw.status)) ? Number(raw.status) : null,
+      });
+    } catch {
+      malformed += 1;
+    }
+  }
+  return { entries, malformed, error: "" };
+}
+
+function firewallEnabledFromInfo(info) {
+  const value = firstText(info?.firewall, info?.steps?.firewall);
+  if (value) return value.toLowerCase() !== "none" && value.toLowerCase() !== "disabled";
+  return null;
+}
+
+async function readFirewallTelemetry(runRoot, files, summary) {
+  const firewall = emptySecurityTelemetry().firewall;
+  const infoFile = files.find((file) => path.basename(file) === "aw_info.json");
+  if (infoFile) {
+    const content = await readBounded(infoFile);
+    if (content !== null) try {
+      const info = JSON.parse(content);
+      firewall.firewallEnabled = firewallEnabledFromInfo(info);
+      firewall.firewallExpected = firewall.firewallEnabled;
+      firewall.awfVersion = firstText(info.awf_version, info.firewall_version) || "unknown";
+    } catch {
+      firewall.firewallEvidenceError = "Firewall configuration metadata is malformed.";
+    }
+  }
+
+  const manifestFile = files.find((file) => path.basename(file) === "policy-manifest.json");
+  if (manifestFile) {
+    const content = await readBounded(manifestFile);
+    if (content !== null) try {
+      firewall.policyManifest = JSON.parse(content);
+      firewall.firewallEnabled ??= true;
+      firewall.firewallExpected ??= true;
+    } catch {
+      firewall.firewallEvidenceError = "Firewall policy manifest is malformed.";
+    }
+  }
+
+  const auditFile = files.find((file) => path.basename(file) === "audit.jsonl");
+  if (auditFile) {
+    const parsed = await parseFirewallAudit(auditFile);
+    firewall.observations = parsed.entries;
+    firewall.firewallEvidenceReference = relativeEvidencePath(runRoot, auditFile);
+    firewall.firewallEvidenceSource = "firewall-audit";
+    firewall.firewallEvidenceAvailable = parsed.error === "";
+    firewall.available = parsed.error === "";
+    if (parsed.error) {
+      firewall.firewallEvidenceState = "unavailable";
+      firewall.firewallEvidenceCompleteness = "unknown";
+      firewall.firewallEvidenceError = parsed.error;
+    } else if (parsed.malformed > 0 && parsed.entries.length === 0) {
+      firewall.available = false;
+      firewall.firewallEvidenceAvailable = false;
+      firewall.firewallEvidenceState = "malformed";
+      firewall.firewallEvidenceCompleteness = "unknown";
+      firewall.firewallEvidenceError = "Firewall audit artifact contains no valid records.";
+    } else if (parsed.malformed > 0) {
+      firewall.firewallEvidenceState = "partial";
+      firewall.firewallEvidenceCompleteness = "partial";
+      firewall.firewallEvidenceError = `${parsed.malformed} malformed firewall audit record(s) were skipped.`;
+    } else if (parsed.entries.length === 0) {
+      firewall.firewallEvidenceState = "no-traffic";
+      firewall.firewallEvidenceCompleteness = "complete";
+    } else {
+      firewall.firewallEvidenceState = "available";
+      firewall.firewallEvidenceCompleteness = "complete";
+    }
+    if (firewall.firewallEvidenceError && firewall.firewallEvidenceState === "available") {
+      firewall.firewallEvidenceState = "partial";
+      firewall.firewallEvidenceCompleteness = "partial";
+    }
+    const timestamps = parsed.entries.map((entry) => Date.parse(entry.observedAt)).filter(Number.isFinite);
+    if (timestamps.length > 0) {
+      firewall.firewallEvidenceHorizonStart = new Date(Math.min(...timestamps)).toISOString();
+      firewall.firewallEvidenceHorizonEnd = new Date(Math.max(...timestamps)).toISOString();
+      firewall.firewallEvidenceFreshness = "fresh";
+    }
+  }
+
+  const legacy = summary?.firewall_analysis;
+  if (summary?.policy_analysis && typeof summary.policy_analysis === "object") {
+    firewall.policyAnalysis = summary.policy_analysis;
+  }
+  if (legacy && typeof legacy === "object") {
+    firewall.analysis = legacy;
+    firewall.firewallEnabled ??= true;
+    firewall.firewallExpected ??= true;
+    if (!auditFile) {
+      firewall.available = true;
+      firewall.firewallEvidenceAvailable = true;
+      firewall.firewallEvidenceState = "partial";
+      firewall.firewallEvidenceCompleteness = "partial";
+      firewall.firewallEvidenceFreshness = "unknown";
+      firewall.firewallEvidenceSource = "run-summary-legacy";
+      firewall.firewallEvidenceReference = "run_summary.json";
+      firewall.firewallEvidenceError ||= "Legacy summary only; authoritative request and policy attribution may be incomplete.";
+    }
+  }
+
+  if (firewall.firewallEnabled === false) {
+    firewall.available = true;
+    firewall.firewallEvidenceAvailable = false;
+    firewall.firewallEvidenceState = "disabled";
+    firewall.firewallEvidenceCompleteness = "complete";
+    firewall.firewallEvidenceSource = infoFile ? "workflow-metadata" : firewall.firewallEvidenceSource;
+  } else if (firewall.firewallEnabled === true && firewall.firewallEvidenceState === "unknown") {
+    firewall.firewallEvidenceState = "unavailable";
+    firewall.firewallEvidenceCompleteness = "unknown";
+    firewall.firewallEvidenceError ||= "Firewall was enabled but no firewall artifact was collected.";
+  }
+  return firewall;
 }
 
 function countPermissionDenials(content, telemetry) {
@@ -103,17 +301,15 @@ function validThreatVerdict(value) {
 
 export async function readRunSecurityTelemetry(outputDirectory, runId) {
   const telemetry = emptySecurityTelemetry();
-  const files = await securityFiles(path.join(outputDirectory, `run-${runId}`));
+  const runRoot = path.join(outputDirectory, `run-${runId}`);
+  const files = await securityFiles(runRoot);
   const summaryFile = files.find((file) => path.basename(file) === "run_summary.json");
+  let summary = null;
   if (summaryFile) {
     const content = await readBounded(summaryFile);
     if (content !== null) try {
-      const summary = JSON.parse(content);
+      summary = JSON.parse(content);
       telemetry.mcp.cliVersion = firstText(summary.cli_version);
-      const firewall = summary.firewall_analysis;
-      if (firewall && typeof firewall === "object") {
-        telemetry.firewall = { available: true, analysis: firewall };
-      }
       const toolUsage = summary.mcp_tool_usage;
       if (toolUsage && typeof toolUsage === "object") {
         telemetry.mcp.available = true;
@@ -164,6 +360,7 @@ export async function readRunSecurityTelemetry(outputDirectory, runId) {
       // Missing or malformed optional telemetry is represented as unavailable.
     }
   }
+  telemetry.firewall = await readFirewallTelemetry(runRoot, files, summary);
 
   const agentLogs = files.filter((file) => path.basename(file) === "agent-stdio.log");
   if (agentLogs.length > 0) telemetry.accessControl.available = true;
@@ -237,6 +434,30 @@ async function main() {
 
   const runs = new Map();
   const securityRuns = new Map();
+  for (const [runId, metadata] of workflowByRunId) {
+    const repository = metadata.workflow.repository;
+    securityRuns.set(`${repository}:${runId}`, {
+      repository,
+      runId,
+      workflowName: metadata.workflow.name || null,
+      workflowPath: metadata.workflow.path || null,
+      mode: parseRolloutMode(metadata.run?.displayTitle),
+      conclusion: metadata.run?.conclusion || null,
+      createdAt: metadata.run?.createdAt || null,
+      engine: null,
+      engineVersion: null,
+      requestedModel: null,
+      resolvedModel: null,
+      agentRuntime: null,
+      safeItemsCount: 0,
+      noopCount: 0,
+      missingDataCount: 0,
+      missingToolCount: 0,
+      reportIncompleteCount: 0,
+      data: null,
+      security: emptySecurityTelemetry(),
+    });
+  }
   const temporaryRoot = configuredCacheRoot || await mkdtemp(path.join(os.tmpdir(), "pages-aic-"));
   await mkdir(temporaryRoot, { recursive: true });
   try {
@@ -275,9 +496,29 @@ async function main() {
             ...common,
             aic,
           });
+          let security;
+          try {
+            security = await readRunSecurityTelemetry(temporaryRoot, runId);
+          } catch (error) {
+            security = emptySecurityTelemetry();
+            security.firewall.firewallEvidenceState = "unavailable";
+            security.firewall.firewallEvidenceError = "Firewall artifact parsing failed.";
+            log.warning`Firewall evidence unavailable for ${repository} run ${runId}: ${error.message}`;
+          }
+          if (
+            common.createdAt
+            && ["available", "partial", "disabled", "no-traffic"].includes(security.firewall.firewallEvidenceState)
+            && !security.firewall.firewallEvidenceHorizonStart
+          ) {
+            security.firewall.firewallEvidenceHorizonStart = common.createdAt;
+            security.firewall.firewallEvidenceHorizonEnd = common.createdAt;
+          }
+          if (security.firewall.firewallEvidenceSource !== "none" && security.firewall.firewallEvidenceFreshness === "unknown") {
+            security.firewall.firewallEvidenceFreshness = "fresh";
+          }
           securityRuns.set(`${repository}:${runId}`, {
             ...common,
-            security: await readRunSecurityTelemetry(temporaryRoot, runId),
+            security,
           });
         }
       } catch (error) {
@@ -298,11 +539,28 @@ async function main() {
       };
     });
 
+    const generatedAt = new Date().toISOString();
+    const firewallEvidenceTimes = [...securityRuns.values()].flatMap((run) => [
+      Date.parse(run.security.firewall.firewallEvidenceHorizonStart),
+      Date.parse(run.security.firewall.firewallEvidenceHorizonEnd),
+    ]).filter(Number.isFinite);
+    const requestedFirewallStart = new Date(
+      Date.parse(generatedAt) - FIREWALL_HORIZON_DAYS * 86_400_000,
+    ).toISOString();
     const usage = {
-      schemaVersion: 3,
-      generatedAt: new Date().toISOString(),
+      schemaVersion: 4,
+      generatedAt,
       windowStart: inventory.runHealth?.windowStart || null,
       windowHours: inventory.runHealth?.windowHours || null,
+      firewallRequestedHorizonStart: requestedFirewallStart,
+      firewallRequestedHorizonEnd: generatedAt,
+      firewallEvidenceHorizonStart: firewallEvidenceTimes.length > 0
+        ? new Date(Math.min(...firewallEvidenceTimes)).toISOString()
+        : null,
+      firewallEvidenceHorizonEnd: firewallEvidenceTimes.length > 0
+        ? new Date(Math.max(...firewallEvidenceTimes)).toISOString()
+        : null,
+      firewallLastSuccessfulCollectionAt: collectionAvailable ? generatedAt : null,
       available: repositories.every((entry) => entry.available),
       complete: repositories.every((entry) => entry.complete),
       securityAvailable: collectionAvailable,

@@ -241,9 +241,6 @@ function renderSidebar(pages, title, navigation) {
     0,
     navigationSections.findIndex((section) => section.label?.toLowerCase() === 'main')
   );
-  const investigateSectionIndex = navigationSections.findIndex(
-    (section) => section.label?.toLowerCase() === 'investigate'
-  );
   let navigationPageIndex = 0;
   return h(
     'aside',
@@ -287,7 +284,7 @@ function renderSidebar(pages, title, navigation) {
               'details',
               {
                 className: 'nav-section',
-                open: sectionIndex === mainSectionIndex || sectionIndex === investigateSectionIndex
+                open: sectionIndex === mainSectionIndex || ['investigate', 'insights'].includes(section.label?.toLowerCase() ?? '')
               },
               h(
                 'summary',

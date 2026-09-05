@@ -2721,6 +2721,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: local-server\.mjs\n\s+destination: \.github\/aw\/dashboard\/local-server\.mjs/);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
+  assert.match(activityWorkflow, /REPORT_RUN_WINDOW_HOURS: "720"/);
   assert.doesNotMatch(buildWorkflow, /workflow_call:/);
   assert.match(buildWorkflow, /workflow_dispatch:[\s\S]*?site-path:[\s\S]*?default: cao[\s\S]*?mode:[\s\S]*?default: live[\s\S]*?request-id:/);
   assert.match(buildWorkflow, /run-name: CAO Dashboard Build \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
@@ -2765,7 +2766,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.equal((deployWorkflow.match(/actions\/deploy-pages@/g) || []).length, 1);
   assert.doesNotMatch(activityWorkflow, /actions\/setup-go|go build|go clean|gh-aw-operational-value/);
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
-  assert.match(aicUsage, /"--start-date", "-7d", "--cache-before", "-7d"/);
+  assert.match(aicUsage, /"--artifacts", "usage,agent,detection,firewall"/);
+  assert.match(aicUsage, /const FIREWALL_HORIZON_DAYS = 30/);
+  assert.match(aicUsage, /"--start-date", `-\$\{FIREWALL_HORIZON_DAYS\}d`, "--cache-before", `-\$\{FIREWALL_HORIZON_DAYS\}d`/);
   assert.match(aicUsage, /"--count", String\(maxRunsPerWorkflow\), "--timeout", "15"/);
   assert.match(aicUsage, /"--max-github-api-rate-limit", "-2000", "--max-storage", "1024"/);
   assert.match(aicUsage, /targets\.push\(`\$\{workflow\.repository\}\/\$\{workflow\.path\}`\)/);

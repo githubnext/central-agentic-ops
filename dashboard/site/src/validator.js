@@ -3262,6 +3262,7 @@ function validateOptionalStringField(value, path, errors) {
  * @returns {string}
  */
 function defaultBuiltInPageTitle(pageName) {
+  if (pageName === 'experiments') return 'Experiments & Evaluation';
   return pageName
     .split('-')
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))

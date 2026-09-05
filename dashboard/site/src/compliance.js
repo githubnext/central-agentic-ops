@@ -726,7 +726,7 @@ dashboard:
     - id: experiments
       kind: built-in
       page: experiments
-      title: Experiments
+      title: Experiments & Evaluation
       definition:
         data-state:
           availability: true

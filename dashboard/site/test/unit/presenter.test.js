@@ -26,6 +26,60 @@ function activatePage(rendered, pageId) {
 }
 
 describe('presenter built-in and custom pages', () => {
+  it('renders distinct firewall enforcement, evidence, traffic, and drift scenarios', () => {
+    const metadata = /** @type {const} */ ({
+      'source-id': 'firewall-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-09-05T11:00:00Z',
+      'retrieved-at': '2026-09-05T11:05:00Z',
+      completeness: 'partial',
+      freshness: 'fresh',
+      availability: 'available'
+    });
+    const base = {
+      organization: 'githubnext',
+      repository: 'gh-aw-cao',
+      workflow: '.github/workflows/security.md',
+      'rollout-mode': 'review',
+      'run-conclusion': 'success',
+      protocol: 'https',
+      port: 443,
+      'request-count': 1,
+      'policy-rule-id': 'unavailable',
+      'observed-at': '2026-09-05T11:00:00Z',
+      'evidence-completeness': 'complete',
+      'evidence-freshness': 'fresh'
+    };
+    const rows = [
+      { ...base, run: '1', 'firewall-observation': '1', 'firewall-enabled': 'enabled', 'enforcement-label': 'Enabled', 'evidence-state': 'no-traffic', 'evidence-label': 'No observed traffic', domain: 'unknown', decision: 'unknown', 'decision-label': 'Unknown', 'drift-state': 'stable', 'drift-label': 'Stable', 'review-state': 'stable', 'review-label': 'Stable', 'review-priority': 9, 'request-count': null },
+      { ...base, run: '2', 'firewall-observation': '2', 'firewall-enabled': 'disabled', 'enforcement-label': 'Enforcement disabled', 'evidence-state': 'disabled', 'evidence-label': 'Enforcement disabled', domain: 'unknown', decision: 'unknown', 'decision-label': 'Unknown', 'drift-state': 'unknown', 'drift-label': 'Unknown', 'review-state': 'enforcement-disabled', 'review-label': 'Enforcement disabled', 'review-priority': 1, 'request-count': null },
+      { ...base, run: '3', 'firewall-observation': '3', 'firewall-enabled': 'enabled', 'enforcement-label': 'Enabled', 'evidence-state': 'unavailable', 'evidence-label': 'Evidence missing', 'evidence-completeness': 'unknown', domain: 'unknown', decision: 'unknown', 'decision-label': 'Unknown', 'drift-state': 'unknown', 'drift-label': 'Unknown', 'review-state': 'evidence-missing', 'review-label': 'Evidence missing', 'review-priority': 2, 'request-count': null },
+      { ...base, run: '4', 'firewall-observation': '4', 'firewall-enabled': 'enabled', 'enforcement-label': 'Enabled', 'evidence-state': 'available', 'evidence-label': 'Evidence available', domain: 'api.github.com', decision: 'allowed', 'decision-label': 'Allowed by policy', 'drift-state': 'stable', 'drift-label': 'Stable', 'review-state': 'stable', 'review-label': 'Stable', 'review-priority': 9 },
+      { ...base, run: '5', 'firewall-observation': '5', 'firewall-enabled': 'enabled', 'enforcement-label': 'Enabled', 'evidence-state': 'available', 'evidence-label': 'Evidence available', domain: 'new.example', decision: 'allowed', 'decision-label': 'Allowed by policy', 'current-decision': 'allowed', 'drift-state': 'newly-allowed', 'drift-label': 'Newly allowed', 'review-state': 'newly-allowed', 'review-label': 'Newly allowed', 'review-priority': 3 },
+      { ...base, run: '6', 'firewall-observation': '6', 'firewall-enabled': 'enabled', 'enforcement-label': 'Enabled', 'evidence-state': 'available', 'evidence-label': 'Evidence available', domain: 'blocked.example', decision: 'denied', 'decision-label': 'Denied by policy', 'current-decision': 'denied', 'drift-state': 'stable', 'drift-label': 'Stable', 'review-state': 'stable', 'review-label': 'Stable', 'review-priority': 9, 'policy-rule-id': 'default-deny' },
+      { ...base, run: '7', 'firewall-observation': '7', 'firewall-enabled': 'enabled', 'enforcement-label': 'Enabled', 'evidence-state': 'available', 'evidence-label': 'Evidence available', domain: 'changed.example', decision: 'denied', 'decision-label': 'Denied by policy', 'previous-decision': 'allowed', 'current-decision': 'denied', 'drift-state': 'decision-changed', 'drift-label': 'Decision changed', 'review-state': 'decision-changed', 'review-label': 'Decision changed', 'review-priority': 4 }
+    ];
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        'firewall-observations': { source: 'firewall-observations', rows, metadata },
+        'firewall-policy-rules': { source: 'firewall-policy-rules', rows: [], metadata }
+      }
+    });
+
+    const page = activatePage(rendered, 'firewall');
+    expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
+    const text = page?.textContent ?? '';
+    expect(text).toContain('Enforcement disabled');
+    expect(text).toContain('Evidence missing');
+    expect(text).toContain('Newly allowed');
+    expect(text).toContain('Decision changed');
+    expect(text).toContain('Allowed');
+    expect(text).toContain('Denied');
+    expect(text).not.toContain('firewall failure');
+    rendered.remove();
+  });
+
   it('renders cached source health without mixing in presentation-only sources', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
@@ -602,8 +656,8 @@ describe('presenter built-in and custom pages', () => {
       /** @param {{ label?: string }} section */
       (section) => section.label === 'Control plane'
     );
-    expect(labels).toEqual(['Attention', 'Dashboard Next', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
-    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, true, false, false, false]);
+    expect(labels).toEqual(['Attention', 'Dashboard Next', 'Investigate', 'Insights', 'Control plane', 'Explore', 'Package operations']);
+    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, true, true, false, false, false]);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.closest('.nav-section')?.textContent).toContain('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.closest('.nav-section')?.textContent).toContain('Investigate');
     expect(rendered.querySelector('[data-nav-page-id="preview"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
@@ -619,6 +673,7 @@ describe('presenter built-in and custom pages', () => {
       'Runtime',
       'Performance',
       'Security',
+      'Experiments',
       'Value',
       'Cost',
       'Configuration',
@@ -846,6 +901,7 @@ describe('presenter built-in and custom pages', () => {
       'Runtime',
       'Performance',
       'Security',
+      'Experiments',
       'Value',
       'Cost',
       'Configuration',
