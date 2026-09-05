@@ -234,6 +234,16 @@ export function renderIdentityLink({ href, icon, label, className, labelTag = 's
 }
 
 /**
+ * Renders the shared decorative legend swatch (`<i>` with a series-specific
+ * class and `aria-hidden`) used to color-key chart and trend legend entries.
+ * @param {string} className
+ * @returns {HTMLElement}
+ */
+export function renderLegendSwatch(className) {
+  return h('i', { className, 'aria-hidden': 'true' });
+}
+
+/**
  * Renders the shared dismiss/close icon button used by overlay-style
  * components (dialogs, callouts) that need a labelled "x" trigger with
  * matching `title` and `aria-label` text.
