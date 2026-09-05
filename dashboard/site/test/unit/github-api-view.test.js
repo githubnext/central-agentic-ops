@@ -159,6 +159,7 @@ async function renderApiPage(rateLimitSource = {
   });
   rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="github-api"]'));
+  expect(link).not.toBeNull();
   link?.click();
   await vi.waitFor(() => {
     expect(rendered.querySelector('[data-page-id="github-api"]')?.hasAttribute('data-page-pending')).toBe(false);

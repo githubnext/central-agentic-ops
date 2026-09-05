@@ -1137,6 +1137,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
           scrollTop: root.ownerDocument.scrollingElement?.scrollTop ?? root.ownerDocument.documentElement.scrollTop
         });
         activePage.replaceChildren();
+        activePage.removeAttribute('aria-busy');
         activePage.setAttribute('data-page-pending', '');
       }
     }

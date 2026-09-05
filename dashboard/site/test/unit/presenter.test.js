@@ -20,6 +20,7 @@ const authoritativeDashboardDocument = composeDashboardDocuments(
 /** @param {HTMLElement} rendered @param {string} pageId */
 async function activatePage(rendered, pageId) {
   const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector(`[data-nav-page-id="${pageId}"]`));
+  expect(link).not.toBeNull();
   link?.click();
   await vi.waitFor(() => {
     expect(rendered.querySelector(`[data-page-id="${pageId}"]`)?.hasAttribute('data-page-pending')).toBe(false);

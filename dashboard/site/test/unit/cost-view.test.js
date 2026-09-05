@@ -21,6 +21,7 @@ const metadata = {
 /** @param {HTMLElement} rendered */
 async function activateCostPage(rendered) {
   const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="cost"]'));
+  expect(link).not.toBeNull();
   link?.click();
   await vi.waitFor(() => {
     expect(rendered.querySelector('[data-page-id="cost"]')?.hasAttribute('data-page-pending')).toBe(false);
