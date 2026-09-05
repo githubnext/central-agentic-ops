@@ -255,6 +255,26 @@ export function renderCloseButton({ className, label, onClick }) {
 }
 
 /**
+ * Renders the shared `<label><span>{label}</span>{control}</label>` pattern
+ * used to associate a visible text label with a form control (search
+ * inputs, facet selects, time-window inputs) across the filter bar and
+ * table region toolbars.
+ * @param {string} label
+ * @param {Node} control
+ * @param {{ className?: string, prefix?: Node }} [options]
+ * @returns {HTMLLabelElement}
+ */
+export function renderLabeledControl(label, control, options = {}) {
+  return /** @type {HTMLLabelElement} */ (h(
+    'label',
+    options.className ? { className: options.className } : null,
+    options.prefix,
+    h('span', null, label),
+    control
+  ));
+}
+
+/**
  * @param {unknown} value
  * @returns {value is Record<string, any>}
  */
