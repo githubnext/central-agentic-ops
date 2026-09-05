@@ -160,6 +160,26 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
+  it('accepts canonical route body values and rejects non-canonical config.body values', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const workflowRouteView = document.dashboard.pages.find((/** @type {{ id: string, views: Array<any> }} */ page) => page.id === 'workflow-detail')
+      .views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-reports-route');
+
+    expect(workflowRouteView).toMatchObject({
+      mark: 'element',
+      element: 'workflow-route',
+      config: { body: 'reports' }
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    workflowRouteView.config.body = 'report';
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    expect(rejected.errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ message: 'workflow-route config.body must use one canonical route body value.' })
+    ]));
+  });
+
   it('defines an evidence-aware firewall operations page', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const firewall = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'firewall');
