@@ -1098,7 +1098,11 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
       view.requestAnimationFrame(() => view.requestAnimationFrame(populate));
       return;
     }
-    view?.setTimeout(populate, 0);
+    if (view) {
+      view.setTimeout(populate, 0);
+    } else {
+      setTimeout(populate, 0);
+    }
   };
   /**
    * @param {string} pageId
