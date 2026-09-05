@@ -57,6 +57,10 @@ export function deriveDataHealthSources(sources) {
   const confidence = overallConfidence(domainRows);
   const metadata = combineSourceMetadata(Object.values(sources));
   const affectedDomains = domainRows.filter((row) => row.confidence !== 'trusted').map((row) => row.domain);
+  const repositoryCoverage = coverageRows.find((row) => row.area === 'Repositories');
+  const collectorState = ['failed', 'partial', 'unknown', 'complete']
+    .find((state) => collectionRows.some((row) => row.state === state)) ?? 'unknown';
+  const compatibilityGaps = compatibilityRows.filter((row) => row.compatibility !== 'compatible').length;
 
   return {
     ...sources,
@@ -67,7 +71,10 @@ export function deriveDataHealthSources(sources) {
       'next-action': confidence.action,
       availability: aggregateAxis(sourceRows, 'availability'),
       completeness: aggregateAxis(sourceRows, 'completeness'),
-      freshness: aggregateAxis(sourceRows, 'freshness')
+      freshness: aggregateAxis(sourceRows, 'freshness'),
+      'scope-coverage': repositoryCoverage?.['coverage-percent'] ?? 'Unknown',
+      'collector-state': collectorState,
+      'compatibility-gaps': compatibilityRows.length === 0 ? 'Unknown' : compatibilityGaps
     }], metadata),
     'data-health-domains': healthSource('data-health-domains', domainRows, metadata),
     'data-health-collections': healthSource('data-health-collections', collectionRows, metadata),
@@ -229,7 +236,7 @@ function coverageDiagnostic(contract, sources, reconciliationRows) {
 
 /** @param {Record<string, LogicalSourceInput>} sources */
 function collectionDiagnostics(sources) {
-  return Object.entries(sources).map(([name, source]) => {
+  const sourceDiagnostics = Object.entries(sources).map(([name, source]) => {
     const metadata = source?.metadata ?? {};
     const availability = metadata.availability ?? 'unknown';
     const completeness = metadata.completeness ?? 'unknown';
@@ -249,9 +256,27 @@ function collectionDiagnostics(sources) {
       fallback: fallback ? 'stale snapshot' : 'none',
       'snapshot-age': metadata['snapshot-age-seconds'] == null ? 'Unknown' : `${metadata['snapshot-age-seconds']} seconds`,
       provenance: metadata['source-id'] ?? name,
+      'technical-detail': '',
       reason: metadata['collection-reason'] ?? confidenceReason({ availability, completeness, freshness: metadata.freshness ?? 'unknown' })
     };
   });
+  const retainedDiagnostics = (sources['coverage-diagnostics']?.rows ?? []).map((row) => ({
+    operation: row.title || row.kind || 'coverage-diagnostic',
+    source: 'coverage-diagnostics',
+    state: 'partial',
+    'failure-class': String(row.kind ?? '').includes('rate-limit') ? 'rate-limit' : 'collection',
+    progress: 'Partial',
+    'collector-completed-at': sources['coverage-diagnostics']?.metadata?.['retrieved-at'] ?? '',
+    'retrieved-at': sources['coverage-diagnostics']?.metadata?.['retrieved-at'] ?? '',
+    'source-as-of': sources['coverage-diagnostics']?.metadata?.['as-of'] ?? '',
+    'evidence-horizon': 'Unknown',
+    fallback: row['snapshot-age-seconds'] === '' || row['snapshot-age-seconds'] == null ? 'none' : 'stale snapshot',
+    'snapshot-age': row['snapshot-age-seconds'] === '' || row['snapshot-age-seconds'] == null ? 'Unknown' : `${row['snapshot-age-seconds']} seconds`,
+    provenance: row.endpoint || sources['coverage-diagnostics']?.metadata?.['source-id'] || 'coverage-diagnostics',
+    'technical-detail': row['technical-detail'] || '',
+    reason: row.effect || row.title || 'Collection is degraded.'
+  }));
+  return [...sourceDiagnostics, ...retainedDiagnostics];
 }
 
 /** @param {LogicalSourceInput | undefined} workflows */

@@ -9,12 +9,12 @@
       {
         "id": "partial-data-rate-limit",
         "title": "Dashboard data is partial",
-        "description": "The latest dashboard build could not download all data because GitHub returned a 403 rate-limit response.",
+        "description": "Data Health reports a collection gap caused by a GitHub API rate limit. Open Data health for the affected source and evidence horizon.",
         "icon": "alert",
         "visible-when": {
-          "source": "coverage-diagnostics",
-          "field": "kind",
-          "equals": "github-api-rate-limit-403"
+          "source": "data-health-collections",
+          "field": "failure-class",
+          "equals": "rate-limit"
         }
       }
     ],
@@ -6099,6 +6099,9 @@
                 { "field": "availability", "type": "nominal", "title": "Availability", "display": "status" },
                 { "field": "completeness", "type": "nominal", "title": "Completeness", "display": "status" },
                 { "field": "freshness", "type": "nominal", "title": "Freshness", "display": "status" },
+                { "field": "scope-coverage", "type": "nominal", "title": "Scope coverage" },
+                { "field": "collector-state", "type": "nominal", "title": "Collector state", "display": "status" },
+                { "field": "compatibility-gaps", "type": "quantitative", "title": "Compatibility gaps" },
                 { "field": "next-action", "type": "nominal", "title": "Next action" }
               ]
             }
@@ -6143,6 +6146,7 @@
           {
             "id": "data-health-collections",
             "title": "Collector state",
+            "disclosure": "supplemental",
             "data": { "source": "data-health-collections" },
             "mark": "table",
             "controls": "static",
@@ -6294,7 +6298,7 @@
         "kind": "custom",
         "title": "Coverage diagnostics",
         "class-name": "coverage-page",
-        "description": "Reporting coverage gaps for the configured githubnext/gh-aw-cao repository.",
+        "description": "Drill-down into the canonical Data Health coverage and collection evidence.",
         "route": {
           "navigation-page": "overview"
         },
@@ -6329,23 +6333,32 @@
           },
           {
             "id": "coverage-summary",
-            "title": "Repository discovery",
-            "description": "Observed visibility buckets and organization totals make incomplete or allowlist-scoped discovery explicit.",
+            "title": "Canonical coverage",
+            "description": "Expected-versus-observed coverage is derived once by Data Health.",
             "data": {
-              "sources": [
-                "repository-coverage"
+              "source": "data-health-coverage"
+            },
+            "mark": "table",
+            "controls": "static",
+            "encoding": {
+              "columns": [
+                { "field": "area", "type": "nominal", "title": "Evidence area" },
+                { "field": "expected", "type": "nominal", "title": "Expected" },
+                { "field": "observed", "type": "nominal", "title": "Observed" },
+                { "field": "missing", "type": "nominal", "title": "Missing" },
+                { "field": "coverage-percent", "type": "nominal", "title": "Coverage" },
+                { "field": "state", "type": "nominal", "title": "State", "display": "status" },
+                { "field": "reason", "type": "nominal", "title": "Reason" }
               ]
             },
-            "mark": "element",
-            "element": "summary-grid",
             "layout": "full"
           },
           {
             "id": "coverage-diagnostics",
             "title": "Coverage diagnostics",
-            "description": "Concise user-facing effects explain what dashboard claims are limited; technical payloads are disclosed separately.",
+            "description": "Collection gaps consume the same evidence used by Data Health confidence.",
             "data": {
-              "source": "coverage-diagnostics"
+              "source": "data-health-collections"
             },
             "mark": "table",
             "controls": "static",
@@ -6353,12 +6366,12 @@
             "encoding": {
               "columns": [
                 {
-                  "field": "title",
+                  "field": "operation",
                   "type": "nominal",
-                  "title": "Signal"
+                  "title": "Collection"
                 },
                 {
-                  "field": "effect",
+                  "field": "reason",
                   "type": "nominal",
                   "title": "Effect"
                 }
@@ -6372,7 +6385,7 @@
             "description": "Raw collection diagnostics for operators who need endpoint, retry, and snapshot context.",
             "disclosure": "supplemental",
             "data": {
-              "source": "coverage-diagnostics"
+              "source": "data-health-collections"
             },
             "mark": "table",
             "controls": "static",
@@ -6380,9 +6393,14 @@
             "encoding": {
               "columns": [
                 {
-                  "field": "title",
+                  "field": "operation",
                   "type": "nominal",
-                  "title": "Signal"
+                  "title": "Collection"
+                },
+                {
+                  "field": "failure-class",
+                  "type": "nominal",
+                  "title": "Failure class"
                 },
                 {
                   "field": "technical-detail",
@@ -6390,19 +6408,19 @@
                   "title": "Technical detail"
                 },
                 {
-                  "field": "endpoint",
+                  "field": "evidence-horizon",
                   "type": "nominal",
-                  "title": "Endpoint"
+                  "title": "Evidence horizon"
                 },
                 {
-                  "field": "rate-limit-reset",
-                  "type": "temporal",
-                  "title": "Rate-limit reset"
+                  "field": "provenance",
+                  "type": "nominal",
+                  "title": "Provenance"
                 },
                 {
-                  "field": "snapshot-age-seconds",
-                  "type": "quantitative",
-                  "title": "Snapshot age (seconds)"
+                  "field": "snapshot-age",
+                  "type": "nominal",
+                  "title": "Snapshot age"
                 }
               ]
             },

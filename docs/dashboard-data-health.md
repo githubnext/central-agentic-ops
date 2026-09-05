@@ -1,3 +1,7 @@
+---
+title: Dashboard data health
+---
+
 # Dashboard data health
 
 Data Health answers whether the dashboard's evidence is sufficiently complete,
