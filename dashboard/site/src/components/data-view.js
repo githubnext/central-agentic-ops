@@ -461,7 +461,7 @@ function actionMatches(action, row) {
  * @param {{ intent: string, presentation: string, icon: string, label: string, context: string[] }} action
  * @param {Record<string, unknown>} row
  */
-function renderIntentAction(action, row) {
+export function renderIntentAction(action, row) {
   const context = Object.fromEntries(action.context.flatMap((field) => {
     const value = intentValue(row[field]);
     return value === undefined ? [] : [[field, value]];

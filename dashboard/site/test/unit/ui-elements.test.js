@@ -47,6 +47,56 @@ describe('UI elements', () => {
     })).toBeNull();
   });
 
+  it('renders suggested configuration changes as a list without a table header', () => {
+    const rendered = renderUiElement('configuration-actions', {
+      pageId: 'configuration',
+      title: 'Suggested changes',
+      description: 'Copy a bounded prompt to make a policy change.',
+      sourceNames: ['configuration-actions'],
+      sources: {
+        'configuration-actions': {
+          source: 'configuration-actions',
+          rows: [{
+            action: 'Promote self-care to live',
+            path: 'control-plane.packages.self-care.mode',
+            current: 'review',
+            recommended: 'live',
+            prompt: 'Update the policy.'
+          }],
+          metadata
+        }
+      },
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+
+    expect(rendered?.querySelector('table')).toBeNull();
+    expect(rendered?.querySelectorAll('.configuration-action-list > li')).toHaveLength(1);
+    expect(rendered?.textContent).toContain('Promote self-care to live');
+    expect(rendered?.textContent).toContain('control-plane.packages.self-care.mode');
+    expect(rendered?.querySelector('[data-intent-presentation="copy-prompt"]')).not.toBeNull();
+  });
+
+  it('renders the suggested configuration changes empty state inside the list widget', () => {
+    const rendered = renderUiElement('configuration-actions', {
+      pageId: 'configuration',
+      title: 'Suggested changes',
+      sourceNames: ['configuration-actions'],
+      sources: {
+        'configuration-actions': {
+          source: 'configuration-actions',
+          rows: [],
+          metadata: { ...metadata, availability: /** @type {'empty'} */ ('empty') }
+        }
+      },
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+
+    expect(rendered?.querySelector('.configuration-actions-empty')?.textContent)
+      .toBe('No configuration changes are currently suggested.');
+  });
+
   it('allows same-document signal navigation and rejects non-fragment URLs', () => {
     const rendered = renderUiElement('signal-list', {
       pageId: 'runtime',
