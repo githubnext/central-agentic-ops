@@ -5,7 +5,10 @@ import { request } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { startDashboardServer } from "../../dashboard/local-server.mjs";
+import {
+  shellPermissionRejection,
+  startDashboardServer,
+} from "../../dashboard/local-server.mjs";
 
 const dashboard = (pageId) => JSON.stringify({
   "language-version": "0.1.0",
@@ -27,6 +30,41 @@ const dashboard = (pageId) => JSON.stringify({
     }],
   },
 }, null, 2);
+
+function shellPermission(fullCommandText, identifiers) {
+  return {
+    fullCommandText,
+    hasWriteFileRedirection: false,
+    possiblePaths: [],
+    possibleUrls: [],
+    commands: identifiers.map((identifier) => ({ identifier, readOnly: true })),
+    commandSegments: identifiers.map((identifier) => ({ identifier, fullCommandText })),
+  };
+}
+
+test("Copilot shell policy allows safe text tools and rejects mutating sed", () => {
+  assert.equal(shellPermissionRejection(shellPermission("echo ready", ["echo"])), null);
+  assert.equal(shellPermissionRejection(shellPermission("cat dashboard.json", ["cat"])), null);
+  assert.equal(
+    shellPermissionRejection(shellPermission("sed -n '1,20p' dashboard.json", ["sed"])),
+    null,
+  );
+  assert.match(
+    shellPermissionRejection(shellPermission("sed -i 's/old/new/' dashboard.json", ["sed"])),
+    /in-place/,
+  );
+  assert.match(
+    shellPermissionRejection(shellPermission("sed 's/old/new/w output.json' dashboard.json", ["sed"])),
+    /file-writing/,
+  );
+  assert.match(
+    shellPermissionRejection({
+      ...shellPermission("echo changed > dashboard.json", ["echo"]),
+      hasWriteFileRedirection: true,
+    }),
+    /redirection/,
+  );
+});
 
 async function openDashboardSocket(previewUrl) {
   const url = new URL(previewUrl);
@@ -346,6 +384,27 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       request: "Produce invalid dashboard",
     }));
     assert.equal((await invalidDashboardError).type, "error");
+
+    const dashboardUpdate = nextSocketMessage(socket, (message) =>
+      message.type === "dashboard-update");
+    const reloadError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /preview could not reload/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Fail hot reload",
+    }));
+    const update = await dashboardUpdate;
+    socket.send(JSON.stringify({
+      type: "browser.trace",
+      traceId: update.traceId,
+      event: "preview.render.failed",
+      details: { message: "Test render failure" },
+    }));
+    const reloadFailure = await reloadError;
+    assert.equal(reloadFailure.details.phase, "hot-reload");
+    assert.match(reloadFailure.message, /Test render failure/);
+
     socket.close();
     while (disconnectedSessions.length === 0) {
       await new Promise((resolve) => setTimeout(resolve, 5));

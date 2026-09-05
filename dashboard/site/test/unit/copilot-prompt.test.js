@@ -95,8 +95,13 @@ describe('Copilot dashboard prompt', () => {
     prompt.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     socket.emit({ type: 'assistant-message', content: 'I found the active view.' });
     socket.emit({ type: 'assistant-message', content: 'Added a second card.' });
-    socket.emit({ type: 'done' });
-    expect(prompt.querySelectorAll('.dashboard-copilot-message')).toHaveLength(8);
+    socket.emit({
+      type: 'error',
+      message: 'Dashboard was saved, but the preview could not reload.'
+    });
+    expect(prompt.querySelectorAll('.dashboard-copilot-message')).toHaveLength(9);
+    expect(prompt.querySelector('.dashboard-copilot-message-error')?.textContent)
+      .toBe('Dashboard was saved, but the preview could not reload.');
     expect(prompt.querySelector('.dashboard-copilot-conversation')?.textContent)
       .toContain('I found the active view.');
     expect(prompt.querySelector('.dashboard-copilot-conversation')?.textContent)

@@ -93,7 +93,7 @@ export function renderCopilotPrompt(socket) {
   let activeReasoningId = '';
   /**
    * @param {string} content
-   * @param {'response'|'reasoning'|'update'|'refusal'} kind
+   * @param {'response'|'reasoning'|'update'|'refusal'|'error'} kind
    */
   const appendAssistantMessage = (content = '', kind = 'response') => {
     if (!content.trim()) return null;
@@ -275,6 +275,7 @@ export function renderCopilotPrompt(socket) {
       browserTrace(socket, 'copilot.request.completed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'error' && typeof streamEvent.message === 'string') {
       toolbarStatus.textContent = streamEvent.message;
+      appendAssistantMessage(streamEvent.message, 'error');
       setSessionActive(false);
       console.error('Copilot dashboard update failed.', {
         traceId: activeTraceId,

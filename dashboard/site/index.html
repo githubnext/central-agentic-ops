@@ -132,22 +132,35 @@
         return dashboard;
       };
       window.addEventListener("dashboard-preview-update", (event) => {
-        const schema = event.detail.dashboard;
-        dashboardDocument = {
-          languageVersion: schema["language-version"],
-          dashboard: schema.dashboard,
-        };
-        renderSources(renderedSources);
-        if (event.detail.traceId && dashboardSocket?.readyState === WebSocket.OPEN) {
-          dashboardSocket.send(JSON.stringify({
-            type: "browser.trace",
-            traceId: event.detail.traceId,
-            event: "preview.rendered",
-            details: {
-              pageCount: schema.dashboard.pages.length,
-              activeHash: window.location.hash,
-            },
-          }));
+        try {
+          const schema = event.detail.dashboard;
+          dashboardDocument = {
+            languageVersion: schema["language-version"],
+            dashboard: schema.dashboard,
+          };
+          renderSources(renderedSources);
+          if (event.detail.traceId && dashboardSocket?.readyState === WebSocket.OPEN) {
+            dashboardSocket.send(JSON.stringify({
+              type: "browser.trace",
+              traceId: event.detail.traceId,
+              event: "preview.rendered",
+              details: {
+                pageCount: schema.dashboard.pages.length,
+                activeHash: window.location.hash,
+              },
+            }));
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error("Dashboard preview hot reload failed.", { message });
+          if (event.detail.traceId && dashboardSocket?.readyState === WebSocket.OPEN) {
+            dashboardSocket.send(JSON.stringify({
+              type: "browser.trace",
+              traceId: event.detail.traceId,
+              event: "preview.render.failed",
+              details: { message },
+            }));
+          }
         }
       });
 

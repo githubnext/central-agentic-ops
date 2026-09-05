@@ -77,6 +77,7 @@ body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5
 .dashboard-copilot-message-assistant { align-self: stretch; background: var(--canvas); }
 .dashboard-copilot-message-reasoning, .dashboard-copilot-message-update { border-style: dashed; background: transparent; color: var(--muted); font-style: italic; }
 .dashboard-copilot-message-refusal { border-style: dashed; background: transparent; color: var(--muted); }
+.dashboard-copilot-message-error { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, transparent); }
 .dashboard-copilot-message-content { white-space: pre-wrap; overflow-wrap: anywhere; }
 .dashboard-copilot-label { color: var(--muted); font-size: .6875rem; font-weight: 600; }
 .dashboard-copilot-input { min-width: 0; display: flex; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--canvas); }

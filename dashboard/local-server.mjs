@@ -224,6 +224,7 @@ const copilotReadOnlyShellCommands = new Set([
   "cut",
   "dirname",
   "du",
+  "echo",
   "file",
   "grep",
   "head",
@@ -233,6 +234,7 @@ const copilotReadOnlyShellCommands = new Set([
   "readlink",
   "realpath",
   "rg",
+  "sed",
   "stat",
   "tail",
   "tr",
@@ -267,13 +269,24 @@ function shellAbsolutePaths(permission) {
   return [...new Set([...permission.possiblePaths, ...commandPaths])];
 }
 
-function shellPermissionRejection(permission) {
+export function shellPermissionRejection(permission) {
   if (permission.hasWriteFileRedirection || /[<>]/.test(permission.fullCommandText)) {
     return "shell command uses redirection";
   }
   if (permission.possibleUrls.length > 0) return "shell command may access a URL";
   const identifiers = shellCommandIdentifiers(permission);
   if (identifiers.length === 0) return "shell command could not be classified";
+  if (identifiers.includes("sed")) {
+    if (/(?:^|\s)(?:-i(?:\S*)?|--in-place(?:=\S*)?)(?:\s|$)/.test(permission.fullCommandText)) {
+      return "sed in-place editing is not allowed";
+    }
+    if (/(?:^|\s)(?:-f|--file)(?:\s|=|$)/.test(permission.fullCommandText)) {
+      return "sed script files are not allowed";
+    }
+    if (/(?:^|[;/'"\s])(?:e|w|W)(?:\s|['"]|$)/.test(permission.fullCommandText)) {
+      return "sed execute and file-writing commands are not allowed";
+    }
+  }
   const deniedIdentifiers = identifiers.filter((identifier) =>
     !copilotReadOnlyShellCommands.has(identifier));
   if (deniedIdentifiers.length > 0) {
@@ -1425,6 +1438,8 @@ export async function startDashboardServer({
         details: { view: payload.view },
       });
       const rendered = Promise.withResolvers();
+      // Browser failure can arrive during rebuild, before execution reaches the await below.
+      void rendered.promise.catch(() => {});
       const renderTimeout = setTimeout(() => rendered.reject(
         new Error("The browser did not confirm the dashboard update."),
       ), 5000);
@@ -1447,6 +1462,15 @@ export async function startDashboardServer({
         const packagePaths = await refreshPromise;
         await refreshWatchers(packagePaths);
         await rendered.promise;
+      } catch (error) {
+        const reloadError = new Error(
+          `Dashboard was saved, but the preview could not reload: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          { cause: error },
+        );
+        reloadError.code = "DASHBOARD_PREVIEW_RELOAD_FAILED";
+        throw reloadError;
       } finally {
         clearTimeout(renderTimeout);
         renderAcknowledgements.delete(traceId);
@@ -1475,7 +1499,12 @@ export async function startDashboardServer({
       sendSocketEvent(socket, {
         type: "error",
         traceId,
-        message: "Copilot could not update the view.",
+        message: error?.code === "DASHBOARD_PREVIEW_RELOAD_FAILED"
+          ? error.message
+          : "Copilot could not update the view.",
+        details: error?.code === "DASHBOARD_PREVIEW_RELOAD_FAILED"
+          ? { phase: "hot-reload" }
+          : undefined,
       });
     } finally {
       copilotRequestActive = false;
@@ -1503,6 +1532,14 @@ export async function startDashboardServer({
       if (command.event === "preview.rendered") {
         const acknowledgement = renderAcknowledgements.get(command.traceId);
         if (acknowledgement?.socket === socket) acknowledgement.resolve();
+      } else if (command.event === "preview.render.failed") {
+        const acknowledgement = renderAcknowledgements.get(command.traceId);
+        if (acknowledgement?.socket === socket) {
+          const message = typeof command.details?.message === "string"
+            ? command.details.message
+            : "The browser could not render the updated dashboard.";
+          acknowledgement.reject(new Error(message));
+        }
       }
     }
   };
