@@ -163,15 +163,13 @@ function renderTableView(context) {
       const constrainOutputEvidence = (content) => column.display === 'outcome-link'
         ? h('span', { className: 'table-output-evidence' }, content)
         : content;
+      /** @param {string | HTMLElement} content */
+      const renderCellContent = (content) => columnIndex === 0 && tree
+        ? h('span', { className: 'tree-table-cell', style: `--tree-depth: ${depth}` }, constrainOutputEvidence(content))
+        : constrainOutputEvidence(content);
       if (columnIndex === 0 && hrefField) {
         if (column.field === RUN_FIELD && hrefField === RUN_LINK_FIELD) {
-          return h(
-            'td',
-            cellAttributes,
-            columnIndex === 0 && tree
-              ? h('span', { className: 'tree-table-cell', style: `--tree-depth: ${depth}` }, constrainOutputEvidence(value))
-              : constrainOutputEvidence(value)
-          );
+          return h('td', cellAttributes, renderCellContent(value));
         }
         const outputEvidenceText = toText(row[outputField]);
         const linkedValue = renderLinkedValue(
@@ -181,9 +179,9 @@ function renderTableView(context) {
         if (column.display === 'outcome-link' && linkedValue instanceof HTMLElement) {
           linkedValue.title = outputEvidenceText;
         }
-        return h('td', cellAttributes, constrainOutputEvidence(linkedValue));
+        return h('td', cellAttributes, renderCellContent(linkedValue));
       }
-      return h('td', cellAttributes, constrainOutputEvidence(value));
+      return h('td', cellAttributes, renderCellContent(value));
     })
   ));
 

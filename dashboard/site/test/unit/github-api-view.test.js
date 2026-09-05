@@ -231,6 +231,8 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(stackTable?.getAttribute('role')).toBe('treegrid');
     expect(stackTable?.querySelectorAll('tbody tr[aria-level]')).toHaveLength(2);
     expect(stackTable?.querySelector('tbody tr:nth-child(2)')?.getAttribute('aria-level')).toBe('2');
+    expect(stackTable?.querySelectorAll('.tree-table-cell')).toHaveLength(2);
+    expect(stackTable?.querySelector('tbody tr:nth-child(2) .tree-table-cell')?.getAttribute('style')).toContain('--tree-depth: 1');
     expect(stackTable?.textContent).toContain('activity/github-telemetry.mjs:150:9');
   });
 
