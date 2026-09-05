@@ -40,15 +40,11 @@ import { dashboardHorizonHours, formatDashboardHorizon, formatDashboardHorizonHo
  */
 
 /**
- * @typedef {{ filters: string[] }} PresentableFilterBar
+ * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
  */
 
 /**
- * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, ['filter-bar']?: PresentableFilterBar, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
- */
-
-/**
- * @typedef {{ id: string, kind: 'custom', title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, ['filter-bar']?: PresentableFilterBar, route?: { ['hash-query-parameter']?: string, ['navigation-page']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'custom', title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, route?: { ['hash-query-parameter']?: string, ['navigation-page']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
@@ -106,7 +102,6 @@ const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>}
         title: page.title,
         description: 'description' in page ? page.description : undefined,
         'class-name': 'class-name' in page ? page['class-name'] : undefined,
-        'filter-bar': 'filter-bar' in page ? page['filter-bar'] : undefined,
         views: page.definition?.views ?? [],
         sections: page.definition && 'sections' in page.definition ? page.definition.sections : undefined
       }
@@ -126,7 +121,6 @@ function getBuiltInPagePayload(page) {
     title: page.title ?? payload?.title,
     description: page.description ?? payload?.description,
     'class-name': page['class-name'] ?? payload?.['class-name'],
-    'filter-bar': page['filter-bar'] ?? payload?.['filter-bar'],
     views: payload?.views ?? [],
     sections: payload?.sections
   };
@@ -613,9 +607,13 @@ function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, eval
   const tooltipId = 'dashboard-horizon-details';
 
   return h(
-    'span',
+    'div',
     { className: 'dashboard-horizon', 'data-dashboard-evaluated-at': evaluatedAt },
-    h('span', null, `${label} ${duration}`),
+    h(
+      'button',
+      { type: 'button', className: 'horizon-toggle', 'aria-expanded': 'false' },
+      `${label} ${duration}`
+    ),
     horizon
       ? renderTooltip({
         id: tooltipId,
@@ -749,9 +747,10 @@ function renderPage(page, sources, units, dashboardDefaults) {
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @param {Record<string, unknown>} dashboardDefaults
+ * @param {boolean} [withFilterBar]
  * @returns {HTMLElement}
  */
-function renderCustomPage(page, title, sources, units, dashboardDefaults) {
+function renderCustomPage(page, title, sources, units, dashboardDefaults, withFilterBar = true) {
   const views = Array.isArray(page.views)
     ? page.views.map((view) => applyDashboardDefaults(view, dashboardDefaults))
     : [];
@@ -826,8 +825,8 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
   /** @type {HTMLElement} */
   let root;
   let filterRevision = 0;
-  const filterBar = page['filter-bar']
-    ? renderFilterBar(page['filter-bar'], (filters, timeWindow) => {
+  const filterBar = withFilterBar
+    ? renderFilterBar((filters, timeWindow) => {
       const revision = ++filterRevision;
       const result = filterDashboardSources(
         sources,
@@ -847,16 +846,19 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
           ? deriveOverviewSources(pageFilteredSources, { readinessWindow: timeWindow })
           : pageFilteredSources;
         const replacement = renderCustomPage(
-          { ...page, 'filter-bar': undefined },
+          page,
           title,
           effectiveSources,
           units,
-          dashboardDefaults
+          dashboardDefaults,
+          false
         );
-        if (filterBar) {
-          root.replaceChildren(filterBar, ...replacement.children);
-          dispatchPageRoute(root, root.dataset.routeParameter ?? '', root.dataset.routeValue ?? '');
-        }
+        const detailsState = [...root.querySelectorAll('details')].map((details) => details.open);
+        [...replacement.querySelectorAll('details')].forEach((details, index) => {
+          if (detailsState[index] !== undefined) details.open = detailsState[index];
+        });
+        root.replaceChildren(...replacement.children);
+        dispatchPageRoute(root, root.dataset.routeParameter ?? '', root.dataset.routeValue ?? '');
       };
       result.then(apply).catch(() => {});
     }, {
@@ -1115,14 +1117,17 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
   const activate = (pageId, parameters = new URLSearchParams(), deferPopulation = false) => {
     const revision = ++activationRevision;
     const dashboardHorizon = root.querySelector('.dashboard-horizon');
+    let activeFilterBar = root.querySelector('.report-actions > .filter-bar');
     /**
      * @param {HTMLElement | undefined} page
      */
     const placeDashboardHorizon = (page) => {
-      const filterInput = page?.querySelector('.filter-control input');
-      if (dashboardHorizon && filterInput) {
-        filterInput.before(dashboardHorizon);
-      } else if (dashboardHorizon && reportActions) {
+      const filterBar = page?.querySelector('.filter-bar');
+      if (dashboardHorizon && filterBar && reportActions) {
+        filterBar.prepend(dashboardHorizon);
+        reportActions.prepend(filterBar);
+        activeFilterBar = filterBar;
+      } else if (dashboardHorizon && reportActions && !reportActions.contains(dashboardHorizon)) {
         reportActions.prepend(dashboardHorizon);
       }
     };
@@ -1144,7 +1149,9 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     if (activePageId && activePageId !== pageId) {
       const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
       if (activePage) {
-        if (dashboardHorizon && activePage.contains(dashboardHorizon)) dashboardHorizon.remove();
+        if (dashboardHorizon && activeFilterBar?.contains(dashboardHorizon)) dashboardHorizon.remove();
+        activeFilterBar?.remove();
+        activeFilterBar = null;
         pageState.set(activePageId, {
           details: [...activePage.querySelectorAll('details')].map((details) => details.open),
           scrollTop: root.ownerDocument.scrollingElement?.scrollTop ?? root.ownerDocument.documentElement.scrollTop

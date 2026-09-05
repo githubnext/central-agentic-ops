@@ -249,8 +249,10 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
 
   const readinessPage = page.locator('[data-page-id="readiness"]');
   await expect(readinessPage).toBeVisible();
-  await expect(readinessPage.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('');
-  await expect(readinessPage.locator('.filter-bar .count-badge')).toHaveText('3');
+  const horizonFilter = page.getByLabel('Dashboard filters');
+  await horizonFilter.getByRole('button', { name: /Horizon/ }).click();
+  await expect(horizonFilter.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('');
+  await expect(horizonFilter.locator('.count-badge')).toHaveText('3');
   const readinessNavigation = page.locator('[data-nav-page-id="readiness"]');
   await expect(readinessNavigation).toHaveAttribute('aria-current', 'page');
   await expect(readinessNavigation.locator('svg')).toHaveCount(1);
@@ -1541,7 +1543,6 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
             id: 'cost',
             kind: 'custom',
             title: 'Cost & efficiency',
-            'filter-bar': { filters: [] },
             views: [{
               id: 'usage-count',
               data: { source: 'usage' },
@@ -1576,12 +1577,12 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
 
   const filterBar = page.getByLabel('Dashboard filters');
   await expect(filterBar).toBeVisible();
-  await expect(filterBar.locator('.filter-control > .dashboard-horizon')).toHaveCount(1);
+  await expect(filterBar.locator(':scope > .dashboard-horizon')).toHaveCount(1);
   await expect(page.locator('.report-actions > .dashboard-horizon')).toHaveCount(0);
   const filterInput = filterBar.getByRole('searchbox', { name: 'Current filters' });
   await expect(filterInput).toHaveValue('');
-  await expect(filterBar.locator('.time-window-control')).toBeHidden();
-  await filterBar.getByRole('button', { name: /Filter/ }).click();
+  await expect(filterBar.locator('.filter-tuning-controls')).toBeHidden();
+  await filterBar.getByRole('button', { name: /Horizon/ }).click();
   await expect(filterBar.getByRole('combobox', { name: 'Time window' })).toHaveValue('1w');
   await expect(filterBar.getByRole('checkbox')).toHaveCount(3);
   expect(await filterBar.getByRole('checkbox').evaluateAll(
@@ -1596,15 +1597,15 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect.poll(() => page.evaluate(() => JSON.parse(
     localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings') ?? '{}'
   ).modes)).toEqual(['live', 'unknown']);
-  await filterBar.getByRole('button', { name: /Filter/ }).click();
+  await filterBar.getByRole('button', { name: /Horizon/ }).click();
 
   await page.setViewportSize({ width: 400, height: 900 });
-  const filterControlBox = await filterBar.locator('.filter-control').boundingBox();
-  expect(filterControlBox).not.toBeNull();
-  await expect(filterBar.locator('.time-window-control')).toBeHidden();
-  await filterBar.getByRole('button', { name: /Filter/ }).click();
+  const horizonBox = await filterBar.locator('.dashboard-horizon').boundingBox();
+  expect(horizonBox).not.toBeNull();
+  await expect(filterBar.locator('.filter-tuning-controls')).toBeHidden();
+  await filterBar.getByRole('button', { name: /Horizon/ }).click();
   const timeRangeBox = await filterBar.locator('.time-window-control').boundingBox();
-  expect(timeRangeBox?.y).toBeGreaterThan(filterControlBox?.y ?? 0);
+  expect(timeRangeBox?.y).toBeGreaterThan(horizonBox?.y ?? 0);
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {
@@ -2782,7 +2783,6 @@ test('outcome page template follows its JSON-declared hash query route in browse
             title: 'Outcome',
             description: 'Outcome details.',
             route: { 'hash-query-parameter': 'outcome' },
-            'filter-bar': { filters: [] },
             views: [{
               id: 'outcome-record',
               title: 'Outcome',

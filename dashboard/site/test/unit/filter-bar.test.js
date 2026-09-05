@@ -23,7 +23,7 @@ describe('time-window filter bar', () => {
 
   it('emits preset and custom start/end windows', async () => {
     const onChange = vi.fn();
-    const filterBar = renderFilterBar({ filters: [] }, onChange, {
+    const filterBar = renderFilterBar(onChange, {
       defaultRange: '24h',
       referenceEnd: '2026-09-04T12:00:00Z'
     });
@@ -61,29 +61,33 @@ describe('time-window filter bar', () => {
     });
   });
 
-  it('toggles the mobile time-window controls from the filter label', () => {
-    const filterBar = renderFilterBar({ filters: [] }, vi.fn(), { defaultRange: '24h' });
+  it('toggles tuning controls from the horizon text', () => {
+    const filterBar = renderFilterBar(vi.fn(), { defaultRange: '24h' });
+    const toggle = document.createElement('button');
+    toggle.className = 'horizon-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.textContent = 'Horizon 1 day';
+    filterBar.prepend(toggle);
     document.body.append(filterBar);
-    const toggle = filterBar.querySelector('.filter-toggle');
 
-    expect(toggle?.textContent).toContain('Filter');
-    expect(toggle?.querySelector('.count-badge')?.textContent).toBe('3');
-    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
-    expect(filterBar.classList.contains('time-window-expanded')).toBe(false);
+    expect(toggle.textContent).toContain('Horizon');
+    expect(filterBar.querySelector('.count-badge')?.textContent).toBe('3');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(filterBar.classList.contains('filter-bar-expanded')).toBe(false);
 
-    toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
-    expect(filterBar.classList.contains('time-window-expanded')).toBe(true);
+    toggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(filterBar.classList.contains('filter-bar-expanded')).toBe(true);
 
     filterBar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
-    expect(filterBar.classList.contains('time-window-expanded')).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(filterBar.classList.contains('filter-bar-expanded')).toBe(false);
     expect(document.activeElement).toBe(toggle);
   });
 
   it('shares persisted horizon and mode settings across filter bars', async () => {
     const firstChange = vi.fn();
-    const first = renderFilterBar({ filters: [] }, firstChange, {
+    const first = renderFilterBar(firstChange, {
       defaultRange: '24h',
       referenceEnd: '2026-09-04T12:00:00Z'
     });
@@ -97,7 +101,7 @@ describe('time-window filter bar', () => {
     select.dispatchEvent(new Event('change'));
 
     const secondChange = vi.fn();
-    const second = renderFilterBar({ filters: [] }, secondChange, {
+    const second = renderFilterBar(secondChange, {
       defaultRange: '1w',
       referenceEnd: '2026-09-04T12:00:00Z'
     });
@@ -133,7 +137,7 @@ describe('time-window filter bar', () => {
       JSON.stringify({ range: '24h', modes: ['corrupted_mode', 'invalid'] })
     );
     const onChange = vi.fn();
-    const filterBar = renderFilterBar({ filters: [] }, onChange, {
+    const filterBar = renderFilterBar(onChange, {
       defaultRange: '24h',
       referenceEnd: '2026-09-04T12:00:00Z'
     });
