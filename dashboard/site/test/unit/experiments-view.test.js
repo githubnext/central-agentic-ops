@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import dashboardDocument from '../../dashboard.json';
 
 describe('experiments view', () => {
   it('places an actionable experiment summary under Explore', () => {
+    const dashboardDocument = JSON.parse(readFileSync(resolve('dashboard.json'), 'utf8'));
     const dashboard = dashboardDocument.dashboard;
-    const page = dashboard.pages.find((candidate) => candidate.id === 'experiments');
-    const explore = dashboard.navigation.find((group) => group.label === 'Explore');
+    const page = dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'experiments');
+    const explore = dashboard.navigation.find((/** @type {{ label: string }} */ group) => group.label === 'Explore');
 
     expect(explore.pages).toContain('experiments');
     expect(page.icon).toBe('beaker');
@@ -20,9 +22,9 @@ describe('experiments view', () => {
       }
     });
 
-    const progress = page.definition.views.find((view) => view.id === 'experiment-progress');
+    const progress = page.definition.views.find((/** @type {{ id: string }} */ view) => view.id === 'experiment-progress');
     expect(progress.data.source).toBe('grader-observations');
-    expect(progress.encoding.columns.map((column) => column.field)).toEqual([
+    expect(progress.encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
       'experiment',
       'grader',
       'value',
@@ -35,9 +37,9 @@ describe('experiments view', () => {
       when: { field: 'maturity-status', equals: 'matured' }
     });
 
-    const evalResults = page.definition.views.find((view) => view.id === 'experiment-eval-results');
+    const evalResults = page.definition.views.find((/** @type {{ id: string }} */ view) => view.id === 'experiment-eval-results');
     expect(evalResults.data.source).toBe('eval-observations');
-    expect(evalResults.encoding.columns.map((column) => column.field)).toContain('eval-result');
-    expect(page.definition.views.filter((view) => view.disclosure !== 'supplemental')).toHaveLength(4);
+    expect(evalResults.encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toContain('eval-result');
+    expect(page.definition.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure !== 'supplemental')).toHaveLength(4);
   });
 });

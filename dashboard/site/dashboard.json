@@ -3793,7 +3793,7 @@
         "page": "experiments",
         "title": "Experiments",
         "icon": "beaker",
-        "description": "Ongoing experiment progress, grader and eval results, and actions for values whose evidence has matured. Observed associations do not imply causation.",
+        "description": "Ongoing experiment progress, grader and eval results, and actions for values whose evidence has matured. Observed associations are presented without implying causation.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -4069,6 +4069,39 @@
                     "title": "Observed"
                   }
                 ]
+              }
+            },
+            {
+              "id": "experiments-outcomes-source",
+              "title": "Associated outcomes",
+              "disclosure": "supplemental",
+              "data": {
+                "source": "outcomes"
+              },
+              "mark": "metric",
+              "encoding": {
+                "value": {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "aggregate": "count"
+                }
+              }
+            },
+            {
+              "id": "experiments-usage-source",
+              "title": "Associated AI Credit usage",
+              "disclosure": "supplemental",
+              "data": {
+                "source": "usage"
+              },
+              "mark": "metric",
+              "encoding": {
+                "value": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum",
+                  "unit": "aic"
+                }
               }
             }
           ]
