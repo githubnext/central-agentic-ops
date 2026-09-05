@@ -2603,6 +2603,8 @@ test('outcome page template follows its JSON-declared hash query route in browse
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');
   await expect(page.locator('.outcome-meta')).toContainText('Live');
+  await expect(page.locator('.discussion-post')).toHaveCount(1);
+  await expect(page.locator('.outcome-meta')).toHaveCount(1);
 });
 
 test('declarative tables expose report-style facets and progressive catalog disclosure', async ({ page }) => {

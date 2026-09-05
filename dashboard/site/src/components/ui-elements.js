@@ -8,6 +8,7 @@ import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageRouteView } from './package-route-view.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
+import { isOutcomeDetailSectionConfig, renderOutcomeDetailSection } from './outcome-detail-sections.js';
 import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, renderIconSpan } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
@@ -29,7 +30,7 @@ import { rowsFor as rowsForSource } from './source-rows.js';
  *   titleLink?: Record<string, unknown>,
  *   element?: string,
  *   viewId?: string,
- *   elementConfig?: { body?: 'insights'|'reports'|'runs'|'workflows'|'dispatches' },
+ *   elementConfig?: { body?: string, sections?: string[], section?: string },
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */
@@ -54,11 +55,12 @@ const ELEMENT_RENDERERS = new Map([
   ['package-route', renderPackageRouteView],
   ['workflow-route', renderWorkflowRouteView],
   ['outcome-detail', renderOutcomeDetail],
+  ['outcome-detail-section', renderOutcomeDetailSectionElement],
   ['configuration-policy', renderConfigurationView],
   ['experiments-evaluation', renderExperimentsEvaluation]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'package-route', 'workflow-route', 'outcome-detail', 'configuration-policy', 'experiments-evaluation']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'package-route', 'workflow-route', 'outcome-detail', 'outcome-detail-section', 'configuration-policy', 'experiments-evaluation']);
 
 /**
  * @param {string} name
@@ -67,6 +69,21 @@ const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'cont
  */
 export function renderUiElement(name, context) {
   return ELEMENT_RENDERERS.get(name)?.({ ...context, element: name }) ?? null;
+}
+
+/**
+ * @param {ElementRenderContext} context
+ * @returns {HTMLElement | null}
+ */
+function renderOutcomeDetailSectionElement(context) {
+  const outcomes = rowsFor(context, 'outcomes');
+  const sectionConfig = isOutcomeDetailSectionConfig(context.elementConfig)
+    ? context.elementConfig
+    : null;
+  if (!sectionConfig) return null;
+  const outcomeId = stringValue(context.scope?.['safe-output']);
+  const outcome = outcomes.find((row) => String(row['safe-output']) === outcomeId);
+  return outcome ? renderOutcomeDetailSection(outcome, sectionConfig.body) : null;
 }
 
 /**

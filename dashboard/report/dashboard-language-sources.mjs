@@ -13,6 +13,7 @@ const sourceNames = [
   "admission-checks",
   "run-performance",
   "job-performance",
+  "safe-output-performance",
   "experiments",
   "experiment-assignments",
   "graders",
@@ -20,6 +21,8 @@ const sourceNames = [
   "evals",
   "eval-observations",
   "usage",
+  "mcp-calls",
+  "mcp-servers",
   "security-observations",
   "coverage-diagnostics",
   "repository-coverage",
@@ -735,6 +738,38 @@ function positiveCount(value) {
   return Number.isFinite(count) && count > 0 ? count : 0;
 }
 
+function safeOutputPerformanceRows(usage) {
+  const runs = Array.isArray(usage.securityRuns) ? usage.securityRuns : [];
+  const categories = [
+    ["output", "Output", "success", "safeItemsCount"],
+    ["noop", "No-op", "neutral", "noopCount"],
+    ["missing_data", "Missing data", "warning", "missingDataCount"],
+    ["missing_tool", "Missing tool", "warning", "missingToolCount"],
+    ["report_incomplete", "Report incomplete", "warning", "reportIncompleteCount"],
+  ];
+  return runs.flatMap((run) => {
+    const common = {
+      ...repositoryParts(run.repository),
+      workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
+      run: String(run.runId),
+      "run-conclusion": runConclusion(run.conclusion),
+      "rollout-mode": rolloutMode(run.mode),
+      "observed-at": run.createdAt || usage.generatedAt,
+      "run-link": link("run", workflowRunUrl(run.repository, run.runId), `View run ${run.runId}`),
+    };
+    return categories.flatMap(([kind, label, status, field]) => {
+      const count = positiveCount(run[field]);
+      return count > 0 ? [{
+        ...common,
+        "safe-output-kind": kind,
+        "safe-output-label": label,
+        "safe-output-status": status,
+        "safe-output-count": count,
+      }] : [];
+    });
+  });
+}
+
 function securityObservation(run, feature, analysis, signal, status, count, subject = "") {
   return {
     ...repositoryParts(run.repository),
@@ -869,6 +904,128 @@ function securityObservationRows(usage) {
     ...integrityRows(run),
     ...threatDetectionRows(run),
   ]);
+}
+
+function mcpBase(run) {
+  return {
+    ...repositoryParts(run.repository),
+    workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
+    run: String(run.runId ?? ""),
+    "rollout-mode": rolloutMode(run.mode),
+    "engine-version": firstText(run.engineVersion) || "unknown",
+    "gh-aw-version": firstText(run.security?.mcp?.cliVersion) || "unknown",
+    "observed-at": run.createdAt,
+    "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
+  };
+}
+
+function mcpStatus(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "success" || normalized === "ok") return "success";
+  return normalized ? "failure" : "missing";
+}
+
+function mcpCallRows(usage) {
+  return (usage.securityRuns || []).flatMap((run) => {
+    const mcp = run.security?.mcp;
+    const base = mcpBase(run);
+    if (!mcp?.available) {
+      return [];
+    }
+    const versions = new Map((mcp.servers || []).map((server) => [server.serverName, server]));
+    const calls = (mcp.calls || []).map((call, index) => {
+      const server = versions.get(call.serverName);
+      return {
+        ...base,
+        "mcp-observation": `${run.repository}:${run.runId}:call:${index}`,
+        "mcp-server": call.serverName || "unknown",
+        "mcp-server-version": server?.serverVersion || "unknown",
+        "mcp-protocol-version": server?.protocolVersion || "unknown",
+        "mcp-tool": call.toolName || "unknown",
+        "mcp-status": mcpStatus(call.status),
+        "response-bytes": finite(call.outputSize),
+        "observed-at": call.timestamp || base["observed-at"],
+      };
+    });
+    const failures = (mcp.failures || []).map((failure, index) => ({
+      ...base,
+      "mcp-observation": `${run.repository}:${run.runId}:failure:${index}`,
+      "mcp-server": failure.serverName || "unknown",
+      "mcp-server-version": versions.get(failure.serverName)?.serverVersion || "unknown",
+      "mcp-protocol-version": versions.get(failure.serverName)?.protocolVersion || "unknown",
+      "mcp-tool": "server",
+      "mcp-status": "failure",
+      "response-bytes": null,
+    }));
+    return [...calls, ...failures];
+  });
+}
+
+function mcpServerRows(usage) {
+  return (usage.securityRuns || []).flatMap((run) => {
+    const mcp = run.security?.mcp;
+    const base = mcpBase(run);
+    if (!mcp?.available) {
+      return [{
+        ...base,
+        "mcp-server-observation": `${run.repository}:${run.runId}:missing`,
+        "mcp-server": "unknown",
+        "mcp-server-version": "unknown",
+        "mcp-protocol-version": "unknown",
+        "mcp-status": "missing",
+        "tool-calls": 0,
+        "failed-calls": 0,
+        "total-response-bytes": 0,
+        "max-response-bytes": 0,
+      }];
+    }
+    const failures = new Set((mcp.failures || []).map((failure) => failure.serverName));
+    const servers = new Map((mcp.servers || []).map((server) => [server.serverName, { ...server }]));
+    const reportedServers = new Set(servers.keys());
+    for (const call of mcp.calls || []) {
+      const server = servers.get(call.serverName) || {
+        serverName: call.serverName || "unknown",
+        serverVersion: "",
+        protocolVersion: "",
+        toolCallCount: 0,
+        errorCount: 0,
+        totalOutputSize: 0,
+        maxOutputSize: 0,
+      };
+      if (!reportedServers.has(call.serverName)) {
+        server.toolCallCount += 1;
+        if (mcpStatus(call.status) === "failure") server.errorCount += 1;
+        server.totalOutputSize += positiveCount(call.outputSize);
+        server.maxOutputSize = Math.max(server.maxOutputSize, positiveCount(call.outputSize));
+        servers.set(call.serverName, server);
+      }
+    }
+    for (const failure of mcp.failures || []) {
+      const server = servers.get(failure.serverName) || {
+        serverName: failure.serverName,
+        serverVersion: "",
+        protocolVersion: "",
+        toolCallCount: 0,
+        errorCount: 0,
+        totalOutputSize: 0,
+        maxOutputSize: 0,
+      };
+      server.errorCount += 1;
+      servers.set(failure.serverName, server);
+    }
+    return [...servers.values()].map((server) => ({
+      ...base,
+      "mcp-server-observation": `${run.repository}:${run.runId}:${server.serverName}`,
+      "mcp-server": server.serverName || "unknown",
+      "mcp-server-version": server.serverVersion || "unknown",
+      "mcp-protocol-version": server.protocolVersion || "unknown",
+      "mcp-status": server.errorCount > 0 ? "failure" : "success",
+      "tool-calls": positiveCount(server.toolCallCount),
+      "failed-calls": positiveCount(server.errorCount),
+      "total-response-bytes": positiveCount(server.totalOutputSize),
+      "max-response-bytes": positiveCount(server.maxOutputSize),
+    }));
+  });
 }
 
 function recordLink(record, relation) {
@@ -1164,6 +1321,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const runs = runRows(deployed, usage);
   const admission = admissionRows(deployed);
   const performance = performanceRows(deployed, usage);
+  const safeOutputPerformance = safeOutputPerformanceRows(usage);
   const records = report.records || [];
   const workflowRoleForRecord = recordWorkflowRoleResolver(workflows);
   const findings = findingRows(records, workflowRoleForRecord);
@@ -1237,6 +1395,13 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     runAvailable,
     runComplete && usageComplete,
   );
+  sources["safe-output-performance"] = source(
+    "safe-output-performance",
+    safeOutputPerformance,
+    generatedAt,
+    usageAvailable && usage.securityAvailable === true,
+    usageComplete && usage.securityComplete === true,
+  );
   if (Number.isFinite(deployed.runHealth?.windowHours) && deployed.runHealth.windowHours > 0) {
     sources.runs.metadata["coverage-end"] = generatedAt;
     sources.runs.metadata["coverage-start"] = new Date(
@@ -1248,6 +1413,20 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     }
   }
   sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
+  sources["mcp-calls"] = source(
+    "mcp-calls",
+    mcpCallRows(usage),
+    generatedAt,
+    usage.mcpAvailable === true,
+    usage.mcpComplete === true,
+  );
+  sources["mcp-servers"] = source(
+    "mcp-servers",
+    mcpServerRows(usage),
+    generatedAt,
+    usage.mcpAvailable === true,
+    usage.mcpComplete === true,
+  );
   sources["security-observations"] = source(
     "security-observations",
     securityObservationRows(usage),
@@ -1260,6 +1439,9 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     sources.usage.metadata["coverage-start"] = new Date(
       Date.parse(generatedAt) - usage.windowHours * 3_600_000,
     ).toISOString();
+    // Usage and security telemetry come from the same gh aw logs collection window.
+    sources["safe-output-performance"].metadata["coverage-end"] = generatedAt;
+    sources["safe-output-performance"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",

@@ -76,6 +76,7 @@ function emptySecurityTelemetry() {
     accessControl: { available: false, fileDenials: {}, toolDenials: {}, guardPolicy: null },
     firewall: { available: false, analysis: null },
     integrity: { available: false, summary: null, totalToolCalls: 0 },
+    mcp: { available: false, cliVersion: null, servers: [], calls: [], failures: [] },
     threatDetection: { available: false, verdict: null },
   };
 }
@@ -108,12 +109,36 @@ export async function readRunSecurityTelemetry(outputDirectory, runId) {
     const content = await readBounded(summaryFile);
     if (content !== null) try {
       const summary = JSON.parse(content);
+      telemetry.mcp.cliVersion = firstText(summary.cli_version);
       const firewall = summary.firewall_analysis;
       if (firewall && typeof firewall === "object") {
         telemetry.firewall = { available: true, analysis: firewall };
       }
       const toolUsage = summary.mcp_tool_usage;
       if (toolUsage && typeof toolUsage === "object") {
+        telemetry.mcp.available = true;
+        telemetry.mcp.servers = Array.isArray(toolUsage.servers)
+          ? toolUsage.servers.map((server) => ({
+            serverName: firstText(server?.server_name),
+            serverVersion: firstText(server?.server_version, server?.version),
+            protocolVersion: firstText(server?.protocol_version),
+            toolCallCount: Math.max(0, Number(server?.tool_call_count ?? server?.request_count) || 0),
+            errorCount: Math.max(0, Number(server?.error_count) || 0),
+            totalOutputSize: Math.max(0, Number(server?.total_output_size) || 0),
+            maxOutputSize: Math.max(0, Number(server?.max_output_size) || 0),
+          })).filter((server) => server.serverName)
+          : [];
+        telemetry.mcp.calls = Array.isArray(toolUsage.tool_calls)
+          ? toolUsage.tool_calls.map((call) => ({
+            timestamp: firstText(call?.timestamp),
+            serverName: firstText(call?.server_name),
+            toolName: firstText(call?.tool_name),
+            status: firstText(call?.status),
+            outputSize: call?.output_size != null && Number.isFinite(Number(call.output_size))
+              ? Math.max(0, Number(call.output_size))
+              : null,
+          })).filter((call) => call.serverName || call.toolName)
+          : [];
         const integrity = toolUsage.integrity;
         if (integrity && typeof integrity === "object") {
           telemetry.integrity.available = true;
@@ -127,6 +152,13 @@ export async function readRunSecurityTelemetry(outputDirectory, runId) {
           telemetry.accessControl.available = true;
           telemetry.accessControl.guardPolicy = guardPolicy;
         }
+      }
+      if (Array.isArray(summary.mcp_failures)) {
+        telemetry.mcp.failures = summary.mcp_failures.map((failure) => ({
+          serverName: firstText(failure?.server_name),
+          status: firstText(failure?.status),
+        })).filter((failure) => failure.serverName);
+        if (telemetry.mcp.failures.length > 0) telemetry.mcp.available = true;
       }
     } catch {
       // Missing or malformed optional telemetry is represented as unavailable.
@@ -232,6 +264,11 @@ async function main() {
             requestedModel: firstText(run.requested_model, run.requestedModel, run.model, run.model_name),
             resolvedModel: firstText(run.resolved_model, run.resolvedModel, run.model_resolved, run.model),
             agentRuntime: firstText(run.agent_runtime, run.agentRuntime),
+            safeItemsCount: Number(run.safe_items_count) || 0,
+            noopCount: Number(run.noop_count) || 0,
+            missingDataCount: Number(run.missing_data_count) || 0,
+            missingToolCount: Number(run.missing_tool_count) || 0,
+            reportIncompleteCount: Number(run.report_incomplete_count) || 0,
             data: run.data ?? null,
           };
           if (Number.isFinite(aic)) runs.set(`${repository}:${runId}`, {
@@ -271,6 +308,9 @@ async function main() {
       securityAvailable: collectionAvailable,
       securityComplete: collectionAvailable
         && [...securityRuns.values()].every((run) => securityTelemetryComplete(run.security)),
+      mcpAvailable: collectionAvailable,
+      mcpComplete: collectionAvailable
+        && [...securityRuns.values()].every((run) => run.security.mcp.available),
       repositories,
       runs: [...runs.values()],
       securityRuns: [...securityRuns.values()],
