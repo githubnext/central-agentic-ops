@@ -170,6 +170,7 @@ jobs:
           CAO_GITHUB_TOKEN_TYPE: ${{ steps.dashboard-app-token.outputs.token != '' && 'app' || 'builtin' }}
           CAO_ACTIVITY_CACHE_KEY: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
           CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
+          # gh-aw reuses the raw logs restored from the activity cache; derived outputs stay separate.
           REPORT_AIC_CACHE: ${{ runner.temp }}/cao-activity/logs
           REPORT_AIC_USAGE: ${{ runner.temp }}/cao-dashboard-data/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-dashboard-data/deployed-workflows.json
