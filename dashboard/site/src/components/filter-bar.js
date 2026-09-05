@@ -34,24 +34,34 @@ export function renderFilterBar(config, onChange, options = {}) {
   timeControl = config['time-range']
     ? renderTimeWindowControl(config['time-range'], options, emit)
     : null;
+  const scopeLabel = h(
+    timeControl ? 'button' : 'span',
+    timeControl
+      ? { type: 'button', className: 'scope-label filter-toggle', 'aria-expanded': 'false' }
+      : { className: 'scope-label' },
+    octicon('issue'),
+    h('strong', null, 'Filter'),
+    count
+  );
   const root = h(
     'div',
     { className: 'toolbar filter-bar', 'aria-label': 'Dashboard filters' },
     h(
       'div',
       { className: 'filter-control' },
-      h(
-        'span',
-        { className: 'scope-label' },
-        octicon('issue'),
-        h('strong', null, 'Filter'),
-        count
-      ),
+      scopeLabel,
       filters,
       h('span', { className: 'search-control', 'aria-hidden': 'true' }, octicon('eye'))
     ),
     timeControl?.element
   );
+  if (timeControl) {
+    scopeLabel.addEventListener('click', () => {
+      const expanded = scopeLabel.getAttribute('aria-expanded') !== 'true';
+      scopeLabel.setAttribute('aria-expanded', String(expanded));
+      root.classList.toggle('time-window-expanded', expanded);
+    });
+  }
   filters.addEventListener('input', () => {
     const parsed = parseFilters(filters.value);
     const filterCount = [...parsed.values()].reduce((total, values) => total + values.length, 0);

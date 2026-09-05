@@ -52,4 +52,21 @@ describe('time-window filter bar', () => {
     expect(Date.parse(selected.end) - Date.parse(selected.start)).toBe(2 * 3_600_000);
     expect(new URLSearchParams(window.location.search).get('readiness.window')).toBe('custom');
   });
+
+  it('toggles the mobile time-window controls from the filter label', () => {
+    const filterBar = renderFilterBar({ filters: ['mode:review', 'mode:live'], 'time-range': '24h' }, vi.fn());
+    const toggle = filterBar.querySelector('.filter-toggle');
+
+    expect(toggle?.textContent).toContain('Filter2');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(filterBar.classList.contains('time-window-expanded')).toBe(false);
+
+    toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(filterBar.classList.contains('time-window-expanded')).toBe(true);
+
+    toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(filterBar.classList.contains('time-window-expanded')).toBe(false);
+  });
 });

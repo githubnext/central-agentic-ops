@@ -186,6 +186,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .filter-control { min-width: 240px; min-height: 30px; display: flex; flex: 1; align-items: stretch; position: relative; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); font-size: .75rem; }
 .scope-label, .scope-period, .search-control { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; }
 .scope-label { border-right: 1px solid var(--border); }
+.filter-toggle { border-block: 0; border-left: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .count-badge { min-width: 20px; padding: 0 6px; border-radius: 2em; background: var(--neutral-muted); font-size: .6875rem; text-align: center; }
 .filter-control input { min-width: 0; flex: 1; padding: 5px 12px; border: 0; outline: 0; background: transparent; color: var(--accent); font: inherit; }
 .search-control { padding-inline: 9px; border-left: 1px solid var(--border); color: var(--muted); }
@@ -1173,6 +1174,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
   .toolbar { align-items: stretch; flex-wrap: wrap; }
   .filter-control { flex-basis: 100%; }
+  .filter-bar:not(.time-window-expanded) .time-window-control { display: none; }
+  .filter-toggle[aria-expanded="true"] { background: var(--neutral-muted); }
   .scope-period { min-height: 44px; }
   .scope-period { flex: 1; justify-content: center; }
   .time-window-control { display: grid; flex: 1 1 100%; grid-template-columns: minmax(0, 1fr); min-width: 0; }
