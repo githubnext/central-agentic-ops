@@ -3,6 +3,11 @@
  */
 
 import octiconNames from './octicon-names.json' with { type: 'json' };
+export {
+  OUTCOME_DETAIL_SECTION_BODY_VALUES,
+  PACKAGE_ROUTE_BODY_VALUES,
+  WORKFLOW_ROUTE_BODY_VALUES
+} from './components/route-body-specification.js';
 
 export const LANGUAGE_VERSION = '0.1.0';
 
@@ -52,9 +57,6 @@ export const VIEW_ELEMENT_VALUES = [
   'configuration-policy',
   'experiments-evaluation'
 ];
-export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
-export const PACKAGE_ROUTE_BODY_VALUES = ['insights', 'workflows', 'dispatches', 'reports'];
-export const OUTCOME_DETAIL_SECTION_BODY_VALUES = ['discussion', 'metadata'];
 export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'scatter', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];

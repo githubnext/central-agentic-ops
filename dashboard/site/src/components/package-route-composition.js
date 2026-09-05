@@ -5,6 +5,8 @@
 import { h } from '../dom.js';
 import { titleCase } from './count-formatters.js';
 import { selectNamedComposition } from './route-composition.js';
+import { selectConfigBody } from './route-body-composition.js';
+import { PACKAGE_ROUTE_BODY_VALUES } from './route-body-specification.js';
 import { renderWorkflowValueReport } from './workflow-runtime.js';
 
 /**
@@ -70,7 +72,10 @@ const PACKAGE_ROUTE_COMPOSITIONS = {
   }
 };
 
-const DEFAULT_PACKAGE_ROUTE_BODY = 'workflows';
+const PACKAGE_ROUTE_BODY_CONFIG = {
+  values: /** @type {readonly PackageRouteBody[]} */ (PACKAGE_ROUTE_BODY_VALUES),
+  fallback: /** @type {PackageRouteBody} */ ('workflows')
+};
 
 /**
  * @param {unknown} body
@@ -78,7 +83,11 @@ const DEFAULT_PACKAGE_ROUTE_BODY = 'workflows';
  */
 export function packageRouteComposition(body) {
   return /** @type {PackageRouteComposition} */ (
-    selectNamedComposition(PACKAGE_ROUTE_COMPOSITIONS, body, DEFAULT_PACKAGE_ROUTE_BODY)
+    selectNamedComposition(
+      PACKAGE_ROUTE_COMPOSITIONS,
+      selectConfigBody(PACKAGE_ROUTE_BODY_CONFIG, body),
+      PACKAGE_ROUTE_BODY_CONFIG.fallback
+    )
   );
 }
 

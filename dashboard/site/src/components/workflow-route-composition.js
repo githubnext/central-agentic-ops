@@ -3,6 +3,8 @@
  */
 
 import { selectNamedComposition } from './route-composition.js';
+import { selectConfigBody } from './route-body-composition.js';
+import { WORKFLOW_ROUTE_BODY_VALUES } from './route-body-specification.js';
 import { WORKFLOW_ROUTE_BODY_RENDERERS } from './workflow-route-bodies.js';
 
 /**
@@ -69,7 +71,10 @@ const WORKFLOW_ROUTE_BODY_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRout
   }
 });
 
-const DEFAULT_WORKFLOW_ROUTE_BODY = 'reports';
+const WORKFLOW_ROUTE_BODY_CONFIG = {
+  values: /** @type {readonly WorkflowRouteBody[]} */ (WORKFLOW_ROUTE_BODY_VALUES),
+  fallback: /** @type {WorkflowRouteBody} */ ('reports')
+};
 
 /**
  * @param {unknown} body
@@ -77,6 +82,10 @@ const DEFAULT_WORKFLOW_ROUTE_BODY = 'reports';
  */
 export function workflowRouteComposition(body) {
   return /** @type {WorkflowRouteBodyComposition} */ (
-    selectNamedComposition(WORKFLOW_ROUTE_BODY_COMPOSITIONS, body, DEFAULT_WORKFLOW_ROUTE_BODY)
+    selectNamedComposition(
+      WORKFLOW_ROUTE_BODY_COMPOSITIONS,
+      selectConfigBody(WORKFLOW_ROUTE_BODY_CONFIG, body),
+      WORKFLOW_ROUTE_BODY_CONFIG.fallback
+    )
   );
 }
