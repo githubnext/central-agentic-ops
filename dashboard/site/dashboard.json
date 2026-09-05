@@ -52,6 +52,12 @@
         "symbol": "s",
         "significant": 1
       },
+      "human-duration": {
+        "name": "Human-friendly duration",
+        "symbol": "s",
+        "significant": 1,
+        "format": "duration"
+      },
       "minutes": {
         "name": "Minutes",
         "symbol": "min",
@@ -3133,7 +3139,7 @@
                 "type": "quantitative",
                 "aggregate": "none",
                 "title": "Workflow run total time",
-                "unit": "seconds"
+                "unit": "human-duration"
               }
             }
           },
@@ -3159,7 +3165,7 @@
                 "type": "quantitative",
                 "aggregate": "mean",
                 "title": "Mean job time",
-                "unit": "seconds"
+                "unit": "human-duration"
               },
               "color": {
                 "field": "runner",
@@ -3190,7 +3196,7 @@
                 "type": "quantitative",
                 "aggregate": "mean",
                 "title": "Mean job time",
-                "unit": "seconds"
+                "unit": "human-duration"
               },
               "color": {
                 "field": "engine",
@@ -3221,7 +3227,7 @@
                 "type": "quantitative",
                 "aggregate": "mean",
                 "title": "Mean job time",
-                "unit": "seconds"
+                "unit": "human-duration"
               }
             }
           }
