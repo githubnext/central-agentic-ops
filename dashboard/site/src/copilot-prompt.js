@@ -275,7 +275,19 @@ export function renderCopilotPrompt(socket) {
       browserTrace(socket, 'copilot.request.completed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'error' && typeof streamEvent.message === 'string') {
       toolbarStatus.textContent = streamEvent.message;
-      appendAssistantMessage(streamEvent.message, 'error');
+      const recovery = streamEvent.details?.phase === 'hot-reload'
+        ? streamEvent.details.recovered
+          ? 'The previous dashboard is still available.'
+          : 'The previous dashboard could not be fully restored.'
+        : '';
+      const errorLog = typeof streamEvent.details?.errorLog === 'string'
+        ? streamEvent.details.errorLog.trim()
+        : '';
+      appendAssistantMessage([
+        streamEvent.message,
+        recovery,
+        errorLog ? `Error log:\n${errorLog}` : ''
+      ].filter(Boolean).join('\n\n'), 'error');
       setSessionActive(false);
       console.error('Copilot dashboard update failed.', {
         traceId: activeTraceId,

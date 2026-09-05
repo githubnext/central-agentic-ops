@@ -1345,6 +1345,7 @@ export async function startDashboardServer({
         resolvedInstalledDashboardsDirectory,
       )];
       const viewDashboardPath = await dashboardSourceForView(payload.view, editableDashboardPaths);
+      const previousDashboardSource = await readFile(viewDashboardPath, "utf8");
       console.log("Accepted Copilot dashboard request.", {
         view: payload.view,
         requestLength: payload.request.trim().length,
@@ -1463,13 +1464,43 @@ export async function startDashboardServer({
         await refreshWatchers(packagePaths);
         await rendered.promise;
       } catch (error) {
+        let sourceRestored = false;
+        let recoveryError;
+        try {
+          validateDashboardSource(previousDashboardSource);
+          await writeFile(viewDashboardPath, previousDashboardSource);
+          refreshPromise = refreshPromise.then(
+            () => rebuild(false, traceId),
+            () => rebuild(false, traceId),
+          );
+          const packagePaths = await refreshPromise;
+          await refreshWatchers(packagePaths);
+          sourceRestored = true;
+        } catch (restoreError) {
+          recoveryError = restoreError;
+        }
+        const browserRecovered = error?.browserRecovered !== false;
+        const recovered = sourceRestored && browserRecovered;
+        const errorLog = [
+          error?.errorLog,
+          error instanceof Error && error.stack ? error.stack : String(error),
+          recoveryError
+            ? `Dashboard source recovery failed:\n${
+              recoveryError instanceof Error && recoveryError.stack
+                ? recoveryError.stack
+                : String(recoveryError)
+            }`
+            : undefined,
+        ].filter(Boolean).join("\n\n");
         const reloadError = new Error(
-          `Dashboard was saved, but the preview could not reload: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          recovered
+            ? "The updated preview could not reload, so the previous dashboard was restored."
+            : "The updated preview could not reload, and automatic recovery was incomplete.",
           { cause: error },
         );
         reloadError.code = "DASHBOARD_PREVIEW_RELOAD_FAILED";
+        reloadError.errorLog = truncatedLogText(errorLog, 6000);
+        reloadError.recovered = recovered;
         throw reloadError;
       } finally {
         clearTimeout(renderTimeout);
@@ -1503,7 +1534,11 @@ export async function startDashboardServer({
           ? error.message
           : "Copilot could not update the view.",
         details: error?.code === "DASHBOARD_PREVIEW_RELOAD_FAILED"
-          ? { phase: "hot-reload" }
+          ? {
+            phase: "hot-reload",
+            recovered: error.recovered === true,
+            ...(error.errorLog ? { errorLog: error.errorLog } : {}),
+          }
           : undefined,
       });
     } finally {
@@ -1538,7 +1573,10 @@ export async function startDashboardServer({
           const message = typeof command.details?.message === "string"
             ? command.details.message
             : "The browser could not render the updated dashboard.";
-          acknowledgement.reject(new Error(message));
+          const renderError = new Error(message);
+          renderError.browserRecovered = command.details?.recovered === true;
+          renderError.errorLog = truncatedLogText(command.details?.errorLog, 6000);
+          acknowledgement.reject(renderError);
         }
       }
     }

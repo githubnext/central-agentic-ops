@@ -111,6 +111,38 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
     }).toBe(true);
     expect(JSON.parse(await readFile(dashboardPath, "utf8")).dashboard.pages[0].title)
       .toBe("Updated by Copilot");
+
+    const activePageId = await page.locator("[data-nav-page-id][aria-current=page]")
+      .getAttribute("data-nav-page-id");
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dashboard-preview-update", {
+        detail: {
+          traceId: "manual-render-failure",
+          dashboard: {
+            "language-version": "0.1.0",
+            dashboard: null,
+          },
+        },
+      }));
+    });
+    await expect(page.locator("[data-nav-page-id][aria-current=page]"))
+      .toHaveAttribute("data-nav-page-id", activePageId);
+    await expect(page.locator(".app-shell")).toBeVisible();
+    await expect.poll(async () => {
+      const traces = (await readFile(tracePath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+      return traces.find(({ event, traceId }) =>
+        event === "preview.render.failed" && traceId === "manual-render-failure");
+    }).toEqual(expect.objectContaining({
+      source: "browser",
+      details: expect.objectContaining({
+        recovered: true,
+        errorLog: expect.stringContaining("Error"),
+      }),
+    }));
+
     await preview.close();
     preview = undefined;
 

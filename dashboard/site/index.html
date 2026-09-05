@@ -132,6 +132,7 @@
         return dashboard;
       };
       window.addEventListener("dashboard-preview-update", (event) => {
+        const previousDashboardDocument = dashboardDocument;
         try {
           const schema = event.detail.dashboard;
           dashboardDocument = {
@@ -152,13 +153,36 @@
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error("Dashboard preview hot reload failed.", { message });
+          const errorLog = error instanceof Error && error.stack ? error.stack : message;
+          let recovered = false;
+          let recoveryErrorLog = "";
+          dashboardDocument = previousDashboardDocument;
+          try {
+            renderSources(renderedSources);
+            recovered = true;
+          } catch (recoveryError) {
+            recoveryErrorLog = recoveryError instanceof Error && recoveryError.stack
+              ? recoveryError.stack
+              : String(recoveryError);
+          }
+          const combinedErrorLog = [
+            errorLog,
+            recoveryErrorLog ? `Preview recovery failed:\n${recoveryErrorLog}` : "",
+          ].filter(Boolean).join("\n\n").slice(0, 6000);
+          console.error("Dashboard preview hot reload failed.", {
+            message,
+            recovered,
+          });
           if (event.detail.traceId && dashboardSocket?.readyState === WebSocket.OPEN) {
             dashboardSocket.send(JSON.stringify({
               type: "browser.trace",
               traceId: event.detail.traceId,
               event: "preview.render.failed",
-              details: { message },
+              details: {
+                message,
+                errorLog: combinedErrorLog,
+                recovered,
+              },
             }));
           }
         }

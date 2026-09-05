@@ -384,6 +384,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       request: "Produce invalid dashboard",
     }));
     assert.equal((await invalidDashboardError).type, "error");
+    await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
 
     const dashboardUpdate = nextSocketMessage(socket, (message) =>
       message.type === "dashboard-update");
@@ -399,11 +400,21 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       type: "browser.trace",
       traceId: update.traceId,
       event: "preview.render.failed",
-      details: { message: "Test render failure" },
+      details: {
+        message: "Test render failure",
+        errorLog: "Error: Test render failure\n    at renderSources (index.html:140:11)",
+        recovered: true,
+      },
     }));
     const reloadFailure = await reloadError;
     assert.equal(reloadFailure.details.phase, "hot-reload");
-    assert.match(reloadFailure.message, /Test render failure/);
+    assert.equal(reloadFailure.details.recovered, true);
+    assert.match(reloadFailure.details.errorLog, /renderSources/);
+    assert.match(reloadFailure.message, /previous dashboard was restored/);
+    assert.equal(
+      await readFile(path.join(packageDirectory, "dashboard.json"), "utf8"),
+      dashboard("package-one"),
+    );
 
     socket.close();
     while (disconnectedSessions.length === 0) {
