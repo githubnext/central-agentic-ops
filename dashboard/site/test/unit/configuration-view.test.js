@@ -81,12 +81,16 @@ describe('Configuration dashboard view', () => {
 
     const titles = [...rendered.querySelectorAll('.configuration-entry-heading > code')]
       .map((element) => element.textContent);
-    expect(titles).toContain('githubnext');
-    expect(titles).toContain('octodemo');
-    expect(titles).not.toContain('0');
-    expect(titles).not.toContain('1');
-    expect(titles).toContain('2');
-    expect(titles).not.toContain('[object Object]');
+    expect(titles).toEqual([
+      '.github/workflows/cao.json',
+      'control-plane',
+      'scope',
+      'allowed-owners',
+      'githubnext',
+      'octodemo',
+      '2',
+      'mode'
+    ]);
     expect(rendered.textContent).toContain('An owner included in the discovery boundary.');
   });
 
