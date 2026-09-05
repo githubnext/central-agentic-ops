@@ -13,7 +13,7 @@
   <body>
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from "./src/presenter.js";
+      import { renderDashboard, updateWithViewTransition } from "./src/presenter.js";
       import { startLoadingProgress } from "./src/loading-progress.js";
       import { readCachedSources, writeCachedSources } from "./src/source-cache.js";
 
@@ -118,7 +118,7 @@
           languageVersion: schema["language-version"],
           dashboard: schema.dashboard,
         };
-        renderSources(renderedSources);
+        updateWithViewTransition(document, () => renderSources(renderedSources));
       });
 
       const fixtureSources = {

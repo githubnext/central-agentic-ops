@@ -80,6 +80,20 @@ const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data
 const REFRESH_WORKFLOW_DESCRIPTION = 'Open the dashboard workflow on GitHub Actions';
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'central-agentic-ops.dashboard.sidebar-collapsed';
 
+/**
+ * @param {Document} document
+ * @param {() => void} update
+ */
+export function updateWithViewTransition(document, update) {
+  const transitionDocument = /** @type {Document & { startViewTransition?: (update: () => void) => unknown }} */ (document);
+  const prefersReducedMotion = document.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  if (typeof transitionDocument.startViewTransition !== 'function' || prefersReducedMotion) {
+    update();
+    return;
+  }
+  transitionDocument.startViewTransition(update);
+}
+
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
   builtInDashboard.dashboard.pages
@@ -1156,7 +1170,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     const pageId = getNavigationPageId(link);
     if (!pageId || !availableIds.has(pageId)) return;
     root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
-    activate(pageId, routeFromHash()?.parameters);
+    updateWithViewTransition(root.ownerDocument, () => activate(pageId, routeFromHash()?.parameters));
     if (pageTitle instanceof HTMLElement) pageTitle.focus();
   });
 
@@ -1168,7 +1182,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     const route = routeFromHash();
     if (route) {
-      activate(route.pageId, route.parameters);
+      updateWithViewTransition(root.ownerDocument, () => activate(route.pageId, route.parameters));
       if (pageTitle instanceof HTMLElement) pageTitle.focus();
     }
   };
