@@ -375,10 +375,16 @@ describe('chart element helpers', () => {
       significant: 0.1
     });
     const xCoordinates = [...scatter.querySelectorAll('.scatter-chart-point')]
-      .map((point) => point.getAttribute('cx'));
+      .map((point) => Number(point.getAttribute('cx')))
+      .sort((left, right) => left - right);
 
     expect(scatter.getAttribute('data-chart-widget')).toBe('scatter');
-    expect(xCoordinates).toEqual(['0', '25', '100']);
+    expect(xCoordinates).toEqual([0, 25, 100]);
+    expect([...scatter.querySelectorAll('.timeline-chart-axis span')].map((tick) => tick.getAttribute('title'))).toEqual([
+      '2026-09-04T10:00:00.000Z',
+      '2026-09-04T12:00:00.000Z',
+      '2026-09-04T14:00:00.000Z'
+    ]);
     expect(scatter.querySelector('.line-chart-series')).toBeNull();
     expect(scatter.querySelector('svg')?.getAttribute('aria-label')).toBe('Scatter chart with 3 points');
   });
