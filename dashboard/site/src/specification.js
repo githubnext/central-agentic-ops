@@ -282,6 +282,8 @@ export const SOURCE_VALUES = [
   'evals',
   'eval-observations',
   'usage',
+  'mcp-calls',
+  'mcp-servers',
   'security-observations',
   'detection-observations',
   'coverage-diagnostics',
@@ -337,7 +339,11 @@ export const SOURCE_VALUES = [
   'model-usage-summary',
   'engine-usage-summary',
   'data-health-summary',
-  'data-health-sources'
+  'data-health-sources',
+  'work-items',
+  'attention-signals',
+  'agent-assignments',
+  'evidence-records'
 ];
 
 export const SOURCE_FIELDS = {
@@ -356,6 +362,8 @@ export const SOURCE_FIELDS = {
   evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'mcp-calls': ['organization', 'repository', 'workflow', 'run', 'mcp-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-tool', 'mcp-status', 'response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
+  'mcp-servers': ['organization', 'repository', 'workflow', 'run', 'mcp-server-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-status', 'tool-calls', 'failed-calls', 'total-response-bytes', 'max-response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
   'security-observations': ['organization', 'repository', 'workflow', 'run', 'security-observation', 'security-feature', 'security-analysis', 'security-signal', 'security-status', 'security-subject', 'security-count', 'observed-at', 'run-link'],
   'detection-observations': ['organization', 'repository', 'workflow', 'run', 'observed-at', 'run-link', 'rollout-mode', 'detection-expected', 'detection-applicable', 'detection-executed', 'verdict-available', 'usable-verdict-percent', 'detection-state', 'detection-state-label', 'detection-count', 'prompt-injection-detected', 'secret-leak-detected', 'malicious-patch-detected', 'inspection-warning-count', 'inspection-warning', 'detection-signal', 'attention-priority', 'job-status', 'job-conclusion', 'job-duration-seconds', 'runner', 'engine', 'requested-model', 'resolved-model'],
   'coverage-diagnostics': ['kind', 'title', 'effect', 'technical-detail', 'endpoint', 'rate-limit-reset', 'snapshot-age-seconds'],
@@ -407,7 +415,11 @@ export const SOURCE_FIELDS = {
   'run-aggregate-summary': ['engine', 'engine-version', 'requested-model', 'resolved-model', 'run-conclusion', 'runs', 'run-link'],
   'workflow-topology-summary': ['label', 'value'],
   'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'package-link', 'repository-link', 'workflow-link'],
-  'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link']
+  'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link'],
+  'work-items': ['work-item-id', 'objective', 'organization', 'repository', 'scope', 'domain', 'work-type', 'lifecycle-state', 'phase', 'reason', 'reason-evidence-class', 'next-action', 'next-actor', 'waiting-on', 'waiting-since', 'owner', 'consequence-tier', 'verification-state', 'outcome-state', 'observed-at', 'evidence-link', 'repository-link', 'run-link'],
+  'attention-signals': ['attention-signal-id', 'signal-type', 'work-item-id', 'objective', 'scope', 'reason', 'action', 'expected-actor', 'age-seconds', 'consequence-tier', 'priority', 'observed-at', 'evidence-link', 'repository-link', 'run-link'],
+  'agent-assignments': ['assignment-id', 'agent-id', 'agent-name', 'agent-state', 'work-item-id', 'objective', 'assignment-state', 'handoff-state', 'dependency-state', 'conflict-state', 'observed-at', 'evidence-link', 'repository-link', 'run-link'],
+  'evidence-records': ['evidence-id', 'evidence-class', 'evidence-kind', 'work-item-id', 'objective', 'claim', 'verification-state', 'provenance-state', 'source-revision', 'observed-at', 'evidence-link', 'repository-link', 'run-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
@@ -451,6 +463,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   evals: ['eval'],
   'eval-observations': ['eval', 'run'],
   usage: ['invocation'],
+  'mcp-calls': ['mcp-observation'],
+  'mcp-servers': ['mcp-server-observation'],
   'security-observations': ['security-observation'],
   'detection-observations': ['run'],
   'repository-coverage': ['label'],
@@ -470,7 +484,11 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   'repository-workflows': ['repository', 'workflow'],
   'workflow-runs': ['workflow-route', 'run'],
   'workflow-reports': ['workflow-route', 'safe-output'],
-  'package-reports': ['package', 'safe-output']
+  'package-reports': ['package', 'safe-output'],
+  'work-items': ['work-item-id'],
+  'attention-signals': ['attention-signal-id'],
+  'agent-assignments': ['assignment-id'],
+  'evidence-records': ['evidence-id']
 };
 
 export const TEMPORAL_FIELD_NAMES = [
@@ -483,7 +501,8 @@ export const TEMPORAL_FIELD_NAMES = [
   'maturity-at',
   'published-at',
   'reset-at',
-  'projected-exhaustion-at'
+  'projected-exhaustion-at',
+  'waiting-since'
 ];
 
 export const ADDITIVE_MEASURE_FIELDS = [
@@ -494,6 +513,10 @@ export const ADDITIVE_MEASURE_FIELDS = [
   'reasoning-tokens',
   'aic',
   'security-count',
+  'response-bytes',
+  'tool-calls',
+  'failed-calls',
+  'total-response-bytes',
   'safe-output-count'
 ];
 
@@ -510,6 +533,7 @@ export const NON_ADDITIVE_MEASURE_FIELDS = [
   'projected-remaining-at-reset',
   'runway-ratio',
   'operation-consumed',
+  'max-response-bytes'
 ];
 
 export const ERROR_CODES = {

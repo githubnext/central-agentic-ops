@@ -231,6 +231,55 @@ describe('dashboard document validation', () => {
   });
 
   it('defines detection health, findings, attention, and supporting reliability views', () => {
+  it('defines MCP diagnostics in a dedicated Explore page', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const mcps = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'mcps');
+    expect(document.dashboard.navigation.find(
+      (/** @type {{ label: string }} */ section) => section.label === 'Explore'
+    ).pages).toContain('mcps');
+    expect(mcps).toMatchObject({
+      kind: 'custom',
+      'navigation-label': 'MCPs',
+      views: [
+        {
+          id: 'mcp-status-distribution',
+          mark: 'chart',
+          chart: 'pie',
+          data: { source: 'mcp-servers' }
+        },
+        {
+          id: 'mcp-response-size-distribution',
+          mark: 'chart',
+          chart: 'histogram',
+          data: { source: 'mcp-calls' }
+        },
+        {
+          id: 'mcp-server-inventory',
+          mark: 'table',
+          controls: 'interactive',
+          data: { source: 'mcp-servers' }
+        }
+      ]
+    });
+    expect(mcps.views[2].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
+      'mcp-server',
+      'mcp-server-version',
+      'mcp-protocol-version',
+      'gh-aw-version',
+      'mcp-status',
+      'tool-calls',
+      'failed-calls',
+      'total-response-bytes',
+      'max-response-bytes',
+      'repository',
+      'workflow',
+      'run',
+      'observed-at'
+    ]);
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+  });
+
+  it('defines detection diagnostics and performance in a dedicated Explore page', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const detection = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'detection');
     expect(document.dashboard.navigation.find(
