@@ -256,6 +256,23 @@ export function renderLegendSwatch(className) {
 }
 
 /**
+ * Renders a `<span>` wrapping a single octicon, used by the attention-domain
+ * cards, readiness-verdict hero, and signal-list rows to present one
+ * decorative or semantic icon inside a component-specific class name.
+ * @param {string} className
+ * @param {string} iconName
+ * @param {{ ariaHidden?: boolean }} [options]
+ * @returns {HTMLElement}
+ */
+export function renderIconSpan(className, iconName, options = {}) {
+  return h(
+    'span',
+    options.ariaHidden ? { className, 'aria-hidden': 'true' } : { className },
+    octicon(iconName)
+  );
+}
+
+/**
  * Renders the shared dismiss/close icon button used by overlay-style
  * components (dialogs, callouts) that need a labelled "x" trigger with
  * matching `title` and `aria-label` text.
