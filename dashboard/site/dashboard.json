@@ -6165,6 +6165,628 @@
             }
           }
         ]
+      },
+      {
+        "id": "home",
+        "kind": "custom",
+        "title": "Home",
+        "navigation-label": "Home",
+        "icon": "home",
+        "class-name": "dashboard-next-home-page",
+        "description": "What needs attention, what meaningful work is active, what outcomes were produced, and whether the operating evidence is sufficient.",
+        "views": [
+          {
+            "id": "home-attention",
+            "title": "Need attention",
+            "description": "Unresolved conditions that require an authorized person to act or investigate, ordered by deterministic priority.",
+            "data": {
+              "sources": [
+                "attention-signals"
+              ]
+            },
+            "mark": "element",
+            "element": "signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "home-work",
+            "title": "Work in progress",
+            "description": "Current delegated work at work-item grain, independent of the number of executions or agents involved.",
+            "data": {
+              "source": "work-items",
+              "limit": 5
+            },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No active work items were observed in the selected scope.",
+            "layout": "full",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "objective",
+                  "type": "nominal",
+                  "title": "Work"
+                },
+                {
+                  "field": "scope",
+                  "type": "nominal",
+                  "title": "Scope"
+                },
+                {
+                  "field": "phase",
+                  "type": "ordinal",
+                  "title": "Phase",
+                  "display": "status"
+                },
+                {
+                  "field": "reason",
+                  "type": "nominal",
+                  "title": "Why"
+                },
+                {
+                  "field": "next-action",
+                  "type": "nominal",
+                  "title": "Next action"
+                },
+                {
+                  "field": "owner",
+                  "type": "nominal",
+                  "title": "Owner"
+                }
+              ]
+            }
+          },
+          {
+            "id": "home-outcomes",
+            "title": "Outcomes",
+            "description": "Recent retained outcomes remain distinct from runtime success and operational value.",
+            "data": {
+              "source": "outcomes",
+              "limit": 5,
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No outcomes were retained in the selected scope.",
+            "layout": "half",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Outcome"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal",
+                  "title": "Repository"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "ordinal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                }
+              ]
+            }
+          },
+          {
+            "id": "home-operational-pulse",
+            "title": "Operational pulse",
+            "description": "Current work distribution without collapsing runtime, verification, outcome, evidence quality, budget, or capacity into one score.",
+            "data": {
+              "source": "work-items"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "lifecycle-state",
+                "type": "nominal",
+                "title": "Lifecycle state"
+              },
+              "y": {
+                "field": "work-item-id",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Work items"
+              },
+              "color": {
+                "field": "lifecycle-state",
+                "type": "nominal",
+                "title": "Lifecycle state"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "work",
+        "kind": "custom",
+        "title": "Work",
+        "icon": "project-roadmap",
+        "class-name": "dashboard-next-work-page",
+        "description": "Complete operational inventory organized by stable delegated work rather than workflow executions.",
+        "views": [
+          {
+            "id": "work-lifecycle-distribution",
+            "title": "Work by lifecycle state",
+            "description": "Current distribution of work across active, waiting, blocked, review, completed, and cancelled states.",
+            "data": {
+              "source": "work-items"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "lifecycle-state",
+                "type": "nominal",
+                "title": "Lifecycle state"
+              },
+              "y": {
+                "field": "work-item-id",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Work items"
+              },
+              "color": {
+                "field": "lifecycle-state",
+                "type": "nominal",
+                "title": "Lifecycle state"
+              }
+            }
+          },
+          {
+            "id": "work-inventory",
+            "title": "Work inventory",
+            "description": "State, reason, next action, waiting condition, and owner for each stable work item.",
+            "data": {
+              "source": "work-items"
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "column-summaries": false,
+            "empty-message": "No work-item telemetry is available in the selected scope.",
+            "layout": "full",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "objective",
+                  "type": "nominal",
+                  "title": "Work"
+                },
+                {
+                  "field": "scope",
+                  "type": "nominal",
+                  "title": "Scope"
+                },
+                {
+                  "field": "lifecycle-state",
+                  "type": "ordinal",
+                  "title": "State",
+                  "display": "status"
+                },
+                {
+                  "field": "phase",
+                  "type": "ordinal",
+                  "title": "Phase",
+                  "display": "status"
+                },
+                {
+                  "field": "reason",
+                  "type": "nominal",
+                  "title": "Why"
+                },
+                {
+                  "field": "next-action",
+                  "type": "nominal",
+                  "title": "Next action"
+                },
+                {
+                  "field": "waiting-on",
+                  "type": "nominal",
+                  "title": "Waiting on"
+                },
+                {
+                  "field": "owner",
+                  "type": "nominal",
+                  "title": "Owner"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "agents",
+        "kind": "custom",
+        "title": "Agents",
+        "icon": "copilot",
+        "class-name": "dashboard-next-agents-page",
+        "description": "Assignments, handoffs, dependencies, conflicts, and current agent state tied to explicit work identity.",
+        "views": [
+          {
+            "id": "agents-state-distribution",
+            "title": "Agents by state",
+            "description": "Current assignment-state distribution for observed agents.",
+            "data": {
+              "source": "agent-assignments"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "agent-state",
+                "type": "nominal",
+                "title": "Agent state"
+              },
+              "y": {
+                "field": "assignment-id",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Assignments"
+              },
+              "color": {
+                "field": "agent-state",
+                "type": "nominal",
+                "title": "Agent state"
+              }
+            }
+          },
+          {
+            "id": "agents-assignment-inventory",
+            "title": "Assignments and coordination",
+            "description": "Observed agent assignments with handoff, dependency, and conflict state.",
+            "data": {
+              "source": "agent-assignments"
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "column-summaries": false,
+            "empty-message": "No exact agent-to-work assignments were observed.",
+            "layout": "full",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "agent-name",
+                  "type": "nominal",
+                  "title": "Agent"
+                },
+                {
+                  "field": "agent-state",
+                  "type": "ordinal",
+                  "title": "State",
+                  "display": "status"
+                },
+                {
+                  "field": "objective",
+                  "type": "nominal",
+                  "title": "Work"
+                },
+                {
+                  "field": "handoff-state",
+                  "type": "ordinal",
+                  "title": "Handoff",
+                  "display": "status"
+                },
+                {
+                  "field": "dependency-state",
+                  "type": "ordinal",
+                  "title": "Dependency",
+                  "display": "status"
+                },
+                {
+                  "field": "conflict-state",
+                  "type": "ordinal",
+                  "title": "Conflict",
+                  "display": "status"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "evidence",
+        "kind": "custom",
+        "title": "Evidence",
+        "icon": "file-diff",
+        "class-name": "dashboard-next-evidence-page",
+        "description": "Verification, provenance, and decision evidence with explicit evidence class and source revision.",
+        "views": [
+          {
+            "id": "evidence-class-distribution",
+            "title": "Evidence by class",
+            "description": "Observed, derived, annotated, inferred, and unsupported evidence remain distinguishable.",
+            "data": {
+              "source": "evidence-records"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "evidence-class",
+                "type": "nominal",
+                "title": "Evidence class"
+              },
+              "y": {
+                "field": "evidence-id",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Evidence records"
+              },
+              "color": {
+                "field": "evidence-class",
+                "type": "nominal",
+                "title": "Evidence class"
+              }
+            }
+          },
+          {
+            "id": "evidence-ledger",
+            "title": "Evidence ledger",
+            "description": "Claims, verification state, provenance coverage, source revision, and direct evidence links.",
+            "data": {
+              "source": "evidence-records"
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "column-summaries": false,
+            "empty-message": "No work-oriented evidence records were observed.",
+            "layout": "full",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "objective",
+                  "type": "nominal",
+                  "title": "Work"
+                },
+                {
+                  "field": "evidence-kind",
+                  "type": "nominal",
+                  "title": "Kind"
+                },
+                {
+                  "field": "evidence-class",
+                  "type": "ordinal",
+                  "title": "Class",
+                  "display": "status"
+                },
+                {
+                  "field": "claim",
+                  "type": "nominal",
+                  "title": "Claim"
+                },
+                {
+                  "field": "verification-state",
+                  "type": "ordinal",
+                  "title": "Verification",
+                  "display": "status"
+                },
+                {
+                  "field": "provenance-state",
+                  "type": "ordinal",
+                  "title": "Provenance",
+                  "display": "status"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "insights",
+        "kind": "custom",
+        "title": "Insights",
+        "icon": "graph",
+        "class-name": "dashboard-next-insights-page",
+        "description": "Longer-horizon outcomes, operational value, measured resource use, and capacity without unsupported causal claims.",
+        "views": [
+          {
+            "id": "insights-operational-value-trend",
+            "title": "Operational value trend",
+            "description": "Mature and interim operational-value observations grouped by their disclosed definition.",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": true,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Observed"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean attainment"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal",
+                "title": "Definition"
+              },
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "insights-outcome-distribution",
+            "title": "Outcome disposition",
+            "description": "Accepted, rejected, ignored, pending, and lifecycle outcomes in the selected interval.",
+            "data": {
+              "source": "outcomes"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "outcome-state",
+                "type": "nominal",
+                "title": "Disposition"
+              },
+              "y": {
+                "field": "safe-output",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Outcomes"
+              },
+              "color": {
+                "field": "outcome-state",
+                "type": "nominal",
+                "title": "Disposition"
+              }
+            }
+          },
+          {
+            "id": "insights-aic-trend",
+            "title": "Measured AI Credit use",
+            "description": "Attributed AI Credit observations remain separate from currency estimates and accepted outcomes.",
+            "data": {
+              "source": "usage",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": true,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Observed"
+              },
+              "y": {
+                "field": "aic",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "AI Credits",
+                "unit": "aic"
+              },
+              "color": {
+                "field": "repository",
+                "type": "nominal",
+                "title": "Repository"
+              },
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "insights-capacity",
+            "title": "Current GitHub API capacity",
+            "description": "Fresh observed capacity by credential and resource. Missing telemetry is not treated as zero.",
+            "data": {
+              "source": "github-api-rate-limits",
+              "order-by": [
+                {
+                  "field": "remaining-percent",
+                  "direction": "asc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No current GitHub API capacity observations are available.",
+            "layout": "full",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "credential",
+                  "type": "nominal",
+                  "title": "Credential"
+                },
+                {
+                  "field": "resource",
+                  "type": "nominal",
+                  "title": "Resource"
+                },
+                {
+                  "field": "remaining",
+                  "type": "quantitative",
+                  "title": "Remaining"
+                },
+                {
+                  "field": "remaining-percent",
+                  "type": "quantitative",
+                  "title": "Remaining %",
+                  "unit": "percent"
+                },
+                {
+                  "field": "reset-at",
+                  "type": "temporal",
+                  "title": "Reset"
+                },
+                {
+                  "field": "risk-status",
+                  "type": "ordinal",
+                  "title": "Status",
+                  "display": "status"
+                }
+              ]
+            }
+          }
+        ]
       }
     ],
     "navigation": [
@@ -6172,6 +6794,16 @@
         "label": "Attention",
         "pages": [
           "overview"
+        ]
+      },
+      {
+        "label": "Dashboard Next",
+        "pages": [
+          "home",
+          "work",
+          "agents",
+          "evidence",
+          "insights"
         ]
       },
       {

@@ -4,13 +4,14 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
+import { formatClockDuration } from '../view-formatters.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageRouteView } from './package-route-view.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { isOutcomeDetailSectionConfig, renderOutcomeDetailSection } from './outcome-detail-sections.js';
 import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, renderIconSpan } from './ui-primitives.js';
-import { renderDefinitionList } from './view-chrome.js';
+import { renderDefinitionList, renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
 import { renderConfigurationView } from './configuration-view.js';
@@ -455,54 +456,90 @@ function renderContextSummaryValue(row) {
 
 /** @param {ElementRenderContext} context */
 function renderSignalListElement(context) {
-  const rows = rowsFor(context, context.sourceNames[0]);
-  return h(
+  const sourceName = context.sourceNames[0];
+  const source = context.sources[sourceName];
+  const isCanonicalAttention = sourceName === 'attention-signals';
+  const sourceRows = rowsFor(context, sourceName);
+  const rows = isCanonicalAttention ? rankCanonicalAttention(sourceRows).slice(0, 1) : sourceRows;
+  const list = h(
     'div',
-    { className: 'signal-list-region' },
-    context.description ? h('p', { className: 'signal-boundary-note' }, context.description) : null,
+    { className: `signal-list-region${isCanonicalAttention ? ' canonical-attention-list' : ''}` },
+    context.description && !isCanonicalAttention ? h('p', { className: 'signal-boundary-note' }, context.description) : null,
     h(
       'ol',
       { className: 'signal-list' },
       ...(rows.length > 0
-        ? rows.map((row, index) => renderSignal(row, index))
+        ? rows.map((row, index) => renderSignal(row, index, isCanonicalAttention))
         : [h(
           'li',
           { className: 'signal-clear' },
           renderIconSpan('signal-icon', 'check-circle'),
-          h('span', { className: 'signal-copy' }, h('strong', null, 'No signals require attention'))
+          h('span', { className: 'signal-copy' }, h('strong', null, isCanonicalAttention
+            ? 'No unresolved attention signals'
+            : 'No signals require attention'))
         )])
     )
+  );
+  if (!isCanonicalAttention || !source) return list;
+  return renderPageSection(
+    context.pageId,
+    context.title,
+    [...renderViewSectionChrome(source.metadata, context.contextDetails), list],
+    context.headingTag,
+    context.description
   );
 }
 
 /**
  * @param {Record<string, unknown>} row
  * @param {number} index
+ * @param {boolean} [isCanonicalAttention]
  */
-function renderSignal(row, index) {
-  const link = findLink(row, 'run-link') ?? findLink(row, 'external-link');
+function renderSignal(row, index, isCanonicalAttention = false) {
+  const link = isCanonicalAttention
+    ? findLink(row, 'evidence-link') ?? findLink(row, 'run-link') ?? findLink(row, 'external-link')
+    : findLink(row, 'run-link') ?? findLink(row, 'external-link');
   const navigationHref = safeNavigationHref(row['navigation-href']);
   const navigationPage = stringValue(row['navigation-page']);
-  const urgency = stringValue(row.urgency);
-  const kind = stringValue(row.kind);
+  const consequence = stringValue(row['consequence-tier']);
+  const urgency = stringValue(row.urgency) || consequence;
+  const kind = stringValue(row.kind) || humanizeSignalLabel(row['signal-type']);
+  const title = stringValue(row.title) || stringValue(row.objective);
+  const reason = stringValue(row.detail) || stringValue(row.reason);
+  const scope = isCanonicalAttention ? stringValue(row.scope) : '';
+  const ageSeconds = Number(row['age-seconds']);
+  const age = isCanonicalAttention && Number.isFinite(ageSeconds)
+    ? `${formatClockDuration(ageSeconds * 1000)} old`
+    : '';
+  const evidence = stringValue(row.evidence) || (isCanonicalAttention
+    ? [stringValue(row['expected-actor']), age].filter(Boolean).join(' · ')
+    : '');
+  const tone = stringValue(row.tone) || canonicalAttentionTone(consequence);
   const content = [
-    h('span', { className: 'signal-rank', 'aria-hidden': 'true' }, String(index + 1)),
+    isCanonicalAttention
+      ? h(
+          'span',
+          { className: 'signal-rank signal-priority-rank', 'aria-hidden': 'true' },
+          h('strong', null, String(index + 1)),
+          h('small', null, 'Priority')
+        )
+      : h('span', { className: 'signal-rank', 'aria-hidden': 'true' }, String(index + 1)),
     renderIconSpan('signal-icon', stringValue(row.icon) || 'issue'),
     h(
       'span',
       { className: 'signal-copy' },
       h('span', null, [urgency, kind].filter(Boolean).join(' · ')),
-      h('strong', null, stringValue(row.title)),
-      h('small', null, stringValue(row.detail))
+      h('strong', null, title),
+      h('small', null, [scope, reason].filter(Boolean).join(' · '))
     ),
     h(
       'span',
       { className: 'signal-evidence' },
-      h('strong', null, stringValue(row.evidence)),
+      h('strong', null, evidence),
       h('small', null, stringValue(row.action) || 'View details')
     )
   ];
-  const className = `signal-item signal-${stringValue(row.tone) || 'informational'}`;
+  const className = `signal-item signal-${tone || 'informational'}${isCanonicalAttention ? ' canonical-attention-item' : ''}`;
   if (link) {
     return h('li', { className }, h('a', { href: link.href, 'aria-label': link.label }, ...content));
   }
@@ -513,6 +550,34 @@ function renderSignal(row, index) {
     return h('li', { className }, h('a', { href: navigationHref }, ...content));
   }
   return h('li', { className }, h('div', null, ...content));
+}
+
+/** @param {unknown} value */
+function humanizeSignalLabel(value) {
+  return stringValue(value).replace(/[-_]+/g, ' ');
+}
+
+/** @param {string} consequence */
+function canonicalAttentionTone(consequence) {
+  if (['critical', 'high'].includes(consequence.toLowerCase())) return 'critical';
+  if (consequence.toLowerCase() === 'low') return 'informational';
+  return 'action';
+}
+
+/** @param {Array<Record<string, unknown>>} rows */
+function rankCanonicalAttention(rows) {
+  return [...rows].sort((left, right) => {
+    const priority = numericValue(left.priority) - numericValue(right.priority);
+    if (priority !== 0) return priority;
+    const age = numericValue(right['age-seconds']) - numericValue(left['age-seconds']);
+    if (age !== 0) return age;
+    return stringValue(left['attention-signal-id']).localeCompare(stringValue(right['attention-signal-id']));
+  });
+}
+
+/** @param {unknown} value */
+function numericValue(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
 }
 
 /** @param {unknown} value */
