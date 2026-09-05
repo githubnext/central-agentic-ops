@@ -49,6 +49,7 @@ imports:
       package: self-care
       role: worker
       worker: open-source-failures
+  - uses: shared/activity-cache.md
 
 permissions:
   actions: read
@@ -95,15 +96,6 @@ safe-outputs:
   noop:
 
 steps:
-  - name: Restore CAO activity snapshot
-    id: activity-cache
-    uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-    with:
-      path: ${{ runner.temp }}/cao-activity
-      key: self-care-cao-activity-${{ github.run_id }}
-      restore-keys: |
-        cao-activity-
-
   - name: Prepare bounded public failure evidence
     env:
       ACTIVITY_ROOT: ${{ runner.temp }}/cao-activity

@@ -2047,7 +2047,7 @@ test("SelfCare open source failures uses complete dashboard activity evidence", 
 
   assert.match(source, /^name: "SelfCare \/ Open Source Failures"$/m);
   assert.match(source, /tracker-id: self-care-open-source-failures/);
-  assert.match(source, /restore-keys: \|[\s\S]*?cao-activity-/);
+  assert.match(source, /uses: shared\/activity-cache\.md/);
   assert.match(source, /deployed-workflows\.json/);
   assert.match(source, /snapshot\.schemaVersion !== 1/);
   assert.match(source, /snapshot\.runHealth\?\.available !== true/);
@@ -2066,6 +2066,26 @@ test("SelfCare open source failures uses complete dashboard activity evidence", 
   assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
   assert.doesNotMatch(source, /^evals:/m);
   assert.doesNotMatch(source, /^graders:/m);
+});
+
+test("shared activity cache restores into activation and agent jobs", () => {
+  const source = workflow("shared/activity-cache.md");
+
+  assert.match(source, /jobs:\n\s+activation:\n\s+pre-steps:/);
+  assert.match(source, /\n\s+agent:\n\s+pre-steps:/);
+  assert.equal((source.match(/actions\/cache\/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/g) || []).length, 2);
+  assert.equal((source.match(/path: \$\{\{ runner\.temp \}\}\/cao-activity/g) || []).length, 2);
+  assert.equal((source.match(/restore-keys: \|[\s\S]*?cao-activity-/g) || []).length, 2);
+  assert.doesNotMatch(source, /actions\/cache\/save@/);
+
+  for (const name of [
+    "aw-failures-investigator.md",
+    "optimization-ai-credit-auditor.md",
+    "optimization-ai-credit-optimizer.md",
+    "self-care-open-source-failures.md",
+  ]) {
+    assert.match(workflow(name), /uses: shared\/activity-cache\.md/, name);
+  }
 });
 
 test("SelfCare Primer brand checker audits the dashboard against retrieved guidance", () => {

@@ -64,6 +64,7 @@ imports:
       package: aw-doctor
       role: worker
       worker: failures-investigator
+  - uses: shared/activity-cache.md
 
 permissions:
   contents: read
