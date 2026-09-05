@@ -1206,8 +1206,8 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     "safe-output-performance",
     safeOutputPerformance,
     generatedAt,
-    usage.securityAvailable === true || usageAvailable,
-    usageComplete,
+    usage.securityAvailable === true,
+    usage.securityComplete === true,
   );
   if (Number.isFinite(deployed.runHealth?.windowHours) && deployed.runHealth.windowHours > 0) {
     sources.runs.metadata["coverage-end"] = generatedAt;
