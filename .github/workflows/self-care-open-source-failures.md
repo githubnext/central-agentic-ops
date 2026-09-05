@@ -264,9 +264,11 @@ Begin every issue body directly with a concise, unheaded executive summary. Eval
 
 `**Action:** <owner> should <next step>; accept when <verification>.`
 
-When remediation can be delegated safely, tell the maintainer to assign the issue to Copilot and include a clear imperative prompt in:
+Every remediation issue is filed in the repository that receives this worker's safe outputs (the repository this issue itself lives in), never in the cluster's affected repository. Assigning that issue to Copilot only grants Copilot access to the repository the issue lives in, so recommend assigning to Copilot only when the cluster's `repository` field is that same repository. When remediation can be delegated safely under that condition, tell the maintainer to assign the issue to Copilot and include a clear imperative prompt in:
 
 `<details><summary><b>Agent prompt</b></summary> ... </details>`
+
+When the cluster's `repository` is a different project, Copilot assigned to this issue cannot modify that project's code. In that case, do not suggest assigning this issue to Copilot; instead name the human maintainer and instruct them to open or assign the equivalent task directly in the affected repository, and say so explicitly in the executive summary.
 
 Otherwise name the human reviewer and required decision, or use `**Action:** None.` when no action remains. Keep only critical findings visible. Put non-essential background, logs, secondary metrics, and per-run evidence inside clearly named `<details>` sections.
 
