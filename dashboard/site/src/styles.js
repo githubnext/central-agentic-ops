@@ -80,6 +80,7 @@ a[href^="https://"]:not(:has(.octicon))::after, .octicon-external-link { content
 .octicon-external-link { margin-left: 4px; }
 .octicon-external-link > use { display: none; }
 a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; animation-timing-function: ease-out; }
 .skip-link { position: fixed; z-index: 10; top: -80px; left: 12px; padding: 7px 12px; border: 1px solid var(--focus); border-radius: 6px; background: var(--canvas); color: var(--accent); font-weight: 600; text-decoration: none; transition: top 120ms ease, color 120ms ease; }
 .skip-link:focus { top: 8px; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); transition: grid-template-columns 120ms ease; }
@@ -1096,6 +1097,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   .dashboard-loading-skeleton > div, .dashboard-horizon-skeleton > span, .freshness-skeleton > span:last-child, .table-summary-skeleton span { animation: none; }
 }
 @media (prefers-contrast: more) {
