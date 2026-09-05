@@ -65,6 +65,35 @@ describe('Configuration dashboard view', () => {
     expect(/** @type {HTMLDetailsElement | null} */ (rendered.querySelector('details.configuration-entry'))?.open).toBe(true);
   });
 
+  it('uses array values as entry titles while retaining index-based explanations', () => {
+    const rendered = renderConfigurationView(context({
+      document: {
+        'control-plane': {
+          scope: {
+            'allowed-owners': ['githubnext', 'octodemo', { mode: 'review' }]
+          }
+        }
+      },
+      raw: '',
+      diagnostics: []
+    }));
+    if (!rendered) throw new Error('configuration view did not render');
+
+    const titles = [...rendered.querySelectorAll('.configuration-entry-heading > code')]
+      .map((element) => element.textContent);
+    expect(titles).toEqual([
+      '.github/workflows/cao.json',
+      'control-plane',
+      'scope',
+      'allowed-owners',
+      'githubnext',
+      'octodemo',
+      '2',
+      'mode'
+    ]);
+    expect(rendered.textContent).toContain('An owner included in the discovery boundary.');
+  });
+
   it('copies the raw policy and reports invalid structured content', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });

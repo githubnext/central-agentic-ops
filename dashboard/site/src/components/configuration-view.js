@@ -71,8 +71,12 @@ function valueLabel(value) {
 /** @param {string} name @param {unknown} value @param {string} path @param {number} [depth] */
 function renderEntry(name, value, path, depth = 0) {
   const children = Array.isArray(value)
-    ? value.map((item, index) => [String(index), item])
-    : isPlainObject(value) ? Object.entries(value) : [];
+    ? value.map((item, index) => [
+        ['string', 'number', 'boolean'].includes(typeof item) ? String(item) : String(index),
+        item,
+        String(index)
+      ])
+    : isPlainObject(value) ? Object.entries(value).map(([childName, childValue]) => [childName, childValue, childName]) : [];
   const content = [
     h('div', { className: 'configuration-entry-heading' },
       h('code', null, name),
@@ -81,7 +85,12 @@ function renderEntry(name, value, path, depth = 0) {
   ];
   if (children.length > 0) {
     content.push(h('div', { className: 'configuration-entry-children' },
-      ...children.map(([childName, childValue]) => renderEntry(childName, childValue, path === '$' ? childName : `${path}.${childName}`, depth + 1))));
+      ...children.map(([childName, childValue, pathSegment]) => renderEntry(
+        childName,
+        childValue,
+        path === '$' ? pathSegment : `${path}.${pathSegment}`,
+        depth + 1
+      ))));
   }
   return h(
     children.length > 0 ? 'details' : 'div',
