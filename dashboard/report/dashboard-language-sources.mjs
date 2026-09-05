@@ -166,13 +166,13 @@ function applyDataHealthMetadata(sources, { deployed, usage, report, workflows, 
   if (Number.isFinite(runCollection?.expected)) sources.runs.metadata["coverage-expected"] = runCollection.expected;
   if (Number.isFinite(runCollection?.observed)) sources.runs.metadata["coverage-observed"] = runCollection.observed;
 
-  const expectedRuns = uniqueStableRuns(runs);
+  const observedRunCount = uniqueStableRuns(runs);
   if (Number.isFinite(deployed.runHealth?.expectedRuns)) {
     sources.runs.metadata["run-records-expected"] = deployed.runHealth.expectedRuns;
   }
-  sources.runs.metadata["run-records-observed"] = expectedRuns;
+  sources.runs.metadata["run-records-observed"] = observedRunCount;
   for (const name of ["usage", "detection-observations", "firewall-observations", "safe-output-performance"]) {
-    sources[name].metadata["coverage-expected"] = expectedRuns;
+    sources[name].metadata["coverage-expected"] = observedRunCount;
     sources[name].metadata["coverage-observed"] = uniqueStableRuns(sources[name].rows);
   }
   sources.outcomes.metadata["coverage-expected"] = uniqueStableRuns(sources["safe-output-performance"].rows);

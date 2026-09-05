@@ -867,7 +867,7 @@ const inventory = {
     {
       operation: "run-query",
       state: runHealth.available ? runHealth.complete ? "complete" : "partial" : "failed",
-      failureClass: runHealth.collections[0]?.failureClass || null,
+      failureClass: runHealth.collections.find((item) => item.operation === "run-query")?.failureClass || null,
       expected: workflows.length,
       observed: runHealth.available ? workflows.length : null,
       pages: runHealth.pages,
