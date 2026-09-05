@@ -1,3 +1,8 @@
+---
+title: Adopt Declarative Workflow Route Layouts
+description: Record the decision to expose reusable workflow-runtime route layouts in the Dashboard Language.
+---
+
 # ADR 2136: Adopt declarative `workflow-route` layouts for the workflow-runtime view
 
 ## Status
