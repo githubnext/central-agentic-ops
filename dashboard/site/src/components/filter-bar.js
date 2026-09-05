@@ -2,6 +2,7 @@ import { h } from '../dom.js';
 import { debounce } from '../debounce.js';
 import { dashboardHorizonHours, formatDashboardHorizon } from '../horizon.js';
 import { octicon } from '../octicons.js';
+import { renderLabeledControl } from './ui-primitives.js';
 
 /** @typedef {{ filters: string[], ['time-range']?: string }} FilterBarConfig */
 /** @typedef {{ range: string, start: string, end: string }} TimeWindow */
@@ -165,9 +166,9 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
     element: h(
       'div',
       { className: 'time-window-control', 'aria-label': 'Evidence window' },
-      h('label', null, octicon('clock'), h('span', null, 'Window'), select),
-      h('label', null, h('span', null, 'Start'), start),
-      h('label', null, h('span', null, 'Stop'), end),
+      renderLabeledControl('Window', select, { prefix: octicon('clock') }),
+      renderLabeledControl('Start', start),
+      renderLabeledControl('Stop', end),
       applyCustomRange
     ),
     value

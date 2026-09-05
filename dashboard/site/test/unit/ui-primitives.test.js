@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIdentityLink, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIdentityLink, renderLabeledControl, renderListWithFallback, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -167,5 +167,26 @@ describe('ui primitives', () => {
     expect(isPlainObject('string')).toBe(false);
     expect(isPlainObject(42)).toBe(false);
     expect(isPlainObject(undefined)).toBe(false);
+  });
+
+  it('renders a labeled control wrapping the given control node', () => {
+    const input = document.createElement('input');
+    const rendered = renderLabeledControl('Filter rows', input);
+
+    expect(rendered.tagName).toBe('LABEL');
+    expect(rendered.className).toBe('');
+    expect(rendered.querySelector('span')?.textContent).toBe('Filter rows');
+    expect(rendered.querySelector('input')).toBe(input);
+  });
+
+  it('renders a labeled control with an optional class name and prefix node', () => {
+    const select = document.createElement('select');
+    const prefix = document.createElement('svg');
+    const rendered = renderLabeledControl('Window', select, { className: 'table-filter-facet', prefix });
+
+    expect(rendered.className).toBe('table-filter-facet');
+    expect(rendered.firstChild).toBe(prefix);
+    expect(rendered.querySelector('span')?.textContent).toBe('Window');
+    expect(rendered.querySelector('select')).toBe(select);
   });
 });
