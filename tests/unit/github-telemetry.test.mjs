@@ -110,3 +110,27 @@ test("activity cache state is explicit when the cache is absent", async () => {
     }
   });
 });
+
+test("GitHub telemetry tolerates a missing default Error stack", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "cao-gh-stack-"));
+  const OriginalError = globalThis.Error;
+  globalThis.Error = class extends OriginalError {
+    constructor(...args) {
+      super(...args);
+      this.stack = undefined;
+    }
+  };
+  try {
+    const entry = await recordGithubTelemetry({
+      phase: "before",
+      operation: "refresh-activity",
+      cacheRoot: root,
+      ledgerPath: path.join(root, "cao-gh.jsonl"),
+      execute: () => ({ status: 0, stdout: JSON.stringify({ resources: {} }) }),
+    });
+    assert.deepEqual(entry.stackTrace, []);
+  } finally {
+    globalThis.Error = OriginalError;
+    await rm(root, { recursive: true, force: true });
+  }
+});

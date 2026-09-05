@@ -63,6 +63,7 @@ function rateLimitRow(overrides = {}) {
  *   },
  *   rows: Array<Record<string, unknown>>
  * }} [rateLimitSource]
+ * @param {Array<Record<string, unknown>>} [stackRows]
  */
 function renderApiPage(rateLimitSource = {
   source: 'github-api-rate-limits',
@@ -100,7 +101,32 @@ function renderApiPage(rateLimitSource = {
       'operation-consumed': null
     })
   ]
-}) {
+}, stackRows = [
+  {
+    'observed-at': '2026-09-04T12:00:00Z',
+    'operation-execution-id': 'run-1',
+    phase: 'after',
+    operation: 'refresh-activity',
+    outcome: 'success',
+    credential: 'reader',
+    'stack-frame-id': 'run-1:after:0',
+    'stack-parent-id': '',
+    'stack-depth': 0,
+    'stack-frame': 'at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)'
+  },
+  {
+    'observed-at': '2026-09-04T12:00:00Z',
+    'operation-execution-id': 'run-1',
+    phase: 'after',
+    operation: 'refresh-activity',
+    outcome: 'success',
+    credential: 'reader',
+    'stack-frame-id': 'run-1:after:1',
+    'stack-parent-id': 'run-1:after:0',
+    'stack-depth': 1,
+    'stack-frame': 'at main (activity/github-telemetry.mjs:150:9)'
+  }
+]) {
   const rendered = renderDashboard({
     document: dashboard,
     sources: {
@@ -125,32 +151,7 @@ function renderApiPage(rateLimitSource = {
       'github-api-call-stacks': {
         source: 'github-api-call-stacks',
         metadata,
-        rows: [
-          {
-            'observed-at': '2026-09-04T12:00:00Z',
-            'operation-execution-id': 'run-1',
-            phase: 'after',
-            operation: 'refresh-activity',
-            outcome: 'success',
-            credential: 'reader',
-            'stack-frame-id': 'run-1:after:0',
-            'stack-parent-id': '',
-            'stack-depth': 0,
-            'stack-frame': 'at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)'
-          },
-          {
-            'observed-at': '2026-09-04T12:00:00Z',
-            'operation-execution-id': 'run-1',
-            phase: 'after',
-            operation: 'refresh-activity',
-            outcome: 'success',
-            credential: 'reader',
-            'stack-frame-id': 'run-1:after:1',
-            'stack-parent-id': 'run-1:after:0',
-            'stack-depth': 1,
-            'stack-frame': 'at main (activity/github-telemetry.mjs:150:9)'
-          }
-        ]
+        rows: stackRows
       }
     }
   });
@@ -234,6 +235,25 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(stackTable?.querySelectorAll('.tree-table-cell')).toHaveLength(2);
     expect(stackTable?.querySelector('tbody tr:nth-child(2) .tree-table-cell')?.getAttribute('style')).toContain('--tree-depth: 1');
     expect(stackTable?.textContent).toContain('activity/github-telemetry.mjs:150:9');
+  });
+
+  it('keeps call-stack rows with missing tree ids as independent roots', () => {
+    const { page } = renderApiPage(undefined, [
+      { 'stack-frame': 'missing id root one', 'stack-parent-id': '' },
+      { 'stack-frame': 'missing id root two', 'stack-parent-id': '' },
+      { 'stack-frame': 'parent row', 'stack-frame-id': 'parent', 'stack-parent-id': '' },
+      { 'stack-frame': 'child row', 'stack-frame-id': 'child', 'stack-parent-id': 'parent' },
+      { 'stack-frame': 'orphan row', 'stack-frame-id': 'orphan', 'stack-parent-id': 'missing-parent' }
+    ]);
+    const rows = [...(page?.querySelectorAll('table[role="treegrid"] tbody tr') ?? [])];
+    /** @param {string} text */
+    const levelFor = (text) => rows.find((row) => row.textContent?.includes(text))?.getAttribute('aria-level');
+
+    expect(levelFor('missing id root one')).toBe('1');
+    expect(levelFor('missing id root two')).toBe('1');
+    expect(levelFor('parent row')).toBe('1');
+    expect(levelFor('child row')).toBe('2');
+    expect(levelFor('orphan row')).toBe('1');
   });
 
   it('exposes stale, partial, unavailable, and empty source states without fabricated quota values', () => {
