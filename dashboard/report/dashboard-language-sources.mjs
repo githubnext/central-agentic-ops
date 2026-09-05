@@ -578,10 +578,15 @@ function runRows(deployed, usage) {
     `${String(run.repository || "").toLowerCase()}:${run.runId}`,
     run.data ?? null,
   ]));
+  const metadataByRun = new Map([...(usage.securityRuns || []), ...(usage.runs || [])].map((run) => [
+    `${String(run.repository || "").toLowerCase()}:${run.runId}`,
+    run,
+  ]));
   for (const workflow of deployed.workflows || []) {
     const names = repositoryParts(workflow.repository);
     for (const run of workflow.runHealth?.runRecords || []) {
       const key = `${workflow.repository}:${run.runId}`;
+      const usageRun = metadataByRun.get(key.toLowerCase()) || {};
       rows.set(key, {
         ...names,
         workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
@@ -601,10 +606,10 @@ function runRows(deployed, usage) {
         ...(run.resourceResetAt ? { "resource-reset-at": run.resourceResetAt } : {}),
         ...(Number.isFinite(run.resourceWaitHours) ? { "resource-wait-hours": run.resourceWaitHours } : {}),
         "rollout-mode": rolloutMode(run.displayTitle),
-        engine: firstText(run.engine, run.agenticEngine, run.agentic_engine) || "unknown",
-        "engine-version": firstText(run.engineVersion, run.engine_version, run.agenticEngineVersion, run.agentic_engine_version) || "unknown",
-        "requested-model": firstText(run.requestedModel, run.requested_model, run.model) || "unknown",
-        "resolved-model": firstText(run.resolvedModel, run.resolved_model, run.model) || "unknown",
+        engine: firstText(run.engine, run.agenticEngine, run.agentic_engine, usageRun.engine, usageRun.agenticEngine, usageRun.agentic_engine) || "unknown",
+        "engine-version": firstText(run.engineVersion, run.engine_version, run.agenticEngineVersion, run.agentic_engine_version, usageRun.engineVersion, usageRun.engine_version, usageRun.agenticEngineVersion, usageRun.agentic_engine_version) || "unknown",
+        "requested-model": firstText(run.requestedModel, run.requested_model, run.model, usageRun.requestedModel, usageRun.requested_model, usageRun.model) || "unknown",
+        "resolved-model": firstText(run.resolvedModel, run.resolved_model, run.model, usageRun.resolvedModel, usageRun.resolved_model, usageRun.model) || "unknown",
         data: dataByRun.get(key.toLowerCase()) ?? null,
         "run-link": link("run", `https://github.com/${workflow.repository}/actions/runs/${run.runId}`, `View run ${run.runId}`),
       });

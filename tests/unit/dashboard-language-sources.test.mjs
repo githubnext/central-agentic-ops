@@ -1479,6 +1479,56 @@ test("dashboard source bridge carries model and agent metadata into usage and re
   );
 });
 
+test("dashboard source bridge carries usage agent metadata into assignments", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-02T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/gh-aw-cao",
+        path: ".github/workflows/model-audit.lock.yml",
+        name: "Model Audit",
+        state: "active",
+        runHealth: {
+          runRecords: [{
+            runId: 42,
+            status: "completed",
+            conclusion: "success",
+            startedAt: "2026-09-02T11:00:00Z",
+          }],
+        },
+      }],
+    },
+    usage: {
+      available: true,
+      complete: true,
+      runs: [{
+        repository: "githubnext/gh-aw-cao",
+        runId: 42,
+        engine: "copilot",
+        resolvedModel: "gpt-5.6-sol",
+      }],
+    },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-02T12:00:00Z", records: [] },
+  });
+
+  assert.deepEqual(
+    sources["agent-assignments"].rows.map((row) => ({
+      agent: row["agent-name"],
+      workItem: row["work-item-id"],
+      state: row["agent-state"],
+    })),
+    [{
+      agent: "copilot · gpt-5.6-sol",
+      workItem: "githubnext/gh-aw-cao:.github/workflows/model-audit.md",
+      state: "completed",
+    }],
+  );
+});
+
 test("dashboard source bridge carries canonical coverage diagnostics", () => {
   const input = {
     deployed: {
