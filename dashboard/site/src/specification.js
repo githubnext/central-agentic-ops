@@ -266,6 +266,7 @@ export const SOURCE_VALUES = [
   'runs',
   'run-performance',
   'job-performance',
+  'safe-output-performance',
   'experiments',
   'experiment-assignments',
   'graders',
@@ -427,6 +428,7 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   runs: ['run'],
   'run-performance': ['run'],
   'job-performance': ['run', 'job'],
+  'safe-output-performance': ['run', 'safe-output-kind'],
   experiments: ['experiment'],
   'experiment-assignments': ['run', 'experiment', 'variant'],
   graders: ['grader'],
@@ -475,7 +477,8 @@ export const ADDITIVE_MEASURE_FIELDS = [
   'cache-write-tokens',
   'reasoning-tokens',
   'aic',
-  'security-count'
+  'security-count',
+  'safe-output-count'
 ];
 
 export const NON_ADDITIVE_MEASURE_FIELDS = [

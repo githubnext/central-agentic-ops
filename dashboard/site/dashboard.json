@@ -3707,10 +3707,12 @@
             "description": "Run-level evidence for delivered outputs and explicit noop, missing_data, missing_tool, or report_incomplete signals.",
             "data": {
               "source": "safe-output-performance",
-              "order-by": {
-                "field": "observed-at",
-                "direction": "desc"
-              }
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                }
+              ]
             },
             "mark": "table",
             "controls": "interactive",
