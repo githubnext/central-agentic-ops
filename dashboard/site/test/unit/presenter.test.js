@@ -969,7 +969,11 @@ describe('presenter built-in and custom pages', () => {
         ? 'mode:review mode:live mode:unknown'
         : 'mode:review mode:live';
       expect(filterBar?.querySelector('input')?.value).toBe(expectedFilters);
-      expect(filterBar?.querySelector('.filter-control')?.contains(rendered.querySelector('.dashboard-horizon'))).toBe(true);
+      const filterControl = filterBar?.querySelector('.filter-control');
+      const horizon = rendered.querySelector('.dashboard-horizon');
+      expect(filterControl).not.toBeNull();
+      expect(horizon).not.toBeNull();
+      expect(filterControl?.contains(horizon)).toBe(true);
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe(pageId === 'firewall' ? '3' : '2');
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
       expect(filterBar?.querySelector('.export-control')).toBeNull();
