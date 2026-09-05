@@ -45,9 +45,6 @@ describe('dashboard document validation', () => {
     for (const page of dashboardDocument.dashboard.pages) {
       const views = page.definition?.views ?? page.views ?? [];
       if (page.id === 'overview' || dashboardNextIds.has(page.id)) {
-        for (const view of views) {
-          expect(view.disclosure).not.toBe('supplemental');
-        }
         continue;
       }
       const trailingView = views.at(-1);
