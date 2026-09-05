@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLinkOrFallback } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatUtcDateTime, renderLegendSwatch, renderPanelHeader, renderTableHeadRow, renderVitalStat } from './ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderLegendList, renderPanelHeader, renderTableHeadRow, renderVitalStat } from './ui-primitives.js';
 import { text } from './count-formatters.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -285,16 +285,14 @@ function renderValueHistory(observations) {
         : 'Positive values mean higher primary operational attainment.',
       body: [
         renderOutcomeChangeChart(outcomeSeries),
-        h(
-          'ul',
-          { className: 'chart-legend value-diagnostic-legend' },
-          outcomeSeries.map((series, index) => h(
-            'li',
-            null,
-            renderLegendSwatch(`chart-series-${(index % 6) + 1}`),
+        renderLegendList(
+          'chart-legend value-diagnostic-legend',
+          outcomeSeries,
+          (series, index) => `chart-series-${(index % 6) + 1}`,
+          (series) => [
             h('span', null, series.name),
             h('strong', { className: series.latestChange > 0 ? 'value-gain' : series.latestChange < 0 ? 'value-loss' : '' }, formatPointChange(series.latestChange))
-          ))
+          ]
         )
       ]
     }));

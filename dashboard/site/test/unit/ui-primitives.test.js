@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendList, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -134,6 +134,26 @@ describe('ui primitives', () => {
     expect(rendered.tagName).toBe('I');
     expect(rendered.className).toBe('chart-series-a');
     expect(rendered.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('renders a legend list pairing a swatch with per-item content and any extra list attributes', () => {
+    const rendered = renderLegendList(
+      'chart-legend chart-legend-line',
+      ['alpha', 'beta'],
+      (item, index) => `chart-series-${index}`,
+      (item) => [`label ${item}`],
+      { 'data-chart-legend': 'visual' }
+    );
+
+    expect(rendered.tagName).toBe('UL');
+    expect(rendered.className).toBe('chart-legend chart-legend-line');
+    expect(rendered.getAttribute('data-chart-legend')).toBe('visual');
+    const items = rendered.querySelectorAll('li');
+    expect(items).toHaveLength(2);
+    expect(items[0].querySelector('i')?.className).toBe('chart-series-0');
+    expect(items[0].textContent).toBe('label alpha');
+    expect(items[1].querySelector('i')?.className).toBe('chart-series-1');
+    expect(items[1].textContent).toBe('label beta');
   });
 
   it('renders the shared icon span with the requested class and a single octicon', () => {
