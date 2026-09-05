@@ -5,7 +5,11 @@ import { request } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { startDashboardServer } from "../../dashboard/local-server.mjs";
+import {
+  isWithinCopilotFileRoots,
+  shellPermissionRejection,
+  startDashboardServer,
+} from "../../dashboard/local-server.mjs";
 
 const dashboard = (pageId) => JSON.stringify({
   "language-version": "0.1.0",
@@ -28,6 +32,47 @@ const dashboard = (pageId) => JSON.stringify({
   },
 }, null, 2);
 
+function shellPermission(fullCommandText, identifiers) {
+  return {
+    fullCommandText,
+    hasWriteFileRedirection: false,
+    possiblePaths: [],
+    possibleUrls: [],
+    commands: identifiers.map((identifier) => ({ identifier, readOnly: true })),
+    commandSegments: identifiers.map((identifier) => ({ identifier, fullCommandText })),
+  };
+}
+
+test("Copilot shell policy allows safe text tools and rejects mutating sed", () => {
+  assert.equal(shellPermissionRejection(shellPermission("echo ready", ["echo"])), null);
+  assert.equal(shellPermissionRejection(shellPermission("cat dashboard.json", ["cat"])), null);
+  assert.equal(
+    shellPermissionRejection(shellPermission("sed -n '1,20p' dashboard.json", ["sed"])),
+    null,
+  );
+  assert.match(
+    shellPermissionRejection(shellPermission("sed -i 's/old/new/' dashboard.json", ["sed"])),
+    /in-place/,
+  );
+  assert.match(
+    shellPermissionRejection(shellPermission("sed 's/old/new/w output.json' dashboard.json", ["sed"])),
+    /file-writing/,
+  );
+  assert.match(
+    shellPermissionRejection({
+      ...shellPermission("echo changed > dashboard.json", ["echo"]),
+      hasWriteFileRedirection: true,
+    }),
+    /redirection/,
+  );
+});
+
+test("Copilot file roots include the workspace and system temporary directory", () => {
+  assert.equal(isWithinCopilotFileRoots("/workspace", "/tmp", "/workspace/dashboard.json"), true);
+  assert.equal(isWithinCopilotFileRoots("/workspace", "/tmp", "/tmp/copilot-notes.json"), true);
+  assert.equal(isWithinCopilotFileRoots("/workspace", "/tmp", "/etc/passwd"), false);
+});
+
 async function openDashboardSocket(previewUrl) {
   const url = new URL(previewUrl);
   url.protocol = "ws:";
@@ -44,6 +89,24 @@ async function nextDashboard(socket) {
   return new Promise((resolve, reject) => {
     socket.addEventListener("message", (event) => resolve(JSON.parse(event.data)), { once: true });
     socket.addEventListener("error", reject, { once: true });
+  });
+}
+
+async function nextSocketMessage(socket, predicate = () => true) {
+  return new Promise((resolve, reject) => {
+    const onMessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (!predicate(message)) return;
+      socket.removeEventListener("message", onMessage);
+      socket.removeEventListener("error", onError);
+      resolve(message);
+    };
+    const onError = (error) => {
+      socket.removeEventListener("message", onMessage);
+      reject(error);
+    };
+    socket.addEventListener("message", onMessage);
+    socket.addEventListener("error", onError, { once: true });
   });
 }
 
@@ -95,13 +158,16 @@ test("local dashboard server composes package dashboards and reloads after updat
       },
     }));
   };
+  const requestLogs = [];
 
   const preview = await startDashboardServer({
     siteRoot,
     catalogRoot: packageRoot,
     installedDashboardsDirectory: path.join(root, "installed-dashboards"),
     downloadData,
+    allowMissingOrigin: true,
     workingDirectory: root,
+    requestOutput: (message) => requestLogs.push(message),
     port: 0,
   });
   try {
@@ -123,10 +189,12 @@ test("local dashboard server composes package dashboards and reloads after updat
     assert.deepEqual(Buffer.from(await imageResponse.arrayBuffer()), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
     assert.equal((await fetch(`${preview.url}/private.txt`)).status, 404);
     assert.equal((await fetch(`${preview.url}/private`)).status, 404);
+    assert.ok(requestLogs.some((message) => /^GET \/ 302 \d+ms$/.test(message)));
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");
     const browserDashboard = await dashboardResponse.json();
+    assert.ok(requestLogs.some((message) => /^GET \/dashboard\.json 200 \d+ms$/.test(message)));
     assert.deepEqual(
       browserDashboard.dashboard.pages.map(({ id }) => id),
       ["built-in", "package-one"],
@@ -137,6 +205,21 @@ test("local dashboard server composes package dashboards and reloads after updat
       repositories: {
         rows: [{ token: "[REDACTED]", note: "[REDACTED]" }],
       },
+    });
+
+    test("repository skill discovery includes supported workspace skill directories", async () => {
+      const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-skills-"));
+      await mkdir(path.join(root, ".github", "skills"), { recursive: true });
+      await mkdir(path.join(root, ".agents", "skills"), { recursive: true });
+      try {
+        const { repositorySkillDirectories } = await import("../../dashboard/local-server.mjs");
+        assert.deepEqual(await repositorySkillDirectories(root), [
+          path.join(root, ".github", "skills"),
+          path.join(root, ".agents", "skills"),
+        ]);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
     });
 
     const traversalResponse = await fetch(`${preview.url}/..%2Foutside.txt`);
@@ -201,6 +284,8 @@ test("local dashboard server optionally prompts Copilot to update the active vie
   const prompts = [];
   const promptGate = Promise.withResolvers();
   let runtimeClosed = false;
+  let runtimeStopped = false;
+  const disconnectedSessions = [];
 
   const preview = await startDashboardServer({
     siteRoot: root,
@@ -211,14 +296,38 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       await writeFile(path.join(destination, "sources.json"), "{}");
     },
     copilot: true,
+    allowMissingOrigin: true,
     createCopilotRuntime: async () => ({
       prompt: async (payload) => {
         prompts.push(payload);
-        const source = payload.request === "Produce invalid JSON"
-          ? "{ invalid"
-          : JSON.stringify(JSON.parse(dashboard("package-one")));
-        await writeFile(payload.viewDashboardPath, source);
+        payload.onEvent({ type: "assistant-delta", content: "Updating dashboard…" });
         await promptGate.promise;
+        if (runtimeStopped) return { aborted: true };
+        let source = JSON.stringify(JSON.parse(dashboard("package-one")));
+        if (payload.request === "Produce invalid JSON") {
+          source = "{ invalid";
+        } else if (payload.request === "Produce invalid dashboard") {
+          const invalidDashboard = JSON.parse(source);
+          invalidDashboard.dashboard.pages[0].views[0].mark = "invalid-mark";
+          source = JSON.stringify(invalidDashboard);
+        } else if (payload.request === "Fail after valid write") {
+          const updatedDashboard = JSON.parse(source);
+          updatedDashboard.dashboard.pages[0].title = "Updated despite SDK failure";
+          source = JSON.stringify(updatedDashboard);
+          await writeFile(payload.viewDashboardPath, source);
+          throw new Error("late SDK failure");
+        }
+        await writeFile(payload.viewDashboardPath, source);
+        return { aborted: false };
+      },
+      stop: async () => {
+        runtimeStopped = true;
+        promptGate.resolve();
+        return true;
+      },
+      disconnect: async (sessionKey) => {
+        disconnectedSessions.push(sessionKey);
+        return true;
       },
       close: async () => {
         runtimeClosed = true;
@@ -235,30 +344,28 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     assert.doesNotMatch(index, /<script[^>]+src=.*copilot-prompt/);
     assert.doesNotMatch(index, /eval\(/);
 
-    const responsePromise = fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: new URL(preview.url).origin,
-      },
-      body: JSON.stringify({ view: "package-one", request: "Add a failure trend" }),
-    });
+    const socket = await openDashboardSocket(preview.url);
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Add a failure trend",
+    }));
     while (prompts.length === 0) await new Promise((resolve) => setTimeout(resolve, 5));
-    const concurrentResponse = await fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: new URL(preview.url).origin,
-      },
-      body: JSON.stringify({ view: "package-one", request: "Change the summary" }),
-    });
-    assert.equal(concurrentResponse.status, 409);
-    promptGate.resolve();
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
+    const concurrentError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /already running/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Change the summary",
+    }));
+    assert.equal((await concurrentError).type, "error");
+    const stoppedMessage = nextSocketMessage(socket, (message) => message.type === "stopped");
+    socket.send(JSON.stringify({ type: "copilot.stop" }));
+    assert.equal((await stoppedMessage).type, "stopped");
     assert.equal(prompts.length, 1);
     assert.equal(prompts[0].view, "package-one");
     assert.equal(prompts[0].request, "Add a failure trend");
+    assert.match(prompts[0].sessionKey, /^[a-f0-9]{32}$/);
     const expectedViewDashboardPath = await realpath(path.join(packageDirectory, "dashboard.json"));
     assert.equal(prompts[0].viewDashboardPath, expectedViewDashboardPath);
     assert.deepEqual(prompts[0].editableDashboardPaths, [
@@ -271,25 +378,86 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       dashboard("package-one"),
     );
 
-    const invalidJsonResponse = await fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: new URL(preview.url).origin,
-      },
-      body: JSON.stringify({ view: "package-one", request: "Produce invalid JSON" }),
-    });
-    assert.equal(invalidJsonResponse.status, 500);
+    runtimeStopped = false;
+    const invalidJsonError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /could not update/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Produce invalid JSON",
+    }));
+    assert.equal((await invalidJsonError).type, "error");
+    await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
 
-    const invalidOrigin = await fetch(`${preview.url}/__dashboard_copilot`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: "http://attacker.example",
+    const invalidDashboardError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /could not update/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Produce invalid dashboard",
+    }));
+    assert.equal((await invalidDashboardError).type, "error");
+    await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
+
+    const recoveredUpdate = nextSocketMessage(socket, (message) =>
+      message.type === "dashboard-update");
+    const recoveredDone = nextSocketMessage(socket, (message) => message.type === "done");
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Fail after valid write",
+    }));
+    const recoveredDashboard = await recoveredUpdate;
+    socket.send(JSON.stringify({
+      type: "browser.trace",
+      traceId: recoveredDashboard.traceId,
+      event: "preview.rendered",
+      details: {},
+    }));
+    assert.equal((await recoveredDone).type, "done");
+    assert.equal(
+      JSON.parse(await readFile(path.join(packageDirectory, "dashboard.json"), "utf8"))
+        .dashboard.pages[0].title,
+      "Updated despite SDK failure",
+    );
+    await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
+
+    const dashboardUpdate = nextSocketMessage(socket, (message) =>
+      message.type === "dashboard-update");
+    const reloadError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /preview could not reload/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Fail hot reload",
+    }));
+    const update = await dashboardUpdate;
+    socket.send(JSON.stringify({
+      type: "browser.trace",
+      traceId: update.traceId,
+      event: "preview.render.failed",
+      details: {
+        message: "Test render failure",
+        errorLog: "Error: Test render failure\n    at renderSources (index.html:140:11)",
+        recovered: true,
       },
-      body: JSON.stringify({ view: "package-one", request: "Change it" }),
-    });
-    assert.equal(invalidOrigin.status, 400);
+    }));
+    const reloadFailure = await reloadError;
+    assert.equal(reloadFailure.details.phase, "hot-reload");
+    assert.equal(reloadFailure.details.recovered, true);
+    assert.match(reloadFailure.details.errorLog, /renderSources/);
+    assert.match(reloadFailure.message, /previous dashboard was restored/);
+    assert.equal(
+      await readFile(path.join(packageDirectory, "dashboard.json"), "utf8"),
+      dashboard("package-one"),
+    );
+
+    socket.close();
+    while (disconnectedSessions.length === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    assert.ok(prompts.every((prompt) => prompt.sessionKey === prompts[0].sessionKey));
+    assert.deepEqual(disconnectedSessions, [prompts[0].sessionKey]);
   } finally {
     await preview.close();
     await rm(root, { recursive: true, force: true });
@@ -352,6 +520,7 @@ test("local dashboard CLI runs directly without a permission sandbox relaunch", 
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /usage: local-server\.mjs/);
+  assert.match(result.stdout, /--replace-existing/);
 });
 
 test("local dashboard server downloads dashboard-build data with GitHub CLI", async () => {
