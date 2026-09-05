@@ -1,9 +1,11 @@
-// @ts-nocheck
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { rowsFor } from './source-rows.js';
 
 const UNKNOWN = '—';
+/** @typedef {Record<string, any>} Row */
+/** @typedef {{ experiments: Row[], assignments: Row[], graders: Row[], evals: Row[], runById: Map<string, Row>, graderById: Map<string, Row>, evalById: Map<string, Row> }} ExperimentModel */
+/** @typedef {Record<string, string>} ExperimentFilters */
 
 /**
  * Renders the experiment decision surface from experiment, assignment, grader,
@@ -13,6 +15,7 @@ const UNKNOWN = '—';
  */
 export function renderExperimentsEvaluation(context) {
   const model = buildModel(context.sources);
+  const pageId = context.pageId;
   if (model.experiments.length === 0) {
     return renderEmptyState(context.sources);
   }
@@ -28,14 +31,14 @@ export function renderExperimentsEvaluation(context) {
     }
     root.replaceChildren(
       renderFilterBar(model, filters, () => {
-        syncDeepLink(filters, selectedExperiment);
+        syncDeepLink(filters, selectedExperiment, pageId);
         render();
       }),
       renderDecisionOverview(visible),
       renderDecisionTable(visible, selectedExperiment, (experimentId) => {
         selectedExperiment = experimentId;
         filters.experiment = experimentId;
-        syncDeepLink(filters, selectedExperiment);
+        syncDeepLink(filters, selectedExperiment, pageId);
         render();
       }),
       visible.length === 0
@@ -48,6 +51,7 @@ export function renderExperimentsEvaluation(context) {
   return root;
 }
 
+/** @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources @returns {ExperimentModel} */
 function buildModel(sources) {
   const experimentRows = rowsFor(sources, 'experiments');
   const assignments = rowsFor(sources, 'experiment-assignments');
@@ -78,6 +82,7 @@ function buildModel(sources) {
   return { experiments, assignments, graders, evals, runById, graderById, evalById };
 }
 
+/** @param {any} row @param {any} assignmentByRun @param {any} definition @param {string} sourceType @returns {any} */
 function normalizeObservation(row, assignmentByRun, definition, sourceType) {
   const assignment = assignmentByRun.get(text(row.run)) ?? {};
   const identifier = text(sourceType === 'grader' ? row.grader : row.eval);
@@ -101,7 +106,9 @@ function normalizeObservation(row, assignmentByRun, definition, sourceType) {
   };
 }
 
-function summarizeExperiment({ id, definition, assignments, graders, evals }) {
+/** @param {{ id: string, definition: Row, assignments: Row[], graders: Row[], evals: Row[] }} input @returns {Row} */
+function summarizeExperiment(input) {
+  const { id, definition, assignments, graders, evals } = input;
   const observations = [...graders, ...evals];
   const variants = [...new Set(assignments.map((row) => text(row.variant)).filter(Boolean))];
   const control = text(definition['control-variant'] || variants.find((variant) => /control|baseline/i.test(variant)) || variants[0] || 'control');
@@ -148,7 +155,9 @@ function summarizeExperiment({ id, definition, assignments, graders, evals }) {
   };
 }
 
+/** @param {ExperimentModel} model @param {ExperimentFilters} filters @param {() => void} onChange @returns {HTMLElement} */
 function renderFilterBar(model, filters, onChange) {
+  /** @type {Array<[string, string, string[]]>} */
   const controls = [
     ['organization', 'Organization', distinct(model.experiments, 'organization')],
     ['repository', 'Repository', distinct(model.experiments, 'repository')],
@@ -162,15 +171,15 @@ function renderFilterBar(model, filters, onChange) {
   ];
   return h(
     'form',
-    { className: 'experiment-filters', 'aria-label': 'Experiments and evaluation filters', onsubmit: (event) => event.preventDefault() },
+    { className: 'experiment-filters', 'aria-label': 'Experiments and evaluation filters', onsubmit: /** @param {SubmitEvent} event */ (event) => event.preventDefault() },
     ...controls.map(([key, label, values]) => {
       const select = h(
         'select',
         {
           name: key,
           'aria-label': label,
-          onchange: (event) => {
-            filters[key] = event.currentTarget.value;
+          onchange: /** @param {Event} event */ (event) => {
+            filters[key] = /** @type {HTMLSelectElement} */ (event.currentTarget).value;
             onChange();
           }
         },
@@ -188,8 +197,8 @@ function renderFilterBar(model, filters, onChange) {
         {
           name: 'range',
           'aria-label': 'Date range',
-          onchange: (event) => {
-            filters.range = event.currentTarget.value;
+          onchange: /** @param {Event} event */ (event) => {
+            filters.range = /** @type {HTMLSelectElement} */ (event.currentTarget).value;
             onChange();
           }
         },
@@ -199,6 +208,7 @@ function renderFilterBar(model, filters, onChange) {
   );
 }
 
+/** @param {any[]} experiments @returns {HTMLElement} */
 function renderDecisionOverview(experiments) {
   const active = experiments.filter((experiment) => !['PROMOTE', 'REJECT'].includes(experiment.decision)).length;
   const ready = experiments.filter((experiment) => experiment.readiness === 'READY').length;
@@ -234,6 +244,7 @@ function renderDecisionOverview(experiments) {
   );
 }
 
+/** @param {any[]} experiments @param {string} selectedId @param {(id: string) => void} onSelect @returns {HTMLElement} */
 function renderDecisionTable(experiments, selectedId, onSelect) {
   return h(
     'section',
@@ -259,7 +270,7 @@ function renderDecisionTable(experiments, selectedId, onSelect) {
             h('td', null, `${experiment.controlN} / ${experiment.candidateN}`, experiment.excluded ? h('small', null, `${experiment.excluded} excluded`) : null),
             h('td', null, renderEffect(experiment.normalizedEffect)),
             h('td', null, experiment.evidenceStrength),
-            h('td', null, statusBadge(experiment.regressingGuardrails.length ? `${experiment.regressingGuardrails.length} regressing` : `${experiment.guardrailCount}/${experiment.guardrailCount} passing`, experiment.regressingGuardrails.length ? 'danger' : 'success')),
+            h('td', null, statusBadge(experiment.regressingGuardrails.length ? `${experiment.guardrailCount - experiment.regressingGuardrails.length}/${experiment.guardrailCount} passing` : `${experiment.guardrailCount}/${experiment.guardrailCount} passing`, experiment.regressingGuardrails.length ? 'danger' : 'success')),
             h('td', null, statusBadge(experiment.readiness, experiment.readiness === 'READY' ? 'success' : 'attention')),
             h('td', null, statusBadge(experiment.decision, decisionTone(experiment.decision))),
             h('td', null, formatDate(experiment.lastObservation))
@@ -270,6 +281,7 @@ function renderDecisionTable(experiments, selectedId, onSelect) {
   );
 }
 
+/** @param {ExperimentModel} model @param {string} experimentId @returns {HTMLElement} */
 function renderExperimentDetails(model, experimentId) {
   const experiment = model.experiments.find((candidate) => candidate.id === experimentId);
   if (!experiment) return h('div');
@@ -288,7 +300,9 @@ function renderExperimentDetails(model, experimentId) {
   );
 }
 
+/** @param {any[]} observations @param {string} control @param {string} candidate @returns {any[]} */
 function metricSummaries(observations, control, candidate) {
+  /** @type {Map<string, Row[]>} */
   const groups = new Map();
   for (const observation of observations) {
     const key = `${observation.sourceType}:${observation.identifier}`;
@@ -327,6 +341,7 @@ function metricSummaries(observations, control, candidate) {
   }).sort((left, right) => roleOrder(left.role) - roleOrder(right.role) || left.identifier.localeCompare(right.identifier));
 }
 
+/** @param {any[]} metrics @param {any} experiment @returns {HTMLElement} */
 function renderMetricComparison(metrics, experiment) {
   return h(
     'section',
@@ -359,6 +374,7 @@ function renderMetricComparison(metrics, experiment) {
   );
 }
 
+/** @param {Row[]} metrics @param {Row} experiment @returns {HTMLElement} */
 function renderEvalOutcomes(metrics, experiment) {
   return h(
     'section',
@@ -367,7 +383,7 @@ function renderEvalOutcomes(metrics, experiment) {
     metrics.length === 0
       ? partialState('No eval observations are available for this experiment.')
       : h('div', { className: 'eval-outcome-list' }, ...metrics.map((metric) => {
-        const matching = experiment.observations.filter((row) => row.sourceType === 'eval' && row.identifier === metric.identifier);
+        const matching = /** @type {Row[]} */ (experiment.observations).filter((row) => row.sourceType === 'eval' && row.identifier === metric.identifier);
         return h(
           'article',
           { className: 'eval-outcome' },
@@ -379,6 +395,7 @@ function renderEvalOutcomes(metrics, experiment) {
   );
 }
 
+/** @param {string} label @param {any[]} rows @returns {HTMLElement} */
 function renderEvalBar(label, rows) {
   const includedRows = rows.filter((row) => row.included);
   const yes = includedRows.filter((row) => row.result === 'YES').length;
@@ -399,6 +416,7 @@ function renderEvalBar(label, rows) {
   );
 }
 
+/** @param {any[]} metrics @returns {HTMLElement} */
 function renderGraderDiagnostics(metrics) {
   return h(
     'section',
@@ -422,12 +440,15 @@ function renderGraderDiagnostics(metrics) {
   );
 }
 
+/** @param {Row} experiment @returns {HTMLElement} */
 function renderObservationQuality(experiment) {
+  const observations = /** @type {Row[]} */ (experiment.observations);
+  const assignments = /** @type {Row[]} */ (experiment.assignments);
   const reasons = countBy(
-    experiment.observations.filter((observation) => !observation.included),
+    observations.filter((observation) => !observation.included),
     (observation) => observation.exclusionReason || `${observation.sourceType} missing`
   );
-  const assignedRuns = new Set(experiment.assignments.map((row) => text(row.run)).filter(Boolean)).size;
+  const assignedRuns = new Set(assignments.map((row) => text(row.run)).filter(Boolean)).size;
   const coverage = experiment.usable + experiment.excluded > 0 ? experiment.usable / (experiment.usable + experiment.excluded) : null;
   return h(
     'section',
@@ -445,10 +466,13 @@ function renderObservationQuality(experiment) {
   );
 }
 
+/** @param {ExperimentModel} model @param {Row} experiment @returns {HTMLElement} */
 function renderRunEvidence(model, experiment) {
-  const rows = experiment.assignments.map((assignment) => {
+  const assignments = /** @type {Row[]} */ (experiment.assignments);
+  const experimentObservations = /** @type {Row[]} */ (experiment.observations);
+  const rows = assignments.map((assignment) => {
     const run = model.runById.get(text(assignment.run)) ?? {};
-    const observations = experiment.observations.filter((observation) => text(observation.run) === text(assignment.run));
+    const observations = experimentObservations.filter((observation) => text(observation.run) === text(assignment.run));
     const primary = observations.find((observation) => observation.identifier === experiment.primaryId);
     const guardrails = observations.filter((observation) => observation.role === 'GUARDRAIL');
     const evals = observations.filter((observation) => observation.sourceType === 'eval');
@@ -489,19 +513,21 @@ function renderRunEvidence(model, experiment) {
   );
 }
 
+/** @param {Row} row @returns {HTMLElement} */
 function renderEvidenceActions(row) {
   const links = [
     ['Assignment', row.assignment['assignment-link']],
     ['Workflow execution', row.run['run-link']],
     ['Artifacts', row.assignment['artifact-link']],
     ['Trace', row.assignment['trace-link']],
-    ...row.observations.map((observation) => [observation.sourceType === 'eval' ? 'Eval' : 'Grader', observation.evidenceLink])
+    .../** @type {Row[]} */ (row.observations).map((observation) => [observation.sourceType === 'eval' ? 'Eval' : 'Grader', observation.evidenceLink])
   ].filter(([, value]) => safeLink(value));
   return links.length
     ? h('details', { className: 'evidence-menu' }, h('summary', null, 'Open evidence'), h('ul', null, ...links.map(([label, value]) => h('li', null, renderEvidenceLink(value, label)))))
     : h('span', { className: 'muted' }, 'Unavailable');
 }
 
+/** @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources @returns {HTMLElement} */
 function renderEmptyState(sources) {
   const experimentSource = sources.experiments;
   const unavailable = experimentSource?.metadata?.availability === 'unavailable';
@@ -516,6 +542,7 @@ function renderEmptyState(sources) {
   );
 }
 
+/** @param {ExperimentModel} model @returns {ExperimentFilters} */
 function initialFilters(model) {
   const hash = globalThis.window?.location?.hash ?? '';
   const query = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
@@ -535,10 +562,12 @@ function initialFilters(model) {
   };
 }
 
+/** @param {Row[]} experiments @param {ExperimentFilters} filters @returns {Row[]} */
 function filterExperiments(experiments, filters) {
   const rangeDays = /^(\d+)d$/.exec(filters.range)?.[1];
   const cutoff = rangeDays ? Date.now() - Number(rangeDays) * 86_400_000 : null;
   return experiments.filter((experiment) => {
+    const observations = /** @type {Row[]} */ (experiment.observations);
     if (filters.organization && experiment.organization !== filters.organization) return false;
     if (filters.repository && experiment.repository !== filters.repository) return false;
     if (filters.package && experiment.package !== filters.package) return false;
@@ -546,14 +575,15 @@ function filterExperiments(experiments, filters) {
     if (filters.experiment && experiment.id !== filters.experiment) return false;
     if (filters.state && experiment.readiness !== filters.state) return false;
     if (filters.variant && ![experiment.control, experiment.candidate].includes(filters.variant)) return false;
-    if (filters.source && !experiment.observations.some((row) => row.sourceType === filters.source)) return false;
-    if (filters.metric && !experiment.observations.some((row) => row.identifier === filters.metric)) return false;
+    if (filters.source && !observations.some((row) => row.sourceType === filters.source)) return false;
+    if (filters.metric && !observations.some((row) => row.identifier === filters.metric)) return false;
     if (cutoff && experiment.lastObservation && Date.parse(experiment.lastObservation) < cutoff) return false;
     return true;
   });
 }
 
-function syncDeepLink(filters, experimentId) {
+/** @param {ExperimentFilters} filters @param {string} experimentId @param {string} pageId */
+function syncDeepLink(filters, experimentId, pageId) {
   const window = globalThis.window;
   if (!window || !['http:', 'https:'].includes(window.location.protocol)) return;
   const parameters = new URLSearchParams();
@@ -561,29 +591,35 @@ function syncDeepLink(filters, experimentId) {
     if (value && !(key === 'range' && value === '30d')) parameters.set(key, value);
   }
   const query = parameters.toString();
-  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#page-experiments${query ? `?${query}` : ''}`);
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#page-${encodeURIComponent(pageId)}${query ? `?${query}` : ''}`);
 }
 
+/** @param {Map<string, number>} counts @returns {HTMLElement} */
 function renderLegend(counts) {
   return h('ul', { className: 'experiment-state-legend' }, ...[...counts].map(([state, count]) => h('li', null, h('span', { className: `state-dot state-${state.toLowerCase()}` }), `${state} ${count}`)));
 }
 
+/** @param {string} label @param {unknown} value @returns {HTMLElement} */
 function summaryItem(label, value) {
   return h('div', null, h('dt', null, label), h('dd', null, String(value)));
 }
 
+/** @param {string} id @param {string} title @param {string} description @returns {HTMLElement} */
 function sectionHeading(id, title, description) {
   return h('header', { className: 'experiment-section-heading' }, h('div', null, h('h2', { id }, title), h('p', null, description)));
 }
 
+/** @param {string} message @returns {HTMLElement} */
 function partialState(message) {
   return h('div', { className: 'experiment-partial', role: 'status' }, octicon('info'), h('span', null, message));
 }
 
+/** @param {string} label @param {string} tone @returns {HTMLElement} */
 function statusBadge(label, tone) {
   return h('span', { className: `experiment-badge experiment-badge-${tone}` }, tone === 'danger' ? octicon('alert-fill') : tone === 'success' ? octicon('check-circle-fill') : null, label);
 }
 
+/** @param {number} value @returns {HTMLElement} */
 function renderEffect(value) {
   if (!Number.isFinite(value)) return h('span', { className: 'effect effect-unknown' }, UNKNOWN, h('span', { className: 'sr-only' }, ' insufficient evidence'));
   const positive = value > 0;
@@ -597,26 +633,32 @@ function renderEffect(value) {
   );
 }
 
+/** @param {unknown} value @param {string} label @returns {HTMLElement} */
 function renderEvidenceLink(value, label) {
   const link = safeLink(value);
   return link ? h('a', { href: link.href, title: link.label || label }, label, octicon('link-external')) : h('span', null, label || UNKNOWN);
 }
 
+/** @param {unknown} value @returns {{href: string, label: string} | null} */
 function safeLink(value) {
-  if (!value || typeof value !== 'object' || typeof value.href !== 'string') return null;
+  if (!value || typeof value !== 'object') return null;
+  const candidate = /** @type {{ href: string, label?: unknown }} */ (value);
+  if (typeof candidate.href !== 'string') return null;
   try {
-    const url = new URL(value.href);
+    const url = new URL(candidate.href);
     if (url.protocol !== 'https:' || url.username || url.password) return null;
   } catch {
     return null;
   }
-  return { href: value.href, label: text(value.label) };
+  return { href: candidate.href, label: text(candidate.label) };
 }
 
+/** @param {string} source @param {string} identifier @returns {string} */
 function sourceLabel(source, identifier) {
   return source === UNKNOWN ? identifier : `${source}:${identifier}`;
 }
 
+/** @param {any[]} rows @param {string} sourceType @returns {number} */
 function aggregateObservations(rows, sourceType) {
   if (sourceType === 'eval') {
     const known = rows.filter((row) => row.result === 'YES' || row.result === 'NO');
@@ -625,53 +667,64 @@ function aggregateObservations(rows, sourceType) {
   return mean(rows.map(numericObservation).filter(Number.isFinite));
 }
 
+/** @param {any} observation @returns {number} */
 function numericObservation(observation) {
   if (observation.sourceType === 'eval') return observation.result === 'YES' ? 1 : observation.result === 'NO' ? 0 : NaN;
-  return finite(observation.result);
+  return finite(observation.result) ?? NaN;
 }
 
+/** @param {any} row @returns {boolean} */
 function includedObservation(row) {
   if (row.included === false || text(row.included).toLowerCase() === 'no') return false;
   if (row['exclusion-reason']) return false;
   return !['missing', 'failed', 'error', 'unavailable'].includes(text(row.status).toLowerCase());
 }
 
+/** @param {any} row @returns {boolean} */
 function includedAssignment(row) {
   if (row.included === false || text(row.included).toLowerCase() === 'no') return false;
   return !row['exclusion-reason'];
 }
 
+/** @param {unknown} value @returns {string} */
 function normalizeEvalResult(value) {
   const normalized = upper(value);
   return normalized === 'YES' || normalized === 'NO' ? normalized : 'UNKNOWN';
 }
 
+/** @param {number} value @param {string} direction @returns {number} */
 function normalizeEffect(value, direction) {
   if (!Number.isFinite(value)) return NaN;
   return direction === 'lower_is_better' ? -value : value;
 }
 
+/** @param {number} left @param {number} right @returns {number} */
 function difference(left, right) {
   return Number.isFinite(left) && Number.isFinite(right) ? left - right : NaN;
 }
 
+/** @param {number[]} values @returns {number} */
 function mean(values) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : NaN;
 }
 
+/** @param {unknown} value @returns {number | null} */
 function finite(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
 
+/** @param {unknown} value @returns {string} */
 function text(value) {
   return typeof value === 'string' ? value.trim() : value == null ? '' : String(value);
 }
 
+/** @param {unknown} value @returns {string} */
 function upper(value) {
   return text(value).replaceAll('-', '_').replaceAll(' ', '_').toUpperCase();
 }
 
+/** @param {number} value @param {string} unit @returns {string} */
 function formatMetric(value, unit) {
   if (!Number.isFinite(value)) return UNKNOWN;
   if (unit === 'percent') return `${(value * 100).toFixed(1)}%`;
@@ -679,15 +732,18 @@ function formatMetric(value, unit) {
   return Number(value.toFixed(3)).toString();
 }
 
+/** @param {string} value @returns {string} */
 function formatDate(value) {
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : UNKNOWN;
 }
 
+/** @param {number} value @param {number} total @returns {number} */
 function percentage(value, total) {
   return total > 0 ? value / total * 360 : 0;
 }
 
+/** @param {any[]} rows @param {(row: any) => string} key @returns {Map<string, number>} */
 function countBy(rows, key) {
   const counts = new Map();
   for (const row of rows) {
@@ -697,18 +753,22 @@ function countBy(rows, key) {
   return counts;
 }
 
+/** @param {any[]} rows @param {string} field @returns {string[]} */
 function distinct(rows, field) {
   return [...new Set(rows.map((row) => text(row[field])).filter(Boolean))].sort();
 }
 
+/** @param {string} role @returns {number} */
 function roleOrder(role) {
   return role === 'PRIMARY' ? 0 : role === 'GUARDRAIL' ? 1 : 2;
 }
 
+/** @param {string} readiness @returns {string} */
 function readinessLabel(readiness) {
   return readiness === 'READY' ? 'Sufficient' : readiness === 'COLLECTING' ? 'Collecting' : 'Insufficient';
 }
 
+/** @param {string} decision @returns {string} */
 function decisionTone(decision) {
   if (decision === 'PROMOTE') return 'success';
   if (decision === 'REJECT') return 'danger';

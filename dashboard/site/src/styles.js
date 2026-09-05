@@ -1036,7 +1036,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 .skeleton-card { min-height: 104px; }
 .skeleton-panel { min-height: 280px; grid-column: 1 / -1; }
 .experiments-evaluation { display: grid; gap: 24px; }
-.experiment-filters { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.experiment-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .experiment-filters label { min-width: 0; color: var(--muted); font-size: .6875rem; font-weight: 600; }
 .experiment-filters label > span { display: block; margin-bottom: 4px; }
 .experiment-filters select { width: 100%; min-height: 34px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
