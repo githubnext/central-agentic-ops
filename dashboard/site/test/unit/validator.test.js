@@ -52,7 +52,6 @@ describe('dashboard document validation', () => {
       'runtime-episode-attribution-gap',
       'runs-runs-source',
       'safe-output-diagnostics',
-      'experiment-decision-summary',
       'graders-observations-source',
       'evals-observations-source',
       'usage-usage-source',
@@ -65,8 +64,10 @@ describe('dashboard document validation', () => {
     const dashboardNextIds = new Set(['home', 'work', 'agents', 'evidence', 'insights']);
 
     for (const page of document.dashboard.pages) {
-      const views = page.definition?.views ?? page.views ?? page.sections?.flatMap((section) => section.views) ?? [];
-      for (const view of views.filter((candidate) => typeof candidate === 'object')) {
+      const views = page.definition?.views ?? page.views ?? page.sections?.flatMap(
+        (/** @type {{ views: unknown[] }} */ section) => section.views
+      ) ?? [];
+      for (const view of views.filter((/** @type {unknown} */ candidate) => typeof candidate === 'object')) {
         if (collapsedTableIds.has(view.id)) expect(view.disclosure).toBe('supplemental');
         if (page.id === 'overview' || dashboardNextIds.has(page.id)) {
           expect(view.disclosure).not.toBe('supplemental');

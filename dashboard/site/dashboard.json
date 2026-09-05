@@ -1727,7 +1727,6 @@
             "controls": "interactive",
             "empty-message": "No MCP server activity was observed.",
             "layout": "full",
-            "disclosure": "essential",
             "encoding": {
               "columns": [
                 {
@@ -4916,7 +4915,6 @@
           "views": [
             {
               "id": "experiment-decision-summary",
-              "disclosure": "supplemental",
               "title": "Experiment decision summary",
               "description": "Counts experiment decisions for the current filters without treating workflow execution success as experiment success.",
               "data": {
