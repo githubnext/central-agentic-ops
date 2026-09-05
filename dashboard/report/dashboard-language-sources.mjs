@@ -181,6 +181,7 @@ export function githubTelemetryRows(entries = [], generatedAt = new Date().toISO
       "credential-type": entry.tokenType || "unknown",
       resource,
       bucket,
+      "maximum-lane": `${bucket} · max ${limit}`,
       "history-series": segment === 1 ? bucket : `${bucket} · segment ${segment}`,
       "has-history": false,
       limit,

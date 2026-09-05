@@ -27,6 +27,7 @@ function rateLimitRow(overrides = {}) {
     'credential-type': 'app',
     resource: 'core',
     bucket: 'core · reader',
+    'maximum-lane': 'core · reader · max 5000',
     'history-series': 'core · reader',
     'has-history': true,
     remaining: 4_875,
@@ -84,6 +85,7 @@ function renderApiPage(rateLimitSource = {
       'operation-execution-id': 'run-2',
       resource: 'search',
       bucket: 'search · reader',
+      'maximum-lane': 'search · reader · max 30',
       'history-series': 'search · reader',
       remaining: 3,
       limit: 30,
@@ -185,7 +187,7 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'supplemental')).toHaveLength(5);
     expect(apiPage.views[0]).toMatchObject({
       id: 'github-api-remaining-trend',
-      chart: 'line',
+      chart: 'scatter',
       table: true
     });
     expect(apiPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-remaining-capacity')).toMatchObject({
@@ -198,16 +200,17 @@ describe('GitHub API rate-limit dashboard', () => {
       encoding: { value: expect.objectContaining({ aggregate: 'count' }) }
     });
     expect(apiPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-remaining-trend')).toMatchObject({
-      chart: 'line',
+      chart: 'scatter',
       table: true,
       encoding: {
         y: expect.objectContaining({ field: 'remaining-percent', unit: 'percent' }),
-        color: expect.objectContaining({ field: 'history-series' })
+        color: expect.objectContaining({ field: 'maximum-lane' })
       }
     });
     expect(page?.querySelector('[aria-labelledby="github-api-remaining-capacity-heading"]')
       ?.querySelectorAll('.bar-chart-bar')).toHaveLength(2);
-    expect(page?.querySelectorAll('.line-chart-series')).toHaveLength(2);
+    expect(page?.querySelectorAll('.scatter-chart-point')).toHaveLength(3);
+    expect(page?.querySelector('.line-chart-series')).toBeNull();
     expect(page?.textContent).toContain('At-risk buckets');
     expect(page?.textContent).toContain('1');
     expect(page?.textContent).toContain('4875');
@@ -276,7 +279,7 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(page?.textContent).not.toContain('0.0 %');
   });
 
-  it('shows sparse quota history as unavailable instead of drawing overlapping single-point series', () => {
+  it('shows sparse quota observations as independent scatter points', () => {
     const observedAt = '2026-09-04T12:00:00Z';
     const { page } = renderApiPage({
       source: 'github-api-rate-limits',
@@ -297,8 +300,9 @@ describe('GitHub API rate-limit dashboard', () => {
       .find((heading) => heading.textContent === 'Quota history');
     const history = historyHeading?.closest('section');
 
-    expect(history?.textContent).toContain('Quota history is unavailable until at least two observations exist');
-    expect(history?.querySelector('.chart-legend')).toBeNull();
+    expect(history?.textContent).not.toContain('No quota observations are available');
+    expect(history?.querySelector('.chart-legend')).not.toBeNull();
+    expect(history?.querySelectorAll('.scatter-chart-point')).toHaveLength(2);
     expect(history?.querySelector('.line-chart-series')).toBeNull();
   });
 });

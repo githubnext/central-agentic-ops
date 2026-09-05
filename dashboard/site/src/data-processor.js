@@ -1,5 +1,6 @@
 import { tidy } from './data-operations.js';
 import { summarizeTableColumns } from './table-summary-data.js';
+import { clusterScatterPoints } from './scatter-clustering.js';
 
 /** @type {Worker | null} */
 let worker = null;
@@ -29,6 +30,18 @@ export function processTableSummaries(columns) {
   return processRequest(
     { operation: 'summarize-table-columns', columns },
     () => summarizeTableColumns(columns)
+  );
+}
+
+/**
+ * @param {import('./scatter-clustering.js').ScatterPoint[]} points
+ * @param {number} limit
+ * @returns {import('./scatter-clustering.js').ScatterPoint[]|Promise<import('./scatter-clustering.js').ScatterPoint[]>}
+ */
+export function processScatterPoints(points, limit) {
+  return processRequest(
+    { operation: 'cluster-scatter-points', data: points, limit },
+    () => clusterScatterPoints(points, limit)
   );
 }
 
