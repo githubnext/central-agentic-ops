@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIdentityLink, renderLabeledControl, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -134,6 +134,22 @@ describe('ui primitives', () => {
     expect(rendered.tagName).toBe('I');
     expect(rendered.className).toBe('chart-series-a');
     expect(rendered.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('renders the shared icon span with the requested class and a single octicon', () => {
+    const rendered = renderIconSpan('signal-icon', 'check-circle');
+
+    expect(rendered.tagName).toBe('SPAN');
+    expect(rendered.className).toBe('signal-icon');
+    expect(rendered.hasAttribute('aria-hidden')).toBe(false);
+    expect(rendered.querySelector('svg use')?.getAttribute('href')).toContain('#octicon-check-circle');
+  });
+
+  it('renders the shared icon span with aria-hidden when requested', () => {
+    const rendered = renderIconSpan('readiness-verdict-icon', 'x-circle', { ariaHidden: true });
+
+    expect(rendered.getAttribute('aria-hidden')).toBe('true');
+    expect(rendered.querySelector('svg use')?.getAttribute('href')).toContain('#octicon-x-circle');
   });
 
   it('renders the shared close/dismiss icon button with matching title and aria-label text', () => {

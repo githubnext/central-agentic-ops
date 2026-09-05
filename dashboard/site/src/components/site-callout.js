@@ -3,8 +3,7 @@
  */
 
 import { h } from '../dom.js';
-import { octicon } from '../octicons.js';
-import { renderCloseButton } from './ui-primitives.js';
+import { renderCloseButton, renderIconSpan } from './ui-primitives.js';
 
 const dismissedCalloutIds = new Set();
 
@@ -50,11 +49,7 @@ export function renderSiteCallout(callout) {
       'aria-describedby': descriptionId,
       'data-site-callout': callout.id
     },
-    h(
-      'span',
-      { className: 'site-callout-icon' },
-      octicon(typeof callout.icon === 'string' ? callout.icon : 'info')
-    ),
+    renderIconSpan('site-callout-icon', typeof callout.icon === 'string' ? callout.icon : 'info'),
     h(
       'span',
       { className: 'site-callout-content' },

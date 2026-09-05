@@ -8,7 +8,7 @@ import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
-import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow } from './ui-primitives.js';
+import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, renderIconSpan } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -100,7 +100,7 @@ function renderDomainAttentionElement(context) {
         h(
           'header',
           null,
-          h('span', { className: 'attention-domain-icon' }, octicon(stringValue(row.icon))),
+          renderIconSpan('attention-domain-icon', stringValue(row.icon)),
           h('strong', null, stringValue(row.domain)),
           h('span', { className: 'attention-domain-state' }, stringValue(row.state))
         ),
@@ -316,7 +316,7 @@ function renderReadinessVerdictElement(context) {
       h('div', { className: 'readiness-hero' },
         h('small', null, 'Control-plane readiness'),
         h('div', { className: 'readiness-state' },
-          h('span', { className: 'readiness-verdict-icon', 'aria-hidden': 'true' }, octicon(icon)),
+          renderIconSpan('readiness-verdict-icon', icon, { ariaHidden: true }),
           h('strong', null, stateLabel)
         ),
         h('p', null, tone === 'ready'
@@ -446,7 +446,7 @@ function renderSignalListElement(context) {
         : [h(
           'li',
           { className: 'signal-clear' },
-          h('span', { className: 'signal-icon' }, octicon('check-circle')),
+          renderIconSpan('signal-icon', 'check-circle'),
           h('span', { className: 'signal-copy' }, h('strong', null, 'No signals require attention'))
         )])
     )
@@ -465,7 +465,7 @@ function renderSignal(row, index) {
   const kind = stringValue(row.kind);
   const content = [
     h('span', { className: 'signal-rank', 'aria-hidden': 'true' }, String(index + 1)),
-    h('span', { className: 'signal-icon' }, octicon(stringValue(row.icon) || 'issue')),
+    renderIconSpan('signal-icon', stringValue(row.icon) || 'issue'),
     h(
       'span',
       { className: 'signal-copy' },
