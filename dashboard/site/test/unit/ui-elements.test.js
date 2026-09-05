@@ -346,7 +346,7 @@ describe('UI elements', () => {
       pageId: 'outcome-detail',
       title: 'Outcome metadata',
       sourceNames: ['outcomes'],
-      elementConfig: { section: 'outcome-detail-section', body: 'metadata' },
+      elementConfig: { body: 'metadata' },
       scope: { 'safe-output': 'outcome-1' },
       headingTag: 'h3',
       contextDetails: [],
