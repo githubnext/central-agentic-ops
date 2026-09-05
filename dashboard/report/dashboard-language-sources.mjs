@@ -1091,7 +1091,10 @@ function mcpServerRows(usage) {
         "max-response-bytes": 0,
       }];
     }
-    const failures = new Set((mcp.failures || []).map((failure) => failure.serverName));
+    const failureCounts = new Map();
+    for (const failure of mcp.failures || []) {
+      failureCounts.set(failure.serverName, (failureCounts.get(failure.serverName) || 0) + 1);
+    }
     const servers = new Map((mcp.servers || []).map((server) => [server.serverName, { ...server }]));
     const reportedServers = new Set(servers.keys());
     for (const call of mcp.calls || []) {
@@ -1112,9 +1115,9 @@ function mcpServerRows(usage) {
         servers.set(call.serverName, server);
       }
     }
-    for (const failure of mcp.failures || []) {
-      const server = servers.get(failure.serverName) || {
-        serverName: failure.serverName,
+    for (const [serverName, failureCount] of failureCounts) {
+      const server = servers.get(serverName) || {
+        serverName,
         serverVersion: "",
         protocolVersion: "",
         toolCallCount: 0,
@@ -1122,8 +1125,8 @@ function mcpServerRows(usage) {
         totalOutputSize: 0,
         maxOutputSize: 0,
       };
-      server.errorCount += 1;
-      servers.set(failure.serverName, server);
+      server.errorCount = Math.max(server.errorCount, failureCount);
+      servers.set(serverName, server);
     }
     return [...servers.values()].map((server) => ({
       ...base,

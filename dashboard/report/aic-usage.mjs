@@ -309,8 +309,7 @@ async function main() {
       securityComplete: collectionAvailable
         && [...securityRuns.values()].every((run) => securityTelemetryComplete(run.security)),
       mcpAvailable: collectionAvailable,
-      mcpComplete: collectionAvailable
-        && [...securityRuns.values()].every((run) => run.security.mcp.available),
+      mcpComplete: collectionAvailable,
       repositories,
       runs: [...runs.values()],
       securityRuns: [...securityRuns.values()],

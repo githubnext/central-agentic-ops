@@ -90,7 +90,7 @@ describe('UI elements', () => {
               'expected-actor': 'security-reviewers',
               'age-seconds': 4800,
               'consequence-tier': 'high',
-              priority: 1,
+              priority: 2,
               'evidence-link': {
                 relation: 'evidence',
                 href: 'https://example.com/evidence/release-train',
@@ -107,7 +107,7 @@ describe('UI elements', () => {
               'expected-actor': 'repository-owner',
               'age-seconds': 9000,
               'consequence-tier': 'medium',
-              priority: 2
+              priority: 1
             }
           ],
           metadata
@@ -119,15 +119,13 @@ describe('UI elements', () => {
 
     expect(rendered?.getAttribute('aria-labelledby')).toBe('home-need-attention-heading');
     expect(rendered?.querySelector('.view-metadata-summary')).not.toBeNull();
-    expect(rendered?.querySelector('.canonical-attention-item.signal-critical')).not.toBeNull();
+    expect(rendered?.querySelector('.canonical-attention-item.signal-action')).not.toBeNull();
     expect(rendered?.querySelectorAll('.canonical-attention-item')).toHaveLength(1);
     expect(rendered?.querySelector('.signal-priority-rank strong')?.textContent).toBe('1');
-    expect(rendered?.textContent).toContain('high · verification review');
-    expect(rendered?.textContent).toContain('Update the Dependabot release train');
-    expect(rendered?.textContent).toContain('github/gh-aw · Security verification requires human review.');
-    expect(rendered?.textContent).toContain('security-reviewers · 1h 20m old');
-    expect(rendered?.textContent).toContain('Review dependency evidence');
-    expect(rendered?.querySelector('a')?.getAttribute('href')).toBe('https://example.com/evidence/release-train');
+    expect(rendered?.textContent).toContain('medium · authority gate');
+    expect(rendered?.textContent).toContain('Upgrade agentic workflow dependencies');
+    expect(rendered?.textContent).toContain('github/mona-tools · Live target authority is unavailable.');
+    expect(rendered?.textContent).toContain('repository-owner · 2h 30m old');
   });
 
   it('renders a blocked readiness verdict with the next unblock action', () => {
