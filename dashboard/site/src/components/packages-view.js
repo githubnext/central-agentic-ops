@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { pluralSuffix, titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage, renderIdentityLink, renderPanelHeader } from './ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage, renderIdentityLink, renderLegendSwatch, renderPanelHeader } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 import { rowsFor } from './source-rows.js';
 
@@ -561,7 +561,7 @@ function renderUnavailableRunTrend(heading, headingId, message) {
  * @returns {HTMLElement}
  */
 function renderLegendItem(status, label) {
-  return h('span', null, h('i', { className: `package-legend-${status}`, 'aria-hidden': 'true' }), label);
+  return h('span', null, renderLegendSwatch(`package-legend-${status}`), label);
 }
 
 /**
