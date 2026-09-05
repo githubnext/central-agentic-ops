@@ -1,4 +1,4 @@
-const DEFAULT_MAX_SCATTER_CLUSTERS = 400;
+export const MAX_RENDERED_SCATTER_POINTS = 400;
 
 /**
  * @typedef {{
@@ -18,7 +18,7 @@ const DEFAULT_MAX_SCATTER_CLUSTERS = 400;
  * @param {number} [maximumClusters]
  * @returns {ScatterPoint[]}
  */
-export function clusterScatterPoints(points, maximumClusters = DEFAULT_MAX_SCATTER_CLUSTERS) {
+export function clusterScatterPoints(points, maximumClusters = MAX_RENDERED_SCATTER_POINTS) {
   const limit = Math.max(1, Math.floor(maximumClusters));
   if (points.length <= limit) return points;
 

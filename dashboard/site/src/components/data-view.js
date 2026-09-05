@@ -14,6 +14,7 @@ import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 import { renderCloseButton, isPlainObject } from './ui-primitives.js';
 import { processScatterPoints } from '../data-processor.js';
+import { MAX_RENDERED_SCATTER_POINTS } from '../scatter-clustering.js';
 
 /** @type {Record<string, 'organization-link'|'repository-link'|'workflow-link'>} */
 const ENTITY_LINK_FIELDS = {
@@ -25,7 +26,6 @@ const ENTITY_LINK_FIELDS = {
 };
 const RUN_FIELD = 'run';
 const RUN_LINK_FIELD = 'run-link';
-const MAX_RENDERED_SCATTER_POINTS = 400;
 
 /**
  * @typedef {{ field: string, aggregate?: string, as?: string, direction?: string, display?: string } & Record<string, unknown>} TableField

@@ -17,7 +17,11 @@ export function processDataRequest(request) {
     if (!Array.isArray(request.data)) {
       throw new TypeError('Scatter clustering requests require a data array.');
     }
-    return clusterScatterPoints(request.data, Number(request.limit));
+    const limit = Number(request.limit);
+    if (!Number.isSafeInteger(limit) || limit <= 0) {
+      throw new TypeError('Scatter clustering requests require a positive integer limit.');
+    }
+    return clusterScatterPoints(request.data, limit);
   }
   if (!Array.isArray(request?.data) || !Array.isArray(request?.operators)) {
     throw new TypeError('Data worker requests require data and operators arrays.');

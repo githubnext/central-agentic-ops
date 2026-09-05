@@ -56,6 +56,10 @@ describe('dashboard data operations', () => {
     expect(() => tidy(rows, [/** @type {any} */ ({ op: 'execute' })])).toThrow(
       'Unsupported data operator: execute'
     );
+    expect(() => processDataRequest({
+      operation: 'cluster-scatter-points',
+      data: rows
+    })).toThrow('Scatter clustering requests require a positive integer limit.');
   });
 
   it('computes table statistics and histogram bins through the worker request boundary', () => {
