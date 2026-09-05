@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { renderDashboard } from '../../src/presenter.js';
 
@@ -66,7 +66,7 @@ function rateLimitRow(overrides = {}) {
  * }} [rateLimitSource]
  * @param {Array<Record<string, unknown>>} [stackRows]
  */
-function renderApiPage(rateLimitSource = {
+async function renderApiPage(rateLimitSource = {
   source: 'github-api-rate-limits',
   metadata,
   rows: [
@@ -159,7 +159,11 @@ function renderApiPage(rateLimitSource = {
   });
   rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="github-api"]'));
+  expect(link).not.toBeNull();
   link?.click();
+  await vi.waitFor(() => {
+    expect(rendered.querySelector('[data-page-id="github-api"]')?.hasAttribute('data-page-pending')).toBe(false);
+  });
   return {
     rendered,
     link,
@@ -168,8 +172,8 @@ function renderApiPage(rateLimitSource = {
 }
 
 describe('GitHub API rate-limit dashboard', () => {
-  it('renders four essential operational views with accessible capacity evidence', () => {
-    const { link, page } = renderApiPage();
+  it('renders four essential operational views with accessible capacity evidence', async () => {
+    const { link, page } = await renderApiPage();
     const apiPage = dashboard.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'github-api');
 
     expect(link).not.toBeNull();
@@ -220,8 +224,8 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(page?.textContent).toContain('As ofSep 4, 2026, 1:00 PM');
   });
 
-  it('keeps raw quota and collector/cache diagnostics supplemental and distinct', () => {
-    const { page } = renderApiPage();
+  it('keeps raw quota and collector/cache diagnostics supplemental and distinct', async () => {
+    const { page } = await renderApiPage();
     const supplemental = [...(page?.querySelectorAll('details[data-disclosure="supplemental"]') ?? [])];
 
     expect(supplemental).toHaveLength(5);
@@ -240,8 +244,8 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(stackTable?.textContent).toContain('activity/github-telemetry.mjs:100:16');
   });
 
-  it('keeps call-stack rows with missing tree ids as independent roots', () => {
-    const { page } = renderApiPage(undefined, [
+  it('keeps call-stack rows with missing tree ids as independent roots', async () => {
+    const { page } = await renderApiPage(undefined, [
       { 'stack-frame': 'missing id root one', 'stack-parent-id': '' },
       { 'stack-frame': 'missing id root two', 'stack-parent-id': '' },
       { 'stack-frame': 'parent row', 'stack-frame-id': 'parent', 'stack-parent-id': '' },
@@ -259,7 +263,7 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(levelFor('orphan row')).toBe('1');
   });
 
-  it('exposes stale, partial, unavailable, and empty source states without fabricated quota values', () => {
+  it('exposes stale, partial, unavailable, and empty source states without fabricated quota values', async () => {
     const stalePartial = {
       source: 'github-api-rate-limits',
       metadata: {
@@ -270,7 +274,7 @@ describe('GitHub API rate-limit dashboard', () => {
       },
       rows: []
     };
-    const { page } = renderApiPage(stalePartial);
+    const { page } = await renderApiPage(stalePartial);
 
     expect(page?.textContent).toContain('This view is unavailable.');
     expect(page?.textContent).toContain('Affected source: github-api-rate-limits');
@@ -279,9 +283,9 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(page?.textContent).not.toContain('0.0 %');
   });
 
-  it('shows sparse quota observations as independent scatter points', () => {
+  it('shows sparse quota observations as independent scatter points', async () => {
     const observedAt = '2026-09-04T12:00:00Z';
-    const { page } = renderApiPage({
+    const { page } = await renderApiPage({
       source: 'github-api-rate-limits',
       metadata,
       rows: [
