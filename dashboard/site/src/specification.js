@@ -493,8 +493,7 @@ export const ADDITIVE_MEASURE_FIELDS = [
   'response-bytes',
   'tool-calls',
   'failed-calls',
-  'total-response-bytes',
-  'max-response-bytes'
+  'total-response-bytes'
 ];
 
 export const NON_ADDITIVE_MEASURE_FIELDS = [
@@ -510,6 +509,7 @@ export const NON_ADDITIVE_MEASURE_FIELDS = [
   'projected-remaining-at-reset',
   'runway-ratio',
   'operation-consumed',
+  'max-response-bytes'
 ];
 
 export const ERROR_CODES = {

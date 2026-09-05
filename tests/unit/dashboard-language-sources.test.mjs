@@ -640,6 +640,79 @@ test("dashboard source bridge detects rollout mode from run titles with punctuat
   assert.equal(sources.runs.rows[0]["rollout-mode"], "review");
 });
 
+test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavailable and correctly counts mcp failures", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-03T06:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [],
+    },
+    usage: {
+      available: true,
+      complete: true,
+      securityAvailable: true,
+      securityComplete: true,
+      runs: [],
+      securityRuns: [
+        {
+          repository: "githubnext/gh-aw-cao",
+          workflowName: "Security",
+          workflowPath: ".github/workflows/security.lock.yml",
+          runId: 101,
+          mode: "review",
+          createdAt: "2026-09-03T05:00:00Z",
+          security: {
+            accessControl: { available: false, fileDenials: {}, toolDenials: {} },
+            firewall: { available: false },
+            integrity: { available: false, totalToolCalls: 0, summary: {} },
+            mcp: { available: false, cliVersion: null, servers: [], calls: [], failures: [] },
+            threatDetection: { available: false },
+          },
+        },
+        {
+          repository: "githubnext/gh-aw-cao",
+          workflowName: "Security",
+          workflowPath: ".github/workflows/security.lock.yml",
+          runId: 102,
+          mode: "review",
+          createdAt: "2026-09-03T05:00:00Z",
+          security: {
+            accessControl: { available: false, fileDenials: {}, toolDenials: {} },
+            firewall: { available: false },
+            integrity: { available: false, totalToolCalls: 0, summary: {} },
+            mcp: {
+              available: true,
+              cliVersion: "0.88.0",
+              servers: [{
+                serverName: "playwright",
+                serverVersion: "1.0.0",
+                protocolVersion: "2025-06-18",
+                toolCallCount: 0,
+                errorCount: 0,
+                totalOutputSize: 0,
+                maxOutputSize: 0,
+              }],
+              calls: [],
+              failures: [{ serverName: "playwright", status: "failure" }],
+            },
+            threatDetection: { available: false },
+          },
+        },
+      ],
+    },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+  });
+
+  assert.equal(sources["mcp-calls"].rows.filter((row) => row.run === "101").length, 0);
+
+  const serverRow = sources["mcp-servers"].rows.find((row) => row.run === "102");
+  assert.equal(serverRow["mcp-status"], "failure");
+  assert.equal(serverRow["failed-calls"], 1);
+});
+
 test("dashboard source bridge exposes run and job performance dimensions", () => {
   const sources = buildDashboardLanguageSources({
     deployed: {

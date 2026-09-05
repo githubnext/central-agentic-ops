@@ -897,16 +897,7 @@ function mcpCallRows(usage) {
     const mcp = run.security?.mcp;
     const base = mcpBase(run);
     if (!mcp?.available) {
-      return [{
-        ...base,
-        "mcp-observation": `${run.repository}:${run.runId}:missing`,
-        "mcp-server": "unknown",
-        "mcp-server-version": "unknown",
-        "mcp-protocol-version": "unknown",
-        "mcp-tool": "unknown",
-        "mcp-status": "missing",
-        "response-bytes": null,
-      }];
+      return [];
     }
     const versions = new Map((mcp.servers || []).map((server) => [server.serverName, server]));
     const calls = (mcp.calls || []).map((call, index) => {
@@ -977,17 +968,17 @@ function mcpServerRows(usage) {
       }
     }
     for (const failure of mcp.failures || []) {
-      if (!servers.has(failure.serverName)) {
-        servers.set(failure.serverName, {
-          serverName: failure.serverName,
-          serverVersion: "",
-          protocolVersion: "",
-          toolCallCount: 0,
-          errorCount: 1,
-          totalOutputSize: 0,
-          maxOutputSize: 0,
-        });
-      }
+      const server = servers.get(failure.serverName) || {
+        serverName: failure.serverName,
+        serverVersion: "",
+        protocolVersion: "",
+        toolCallCount: 0,
+        errorCount: 0,
+        totalOutputSize: 0,
+        maxOutputSize: 0,
+      };
+      server.errorCount += 1;
+      servers.set(failure.serverName, server);
     }
     return [...servers.values()].map((server) => ({
       ...base,
@@ -995,7 +986,7 @@ function mcpServerRows(usage) {
       "mcp-server": server.serverName || "unknown",
       "mcp-server-version": server.serverVersion || "unknown",
       "mcp-protocol-version": server.protocolVersion || "unknown",
-      "mcp-status": server.errorCount > 0 || failures.has(server.serverName) ? "failure" : "success",
+      "mcp-status": server.errorCount > 0 ? "failure" : "success",
       "tool-calls": positiveCount(server.toolCallCount),
       "failed-calls": positiveCount(server.errorCount),
       "total-response-bytes": positiveCount(server.totalOutputSize),

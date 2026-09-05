@@ -134,7 +134,9 @@ export async function readRunSecurityTelemetry(outputDirectory, runId) {
             serverName: firstText(call?.server_name),
             toolName: firstText(call?.tool_name),
             status: firstText(call?.status),
-            outputSize: Math.max(0, Number(call?.output_size) || 0),
+            outputSize: call?.output_size != null && Number.isFinite(Number(call.output_size))
+              ? Math.max(0, Number(call.output_size))
+              : null,
           })).filter((call) => call.serverName || call.toolName)
           : [];
         const integrity = toolUsage.integrity;

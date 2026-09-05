@@ -122,3 +122,27 @@ test("dashboard telemetry keeps absent MCP usage unavailable when the failure li
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("dashboard telemetry preserves missing tool_call output_size as null", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "dashboard-security-"));
+  const runDirectory = path.join(root, "run-44");
+  await mkdir(runDirectory, { recursive: true });
+  try {
+    await writeFile(path.join(runDirectory, "run_summary.json"), JSON.stringify({
+      cli_version: "0.88.0",
+      mcp_tool_usage: {
+        tool_calls: [{
+          timestamp: "2026-09-03T05:01:00Z",
+          server_name: "github",
+          tool_name: "get_file",
+          status: "success",
+        }],
+      },
+    }));
+
+    const telemetry = await readRunSecurityTelemetry(root, 44);
+    assert.equal(telemetry.mcp.calls[0].outputSize, null);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
