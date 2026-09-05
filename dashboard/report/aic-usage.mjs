@@ -133,7 +133,7 @@ function firewallDecision(entry) {
   const status = Number(entry?.status);
   const decision = String(entry?.decision || "").toUpperCase();
   if ([200, 206, 304].includes(status) || /TCP_(?:TUNNEL|HIT|MISS)/.test(decision)) return "allowed";
-  if ([403, 407].includes(status) || /(?:NONE_NONE|TCP_DENIED)/.test(decision)) return "denied";
+  if ([403, 407].includes(status) || /TCP_DENIED/.test(decision)) return "denied";
   return "unknown";
 }
 
