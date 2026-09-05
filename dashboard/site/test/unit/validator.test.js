@@ -375,6 +375,36 @@ dashboard:
     }
   });
 
+  it('rejects workflow-route config.body and config.layout together', () => {
+    const invalid = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: workflow-route-layout
+  title: Workflow route layout
+  pages:
+    - id: workflow-page
+      kind: custom
+      title: Workflow page
+      route:
+        hash-query-parameter: workflow
+      views:
+        - id: workflow-shell
+          data:
+            sources: [workflows]
+          mark: element
+          element: workflow-route
+          config:
+            body: insights
+            layout: metrics
+`);
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[0].views[0].config'
+      }));
+    }
+  });
+
   it('accepts every package dashboard document', () => {
     for (const source of packageDashboardSources) {
       expect(validateDashboardDocument(source).ok).toBe(true);

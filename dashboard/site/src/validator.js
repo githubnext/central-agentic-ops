@@ -1564,6 +1564,13 @@ function validateView(view, viewNode, path, viewIds, errors) {
       const configNode = getValueNodeByKey(viewNode, 'config');
       validateObjectKeys(configNode, VIEW_ELEMENT_CONFIG_KEYS, `${path}.config`, errors);
       if (view.element === 'workflow-route') {
+        if (view.config.body !== undefined && view.config.layout !== undefined) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            'workflow-route config.body and config.layout are mutually exclusive.',
+            `${path}.config`
+          ));
+        }
         if (view.config.body !== undefined) {
           validateStringField(view.config.body, `${path}.config.body`, true, errors);
           if (typeof view.config.body === 'string' && !WORKFLOW_ROUTE_BODY_VALUES.includes(view.config.body)) {
