@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  isWithinCopilotFileRoots,
   shellPermissionRejection,
   startDashboardServer,
 } from "../../dashboard/local-server.mjs";
@@ -64,6 +65,12 @@ test("Copilot shell policy allows safe text tools and rejects mutating sed", () 
     }),
     /redirection/,
   );
+});
+
+test("Copilot file roots include the workspace and system temporary directory", () => {
+  assert.equal(isWithinCopilotFileRoots("/workspace", "/tmp", "/workspace/dashboard.json"), true);
+  assert.equal(isWithinCopilotFileRoots("/workspace", "/tmp", "/tmp/copilot-notes.json"), true);
+  assert.equal(isWithinCopilotFileRoots("/workspace", "/tmp", "/etc/passwd"), false);
 });
 
 async function openDashboardSocket(previewUrl) {

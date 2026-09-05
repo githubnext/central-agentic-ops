@@ -18,6 +18,7 @@ import {
 import { existsSync, watch } from "node:fs";
 import { createRequire } from "node:module";
 import { isIP } from "node:net";
+import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import {
   basename,
@@ -861,6 +862,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
       };
       if (!entry) try {
         const workspaceRoot = await canonicalPath(workingDirectory);
+        const temporaryRoot = await canonicalPath(tmpdir());
         const workspacePath = (path) => canonicalPath(
           isAbsolute(path) ? path : join(workspaceRoot, path),
         );
@@ -887,7 +889,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           onPermissionRequest: async (permission) => {
             let decision = {
               kind: "reject",
-              feedback: "This session permits workspace file reads and writes, plus common read-only shell commands.",
+              feedback: "This session permits file reads and writes in the workspace and temporary directory, plus common safe shell commands.",
             };
             let reason = "unsupported permission kind";
             try {
@@ -897,19 +899,19 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
                 reason = "managed policy requires human approval";
               } else if (permission.kind === "read") {
                 const requestedPath = await workspacePath(permission.path);
-                if (isWithin(workspaceRoot, requestedPath)) {
+                if (isWithinCopilotFileRoots(workspaceRoot, temporaryRoot, requestedPath)) {
                   decision = { kind: "approve-once" };
-                  reason = "workspace read";
+                  reason = isWithin(temporaryRoot, requestedPath) ? "temporary directory read" : "workspace read";
                 } else {
-                  reason = "read path is outside workspace";
+                  reason = "read path is outside workspace and temporary directory";
                 }
               } else if (permission.kind === "write") {
                 const requestedPath = await workspacePath(permission.fileName);
-                if (isWithin(workspaceRoot, requestedPath)) {
+                if (isWithinCopilotFileRoots(workspaceRoot, temporaryRoot, requestedPath)) {
                   decision = { kind: "approve-once" };
-                  reason = "workspace write";
+                  reason = isWithin(temporaryRoot, requestedPath) ? "temporary directory write" : "workspace write";
                 } else {
-                  reason = "write path is outside workspace";
+                  reason = "write path is outside workspace and temporary directory";
                 }
               } else if (permission.kind === "shell") {
                 const rejection = shellPermissionRejection(permission);
@@ -919,11 +921,12 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
                   const possiblePaths = await Promise.all(
                     shellAbsolutePaths(permission).map(workspacePath),
                   );
-                  if (possiblePaths.every((path) => isWithin(workspaceRoot, path))) {
+                  if (possiblePaths.every((path) =>
+                    isWithinCopilotFileRoots(workspaceRoot, temporaryRoot, path))) {
                     decision = { kind: "approve-once" };
-                    reason = "allowlisted read-only shell command";
+                    reason = "allowlisted safe shell command";
                   } else {
-                    reason = "shell path is outside workspace";
+                    reason = "shell path is outside workspace and temporary directory";
                   }
                 }
               }
@@ -1006,7 +1009,7 @@ The original dashboard source most likely defining this view is ${JSON.stringify
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON dashboard changes are supported. You may inspect files in the workspace, search with grep, and use common read-only shell commands to understand existing data, conventions, and related dashboards. Workspace read and write tools are available, but modify only the selected dashboard.json. Do not create, read, or write files under /tmp; use repository files and the dashboard-specific tools instead. Use read_dashboard_language_reference when language vocabulary is needed, then use read_current_dashboard_view and validate_current_dashboard_view to inspect and validate the selected page. Prefer save_current_dashboard_view for the final write, then run validate_dashboard_json. Do not finish until validate_dashboard_json returns ok: true.
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON dashboard changes are supported. You may inspect files in the workspace, search with grep, and use common safe shell commands to understand existing data, conventions, and related dashboards. Read, write, and shell access are available in the workspace and under ${JSON.stringify(tmpdir())}; use the temporary directory only for disposable intermediate files. Modify application state only through the selected dashboard.json. Use read_dashboard_language_reference when language vocabulary is needed, then use read_current_dashboard_view and validate_current_dashboard_view to inspect and validate the selected page. Prefer save_current_dashboard_view for the final write, then run validate_dashboard_json. Do not finish until validate_dashboard_json returns ok: true.
 
 JavaScript, HTML, CSS, and all other application files are outside this session's scope. Do not propose or attempt changes to them because they require a full application reload; make the requested improvement only through the selected dashboard.json page.
 
@@ -1119,6 +1122,10 @@ ${validationErrors}`,
 function isWithin(root, candidate) {
   const path = relative(root, candidate);
   return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path));
+}
+
+export function isWithinCopilotFileRoots(workspaceRoot, temporaryRoot, candidate) {
+  return isWithin(workspaceRoot, candidate) || isWithin(temporaryRoot, candidate);
 }
 
 function websocketTextFrame(content) {
