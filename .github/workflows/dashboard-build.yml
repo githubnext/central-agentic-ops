@@ -110,7 +110,9 @@ jobs:
 
       - name: Restore recent GitHub API telemetry
         # prepare reads prior history from dashboard data and writes the active ledger to CAO_GH_LEDGER.
-        run: node "$GITHUB_TELEMETRY" prepare "$RUNNER_TEMP/cao-dashboard-data/cao-gh.jsonl"
+        run: |
+          mkdir -p "$(dirname "$CAO_GH_LEDGER")"
+          node "$GITHUB_TELEMETRY" prepare "$RUNNER_TEMP/cao-dashboard-data/cao-gh.jsonl"
 
       - name: Resolve authoritative control policy
         env:
@@ -258,6 +260,7 @@ jobs:
         run: cp "$CAO_GH_LEDGER" "$RUNNER_TEMP/cao-dashboard-data/cao-gh.jsonl"
 
       - name: Save dashboard data cache
+        # Do not replace the last complete transformed snapshot after a collector failure.
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/cao-dashboard-data
