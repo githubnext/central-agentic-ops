@@ -739,9 +739,20 @@ test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavail
                 errorCount: 1,
                 totalOutputSize: 0,
                 maxOutputSize: 0,
+              }, {
+                serverName: "github",
+                serverVersion: "1.2.3",
+                protocolVersion: "2025-06-18",
+                toolCallCount: 0,
+                errorCount: 0,
+                totalOutputSize: 0,
+                maxOutputSize: 0,
               }],
               calls: [],
-              failures: [{ serverName: "playwright", status: "failure" }],
+              failures: [
+                { serverName: "playwright", status: "failure" },
+                { serverName: "github", status: "failure" },
+              ],
             },
             threatDetection: { available: false },
           },
@@ -754,9 +765,9 @@ test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavail
 
   assert.equal(sources["mcp-calls"].rows.filter((row) => row.run === "101").length, 0);
 
-  const serverRow = sources["mcp-servers"].rows.find((row) => row.run === "102");
-  assert.equal(serverRow["mcp-status"], "failure");
-  assert.equal(serverRow["failed-calls"], 1);
+  const serverRows = sources["mcp-servers"].rows.filter((row) => row.run === "102");
+  assert.equal(serverRows.find((row) => row["mcp-server"] === "playwright")["failed-calls"], 1);
+  assert.equal(serverRows.find((row) => row["mcp-server"] === "github")["failed-calls"], 1);
 });
 
 test("dashboard source bridge exposes run and job performance dimensions", () => {

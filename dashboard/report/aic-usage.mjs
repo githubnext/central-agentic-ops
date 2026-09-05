@@ -298,6 +298,7 @@ async function main() {
       };
     });
 
+    const securityRunValues = [...securityRuns.values()];
     const usage = {
       schemaVersion: 3,
       generatedAt: new Date().toISOString(),
@@ -307,13 +308,14 @@ async function main() {
       complete: repositories.every((entry) => entry.complete),
       securityAvailable: collectionAvailable,
       securityComplete: collectionAvailable
-        && [...securityRuns.values()].every((run) => securityTelemetryComplete(run.security)),
-      mcpAvailable: collectionAvailable,
+        && securityRunValues.every((run) => securityTelemetryComplete(run.security)),
+      mcpAvailable: collectionAvailable
+        && securityRunValues.some((run) => run.security.mcp.available),
       mcpComplete: collectionAvailable
         && repositories.every((entry) => entry.complete),
       repositories,
       runs: [...runs.values()],
-      securityRuns: [...securityRuns.values()],
+      securityRuns: securityRunValues,
     };
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, `${JSON.stringify(usage, null, 2)}\n`);
