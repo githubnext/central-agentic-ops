@@ -45,10 +45,12 @@ export const VIEW_ELEMENT_VALUES = [
   'package-detail',
   'package-dispatches',
   'package-reports',
+  'package-route',
   'workflow-route',
   'outcome-detail'
 ];
 export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
+export const PACKAGE_ROUTE_BODY_VALUES = ['insights', 'workflows', 'dispatches', 'reports'];
 export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];

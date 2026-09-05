@@ -1003,7 +1003,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                   title: 'Package operational value',
                   data: { sources: ['workflows', 'operational-values'] },
                   mark: 'element',
-                  element: 'package-insights'
+                  element: 'package-route',
+                  config: { body: 'insights' }
                 }
               ]
             },
@@ -1018,7 +1019,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                   title: 'Package workflows',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'package-detail'
+                  element: 'package-route',
+                  config: { body: 'workflows' }
                 },
                 {
                   id: 'package-workflow-table',
@@ -1051,7 +1053,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                   title: 'Package dispatches',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'package-dispatches'
+                  element: 'package-route',
+                  config: { body: 'dispatches' }
                 },
                 {
                   id: 'package-failure-reason-distribution',
@@ -1126,7 +1129,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                   title: 'Package reports',
                   data: { sources: ['workflows'] },
                   mark: 'element',
-                  element: 'package-reports'
+                  element: 'package-route',
+                  config: { body: 'reports' }
                 },
                 {
                   id: 'package-report-table',

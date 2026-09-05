@@ -75,6 +75,7 @@ import {
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
   VIEW_TITLE_LINK_KEYS,
+  PACKAGE_ROUTE_BODY_VALUES,
   WORKFLOW_ROUTE_BODY_VALUES,
   WORKFLOW_ACTIVE_VALUES,
   WORKFLOW_ROLE_VALUES
@@ -1614,21 +1615,24 @@ function validateView(view, viewNode, path, viewIds, errors) {
     } else {
       const configNode = getValueNodeByKey(viewNode, 'config');
       validateObjectKeys(configNode, VIEW_ELEMENT_CONFIG_KEYS, `${path}.config`, errors);
-      if (view.element === 'workflow-route' && view.config.body !== undefined) {
+      if ((view.element === 'workflow-route' || view.element === 'package-route') && view.config.body !== undefined) {
         validateStringField(view.config.body, `${path}.config.body`, true, errors);
-        if (typeof view.config.body === 'string' && !WORKFLOW_ROUTE_BODY_VALUES.includes(view.config.body)) {
-          errors.push(createError(
-            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
-            'workflow-route config.body must use one canonical route body value.',
-            `${path}.config.body`
-          ));
-        }
+       const allowedBodies = view.element === 'workflow-route'
+         ? WORKFLOW_ROUTE_BODY_VALUES
+         : PACKAGE_ROUTE_BODY_VALUES;
+       if (typeof view.config.body === 'string' && !allowedBodies.includes(view.config.body)) {
+         errors.push(createError(
+           ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+           `${view.element} config.body must use one canonical route body value.`,
+           `${path}.config.body`
+         ));
+       }
       } else if (view.config.body !== undefined) {
-        errors.push(createError(
-          ERROR_CODES.missingOrInvalidRequiredField,
-          'config.body is supported only for the workflow-route element.',
-          `${path}.config.body`
-        ));
+       errors.push(createError(
+         ERROR_CODES.missingOrInvalidRequiredField,
+         'config.body is supported only for the workflow-route and package-route elements.',
+         `${path}.config.body`
+       ));
       }
     }
   }

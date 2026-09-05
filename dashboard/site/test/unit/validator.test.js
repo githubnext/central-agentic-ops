@@ -338,6 +338,56 @@ dashboard:
     }
   });
 
+  it('accepts package-route config.body and rejects unsupported values', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: package-route-config
+  title: Package route config
+  pages:
+    - id: package-page
+      kind: custom
+      title: Package page
+      route:
+        hash-query-parameter: package
+      views:
+        - id: package-shell
+          data:
+            sources: [workflows]
+          mark: element
+          element: package-route
+          config:
+            body: dispatches
+`);
+    expect(accepted.ok).toBe(true);
+
+    const invalidBody = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: package-route-config
+  title: Package route config
+  pages:
+    - id: package-page
+      kind: custom
+      title: Package page
+      route:
+        hash-query-parameter: package
+      views:
+        - id: package-shell
+          data:
+            sources: [workflows]
+          mark: element
+          element: package-route
+          config:
+            body: runs
+`);
+    expect(invalidBody.ok).toBe(false);
+    if (!invalidBody.ok) {
+      expect(invalidBody.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[0].views[0].config.body'
+      }));
+    }
+  });
+
   it('accepts every package dashboard document', () => {
     for (const source of packageDashboardSources) {
       expect(validateDashboardDocument(source).ok).toBe(true);
