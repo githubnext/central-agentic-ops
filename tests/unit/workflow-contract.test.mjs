@@ -2727,6 +2727,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(activityWorkflow, /run-name: CAO Activity \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
   assert.match(activityWorkflow, /Resolve activity cache key[\s\S]*?cao-activity-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(buildWorkflow, /key: \$\{\{ format\('cao-activity-\{0\}-\{1\}', needs\.activity\.outputs\.run-id, needs\.activity\.outputs\.run-attempt\) \}\}/);
+  assert.match(buildWorkflow, /Restore collected activity data[\s\S]*?Refresh authoritative control policy[\s\S]*?control-settings\.mjs[\s\S]*?\.github\/workflows\/cao\.json[\s\S]*?Assemble Dashboard Language site/);
   assert.match(maintenanceWorkflow, /workflow_dispatch:[\s\S]*?command:[\s\S]*?clear-cache/);
   assert.match(maintenanceWorkflow, /permissions:[\s\S]*?actions: write/);
   assert.match(maintenanceWorkflow, /gh api --paginate[\s\S]*?gh cache delete/);
