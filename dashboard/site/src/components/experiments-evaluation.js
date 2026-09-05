@@ -92,9 +92,10 @@ function normalizeObservation(row, assignmentByRun, definition, sourceType) {
     role: upper(row.role || definition?.role || 'SECONDARY'),
     direction: text(row.direction || definition?.direction || 'higher_is_better'),
     unit: text(row.unit || definition?.unit || (sourceType === 'eval' ? 'answer' : 'raw')),
+    question: text(row.question || (definition && definition['eval-question'])),
     threshold: finite(row.threshold ?? definition?.threshold),
-    included: includedObservation(row),
-    exclusionReason: text(row['exclusion-reason'] || row.reason),
+    included: includedObservation(row) && includedAssignment(assignment),
+    exclusionReason: text(row['exclusion-reason'] || row.reason || assignment['exclusion-reason']),
     observedAt: text(row['observed-at']),
     evidenceLink: safeLink(row['evidence-link']) || safeLink(row['grader-link']) || safeLink(row['eval-link'])
   };
@@ -312,6 +313,7 @@ function metricSummaries(observations, control, candidate) {
       role: first.role,
       direction: first.direction,
       unit: first.unit,
+      question: first.question,
       threshold: first.threshold,
       controlValue,
       candidateValue,
@@ -369,7 +371,7 @@ function renderEvalOutcomes(metrics, experiment) {
         return h(
           'article',
           { className: 'eval-outcome' },
-          h('header', null, h('div', null, h('strong', null, metric.identifier), h('span', null, `${metric.candidateN + metric.controlN} usable · ${metric.excluded} excluded`)), renderEffect(metric.normalizedEffect)),
+          h('header', null, h('div', null, h('strong', null, metric.question || metric.identifier), h('span', null, `${metric.identifier} · ${metric.candidateN + metric.controlN} usable · ${metric.excluded} excluded`)), renderEffect(metric.normalizedEffect)),
           renderEvalBar(experiment.control, matching.filter((row) => row.variant === experiment.control)),
           renderEvalBar(experiment.candidate, matching.filter((row) => row.variant === experiment.candidate))
         );
@@ -630,6 +632,11 @@ function includedObservation(row) {
   if (row.included === false || text(row.included).toLowerCase() === 'no') return false;
   if (row['exclusion-reason']) return false;
   return !['missing', 'failed', 'error', 'unavailable'].includes(text(row.status).toLowerCase());
+}
+
+function includedAssignment(row) {
+  if (row.included === false || text(row.included).toLowerCase() === 'no') return false;
+  return !row['exclusion-reason'];
 }
 
 function normalizeEvalResult(value) {

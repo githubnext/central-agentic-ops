@@ -4000,7 +4000,7 @@
         "navigation-label": "Experiments",
         "icon": "beaker",
         "class-name": "experiments-page",
-        "description": "Understand whether agent changes improve outcomes without regressions.",
+        "description": "Understand whether agent changes improve outcomes without regressions. Observed associations are presented without implying causation.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -4020,7 +4020,10 @@
                   "grader-observations",
                   "evals",
                   "eval-observations",
-                  "runs"
+                  "runs",
+                  "outcomes",
+                  "usage",
+                  "operational-values"
                 ]
               },
               "mark": "element",

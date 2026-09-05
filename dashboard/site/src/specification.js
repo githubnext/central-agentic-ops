@@ -182,7 +182,7 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   packages: ['workflows', 'runs', 'outcomes', 'usage'],
   workflows: ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values'],
   runs: ['runs'],
-  experiments: ['experiments', 'experiment-assignments', 'graders', 'grader-observations', 'evals', 'eval-observations', 'runs'],
+  experiments: ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values'],
   graders: ['graders', 'grader-observations'],
   evals: ['evals', 'eval-observations'],
   usage: ['usage'],
@@ -233,11 +233,11 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
   experiments: {
     experiments: ['experiment'],
     'experiment-assignments': ['run', 'variant'],
-    graders: ['grader'],
     'grader-observations': ['grader'],
-    evals: ['eval'],
     'eval-observations': ['eval'],
-    runs: ['run']
+    outcomes: ['outcome-state'],
+    usage: ['aic'],
+    'operational-values': ['operational-value']
   },
   graders: {
     graders: ['grader'],
