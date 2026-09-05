@@ -48,6 +48,7 @@ describe('dashboard document validation', () => {
         continue;
       }
       const trailingView = views.at(-1);
+      if (trailingView) expect(trailingView).toHaveProperty('mark');
       if (trailingView?.mark === 'table') {
         expect(trailingView.disclosure).toBe('supplemental');
       }
