@@ -74,6 +74,10 @@ test("operational workflows use the transitive CAO package bundle", () => {
   const operationWorkflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/control.md"));
   assert.equal(operationWorkflows.length, 33);
+  assert.match(control, /name: Upload CAO admission artifact/);
+  assert.match(control, /name: cao-admission/);
+  assert.match(control, /path: \$\{\{ runner\.temp \}\}\/cao\/admission\.json/);
+  assert.match(readFileSync(join(root, "activity", "aw.yml"), "utf8"), /source: admission-evidence\.mjs/);
 });
 
 test("AI Credit workers collect all workflow logs with bounded resources", () => {
@@ -2825,6 +2829,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
     ".github/workflows/cao-maintenance.yml",
   ]);
   assert.deepEqual(activityManifest.resources, [
+    { source: "admission-evidence.mjs", destination: ".github/aw/activity/admission-evidence.mjs" },
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
     { source: "failure-evidence.mjs", destination: ".github/aw/activity/failure-evidence.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },

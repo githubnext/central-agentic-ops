@@ -1,7 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { actionsLog as log } from "./actions-log.mjs";
+import { admissionRecordFromArchive } from "./admission-evidence.mjs";
 import {
   extractCaoFailureMessage,
   isFailedConclusion,
@@ -32,6 +33,7 @@ const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
 const FAILURE_EVIDENCE_RUNS_PER_WORKFLOW = 5;
 const CAO_PRECOMPUTE_STEP = "Run CAO control precompute";
+const MAX_ADMISSION_ARTIFACT_BYTES = 1024 * 1024;
 if (!Number.isInteger(runWindowHours) || runWindowHours < 1 || runWindowHours > 24 * 31) {
   throw new Error("REPORT_RUN_WINDOW_HOURS must be an integer from 1 through 744");
 }
@@ -67,6 +69,29 @@ function markdownSourceUrl(lockUrl = "") {
   return `${lockUrl.slice(0, -".lock.yml".length)}.md?plain=1`;
 }
 
+async function boundedResponseBuffer(response, maximumBytes) {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
+    throw new Error(`response exceeds ${maximumBytes} bytes`);
+  }
+  if (!response.body) return Buffer.alloc(0);
+  const chunks = [];
+  let length = 0;
+  const reader = response.body.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > maximumBytes) throw new Error(`response exceeds ${maximumBytes} bytes`);
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    if (length > maximumBytes) await reader.cancel().catch(() => {});
+  }
+  return Buffer.concat(chunks, length);
+}
+
 async function github(url, attempt = 0, authToken = token, responseType = "json") {
   const response = await fetch(`https://api.github.com${url}`, { headers: {
     Accept: "application/vnd.github+json",
@@ -75,7 +100,11 @@ async function github(url, attempt = 0, authToken = token, responseType = "json"
     "X-GitHub-Api-Version": "2022-11-28",
   } });
   if (response.ok) return {
-    body: responseType === "text" ? await response.text() : await response.json(),
+    body: responseType === "text"
+      ? await response.text()
+      : responseType === "binary"
+        ? await boundedResponseBuffer(response, MAX_ADMISSION_ARTIFACT_BYTES)
+        : await response.json(),
     headers: response.headers,
   };
   if ((response.status === 403 || response.status === 429) && attempt < 3) {
@@ -402,6 +431,9 @@ async function collectRunHealth(registryByRepository, previousIndex) {
               jobsCollected: true,
               jobs: previousRun.jobs,
             } : {}),
+            ...(previousRun?.admission && previousRun.runAttempt === run.run_attempt ? {
+              admission: previousRun.admission,
+            } : {}),
           } });
         }
         if (runs.length < 100) break;
@@ -411,6 +443,57 @@ async function collectRunHealth(registryByRepository, previousIndex) {
       available = false;
       complete = false;
       log.warning`${error.message}; run health will be unavailable for ${repositoryName}`;
+    }
+  });
+
+  const admissionEvidence = { available: true, complete: true };
+  const recordsByRepository = new Map();
+  for (const { run } of records.values()) {
+    if (!recordsByRepository.has(run.repository)) recordsByRepository.set(run.repository, new Map());
+    recordsByRepository.get(run.repository).set(String(run.runId), run);
+  }
+  await mapWithConcurrency([...recordsByRepository], 4, async ([repositoryName, repositoryRuns]) => {
+    try {
+      const artifactsByRun = new Map();
+      for (let artifactPage = 1; artifactPage <= auditMaxPages; artifactPage += 1) {
+        const response = await github(`/repos/${repositoryName}/actions/artifacts?name=cao-admission&per_page=100&page=${artifactPage}`);
+        const artifacts = response.body.artifacts || [];
+        for (const artifact of artifacts) {
+          const runId = String(artifact.workflow_run?.id || "");
+          if (!artifact.expired && repositoryRuns.has(runId) && !artifactsByRun.has(runId)) {
+            artifactsByRun.set(runId, artifact);
+          }
+        }
+        if (artifacts.length < 100) break;
+        if (artifactPage === auditMaxPages) admissionEvidence.complete = false;
+      }
+      const admissionDirectory = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-activity", "admissions");
+      await mkdir(admissionDirectory, { recursive: true });
+      await mapWithConcurrency([...artifactsByRun], 4, async ([runId, artifact]) => {
+        const run = repositoryRuns.get(runId);
+        if (run.admission) return;
+        const archivePath = path.join(admissionDirectory, `${artifact.id}.zip`);
+        try {
+          const response = await github(`/repos/${repositoryName}/actions/artifacts/${artifact.id}/zip`, 0, token, "binary");
+          await writeFile(archivePath, response.body);
+          const admission = admissionRecordFromArchive(archivePath, {
+            repository: repositoryName,
+            runId,
+            runAttempt: run.runAttempt,
+          });
+          if (!admission) throw new Error("admission artifact is invalid");
+          run.admission = admission;
+        } catch (error) {
+          admissionEvidence.complete = false;
+          log.warning`${error.message}; admission evidence will be unavailable for run ${runId}`;
+        } finally {
+          await unlink(archivePath).catch(() => {});
+        }
+      });
+    } catch (error) {
+      admissionEvidence.available = false;
+      admissionEvidence.complete = false;
+      log.warning`${error.message}; admission evidence will be unavailable for ${repositoryName}`;
     }
   });
 
@@ -504,6 +587,7 @@ async function collectRunHealth(registryByRepository, previousIndex) {
     refreshStart: reusable ? overlapStart.toISOString() : windowStart.toISOString(),
     windowStart: windowStart.toISOString(),
     pages: page,
+    admissionEvidence,
     totals,
   };
 }
@@ -712,6 +796,7 @@ const inventory = {
     windowStart: runHealth.windowStart,
     windowHours: runWindowHours,
     pages: runHealth.pages,
+    admissionEvidence: runHealth.admissionEvidence,
   },
   bundles,
   standaloneWorkflows,

@@ -9,6 +9,8 @@ const sourceNames = [
   "repositories",
   "workflows",
   "runs",
+  "admissions",
+  "admission-checks",
   "run-performance",
   "job-performance",
   "safe-output-performance",
@@ -182,6 +184,7 @@ export function githubTelemetryRows(entries = [], generatedAt = new Date().toISO
       "credential-type": entry.tokenType || "unknown",
       resource,
       bucket,
+      "maximum-lane": `${bucket} · max ${limit}`,
       "history-series": segment === 1 ? bucket : `${bucket} · segment ${segment}`,
       "has-history": false,
       limit,
@@ -601,6 +604,49 @@ function runRows(deployed, usage) {
   return [...rows.values()];
 }
 
+function admissionRows(deployed) {
+  const admissions = [];
+  const checks = [];
+  for (const workflow of deployed.workflows || []) {
+    const names = repositoryParts(workflow.repository);
+    for (const run of workflow.runHealth?.runRecords || []) {
+      const admission = run.admission;
+      if (!admission) continue;
+      const row = {
+        ...names,
+        workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
+        run: String(run.runId),
+        "observed-at": admission.observedAt,
+        package: admission.package || "unknown",
+        "workflow-role": admission.role || workflow.role || "unknown",
+        worker: admission.worker || "",
+        "target-repository": admission.targetRepository || "",
+        "admission-status": admission.authorized ? "authorized" : "denied",
+        "admission-reason": admission.reason,
+        "failed-check": admission.failedCheck || "",
+        "github-api-status": admission.githubApiCapacity?.status || "unknown",
+        "github-api-remaining": finite(admission.githubApiCapacity?.remaining),
+        "github-api-required": finite(admission.githubApiCapacity?.required),
+        "github-api-reset-at": admission.githubApiCapacity?.resetAt || "",
+        "runner-disk-status": admission.runnerDiskCapacity?.status || "unknown",
+        "runner-disk-available-mb": finite(admission.runnerDiskCapacity?.available),
+        "runner-disk-required-mb": finite(admission.runnerDiskCapacity?.required),
+        "run-link": link("run", workflowRunUrl(workflow.repository, run.runId), `Run ${run.runId}`),
+      };
+      admissions.push(row);
+      for (const [index, check] of (admission.checks || []).entries()) {
+        checks.push({
+          ...row,
+          check: check.check,
+          "check-order": index + 1,
+          "check-status": check.status,
+        });
+      }
+    }
+  }
+  return { admissions, checks };
+}
+
 function usageRows(usage) {
   return (usage.runs || []).map((run, index) => ({
     ...repositoryParts(run.repository),
@@ -668,11 +714,12 @@ function performanceRows(deployed, usage) {
       }
       for (const job of run.jobs || []) {
         const jobDuration = durationSeconds(job.startedAt, job.completedAt);
-        if (jobDuration === null) continue;
         const labels = Array.isArray(job.labels) ? job.labels.filter(Boolean) : [];
         jobs.push({
           ...common,
           job: job.name || "Unknown job",
+          "job-status": job.status || "unknown",
+          "job-conclusion": runConclusion(job.conclusion),
           runner: labels.join(", ") || job.runnerName || "unknown",
           "runner-name": job.runnerName || "unknown",
           "runner-group": job.runnerGroupName || "unknown",
@@ -1148,6 +1195,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const generatedAt = report.generatedAt || deployed.generatedAt || new Date().toISOString();
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed, usage);
+  const admission = admissionRows(deployed);
   const performance = performanceRows(deployed, usage);
   const safeOutputPerformance = safeOutputPerformanceRows(usage);
   const records = report.records || [];
@@ -1188,6 +1236,27 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   sources.repositories = source("repositories", [...repositories.values()], generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
   sources.workflows = source("workflows", workflows, generatedAt, workflowsAvailable, deployed.discovery?.complete === true);
   sources.runs = source("runs", runs, generatedAt, runAvailable, runComplete);
+  const admissionExpected = (deployed.workflows || [])
+    .filter((workflow) => workflow.role === "orchestrator" || workflow.role === "worker")
+    .flatMap((workflow) => workflow.runHealth?.runRecords || []);
+  const admissionAvailable = deployed.runHealth?.admissionEvidence?.available !== false;
+  const admissionComplete = runComplete
+    && deployed.runHealth?.admissionEvidence?.complete !== false
+    && admissionExpected.every((run) => Boolean(run.admission));
+  sources.admissions = source(
+    "admissions",
+    admission.admissions,
+    generatedAt,
+    admissionAvailable,
+    admissionComplete,
+  );
+  sources["admission-checks"] = source(
+    "admission-checks",
+    admission.checks,
+    generatedAt,
+    admissionAvailable,
+    admissionComplete,
+  );
   sources["run-performance"] = source(
     "run-performance",
     performance.runs,
@@ -1214,7 +1283,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     sources.runs.metadata["coverage-start"] = new Date(
       Date.parse(generatedAt) - deployed.runHealth.windowHours * 3_600_000,
     ).toISOString();
-    for (const name of ["run-performance", "job-performance"]) {
+    for (const name of ["admissions", "admission-checks", "run-performance", "job-performance"]) {
       sources[name].metadata["coverage-end"] = generatedAt;
       sources[name].metadata["coverage-start"] = sources.runs.metadata["coverage-start"];
     }

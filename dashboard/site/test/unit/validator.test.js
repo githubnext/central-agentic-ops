@@ -91,6 +91,7 @@ describe('dashboard document validation', () => {
         }
       ]
     });
+
     expect(preview.views[1].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
       'package',
       'workflow-name',
@@ -99,6 +100,30 @@ describe('dashboard document validation', () => {
       'repository',
       'observed-at'
     ]);
+  });
+
+  it('defines the control-plane Admission page from structured admission sources', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const admission = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'admission');
+
+    expect(admission.views.map((/** @type {{ id: string }} */ view) => view.id)).toEqual([
+      'admission-decision-distribution',
+      'admission-decision-trend',
+      'admission-failed-gates',
+      'admission-decision-ledger'
+    ]);
+    expect(admission.views[0]).toMatchObject({
+      mark: 'chart',
+      chart: 'pie',
+      data: { source: 'admissions' }
+    });
+    expect(admission.views[2]).toMatchObject({
+      data: {
+        source: 'admission-checks',
+        filters: { 'check-status': ['failed'] }
+      }
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
   it('defines workflow update inventory and version distribution views', () => {
@@ -203,6 +228,57 @@ describe('dashboard document validation', () => {
     ]));
     expect(domains.encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+  });
+
+  it('defines detection diagnostics and performance in a dedicated Explore page', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const detection = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'detection');
+    expect(document.dashboard.navigation.find(
+      (/** @type {{ label: string }} */ section) => section.label === 'Explore'
+    ).pages).toContain('detection');
+    expect(detection).toMatchObject({
+      kind: 'custom',
+      title: 'Detection',
+      views: [
+        {
+          id: 'detection-job-conclusions',
+          mark: 'chart',
+          chart: 'pie',
+          data: { source: 'job-performance', filters: { job: ['detection'] } }
+        },
+        {
+          id: 'detection-job-duration-trend',
+          mark: 'chart',
+          chart: 'line',
+          data: {
+            source: 'job-performance',
+            filters: { job: ['detection'], 'job-status': ['completed'] }
+          }
+        },
+        {
+          id: 'detection-job-runner-performance',
+          mark: 'chart',
+          chart: 'bar',
+          data: {
+            source: 'job-performance',
+            filters: { job: ['detection'], 'job-status': ['completed'] }
+          }
+        },
+        {
+          id: 'detection-job-ledger',
+          mark: 'table',
+          controls: 'interactive',
+          data: { source: 'job-performance', filters: { job: ['detection'] } }
+        }
+      ]
+    });
+    expect(detection.views[3].encoding.columns).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'job-status', display: 'status' }),
+      expect.objectContaining({ field: 'job-conclusion', display: 'status' }),
+      expect.objectContaining({ field: 'job-duration-seconds', unit: 'human-duration' }),
+      expect.objectContaining({ field: 'run' })
+    ]));
+    expect(detection.views[3].encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
   });
 
   it('defines safe-output diagnostics and performance in Explore', () => {
@@ -3792,6 +3868,35 @@ dashboard:
             reference:
               field: limit
               type: quantitative
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-VIEW-005 accepts temporal scatter charts with unbucketed observations', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: rate-limit-scatter
+  title: Rate-limit scatter
+  pages:
+    - id: github-api
+      kind: custom
+      views:
+        - id: remaining
+          data:
+            source: github-api-rate-limits
+          mark: chart
+          chart: scatter
+          encoding:
+            x:
+              field: observed-at
+              type: temporal
+            y:
+              field: remaining-percent
+              type: quantitative
+            color:
+              field: maximum-lane
+              type: nominal
 `);
 
     expect(result.ok).toBe(true);

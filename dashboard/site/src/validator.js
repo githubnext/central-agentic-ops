@@ -2452,7 +2452,7 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
   if (chart === undefined) {
     return;
   }
-  if (['dot', 'line'].includes(String(chart)) && isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'temporal') {
+  if (['dot', 'line', 'scatter'].includes(String(chart)) && isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'temporal') {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
       `${chart} chart x encoding must be temporal when explicitly typed.`,
@@ -2708,7 +2708,7 @@ function validateChartEncoding(encodingNode, encoding, chart, sourceName, path, 
   const xHasTimeUnit = isPlainObject(encoding.x) && encoding.x['time-unit'] !== undefined;
   const expectedDefault = xIsTemporal ? 'line' : 'bar';
 
-  if (expectedDefault === 'line' && !['dot', 'swimlane'].includes(String(chart)) && !xHasTimeUnit) {
+  if (expectedDefault === 'line' && !['dot', 'scatter', 'swimlane'].includes(String(chart)) && !xHasTimeUnit) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
       'chart views with temporal x must declare a temporal bucket to realize the line time-series default conservatively.',

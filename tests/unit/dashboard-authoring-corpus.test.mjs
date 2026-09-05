@@ -15,7 +15,7 @@ test("generate-dashboard-ir corpus is indexed and valid", () => {
 });
 
 test("every production dashboard page starts with an executive summary", () => {
-  const executiveSummaryCharts = new Set(["pie", "line", "dot", "histogram", "swimlane"]);
+  const executiveSummaryCharts = new Set(["pie", "line", "dot", "histogram", "scatter", "swimlane"]);
   const dashboardFiles = [
     join(root, "dashboard/site/dashboard.json"),
     ...readdirSync(root, { withFileTypes: true })
