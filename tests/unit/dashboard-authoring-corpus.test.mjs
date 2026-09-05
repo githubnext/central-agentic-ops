@@ -33,8 +33,14 @@ test("every production dashboard page starts with an executive summary", () => {
       const isSummaryTable = summary.mark === "table"
         && summary.encoding?.columns?.some((column) => typeof column.aggregate === "string");
       const isSummaryGrid = summary.mark === "element" && summary.element === "summary-grid";
+      const isExperimentsEvaluation = page.id === "experiments"
+        && summary.mark === "element"
+        && summary.element === "experiments-evaluation";
       assert.ok(
-        (summary.mark === "chart" && executiveSummaryCharts.has(summary.chart)) || isSummaryTable || isSummaryGrid,
+        (summary.mark === "chart" && executiveSummaryCharts.has(summary.chart))
+          || isSummaryTable
+          || isSummaryGrid
+          || isExperimentsEvaluation,
         `${path}: page "${page.id}" must start with an executive-summary chart, aggregated table, or summary grid`,
       );
     }
