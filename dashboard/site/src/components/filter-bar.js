@@ -31,6 +31,7 @@ export function renderFilterBar(config, onChange, options = {}) {
   let horizonControl;
   const emit = () => {
     applyFilters.cancel();
+    stripModeTokens();
     const parsed = parseFilters(filters.value);
     parsed.set('mode', horizonControl.modes());
     updateCount(parsed);
@@ -71,11 +72,29 @@ export function renderFilterBar(config, onChange, options = {}) {
     event.stopPropagation();
   });
   filters.addEventListener('input', () => {
+    stripModeTokens();
     const parsed = parseFilters(filters.value);
     parsed.set('mode', horizonControl.modes());
     updateCount(parsed);
     applyFilters(parsed, horizonControl.value());
   });
+  /** Strips `mode:` / `rollout-mode:` tokens from the freeform filter input, since applied
+   * mode values always come from the horizon control's checkboxes, not this text field. */
+  function stripModeTokens() {
+    const cursor = filters.selectionStart;
+    const nextValue = filters.value
+      .split(/\s+/)
+      .filter((token) => {
+        const separator = token.indexOf(':');
+        const field = separator > 0 ? token.slice(0, separator) : '';
+        return field !== 'mode' && field !== 'rollout-mode';
+      })
+      .join(' ');
+    if (nextValue !== filters.value) {
+      filters.value = nextValue;
+      if (cursor !== null) filters.setSelectionRange(cursor, cursor);
+    }
+  }
   /** @param {Map<string, string[]>} parsed */
   function updateCount(parsed) {
     const filterCount = [...parsed.values()].reduce((total, values) => total + values.length, 0);
