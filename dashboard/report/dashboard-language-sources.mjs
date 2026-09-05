@@ -1125,7 +1125,7 @@ function mcpServerRows(usage) {
         totalOutputSize: 0,
         maxOutputSize: 0,
       };
-      server.errorCount = Math.max(server.errorCount, failureCount);
+      server.errorCount += failureCount;
       servers.set(serverName, server);
     }
     return [...servers.values()].map((server) => ({
