@@ -6532,34 +6532,6 @@
         "description": "Validated, explained, and actionable view of the checked-in .github/workflows/cao.json policy.",
         "views": [
           {
-            "id": "configuration-health",
-            "title": "Configuration health",
-            "description": "Current validation, warning, and guidance signals for the policy revision used by this dashboard.",
-            "data": {
-              "source": "configuration-summary"
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "table": false,
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "status",
-                "type": "nominal",
-                "title": "Status"
-              },
-              "y": {
-                "field": "count",
-                "type": "quantitative",
-                "title": "Checks"
-              },
-              "color": {
-                "field": "status",
-                "type": "nominal"
-              }
-            }
-          },
-          {
             "id": "configuration-policy",
             "title": "Control policy",
             "description": "Every declared entry is shown with its operational meaning. Defaults are identified where they affect rollout behavior.",

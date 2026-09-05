@@ -831,7 +831,8 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .configuration-diagnostic strong, .configuration-diagnostic code { display: block; }
 .configuration-diagnostic code { margin-top: 2px; color: var(--muted); font-size: .75rem; overflow-wrap: anywhere; }
 .configuration-diagnostic p { margin: 3px 0 0; color: var(--muted); }
-.configuration-entries > h3 { margin: 0 0 10px; font-size: 1rem; }
+.configuration-entries > summary { cursor: pointer; font-size: 1rem; font-weight: 600; }
+.configuration-entries[open] > summary { margin-bottom: 10px; }
 .configuration-entry { min-width: 0; border-top: 1px solid var(--border-muted); }
 .configuration-entry:first-of-type { border: 1px solid var(--border); border-radius: 6px; }
 .configuration-entry > summary, .configuration-entry:not(details) { padding: 10px 12px; }
