@@ -256,6 +256,33 @@ export function renderLegendSwatch(className) {
 }
 
 /**
+ * Renders the shared `<ul class="chart-legend ...">` of `<li>` entries, each
+ * pairing a color-keyed {@link renderLegendSwatch} with caller-supplied
+ * content. Shared by the line/bar series legend, the pie-chart legend, and
+ * the outcome-diagnostic legend, which all build one list item per series
+ * from a swatch class name and the series' own label markup.
+ * @template T
+ * @param {string} className full `className` for the `<ul>` element
+ * @param {T[]} items
+ * @param {(item: T, index: number) => string} swatchClassName
+ * @param {(item: T, index: number) => Array<Node | string | null>} renderContent
+ * @param {Record<string, unknown>} [extraAttrs]
+ * @returns {HTMLElement}
+ */
+export function renderLegendList(className, items, swatchClassName, renderContent, extraAttrs) {
+  return h(
+    'ul',
+    { className, ...extraAttrs },
+    items.map((item, index) => h(
+      'li',
+      null,
+      renderLegendSwatch(swatchClassName(item, index)),
+      ...renderContent(item, index)
+    ))
+  );
+}
+
+/**
  * Renders a `<span>` wrapping a single octicon, used by the attention-domain
  * cards, readiness-verdict hero, and signal-list rows to present one
  * decorative or semantic icon inside a component-specific class name.

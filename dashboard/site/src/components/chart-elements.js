@@ -7,7 +7,7 @@ import { formatNumber, toNumber } from '../view-formatters.js';
 import { pluralSuffix } from './count-formatters.js';
 import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
-import { renderEmptyMessage, renderLegendSwatch } from './ui-primitives.js';
+import { renderEmptyMessage, renderLegendList } from './ui-primitives.js';
 
 const MAX_LINE_POINT_SIZE = 6;
 const MIN_LINE_POINT_SIZE = 2;
@@ -140,15 +140,12 @@ function hasMatchingTerm(terms, candidates) {
  * @returns {HTMLElement}
  */
 export function renderChartLegend(series, chartType) {
-  return h(
-    'ul',
-    { className: `chart-legend chart-legend-${chartType}`, 'data-chart-legend': 'visual' },
-    series.map((item) => h(
-      'li',
-      null,
-      renderLegendSwatch(item.className),
-      h('span', null, item.name)
-    ))
+  return renderLegendList(
+    `chart-legend chart-legend-${chartType}`,
+    series,
+    (item) => item.className,
+    (item) => [h('span', null, item.name)],
+    { 'data-chart-legend': 'visual' }
   );
 }
 
@@ -200,20 +197,19 @@ function pieChartSegmentPath(startFraction, endFraction) {
  * @returns {HTMLElement}
  */
 export function renderPieLegend(entries, total, links = new Map(), unit = null) {
-  return h(
-    'ul',
-    { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
-    entries.map(([label, value], index) => {
+  return renderLegendList(
+    'chart-legend chart-legend-pie',
+    entries,
+    ([label], index) => chartSeriesClassName(label, index),
+    ([label, value]) => {
       const link = links.get(label) ?? null;
-      return h(
-        'li',
-        null,
-        renderLegendSwatch(chartSeriesClassName(label, index)),
+      return [
         h('span', null, renderSafeLink(label, link)),
         h('strong', null, formatNumber(value, unit)),
         h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
-      );
-    })
+      ];
+    },
+    { 'data-chart-legend': 'visual' }
   );
 }
 
