@@ -214,6 +214,22 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
 }
 
 /**
+ * Wraps chart content in the shared `chart-widget` container, applying the
+ * per-chart-type modifier class and `data-chart-widget` marker consistently.
+ * @param {string} chartType
+ * @param {Record<string, unknown> | null} extraAttrs
+ * @param {...(HTMLElement | null)} children
+ * @returns {HTMLElement}
+ */
+function renderChartWidgetShell(chartType, extraAttrs, ...children) {
+  return h(
+    'div',
+    { className: `chart-widget ${chartType}-chart-widget`, 'data-chart-widget': chartType, ...(extraAttrs ?? {}) },
+    ...children
+  );
+}
+
+/**
  * Renders a declaratively selected chart using normalized dashboard points.
  * @param {string} chartType
  * @param {ChartPointLike[]} points
@@ -230,9 +246,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
   const entryCount = pieData ? pieData.entries.length : points.length;
   const minimumEntries = chartType === 'pie' ? 1 : 2;
   if (entryCount < minimumEntries && chartType !== 'swimlane') {
-    return h(
-      'div',
-      { className: `chart-widget ${chartType}-chart-widget`, 'data-chart-widget': chartType },
+    return renderChartWidgetShell(
+      chartType,
+      null,
       renderEmptyMessage(
         entryCount === 0 ? 'No data is available for this visualization.' : 'Not enough data to show this visualization.',
         { role: 'status' }
@@ -244,9 +260,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const { entries, total } = /** @type {{ entries: Array<[string, number]>, total: number }} */ (pieData);
     const safeTotal = Number.isFinite(total) && total > 0 ? total : 0;
     let cumulativeValue = 0;
-    return h(
-      'div',
-      { className: 'chart-widget pie-chart-widget', 'data-chart-widget': 'pie' },
+    return renderChartWidgetShell(
+      'pie',
+      null,
       h(
         'svg',
         { viewBox: '0 0 42 42', role: 'img', 'aria-label': `Pie chart: ${entries.map(([label, value]) => `${label} ${formatNumber(value, unit)}`).join(', ') || 'no data'}` },
@@ -321,9 +337,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       const upper = formatNumber(bin.upper, unit);
       return bin.lower === bin.upper ? lower : `${lower}–${upper}`;
     };
-    return h(
-      'div',
-      { className: 'chart-widget histogram-chart-widget', 'data-chart-widget': 'histogram' },
+    return renderChartWidgetShell(
+      'histogram',
+      null,
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram with ${bins.length} automatically calculated bins` },
@@ -428,13 +444,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         end: Math.min(100, (Math.max(...highlightedIndexes) + 0.5) * xStep)
       }
       : null;
-    return h(
-      'div',
-      {
-        className: `chart-widget ${chartType}-chart-widget`,
-        'data-chart-widget': chartType,
-        'data-line-rendering': showInteractivePoints ? 'rich' : 'compact'
-      },
+    return renderChartWidgetShell(
+      chartType,
+      { 'data-line-rendering': showInteractivePoints ? 'rich' : 'compact' },
       h(
         'svg',
         {
@@ -566,9 +578,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
   const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
   const yTicks = [maximum, maximum / 2, 0];
   const xTickIndexes = sampledIndexes(points.length, MAX_BAR_AXIS_TICKS);
-  return h(
-    'div',
-    { className: 'chart-widget bar-chart-widget', 'data-chart-widget': 'bar' },
+  return renderChartWidgetShell(
+    'bar',
+    null,
     h(
       'svg',
       { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Bar chart with ${points.length} bars` },
@@ -675,9 +687,9 @@ function renderSwimlaneChart(points, timeRange) {
       : [];
   });
   if (plotted.length === 0) {
-    return h(
-      'div',
-      { className: 'chart-widget swimlane-chart-widget', 'data-chart-widget': 'swimlane' },
+    return renderChartWidgetShell(
+      'swimlane',
+      null,
       renderEmptyMessage('No workflow runs to show.', { role: 'status' })
     );
   }
@@ -712,9 +724,9 @@ function renderSwimlaneChart(points, timeRange) {
     + (Math.min(1, Math.max(0, (timestamp - start) / span)) * (SWIMLANE_END_X - SWIMLANE_START_X));
   const sectionsByLane = buildSwimlaneSections(plotted, xCoordinate);
 
-  return h(
-    'div',
-    { className: 'chart-widget swimlane-chart-widget', 'data-chart-widget': 'swimlane' },
+  return renderChartWidgetShell(
+    'swimlane',
+    null,
     h(
       'ul',
       { className: 'swimlane-summary', 'aria-label': 'Run summary' },
