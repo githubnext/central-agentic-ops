@@ -97,7 +97,7 @@ describe('declarative dispatch view', () => {
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('Activation rate');
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('100%');
     const pageFilter = /** @type {HTMLInputElement | null} */ (rendered.querySelector('.filter-bar input'));
-    expect(pageFilter?.value).toBe('event:workflow_dispatch');
+    expect(pageFilter?.value).toBe('');
     expect(rendered.textContent).toContain('Package dispatching state');
     expect(rendered.textContent).toContain('Dispatches by package');
     const tables = rendered.querySelectorAll('table');

@@ -217,9 +217,8 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Tooltip | `label`, `description`, `icon` |
 | `defaults` | `scope`, `time`, `filters` |
 | Unit definition | `name`, `symbol`, `significant`, `format` |
-| Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `definition` |
-| Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `route`, `views`, `sections` |
-| Page `filter-bar` | `filters` |
+| Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `definition` |
+| Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `route`, `views`, `sections` |
 | Page section | `id`, `title`, `description`, `layout`, `views`, `count-source`, `count-label` |
 | Custom page `route` | `hash-query-parameter`, `navigation-page` |
 | View | `id`, `title`, `description`, `intent`, `locked`, `data`, `mark`, `element`, `config`, `callout`, `chart`, `table`, `tree`, `layout`, `disclosure`, `controls`, `column-summaries`, `empty-message`, `title-link`, `encoding` |
@@ -551,9 +550,6 @@ A finding is an observation with a stable finding ID, summary, status, severity,
   title: Runs
   icon: play
   class-name: runs-page
-  filter-bar:
-    filters:
-      - event:workflow_dispatch
 ```
 
 Allowed built-in page names are:
@@ -566,7 +562,7 @@ The optional page `navigation-label` provides a concise sidebar label when the p
 
 The optional page `class-name` is a canonical identifier that a renderer adds to the page container. It lets a document opt into page-specific presentation without requiring the renderer to infer styling from a page ID or built-in page name.
 
-The optional page `filter-bar` enables filtering for a built-in or custom page and may declare page-specific filters. Its required `filters` sequence contains unique `field:value` tokens in display order and MUST NOT contain `mode` or `rollout-mode` filters. The presenter applies edits automatically to matching source fields, treating values for one field as alternatives and filters for different fields as conjunctive. The presenter also provides time-horizon and rollout-mode controls whose user-selected values are global client-side settings shared by all filter bars and persisted in local storage. All rollout modes are active by default.
+The presenter provides one filter bar in the view chrome for every page. Clicking the horizon text toggles its free-form filters, time-horizon controls, and rollout-mode controls. The presenter applies edits automatically to matching source fields, treating values for one field as alternatives and filters for different fields as conjunctive. Time-horizon and rollout-mode selections are global client-side settings persisted in local storage. All rollout modes are active by default.
 
 ### 10.2 Required Content
 
@@ -586,7 +582,7 @@ The optional page `filter-bar` enables filtering for a built-in or custom page a
 - **DLS-PAGE-014:** Every built-in page **MUST** honor the dashboard scope, time, and filters and expose availability, completeness, and freshness independently.
 - **DLS-PAGE-015:** The `packages` page **MUST** expose centrally managed package inventory, rollout-mode filtering, actual package AIC against summed per-run limits without treating missing usage as zero, the complete-attempt AIC allowance, retained usage coverage, and time-ordered successful, failed, and cancelled package-run trends.
 - **DLS-PAGE-016:** When `class-name` is present, it **MUST** be a canonical identifier and a renderer **MUST** add it to the page container without deriving additional CSS class names from `id` or `page`.
-- **DLS-PAGE-017:** When `filter-bar` is present, it **MUST** contain a sequence of unique canonical `field:value` filter tokens, **MUST NOT** contain `mode` or `rollout-mode` filters, and **MUST** be rendered as an editable control before the page views. A presenter **MUST** apply valid filter edits automatically. A presenter **MUST** provide time-horizon and rollout-mode controls, persist those settings globally in local storage across filter bars, and activate all rollout modes by default.
+- **DLS-PAGE-017:** A presenter **MUST** render one filter bar in the view chrome for every page, toggle its tuning controls from the horizon text, and apply valid filter edits automatically. A presenter **MUST** persist time-horizon and rollout-mode settings globally in local storage and activate all rollout modes by default.
 
 ---
 
@@ -802,7 +798,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
 | DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
-| DLS-PAGE-001–017 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, data states, page classes, and filter-bar configuration. |
+| DLS-PAGE-001–017 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, data states, page classes, and shared filter chrome. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–004 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units and compact duration formatting, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |

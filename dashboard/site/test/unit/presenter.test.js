@@ -964,7 +964,8 @@ describe('presenter built-in and custom pages', () => {
     expect(horizonTooltip).toBeNull();
 
     for (const pageId of ['runtime', 'security', 'firewall', 'operational-value']) {
-      const filterBar = (await activatePage(rendered, pageId))?.querySelector('.filter-bar');
+      await activatePage(rendered, pageId);
+      const filterBar = rendered.querySelector('.report-actions > .filter-bar');
       expect(filterBar?.querySelector('input')?.value).toBe('');
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('3');
       expect([...filterBar?.querySelectorAll('.mode-filter-control input') ?? []].every(
@@ -974,7 +975,7 @@ describe('presenter built-in and custom pages', () => {
       const horizon = rendered.querySelector('.dashboard-horizon');
       expect(filterControl).not.toBeNull();
       expect(horizon).not.toBeNull();
-      expect(filterControl?.contains(horizon)).toBe(true);
+      expect(filterBar?.contains(horizon)).toBe(true);
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
       expect(filterBar?.querySelector('.export-control')).toBeNull();
     }
@@ -1082,7 +1083,7 @@ describe('presenter built-in and custom pages', () => {
     expect(table?.textContent).toContain('timeless');
     expect(table?.textContent).not.toContain('expired');
     expect(rendered.querySelector('.dashboard-horizon')?.getAttribute('data-dashboard-evaluated-at')).toBe('2026-09-01T12:00:00.000Z');
-    expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Data horizon 2 days');
+    expect(rendered.querySelector('.horizon-toggle')?.textContent).toBe('Data horizon 2 days');
     expect(rendered.querySelector('.dashboard-horizon .tooltip-content')?.textContent).toBe(
       'Data is included from the start up to the exclusive end.StartAug 30, 2026, 12:30 PM UTCEndSep 1, 2026, 12:00 PM UTCDuration2 days'
     );

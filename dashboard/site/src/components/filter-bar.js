@@ -4,7 +4,6 @@ import { dashboardHorizonHours, formatDashboardHorizon } from '../horizon.js';
 import { octicon } from '../octicons.js';
 import { renderLabeledControl } from './ui-primitives.js';
 
-/** @typedef {{ filters: string[] }} FilterBarConfig */
 /** @typedef {{ range: string, start: string, end: string }} TimeWindow */
 const FILTER_DEBOUNCE_MS = 500;
 const TIME_RANGE_OPTIONS = ['1h', '6h', '24h', '3d', '1w', '2w', '4w', '30d'];
@@ -13,15 +12,15 @@ const ALL_RECORDED = 'all';
 export const HORIZON_FILTER_STORAGE_KEY = 'central-agentic-ops.dashboard.horizon-filter-settings';
 
 /**
- * @param {FilterBarConfig} config
  * @param {(filters: Map<string, string[]>, timeWindow?: TimeWindow) => void} onChange
  * @param {{ defaultRange?: string, referenceEnd?: string }} [options]
  * @returns {HTMLElement}
  */
-export function renderFilterBar(config, onChange, options = {}) {
+export function renderFilterBar(onChange, options = {}) {
+  const persisted = readHorizonSettings();
   const filters = /** @type {HTMLInputElement} */ (h('input', {
     type: 'search',
-    value: config.filters.join(' '),
+    value: typeof persisted.filters === 'string' ? persisted.filters : '',
     'aria-label': 'Current filters',
     spellcheck: 'false'
   }));
@@ -38,41 +37,42 @@ export function renderFilterBar(config, onChange, options = {}) {
     onChange(parsed, horizonControl.value());
   };
   horizonControl = renderHorizonControl(options.defaultRange ?? '1w', options.referenceEnd, emit);
-  const scopeLabel = h(
-    'button',
-    { type: 'button', className: 'scope-label filter-toggle', 'aria-expanded': 'false' },
-    octicon('issue'),
-    h('strong', null, 'Filter'),
-    count
-  );
   const root = h(
     'div',
     { className: 'toolbar filter-bar', 'aria-label': 'Dashboard filters' },
     h(
       'div',
-      { className: 'filter-control' },
-      scopeLabel,
-      filters,
-      h('span', { className: 'search-control', 'aria-hidden': 'true' }, octicon('eye'))
-    ),
-    horizonControl.element
+      { className: 'filter-tuning-controls' },
+      h(
+        'div',
+        { className: 'filter-control' },
+        filters,
+        h('span', { className: 'search-control', 'aria-hidden': 'true' }, octicon('eye')),
+        count
+      ),
+      horizonControl.element
+    )
   );
   /** @param {boolean} expanded */
   const setExpanded = (expanded) => {
-    scopeLabel.setAttribute('aria-expanded', String(expanded));
-    root.classList.toggle('time-window-expanded', expanded);
+    root.querySelector('.horizon-toggle')?.setAttribute('aria-expanded', String(expanded));
+    root.classList.toggle('filter-bar-expanded', expanded);
   };
-  scopeLabel.addEventListener('click', () => {
-    setExpanded(scopeLabel.getAttribute('aria-expanded') !== 'true');
+  root.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('.horizon-toggle')) return;
+    const toggle = root.querySelector('.horizon-toggle');
+    setExpanded(toggle?.getAttribute('aria-expanded') !== 'true');
   });
   root.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || scopeLabel.getAttribute('aria-expanded') !== 'true') return;
+    const toggle = root.querySelector('.horizon-toggle');
+    if (event.key !== 'Escape' || toggle?.getAttribute('aria-expanded') !== 'true') return;
     setExpanded(false);
-    scopeLabel.focus();
+    if (toggle instanceof HTMLElement) toggle.focus();
     event.stopPropagation();
   });
   filters.addEventListener('input', () => {
     stripModeTokens();
+    persistFilterText(filters.value);
     const parsed = parseFilters(filters.value);
     parsed.set('mode', horizonControl.modes());
     updateCount(parsed);
@@ -107,7 +107,17 @@ export function renderFilterBar(config, onChange, options = {}) {
   const initialFilters = parseFilters(filters.value);
   initialFilters.set('mode', horizonControl.modes());
   updateCount(initialFilters);
-  queueMicrotask(emit);
+  const persistedModes = Array.isArray(persisted.modes)
+    ? [...new Set(persisted.modes.filter((mode) => MODE_OPTIONS.includes(mode)))]
+    : MODE_OPTIONS;
+  const hasModeOverride = Array.isArray(persisted.modes)
+    && (persistedModes.length > 0 || persisted.modes.length === 0)
+    && (persistedModes.length !== MODE_OPTIONS.length
+      || persistedModes.some((mode, index) => mode !== MODE_OPTIONS[index]));
+  const hasCustomizedSettings = filters.value.length > 0
+    || (typeof persisted.range === 'string' && persisted.range !== (options.defaultRange ?? '1w'))
+    || hasModeOverride;
+  if (hasCustomizedSettings) queueMicrotask(emit);
   return root;
 }
 
@@ -172,8 +182,13 @@ function renderHorizonControl(defaultRange, referenceEnd, onChange) {
   };
   const modes = () => modeInputs.filter((input) => input.checked).map((input) => input.value);
   const persist = () => {
-    /** @type {{ range: string, modes: string[], start?: string, end?: string }} */
-    const settings = { range: select.value, modes: modes() };
+    const savedFilters = readHorizonSettings().filters;
+    /** @type {{ range: string, modes: string[], filters?: string, start?: string, end?: string }} */
+    const settings = {
+      range: select.value,
+      modes: modes(),
+      ...(typeof savedFilters === 'string' && savedFilters ? { filters: savedFilters } : {})
+    };
     if (select.value === 'custom') {
       const selected = value();
       if (selected) {
@@ -242,7 +257,19 @@ function renderHorizonControl(defaultRange, referenceEnd, onChange) {
   };
 }
 
-/** @returns {{ range?: unknown, modes?: unknown, start?: unknown, end?: unknown }} */
+/** @param {string} filters */
+function persistFilterText(filters) {
+  try {
+    const settings = readHorizonSettings();
+    if (filters) settings.filters = filters;
+    else delete settings.filters;
+    globalThis.localStorage?.setItem(HORIZON_FILTER_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // The filters still work for the current page when storage is unavailable.
+  }
+}
+
+/** @returns {{ range?: unknown, modes?: unknown, start?: unknown, end?: unknown, filters?: unknown }} */
 function readHorizonSettings() {
   try {
     const value = JSON.parse(globalThis.localStorage?.getItem(HORIZON_FILTER_STORAGE_KEY) ?? 'null');

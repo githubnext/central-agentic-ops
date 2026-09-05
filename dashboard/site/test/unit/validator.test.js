@@ -831,42 +831,20 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-017 validates JSON-configured page filter bars', () => {
+  it('DLS-PAGE-017 rejects obsolete page filter-bar configuration', () => {
     const accepted = validateDashboardDocument(authoritativeDashboardSource);
     expect(accepted.ok).toBe(true);
 
-    const invalidTokens = JSON.parse(authoritativeDashboardSource);
-    const costPage = invalidTokens.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
-    costPage['filter-bar'] = {
-      filters: ['mode:review', 'phase:after', 'phase:after', 'invalid token'],
-      'time-range': '24h',
-      unknown: true
-    };
+    const obsoleteConfiguration = JSON.parse(authoritativeDashboardSource);
+    const costPage = obsoleteConfiguration.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
+    costPage['filter-bar'] = { filters: [] };
 
-    const rejected = validateDashboardDocument(JSON.stringify(invalidTokens));
+    const rejected = validateDashboardDocument(JSON.stringify(obsoleteConfiguration));
     expect(rejected.ok).toBe(false);
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E005',
-        path: '$.dashboard.pages[3].filter-bar.filters[0]',
-        message: 'rollout modes are global client settings and must not be declared by a page.'
-      }));
-      expect(rejected.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E003',
-        path: '$.dashboard.pages[3].filter-bar.filters[2]',
-        message: 'filter-bar filters must be unique.'
-      }));
-      expect(rejected.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E005',
-        path: '$.dashboard.pages[3].filter-bar.filters[3]'
-      }));
-      expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
-        path: '$.dashboard.pages[3].filter-bar.time-range'
-      }));
-      expect(rejected.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E004',
-        path: '$.dashboard.pages[3].filter-bar.unknown'
+        path: '$.dashboard.pages[3].filter-bar'
       }));
     }
   });

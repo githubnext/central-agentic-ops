@@ -181,10 +181,7 @@ describe('GitHub API rate-limit dashboard', () => {
     expect(apiPage).toMatchObject({
       kind: 'custom',
       title: 'GitHub API Rate Limits',
-      icon: 'meter',
-      'filter-bar': {
-        filters: ['phase:after']
-      }
+      icon: 'meter'
     });
     expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential')).toHaveLength(4);
     expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'supplemental')).toHaveLength(5);

@@ -153,9 +153,6 @@
         "icon": "check-circle",
         "class-name": "readiness-page",
         "description": "Fail-closed release readiness across evidence integrity, package inventory, policy controls, and recent runtime behavior.",
-        "filter-bar": {
-          "filters": []
-        },
         "sections": [
           {
             "id": "readiness-verdict",
@@ -303,11 +300,6 @@
         "icon": "meter",
         "class-name": "github-api-page",
         "description": "GitHub quota health by resource and credential, with reset-safe burn forecasts and explicit observation quality.",
-        "filter-bar": {
-          "filters": [
-            "phase:after"
-          ]
-        },
         "sections": [
           {
             "id": "github-api-quota-health",
@@ -1087,9 +1079,6 @@
         "icon": "globe",
         "class-name": "firewall-page",
         "description": "Network enforcement, policy decisions, destination drift, and evidence for agent egress.",
-        "filter-bar": {
-          "filters": []
-        },
         "views": [
           {
             "id": "security-firewall-decisions",
@@ -1662,9 +1651,6 @@
         "icon": "mcp",
         "class-name": "mcps-page",
         "description": "Diagnose MCP reliability, response payload sizes, and observed server versions across agentic workflow runs.",
-        "filter-bar": {
-          "filters": []
-        },
         "views": [
           {
             "id": "mcp-status-distribution",
@@ -1823,9 +1809,6 @@
         "icon": "shield",
         "class-name": "security-page",
         "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/gh-aw-cao repository.",
-        "filter-bar": {
-          "filters": []
-        },
         "sections": [
           {
             "id": "operational-assurance",
@@ -2765,9 +2748,6 @@
         "class-name": "outcome-detail-page",
         "route": {
           "hash-query-parameter": "outcome"
-        },
-        "filter-bar": {
-          "filters": []
         },
         "views": [
           {
@@ -3764,9 +3744,6 @@
         "icon": "play",
         "class-name": "runtime-page",
         "description": "Execution failures, approval gates, and exact control-plane episode evidence.",
-        "filter-bar": {
-          "filters": []
-        },
         "sections": [
           {
             "id": "runtime-triage",
@@ -3949,9 +3926,6 @@
         "icon": "meter",
         "class-name": "performance-page",
         "description": "Workflow and job duration distributions across runners, sandbox runtimes, agent engines, and models.",
-        "filter-bar": {
-          "filters": []
-        },
         "views": [
           {
             "id": "workflow-run-duration-histogram",
@@ -4212,9 +4186,6 @@
         "icon": "shield-check",
         "class-name": "safe-outputs-page",
         "description": "Safe-output volume, diagnostic signals, and per-run delivery performance.",
-        "filter-bar": {
-          "filters": []
-        },
         "views": [
           {
             "id": "safe-output-distribution",
@@ -4389,9 +4360,6 @@
         "icon": "shield-check",
         "class-name": "detection-page",
         "description": "Threat-detection verdicts, coverage, degraded inspections, and execution health.",
-        "filter-bar": {
-          "filters": []
-        },
         "views": [
           {
             "id": "detection-state-distribution",
@@ -4731,11 +4699,6 @@
         "icon": "workflow",
         "class-name": "dispatches-page",
         "description": "Workflow dispatch events retained from configured repositories.",
-        "filter-bar": {
-          "filters": [
-            "event:workflow_dispatch"
-          ]
-        },
         "views": [
           {
             "id": "dispatch-status",
@@ -5614,9 +5577,6 @@
         "icon": "beaker",
         "class-name": "value-page",
         "description": "Outcome, grader, maturity, AI Credit, and experiment-readiness evidence for the configured repositories.",
-        "filter-bar": {
-          "filters": []
-        },
         "sections": [
           {
             "id": "outcome-operations",
@@ -6339,12 +6299,6 @@
         "title": "Admission",
         "icon": "shield-check",
         "description": "Pre-activation decisions and gate behavior for control-plane orchestrators and workers.",
-        "filter-bar": {
-          "filters": [
-            "workflow-role:orchestrator",
-            "workflow-role:worker"
-          ]
-        },
         "views": [
           {
             "id": "admission-decision-distribution",
