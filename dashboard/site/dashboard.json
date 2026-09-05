@@ -153,13 +153,6 @@
         "icon": "check-circle",
         "class-name": "readiness-page",
         "description": "Fail-closed release readiness across evidence integrity, package inventory, policy controls, and recent runtime behavior.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ],
-          "time-range": "24h"
-        },
         "sections": [
           {
             "id": "readiness-verdict",
@@ -310,8 +303,7 @@
         "filter-bar": {
           "filters": [
             "phase:after"
-          ],
-          "time-range": "24h"
+          ]
         },
         "sections": [
           {
@@ -1092,14 +1084,6 @@
         "icon": "globe",
         "class-name": "firewall-page",
         "description": "Network enforcement, policy decisions, destination drift, and evidence for agent egress.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live",
-            "mode:unknown"
-          ],
-          "time-range": "30d"
-        },
         "views": [
           {
             "id": "security-firewall-decisions",
@@ -1672,13 +1656,6 @@
         "icon": "mcp",
         "class-name": "mcps-page",
         "description": "Diagnose MCP reliability, response payload sizes, and observed server versions across agentic workflow runs.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ],
-          "time-range": "1w"
-        },
         "views": [
           {
             "id": "mcp-status-distribution",
@@ -1837,12 +1814,6 @@
         "icon": "shield",
         "class-name": "security-page",
         "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/gh-aw-cao repository.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ]
-        },
         "sections": [
           {
             "id": "operational-assurance",
@@ -2782,12 +2753,6 @@
         "class-name": "outcome-detail-page",
         "route": {
           "hash-query-parameter": "outcome"
-        },
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ]
         },
         "views": [
           {
@@ -3784,12 +3749,6 @@
         "icon": "play",
         "class-name": "runtime-page",
         "description": "Execution failures, approval gates, and exact control-plane episode evidence.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ]
-        },
         "sections": [
           {
             "id": "runtime-triage",
@@ -3972,13 +3931,6 @@
         "icon": "meter",
         "class-name": "performance-page",
         "description": "Workflow and job duration distributions across runners, sandbox runtimes, agent engines, and models.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ],
-          "time-range": "1w"
-        },
         "views": [
           {
             "id": "workflow-run-duration-histogram",
@@ -4217,13 +4169,6 @@
         "icon": "shield-check",
         "class-name": "safe-outputs-page",
         "description": "Safe-output volume, diagnostic signals, and per-run delivery performance.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ],
-          "time-range": "1w"
-        },
         "views": [
           {
             "id": "safe-output-distribution",
@@ -4398,13 +4343,6 @@
         "icon": "shield-check",
         "class-name": "detection-page",
         "description": "Threat-detection verdicts, coverage, degraded inspections, and execution health.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ],
-          "time-range": "1w"
-        },
         "views": [
           {
             "id": "detection-state-distribution",
@@ -5627,12 +5565,6 @@
         "icon": "beaker",
         "class-name": "value-page",
         "description": "Outcome, grader, maturity, AI Credit, and experiment-readiness evidence for the configured repositories.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ]
-        },
         "sections": [
           {
             "id": "outcome-operations",
@@ -6359,8 +6291,7 @@
           "filters": [
             "workflow-role:orchestrator",
             "workflow-role:worker"
-          ],
-          "time-range": "1w"
+          ]
         },
         "views": [
           {

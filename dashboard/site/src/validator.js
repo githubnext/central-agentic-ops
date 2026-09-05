@@ -856,6 +856,12 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
           'filter-bar filters must use canonical field:value tokens.',
           filterPath
         ));
+      } else if (filter.startsWith('mode:') || filter.startsWith('rollout-mode:')) {
+        errors.push(createError(
+          ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+          'rollout modes are global client settings and must not be declared by a page.',
+          filterPath
+        ));
       } else if (seen.has(filter)) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,
@@ -868,9 +874,6 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
     });
   }
 
-  if (filterBar['time-range'] !== undefined) {
-    validateStringField(filterBar['time-range'], `${path}.time-range`, true, errors);
-  }
 }
 
 /**

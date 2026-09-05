@@ -195,6 +195,10 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .time-window-control { display: none; align-items: stretch; gap: 6px; }
 .filter-bar.time-window-expanded .time-window-control { display: flex; }
 .time-window-control label { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--muted); font-size: .6875rem; font-weight: 600; white-space: nowrap; }
+.mode-filter-control { display: flex; align-items: stretch; gap: 2px; margin: 0; padding: 0; border: 0; }
+.mode-filter-control legend { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.mode-filter-control label { cursor: pointer; text-transform: capitalize; }
+.mode-filter-control input { width: auto; accent-color: var(--accent); }
 .time-window-control :is(select, input) { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-weight: 600; }
 .time-window-control select { max-width: 132px; }
 .time-window-control input { width: 132px; }
@@ -1183,7 +1187,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .scope-period { flex: 1; justify-content: center; }
   .filter-bar.time-window-expanded .time-window-control { display: grid; flex: 1 1 100%; grid-template-columns: minmax(0, 1fr); min-width: 0; }
   .time-window-control label { min-height: 44px; }
+  .mode-filter-control { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .time-window-control :is(select, input) { width: 100%; }
+  .mode-filter-control input { width: auto; }
   .time-window-control > button { min-height: 44px; }
   main.dashboard-prototype { padding: 0 14px 28px; }
   .data-state-summary, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }

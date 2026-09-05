@@ -40,7 +40,7 @@ import { dashboardHorizonHours, formatDashboardHorizon, formatDashboardHorizonHo
  */
 
 /**
- * @typedef {{ filters: string[], ['time-range']?: string }} PresentableFilterBar
+ * @typedef {{ filters: string[] }} PresentableFilterBar
  */
 
 /**
@@ -718,10 +718,22 @@ function renderPage(page, sources, units, dashboardDefaults) {
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(payload, title, sources, units, dashboardDefaults);
+    return renderCustomPage(
+      { ...payload, 'filter-bar': payload['filter-bar'] ?? { filters: [] } },
+      title,
+      sources,
+      units,
+      dashboardDefaults
+    );
   }
 
-  return renderCustomPage(page, title, sources, units, dashboardDefaults);
+  return renderCustomPage(
+    { ...page, 'filter-bar': page['filter-bar'] ?? { filters: [] } },
+    title,
+    sources,
+    units,
+    dashboardDefaults
+  );
 }
 
 /**
@@ -841,7 +853,9 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
       };
       result.then(apply).catch(() => {});
     }, {
-      id: page.id,
+      defaultRange: isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.range === 'string'
+        ? dashboardDefaults.time.range
+        : '1w',
       referenceEnd: latestSourceCoverageEnd(page.id === 'readiness'
         ? [sources.runs, sources.findings, sources.outcomes]
         : [...pageSources.values()])
