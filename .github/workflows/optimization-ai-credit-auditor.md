@@ -64,6 +64,7 @@ imports:
       package: optimization
       role: worker
       worker: ai-credit-auditor
+  - uses: shared/activity-cache.md
 
 permissions:
   contents: read

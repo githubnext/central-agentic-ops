@@ -45,6 +45,7 @@ const awDoctorExpectedFiles = [
   ".github/workflows/aw-maintenance-compiler-security.md",
   ".github/workflows/aw-maintenance-upgrade.md",
   ".github/workflows/aw-doctor.md",
+  ".github/workflows/shared/activity-cache.md",
   ".github/workflows/shared/control.md",
 ];
 const ukAiAdvisoryExpectedFiles = [
@@ -97,6 +98,7 @@ const selfCareExpectedFiles = [
   ".github/workflows/self-care-open-source-failures.md",
   ".github/workflows/self-care-primer-brand-checker.md",
   ".github/workflows/self-care.md",
+  ".github/workflows/shared/activity-cache.md",
   ".github/workflows/shared/control.md",
 ];
 const softwareDevelopmentPracticesExpectedFiles = [

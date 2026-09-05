@@ -1104,6 +1104,19 @@
         },
         "sections": [
           {
+            "id": "firewall-activity",
+            "title": "Firewall activity",
+            "description": "Review network decisions, changes over time, and domain-level evidence to identify suspicious destinations, policy misconfiguration, and operational drift.",
+            "layout": "full",
+            "count-source": "security-observations",
+            "count-label": "observations",
+            "views": [
+              "security-firewall-decisions",
+              "security-firewall-trend",
+              "security-firewall-domains"
+            ]
+          },
+          {
             "id": "operational-assurance",
             "title": "Needs attention",
             "description": "Execution controls, package integrity, and explicit output warnings.",
@@ -1129,6 +1142,156 @@
         ],
         "views": [
           {
+            "id": "security-firewall-decisions",
+            "title": "Firewall decisions",
+            "description": "Allowed and blocked request totals provide an at-a-glance check for unexpected firewall behavior.",
+            "data": {
+              "source": "security-observations",
+              "filters": {
+                "security-feature": [
+                  "firewall"
+                ],
+                "security-analysis": [
+                  "summary"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "security-status",
+                "type": "ordinal",
+                "title": "Decision"
+              },
+              "y": {
+                "field": "security-count",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "Requests"
+              }
+            }
+          },
+          {
+            "id": "security-firewall-trend",
+            "title": "Firewall activity trend",
+            "description": "Daily allowed and blocked request volume reveals sudden changes that may indicate policy drift or unexpected network behavior.",
+            "data": {
+              "source": "security-observations",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "security-feature": [
+                  "firewall"
+                ],
+                "security-analysis": [
+                  "summary"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Observed"
+              },
+              "y": {
+                "field": "security-count",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "Requests"
+              },
+              "color": {
+                "field": "security-status",
+                "type": "ordinal",
+                "title": "Decision"
+              }
+            }
+          },
+          {
+            "id": "security-firewall-domains",
+            "title": "Firewall domains",
+            "description": "Inspect high-volume and blocked destinations by workflow run to investigate suspicious domains and firewall configuration.",
+            "data": {
+              "source": "security-observations",
+              "filters": {
+                "security-feature": [
+                  "firewall"
+                ],
+                "security-analysis": [
+                  "detail"
+                ]
+              },
+              "order-by": [
+                {
+                  "field": "security-count",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No firewall domain observations are available.",
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "security-subject",
+                  "type": "nominal",
+                  "title": "Domain"
+                },
+                {
+                  "field": "security-status",
+                  "type": "ordinal",
+                  "title": "Decision",
+                  "display": "status"
+                },
+                {
+                  "field": "security-count",
+                  "type": "quantitative",
+                  "title": "Requests"
+                },
+                {
+                  "field": "organization",
+                  "type": "nominal"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal"
+                },
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            }
+          },
+          {
             "id": "security-summary",
             "title": "Assurance summary",
             "description": "Answers which operational assurance gates and API capacity controls are represented in retained evidence.",
@@ -1139,7 +1302,8 @@
             },
             "mark": "element",
             "element": "summary-grid",
-            "layout": "full"
+            "layout": "full",
+            "disclosure": "supplemental"
           },
           {
             "id": "security-signals",
@@ -1152,7 +1316,8 @@
             },
             "mark": "element",
             "element": "signal-list",
-            "layout": "full"
+            "layout": "full",
+            "disclosure": "supplemental"
           },
           {
             "id": "security-output-ledger",
@@ -1164,6 +1329,7 @@
             "controls": "interactive",
             "empty-message": "No retained output assurance records were observed.",
             "layout": "full",
+            "disclosure": "supplemental",
             "encoding": {
               "columns": [
                 {
@@ -4068,74 +4234,6 @@
                   {
                     "field": "observed-at",
                     "type": "temporal"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "usage-firewall-domains",
-              "title": "Firewall domains",
-              "description": "Allowed and blocked network requests by domain from retained workflow firewall telemetry.",
-              "data": {
-                "source": "security-observations",
-                "filters": {
-                  "security-feature": [
-                    "firewall"
-                  ],
-                  "security-analysis": [
-                    "detail"
-                  ]
-                },
-                "order-by": [
-                  {
-                    "field": "security-count",
-                    "direction": "desc"
-                  }
-                ]
-              },
-              "mark": "table",
-              "controls": "interactive",
-              "empty-message": "No firewall domain observations are available.",
-              "layout": "full",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "security-subject",
-                    "type": "nominal",
-                    "title": "Domain"
-                  },
-                  {
-                    "field": "security-status",
-                    "type": "ordinal",
-                    "title": "Decision",
-                    "display": "status"
-                  },
-                  {
-                    "field": "security-count",
-                    "type": "quantitative",
-                    "title": "Requests"
-                  },
-                  {
-                    "field": "organization",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "repository",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "workflow",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "run",
-                    "type": "nominal",
-                    "title": "Run"
-                  },
-                  {
-                    "field": "observed-at",
-                    "type": "temporal",
-                    "title": "Observed"
                   }
                 ]
               }

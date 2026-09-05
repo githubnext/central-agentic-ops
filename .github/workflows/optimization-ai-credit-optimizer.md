@@ -54,6 +54,7 @@ imports:
       package: optimization
       role: worker
       worker: ai-credit-optimizer
+  - uses: shared/activity-cache.md
   - uses: shared/target-checkout-read-org-token.md
 
 permissions:
