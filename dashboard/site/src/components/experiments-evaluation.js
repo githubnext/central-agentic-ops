@@ -380,10 +380,11 @@ function renderEvalOutcomes(metrics, experiment) {
 }
 
 function renderEvalBar(label, rows) {
-  const yes = rows.filter((row) => row.included && row.result === 'YES').length;
-  const no = rows.filter((row) => row.included && row.result === 'NO').length;
-  const unknown = rows.length - yes - no;
-  const total = rows.length || 1;
+  const includedRows = rows.filter((row) => row.included);
+  const yes = includedRows.filter((row) => row.result === 'YES').length;
+  const no = includedRows.filter((row) => row.result === 'NO').length;
+  const unknown = includedRows.length - yes - no;
+  const total = includedRows.length || 1;
   return h(
     'div',
     { className: 'eval-bar-row' },
@@ -535,7 +536,8 @@ function initialFilters(model) {
 }
 
 function filterExperiments(experiments, filters) {
-  const cutoff = filters.range === 'all' ? null : Date.now() - Number.parseInt(filters.range, 10) * 86_400_000;
+  const rangeDays = /^(\d+)d$/.exec(filters.range)?.[1];
+  const cutoff = rangeDays ? Date.now() - Number(rangeDays) * 86_400_000 : null;
   return experiments.filter((experiment) => {
     if (filters.organization && experiment.organization !== filters.organization) return false;
     if (filters.repository && experiment.repository !== filters.repository) return false;

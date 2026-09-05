@@ -82,7 +82,7 @@ describe('experiments and evaluation', () => {
     expect(rendered.querySelector('.experiment-metric-table')?.textContent).toContain('-0.040 ▼');
     expect(rendered.querySelector('.eval-outcome')?.textContent).toContain('Is the answer correct?');
     expect(rendered.querySelector('.eval-stacked-bar')?.getAttribute('aria-label')).toContain('0 unknown or missing');
-    expect(rendered.querySelectorAll('.eval-stacked-bar')[1]?.getAttribute('aria-label')).toContain('2 unknown or missing');
+    expect(rendered.querySelectorAll('.eval-stacked-bar')[1]?.getAttribute('aria-label')).toContain('1 unknown or missing');
     expect(rendered.querySelector('.observation-quality')?.textContent).toContain('grader missing');
     expect(rendered.querySelector('.run-evidence-table')?.textContent).toContain('eval missing');
     expect(rendered.querySelector(`a[href="${evidenceLink.href}"]`)).not.toBeNull();
