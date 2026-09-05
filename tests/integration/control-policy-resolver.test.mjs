@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const control = join(root, ".github", "cao", "src", "control.mjs");
+const control = join(root, ".github", "cao", "control.mjs");
 const schemaUri = "https://raw.githubusercontent.com/githubnext/gh-aw-cao/main/.github/cao/cao.schema.json";
 
 function policy() {

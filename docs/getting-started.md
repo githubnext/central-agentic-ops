@@ -87,7 +87,7 @@ The package installs:
 3. shared authentication, routing, and fail-closed controls;
 4. generated `.lock.yml` workflows that GitHub Actions executes.
 
-The root package installs the `.github/cao` runtime from the same immutable release as the workflows. Commit it with the workflows and policy so every run resolves one atomic revision. See [Admission Gates](admission.md) for the checks this runtime performs before activation.
+The root package installs the runtime under `.github/aw/cao` from the same immutable release as the workflows. The shared control workflow deploys it to `.github/cao` in the agent job. Commit the package resources with the workflows and policy so every run resolves one atomic revision. See [Admission Gates](admission.md) for the checks this runtime performs before activation.
 
 The installed operation is runnable after its package and worker workflow identities are declared in the control policy. Declared workers are enabled unless their policy sets `enabled: false`; undeclared or disabled identities are skipped by admission before agent execution.
 

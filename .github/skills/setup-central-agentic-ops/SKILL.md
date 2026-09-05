@@ -15,7 +15,7 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 - Public and private control repositories are supported. Preserve an existing repository's visibility; for a new repository, use the visibility the user chooses.
 - In a public control repository, policy, workflow runs, operational metadata, and review safe outputs are public. State that exposure before creation and never place confidential target information in those outputs.
 - Install the root CAO package from one full commit SHA. Resolve a reviewed release or the current default branch once before installation so every package dependency uses the same immutable source identity.
-- Install `.github/cao/control.mjs` and `.github/cao/policy.mjs` from that same immutable CAO commit through the root package resources.
+- Install `.github/aw/cao/control.mjs` and `.github/aw/cao/policy.mjs` from that same immutable CAO commit through the root package resources. The shared control workflow deploys them to `.github/cao` in the agent job.
 - The root package installs `.github/aw/default-AGENTS.md` as package-owned source for control-repository ambient context. If the control repository has no root `AGENTS.md`, materialize that source as `AGENTS.md`; never overwrite or merge into existing agent instructions without the user's approval.
 - Keep rollout policy only in `.github/workflows/cao.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
 - Keep credentials out of files, chat, command arguments, and workflow inputs. Have the user enter secrets directly through GitHub or an interactive terminal prompt.
@@ -166,7 +166,7 @@ Stop before installation or execution and explain the blocker when:
 - organization-billed Copilot inference is unavailable or unconfirmed;
 - any installed Copilot-backed source omits `copilot-requests: write` or any generated lock requires `secrets.COPILOT_GITHUB_TOKEN`;
 - the installed root package does not contain `.github/aw/default-AGENTS.md`;
-- `.github/cao/control.mjs` or `.github/cao/policy.mjs` is missing from the installed immutable CAO package;
+- `.github/aw/cao/control.mjs` or `.github/aw/cao/policy.mjs` is missing from the installed immutable CAO package;
 - the selected target does not exist, cannot be accessed, requires credentials that were not configured, or would expose non-public evidence through a public control repository;
 - the existing repository contains conflicting files that the user has not approved replacing;
 - root package installation fails; or

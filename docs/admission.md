@@ -66,7 +66,7 @@ Setup creates one atomic control-plane revision:
 3. Declare the installed package and its worker-to-workflow mapping in `.github/workflows/cao.json`.
 4. Commit the workflows, generated locks, CAO runtime, and policy together, then push before running the operation.
 
-The root gh-aw package installs the CAO runtime files. Follow [Quickstart: add the operation](getting-started.md#step-3---add-the-dependabot-operation) to install them and [Quickstart: set the first-run boundary](getting-started.md#step-4---set-the-first-run-boundary) to create the policy.
+The root gh-aw package installs the CAO runtime files under `.github/aw/cao`, and the shared control workflow deploys them to `.github/cao` in the agent job. Follow [Quickstart: add the operation](getting-started.md#step-3---add-the-dependabot-operation) to install them and [Quickstart: set the first-run boundary](getting-started.md#step-4---set-the-first-run-boundary) to create the policy.
 
 Package installation does not install the CAO runtime, declare a package, or grant admission. The CAO setup procedure and checked-in control policy own those decisions.
 

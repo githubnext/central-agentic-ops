@@ -7,7 +7,7 @@ import test from "node:test";
 import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/cao/policy.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const control = join(root, ".github", "cao", "src", "control.mjs");
+const control = join(root, ".github", "cao", "control.mjs");
 const schema = JSON.parse(readFileSync(join(root, ".github", "cao", "cao.schema.json"), "utf8"));
 
 function validate(policy) {

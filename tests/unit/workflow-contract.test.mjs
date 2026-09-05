@@ -479,7 +479,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   assert.match(control, /role:\n\s+type: choice\n\s+options: \[orchestrator, worker\]/);
   assert.match(control, /worker:\n\s+type: string\n\s+default: "__none__"/);
   assert.match(precompute, /join\(admissionDirectory\(\), "effective-policy\.json"\)/);
-  assert.doesNotMatch(control, /^steps:/m);
+  assert.match(control, /^pre-agent-steps:\n\s+- name: Checkout CAO control modules[\s\S]*?\n\s+- name: Deploy CAO control modules/m);
   assert.match(precompute, /max_repos must be an integer from 1 through 1000/);
   assert.match(precompute, /max_scan_repos must be an integer from 1 through 100000/);
   assert.match(precompute, /assertUniqueStrings\(scope\["allowed-repositories"\], "control-plane\.scope\.allowed-repositories"/);
@@ -531,7 +531,7 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
   assert.match(sharedControl, /ref: \$\{\{ github\.workflow_sha \}\}/);
   assert.match(sharedControl, /path: \.cao\n/);
-  assert.match(sharedControl, /sparse-checkout: \.github\/cao/);
+  assert.match(sharedControl, /sparse-checkout: \|[\s\S]*?\.github\/cao[\s\S]*?\.github\/aw\/cao/);
   assert.match(sharedControl, /sparse-checkout-cone-mode: true/);
   assert.match(sharedControl, /fetch-depth: 1/);
   assert.doesNotMatch(sharedControl, /gh api --method GET "repos\/\$\{GITHUB_REPOSITORY\}\/contents\/\.github\/cao/);
@@ -932,8 +932,9 @@ test("root package deploys the CAO runtime", () => {
 
   assert.equal(policy.authorized, true);
   assert.equal(policy.package, "dependabot");
-  assert.match(rootManifest, /source: \.github\/cao\/control\.mjs\n\s+destination: \.github\/cao\/control\.mjs/);
-  assert.match(rootManifest, /source: \.github\/cao\/policy\.mjs\n\s+destination: \.github\/cao\/policy\.mjs/);
+  assert.match(rootManifest, /source: \.github\/cao\/control\.mjs\n\s+destination: \.github\/aw\/cao\/control\.mjs/);
+  assert.match(rootManifest, /source: \.github\/cao\/policy\.mjs\n\s+destination: \.github\/aw\/cao\/policy\.mjs/);
+  assert.match(workflow("shared/control.md"), /pre-agent-steps:[\s\S]*?name: Checkout CAO control modules[\s\S]*?name: Deploy CAO control modules[\s\S]*?cp "\$source_dir\/control\.mjs" "\$source_dir\/policy\.mjs" "\$target_dir\/"/);
   assert.doesNotMatch(setupSkill, /cao_checkout|sparse-checkout set|cp -R/);
 });
 
@@ -2340,7 +2341,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(preActivation, /actions: read/);
       assert.match(preActivation, /name: Evaluate Central Agentic Ops admission/);
       assert.match(preActivation, /name: Checkout CAO control modules/);
-      assert.match(preActivation, /sparse-checkout: \.github\/cao/);
+      assert.match(preActivation, /sparse-checkout: \|[\s\S]*?\.github\/cao[\s\S]*?\.github\/aw\/cao/);
       assert.match(preActivation, /fetch-depth: 1/);
       assert.doesNotMatch(preActivation, /contents\/\.github\/cao\/(?:control|policy)\.mjs/);
       assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);

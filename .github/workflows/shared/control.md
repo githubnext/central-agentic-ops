@@ -64,11 +64,25 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
           path: .cao
-          sparse-checkout: .github/cao
+          sparse-checkout: |
+            .github/cao
+            .github/aw/cao
           sparse-checkout-cone-mode: true
           fetch-depth: 1
           persist-credentials: false
           token: ${{ steps.cao_pre_activation_app_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || github.token }}
+
+      - name: Deploy CAO control modules
+        run: |
+          set -euo pipefail
+          source_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/aw/cao"
+          target_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/cao"
+          if [ -f "$source_dir/control.mjs" ] && [ -f "$source_dir/policy.mjs" ]; then
+            mkdir -p "$target_dir"
+            cp "$source_dir/control.mjs" "$source_dir/policy.mjs" "$target_dir/"
+          fi
+          test -f "$target_dir/control.mjs"
+          test -f "$target_dir/policy.mjs"
 
       - name: Evaluate Central Agentic Ops admission
         id: cao_admission
@@ -258,22 +272,35 @@ jobs:
 
   agent:
     pre-steps:
-      - name: Checkout CAO control modules
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.workflow_sha }}
-          path: .cao
-          sparse-checkout: .github/cao
-          sparse-checkout-cone-mode: true
-          fetch-depth: 1
-          persist-credentials: false
-          token: ${{ secrets.GH_AW_GITHUB_TOKEN || github.token }}
-
       - name: Download CAO control precompute artifact
         uses: actions/download-artifact@v8.0.1
         with:
           name: cao-control-precompute
           path: /tmp/gh-aw/agent
+
+pre-agent-steps:
+  - name: Checkout CAO control modules
+    uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    with:
+      ref: ${{ github.workflow_sha }}
+      path: .cao
+      sparse-checkout: |
+        .github/cao
+        .github/aw/cao
+      sparse-checkout-cone-mode: true
+      fetch-depth: 1
+      persist-credentials: false
+
+  - name: Deploy CAO control modules
+    run: |
+      set -euo pipefail
+      source_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/aw/cao"
+      if [ ! -f "$source_dir/control.mjs" ] || [ ! -f "$source_dir/policy.mjs" ]; then
+        source_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/cao"
+      fi
+      target_dir="${GITHUB_WORKSPACE:-.}/.github/cao"
+      mkdir -p "$target_dir"
+      cp "$source_dir/control.mjs" "$source_dir/policy.mjs" "$target_dir/"
 
 post-steps:
   - name: Emit control-plane dispatcher telemetry

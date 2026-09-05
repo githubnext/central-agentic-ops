@@ -12,5 +12,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["*.mjs"]
+  "include": ["control.mjs", "policy.mjs"]
 }
