@@ -136,6 +136,7 @@ jobs:
       - name: Transform cached logs into AI Credit usage
         env:
           GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
+          # REPORT_AIC_CACHE reuses the raw gh-aw logs restored from the activity cache above.
           REPORT_AIC_CACHE: ${{ runner.temp }}/cao-activity/logs
           REPORT_AIC_USAGE: ${{ runner.temp }}/cao-activity/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
@@ -193,7 +194,6 @@ jobs:
           REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}/sources.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
-          REPORT_GITHUB_TELEMETRY: ${{ runner.temp }}/cao-activity/cao-gh.jsonl
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-activity/operational-values.json
           REPORT_RECORDS: ${{ runner.temp }}/cao-activity/dashboard-records.json
         run: node "$DASHBOARD_REPORT_ROOT/dashboard-language-sources.mjs"
