@@ -135,7 +135,7 @@ pre-agent-steps:
     run: |
       set +e
       playwright-cli -s=preflight-chrome open about:blank \
-        --browser=chrome \
+        --browser=chromium \
         --config="$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json" \
         > "$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log" 2>&1
       PREFLIGHT_STATUS=$?

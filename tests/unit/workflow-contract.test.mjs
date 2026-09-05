@@ -2120,7 +2120,7 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /version: "0\.1\.18"/);
   assert.match(source, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
   assert.match(source, /Install Chromium for dashboard review/);
-  assert.match(source, /playwright-cli -s=preflight-chrome open about:blank/);
+  assert.match(source, /playwright-cli -s=preflight-chrome open about:blank[\s\S]*--browser=chromium/);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
