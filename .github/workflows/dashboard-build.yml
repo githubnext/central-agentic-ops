@@ -136,8 +136,6 @@ jobs:
           done
 
       - name: Refresh authoritative control policy
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           node "$DASHBOARD_REPORT_ROOT/control-settings.mjs" \
             .github/cao/src/control.mjs \
