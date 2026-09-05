@@ -1,5 +1,5 @@
 import { h } from './dom.js';
-import { renderCloseButton } from './components/ui-primitives.js';
+import { octicon } from './octicons.js';
 
 const debugSecretPatterns = [
   /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g,
@@ -65,29 +65,21 @@ export function renderCopilotPrompt(socket) {
   }));
   const sendButton = /** @type {HTMLButtonElement} */ (h(
     'button',
-    { type: 'submit', className: 'dashboard-copilot-send' },
-    'Send'
-  ));
-  const openButton = /** @type {HTMLButtonElement} */ (h(
-    'button',
-    { type: 'button', className: 'dashboard-copilot-open' },
-    'Open Copilot'
+    {
+      type: 'submit',
+      className: 'dashboard-copilot-action dashboard-copilot-send',
+      title: 'Send message',
+      'aria-label': 'Send message'
+    },
+    octicon('paper-airplane')
   ));
   const toolbarStatus = h('output', {
     id: 'dashboard-copilot-status',
     'aria-live': 'polite'
   });
-  const dialog = /** @type {HTMLDialogElement} */ (h('dialog', {
-    className: 'dashboard-copilot-dialog',
-    'aria-labelledby': 'dashboard-copilot-dialog-title'
-  }));
   const conversation = h('div', {
     className: 'dashboard-copilot-conversation',
     role: 'log',
-    'aria-live': 'polite'
-  });
-  const dialogStatus = h('output', {
-    className: 'dashboard-copilot-dialog-status',
     'aria-live': 'polite'
   });
   let sessionActive = false;
@@ -110,15 +102,6 @@ export function renderCopilotPrompt(socket) {
   const scrollConversation = () => {
     conversation.scrollTop = conversation.scrollHeight;
   };
-  const openDialog = () => {
-    if (typeof dialog.showModal === 'function') {
-      if (!dialog.open) dialog.showModal();
-    } else {
-      dialog.setAttribute('open', '');
-    }
-    input.focus();
-  };
-
   const stopSession = () => {
     if (!sessionActive) return;
     sessionActive = false;
@@ -127,70 +110,65 @@ export function renderCopilotPrompt(socket) {
       browserTrace(socket, 'copilot.stop.sent', activeTraceId);
     }
   };
-  const closeDialog = () => {
-    stopSession();
-    if (typeof dialog.close === 'function' && dialog.open) {
-      dialog.close();
-    } else {
-      dialog.removeAttribute('open');
-      input.focus();
-    }
+  /** @param {boolean} active */
+  const setSessionActive = (active) => {
+    sessionActive = active;
+    sendButton.type = active ? 'button' : 'submit';
+    sendButton.classList.toggle('dashboard-copilot-cancel', active);
+    sendButton.classList.toggle('dashboard-copilot-send', !active);
+    const label = active ? 'Cancel request' : 'Send message';
+    sendButton.title = label;
+    sendButton.setAttribute('aria-label', label);
+    sendButton.replaceChildren(octicon(active ? 'stop' : 'paper-airplane'));
+    sendButton.disabled = socket.readyState !== 1;
   };
-  dialog.append(
-    h(
-      'header',
-      { className: 'dashboard-copilot-dialog-header' },
-      h('h2', { id: 'dashboard-copilot-dialog-title' }, 'How would you want to modify this view?'),
-      renderCloseButton({
-        className: 'dashboard-copilot-dialog-close',
-        label: 'Close Copilot chat',
-        onClick: closeDialog
-      })
-    ),
-    conversation,
-    h(
-      'footer',
-      { className: 'dashboard-copilot-dialog-footer' },
-      h('label', { htmlFor: input.id }, 'Message Copilot'),
-      h(
-        'div',
-        { className: 'dashboard-copilot-composer' },
-        input,
-        sendButton
-      ),
-      dialogStatus
-    )
-  );
-  openButton.addEventListener('click', openDialog);
-  dialog.addEventListener('cancel', (event) => {
-    event.preventDefault();
-    closeDialog();
-  });
-  dialog.addEventListener('close', () => {
+  const cancelSession = () => {
     stopSession();
+    setSessionActive(false);
+    toolbarStatus.textContent = 'Stopping…';
     input.focus();
+  };
+  sendButton.addEventListener('click', (event) => {
+    if (!sessionActive) return;
+    event.preventDefault();
+    cancelSession();
   });
   const form = /** @type {HTMLFormElement} */ (h(
     'form',
-    { id: 'dashboard-copilot-prompt', className: 'dashboard-copilot-prompt' },
-    h('strong', null, 'Copilot dashboard editor'),
-    openButton,
-    toolbarStatus,
-    dialog
+    {
+      id: 'dashboard-copilot-prompt',
+      className: 'dashboard-copilot-prompt',
+      'aria-labelledby': 'dashboard-copilot-title'
+    },
+    h(
+      'header',
+      { className: 'dashboard-copilot-header' },
+      octicon('copilot'),
+      h('h2', { id: 'dashboard-copilot-title' }, 'Copilot')
+    ),
+    conversation,
+    h('label', { className: 'dashboard-copilot-label', htmlFor: input.id }, 'Modify this view'),
+    h(
+      'div',
+      { className: 'dashboard-copilot-composer' },
+      h(
+        'div',
+        { className: 'dashboard-copilot-input' },
+        input,
+        sendButton
+      )
+    ),
+    toolbarStatus
   ));
 
   sendButton.disabled = socket.readyState !== 1;
-  openButton.disabled = socket.readyState !== 1;
   socket.addEventListener('open', () => {
-    openButton.disabled = false;
-    if (!sessionActive) sendButton.disabled = false;
+    sendButton.disabled = false;
   });
   socket.addEventListener('close', () => {
-    sessionActive = false;
+    setSessionActive(false);
     sendButton.disabled = true;
-    openButton.disabled = true;
     toolbarStatus.textContent = 'Copilot connection closed.';
-    dialogStatus.textContent = 'Copilot connection closed.';
     if (activeTraceId) browserTrace(socket, 'copilot.socket.closed', activeTraceId);
   });
   socket.addEventListener('message', (event) => {
@@ -198,9 +176,8 @@ export function renderCopilotPrompt(socket) {
     if (!streamEvent?.type) return;
     if (streamEvent.traceId && activeTraceId && streamEvent.traceId !== activeTraceId) return;
     if (streamEvent.type === 'stopped') {
-      dialogStatus.textContent = 'Session stopped.';
-      sessionActive = false;
-      sendButton.disabled = false;
+      toolbarStatus.textContent = 'Session stopped.';
+      setSessionActive(false);
       return;
     }
     if (!sessionActive) return;
@@ -219,24 +196,19 @@ export function renderCopilotPrompt(socket) {
       debugCopilotMessage('assistant', assistantResponse, activeTraceId);
       assistantContent = null;
     } else if (streamEvent.type === 'status' && typeof streamEvent.message === 'string') {
-      dialogStatus.textContent = streamEvent.message;
+      toolbarStatus.textContent = streamEvent.message;
     } else if (streamEvent.type === 'reloaded') {
-      dialogStatus.textContent = 'Saved and preview updated.';
       toolbarStatus.textContent = 'Updated.';
       browserTrace(socket, 'copilot.preview.confirmed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'done') {
-      dialogStatus.textContent = 'Saved and preview updated.';
       toolbarStatus.textContent = 'Updated.';
-      sessionActive = false;
-      sendButton.disabled = false;
+      setSessionActive(false);
       input.focus();
       debugCopilotUpdate('Dashboard view update stream completed.', {}, activeTraceId);
       browserTrace(socket, 'copilot.request.completed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'error' && typeof streamEvent.message === 'string') {
       toolbarStatus.textContent = streamEvent.message;
-      dialogStatus.textContent = streamEvent.message;
-      sessionActive = false;
-      sendButton.disabled = false;
+      setSessionActive(false);
       console.error('Copilot dashboard update failed.', {
         traceId: activeTraceId,
         view: activeViewName,
@@ -270,12 +242,9 @@ export function renderCopilotPrompt(socket) {
     );
     input.value = '';
     scrollConversation();
-    dialogStatus.textContent = 'Copilot is working…';
     toolbarStatus.textContent = 'Working…';
-    openDialog();
 
-    sendButton.disabled = true;
-    sessionActive = true;
+    setSessionActive(true);
     debugCopilotUpdate('Sending dashboard view update request.', {
       view,
       requestLength: request.length

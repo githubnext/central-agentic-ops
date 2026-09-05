@@ -81,9 +81,10 @@
         });
         console.log("Dashboard preview socket initialized.");
       }
+      let copilotPrompt;
       if (previewMode === "copilot") {
         const { renderCopilotPrompt } = await import("./src/copilot-prompt.js");
-        document.body.prepend(renderCopilotPrompt(dashboardSocket));
+        copilotPrompt = renderCopilotPrompt(dashboardSocket);
         console.log("Copilot dashboard prompt initialized.");
       }
 
@@ -117,6 +118,9 @@
           status.setAttribute("role", "status");
           status.textContent = "Showing cached data while loading the latest dashboard data…";
           dashboard.querySelector(".report-body")?.prepend(status);
+        }
+        if (copilotPrompt) {
+          dashboard.querySelector(".org-sidebar")?.append(copilotPrompt);
         }
         root.replaceChildren(dashboard);
         return dashboard;

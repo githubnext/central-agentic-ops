@@ -18,15 +18,12 @@ class MockSocket extends EventTarget {
 }
 
 describe('Copilot dashboard prompt', () => {
-  it('opens a chat dialog and renders the streamed Copilot response', async () => {
+  it('renders an integrated chat and streams the Copilot response', async () => {
     document.body.innerHTML = '<a data-nav-page-id="overview" aria-current="page" aria-label="Overview"></a>';
     const debugMock = vi.spyOn(console, 'debug').mockImplementation(() => {});
     const socket = new MockSocket();
     const prompt = renderCopilotPrompt(/** @type {WebSocket} */ (/** @type {unknown} */ (socket)));
     document.body.prepend(prompt);
-    const openButton = prompt.querySelector('.dashboard-copilot-open');
-    if (!(openButton instanceof HTMLButtonElement)) throw new Error('Expected Copilot open button');
-    openButton.click();
     const input = prompt.querySelector('input');
     if (!(input instanceof HTMLInputElement)) throw new Error('Expected prompt input');
     input.value = 'Add a trend';
@@ -40,13 +37,11 @@ describe('Copilot dashboard prompt', () => {
     socket.emit({ type: 'reloaded' });
     socket.emit({ type: 'done' });
 
-    expect(prompt.querySelector('label')?.textContent).toBe('Message Copilot');
-    expect(prompt.querySelector('#dashboard-copilot-dialog-title')?.textContent)
-      .toBe('How would you want to modify this view?');
-    expect(prompt.querySelector('dialog')?.hasAttribute('open')).toBe(true);
+    expect(prompt.querySelector('label')?.textContent).toBe('Modify this view');
+    expect(prompt.querySelector('#dashboard-copilot-title')?.textContent).toBe('Copilot');
+    expect(prompt.querySelector('dialog')).toBeNull();
     expect(prompt.querySelector('.dashboard-copilot-message-user')?.textContent).toContain('Add a trend');
-    expect(prompt.querySelector('.dashboard-copilot-dialog-status')?.textContent)
-      .toBe('Saved and preview updated.');
+    expect(prompt.querySelector('#dashboard-copilot-status')?.textContent).toBe('Updated.');
     expect(debugMock).toHaveBeenCalledWith(
       '[dashboard-copilot]',
       expect.stringContaining('"content":"Added a trend."')
@@ -82,21 +77,20 @@ describe('Copilot dashboard prompt', () => {
     debugMock.mockRestore();
   });
 
-  it('stops the active session when the dialog closes', async () => {
+  it('changes the action icon to cancel while a session is active', async () => {
     const socket = new MockSocket();
     const prompt = renderCopilotPrompt(/** @type {WebSocket} */ (/** @type {unknown} */ (socket)));
     document.body.prepend(prompt);
-    const openButton = prompt.querySelector('.dashboard-copilot-open');
-    if (!(openButton instanceof HTMLButtonElement)) throw new Error('Expected Copilot open button');
-    openButton.click();
     const input = prompt.querySelector('input');
     if (!(input instanceof HTMLInputElement)) throw new Error('Expected prompt input');
     input.value = 'Add a trend';
 
     prompt.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    const closeButton = prompt.querySelector('.dashboard-copilot-dialog-close');
-    if (!(closeButton instanceof HTMLButtonElement)) throw new Error('Expected dialog close button');
-    closeButton.click();
+    const actionButton = prompt.querySelector('.dashboard-copilot-action');
+    if (!(actionButton instanceof HTMLButtonElement)) throw new Error('Expected Copilot action button');
+    expect(actionButton.getAttribute('aria-label')).toBe('Cancel request');
+    expect(actionButton.querySelector('.octicon-stop')).not.toBeNull();
+    actionButton.click();
 
     const start = socket.sent.find((message) => message.type === 'copilot.start');
     expect(start).toEqual({
@@ -112,5 +106,7 @@ describe('Copilot dashboard prompt', () => {
       event: 'copilot.stop.sent',
       details: {}
     });
+    expect(actionButton.getAttribute('aria-label')).toBe('Send message');
+    expect(actionButton.querySelector('.octicon-paper-airplane')).not.toBeNull();
   });
 });

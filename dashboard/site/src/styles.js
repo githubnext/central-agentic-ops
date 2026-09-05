@@ -65,31 +65,26 @@ export function primerStylesheet() {
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; letter-spacing: 0; }
-.dashboard-copilot-prompt { --copilot-accent: var(--purple); --copilot-accent-muted: color-mix(in srgb, var(--purple) 16%, transparent); --copilot-button-bg: #6e40c9; --copilot-button-fg: #fff; display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 2px solid var(--copilot-accent); background: linear-gradient(90deg, var(--copilot-accent-muted), var(--canvas-subtle) 38%); color: var(--fg); }
-@media (prefers-color-scheme: light) { .dashboard-copilot-prompt { --copilot-button-bg: #6639ba; } }
-.dashboard-copilot-prompt > strong { margin-right: auto; }
-.dashboard-copilot-prompt input { min-width: 12rem; flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
-.dashboard-copilot-prompt input:focus { border-color: var(--copilot-accent); outline: 2px solid color-mix(in srgb, var(--copilot-accent) 35%, transparent); outline-offset: 0; }
-.dashboard-copilot-open, .dashboard-copilot-send { padding: 6px 12px; border: 1px solid var(--copilot-button-bg); border-radius: 6px; background: var(--copilot-button-bg); color: var(--copilot-button-fg); font: inherit; font-weight: 600; cursor: pointer; }
-.dashboard-copilot-open:hover, .dashboard-copilot-send:hover { filter: brightness(1.16); }
-.dashboard-copilot-prompt button:disabled { border-color: var(--border); background: var(--canvas-inset); color: var(--muted); cursor: wait; filter: none; }
-.dashboard-copilot-prompt output { color: var(--muted); }
-.dashboard-copilot-dialog { --copilot-accent: var(--purple); --copilot-accent-muted: color-mix(in srgb, var(--purple) 16%, transparent); width: min(720px, calc(100vw - 32px)); height: min(680px, calc(100vh - 32px)); max-width: none; max-height: none; margin: auto; padding: 0; overflow: hidden; border: 1px solid var(--copilot-accent); border-top: 3px solid var(--copilot-accent); border-radius: 12px; background: var(--canvas); box-shadow: 0 16px 48px color-mix(in srgb, var(--purple) 28%, transparent); color: var(--fg); }
-.dashboard-copilot-dialog[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
-.dashboard-copilot-dialog::backdrop { background: color-mix(in srgb, var(--canvas-inset) 72%, transparent); }
-.dashboard-copilot-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid color-mix(in srgb, var(--copilot-accent) 45%, var(--border)); background: linear-gradient(90deg, var(--copilot-accent-muted), var(--canvas-subtle) 58%); }
-.dashboard-copilot-dialog-header h2 { margin: 0; font-size: 1rem; }
-.dashboard-copilot-dialog-close { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
-.dashboard-copilot-dialog-close:hover { background: var(--copilot-accent-muted); color: var(--copilot-accent); }
-.dashboard-copilot-conversation { display: flex; flex-direction: column; gap: 16px; padding: 20px; overflow: auto; }
-.dashboard-copilot-message { max-width: min(86%, 620px); display: grid; gap: 5px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; }
-.dashboard-copilot-message-user { align-self: flex-end; background: var(--copilot-accent-muted); border-color: color-mix(in srgb, var(--copilot-accent) 55%, var(--border)); }
-.dashboard-copilot-message-assistant { align-self: flex-start; background: var(--canvas-subtle); }
+.dashboard-copilot-prompt { --copilot-accent: var(--purple); --copilot-accent-muted: color-mix(in srgb, var(--purple) 14%, transparent); display: grid; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); color: var(--fg); }
+.dashboard-copilot-header { display: flex; align-items: center; gap: 7px; color: var(--muted); }
+.dashboard-copilot-header > .octicon { color: var(--copilot-accent); }
+.dashboard-copilot-header h2 { margin: 0; font-size: .75rem; font-weight: 600; }
+.dashboard-copilot-conversation { max-height: 180px; display: flex; flex-direction: column; gap: 8px; overflow: auto; scrollbar-width: thin; }
+.dashboard-copilot-conversation:empty { display: none; }
+.dashboard-copilot-message { display: grid; gap: 2px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: .75rem; line-height: 1.35; }
+.dashboard-copilot-message > strong { color: var(--muted); font-size: .6875rem; }
+.dashboard-copilot-message-user { align-self: flex-end; background: var(--copilot-accent-muted); border-color: color-mix(in srgb, var(--copilot-accent) 42%, var(--border)); }
+.dashboard-copilot-message-assistant { align-self: stretch; background: var(--canvas); }
 .dashboard-copilot-message-content { white-space: pre-wrap; overflow-wrap: anywhere; }
-.dashboard-copilot-dialog-footer { min-height: 48px; display: grid; gap: 6px; padding: 10px 16px; border-top: 1px solid color-mix(in srgb, var(--copilot-accent) 35%, var(--border)); background: var(--canvas-subtle); }
-.dashboard-copilot-dialog-footer label { font-weight: 600; }
-.dashboard-copilot-composer { display: flex; gap: 8px; align-items: center; }
-.dashboard-copilot-dialog-status { color: var(--muted); }
+.dashboard-copilot-label { color: var(--muted); font-size: .6875rem; font-weight: 600; }
+.dashboard-copilot-input { min-width: 0; display: flex; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--canvas); }
+.dashboard-copilot-input:focus-within { border-color: var(--copilot-accent); outline: 2px solid color-mix(in srgb, var(--copilot-accent) 28%, transparent); }
+.dashboard-copilot-input input { min-width: 0; width: 100%; padding: 4px 5px; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: .75rem; }
+.dashboard-copilot-action { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: var(--copilot-accent); color: #fff; cursor: pointer; }
+.dashboard-copilot-action:hover { filter: brightness(1.14); }
+.dashboard-copilot-action.dashboard-copilot-cancel { background: var(--danger); }
+.dashboard-copilot-action:disabled { background: var(--neutral-muted); color: var(--muted); cursor: not-allowed; filter: none; }
+.dashboard-copilot-prompt output { min-height: 1em; color: var(--muted); font-size: .6875rem; line-height: 1.25; }
 .dashboard-root { min-height: 100vh; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; }
 .octicon-sprite { width: 0; height: 0; position: absolute; overflow: hidden; }
 .octicon { width: 16px; height: 16px; flex: 0 0 16px; fill: currentColor; vertical-align: text-bottom; }
@@ -117,6 +112,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .sidebar-collapsed .nav-section-items { display: flex !important; }
 .sidebar-collapsed .primary-nav a { justify-content: center; gap: 0; padding-inline: 6px; }
 .sidebar-collapsed .primary-nav a[aria-current="page"]::before { left: -8px; }
+.sidebar-collapsed .dashboard-copilot-prompt { display: none; }
 .primary-nav { display: flex; flex-direction: column; gap: 2px; }
 .nav-section { display: flex; flex-direction: column; }
 .nav-section-toggle { min-height: 28px; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 4px 8px; border-radius: 6px; color: var(--muted); cursor: pointer; list-style: none; }
@@ -1012,6 +1008,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .sidebar-toggle { display: none; }
   .sidebar-collapsed .org-sidebar { padding: 14px 12px 10px; }
   .sidebar-collapsed .sidebar-brand > span, .sidebar-collapsed .nav-label { display: initial; }
+  .sidebar-collapsed .dashboard-copilot-prompt { display: grid; }
+  .dashboard-copilot-prompt { margin-top: 12px; }
   .primary-nav { width: 100%; flex-direction: row; gap: 4px; }
   .nav-section { display: contents; }
   .nav-section-toggle { display: none; }

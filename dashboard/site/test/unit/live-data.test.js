@@ -30,7 +30,8 @@ describe("live Dashboard Language sources", () => {
     expect(preview).toContain('new URL("./__dashboard_socket", window.location.href)');
     expect(preview).toContain('previewMode === "copilot"');
     expect(preview).toContain('await import("./src/copilot-prompt.js")');
-    expect(preview).toContain('document.body.prepend(renderCopilotPrompt(dashboardSocket))');
+    expect(preview).toContain('copilotPrompt = renderCopilotPrompt(dashboardSocket)');
+    expect(preview).toContain('dashboard.querySelector(".org-sidebar")?.append(copilotPrompt)');
     expect(preview).not.toContain("Retain the illustrative fixture data");
   });
 

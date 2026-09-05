@@ -73,9 +73,8 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
     });
     await page.goto(`${preview.url}/?local-preview=copilot&fixtures#page-copilot-loop`);
     await expect(page.locator('[data-nav-page-id="copilot-loop"][aria-current="page"]')).toBeVisible();
-    await page.locator(".dashboard-copilot-open").click();
-    await expect(page.locator("#dashboard-copilot-dialog-title"))
-      .toHaveText("How would you want to modify this view?");
+    await expect(page.locator(".org-sidebar #dashboard-copilot-prompt")).toBeVisible();
+    await expect(page.locator("#dashboard-copilot-title")).toHaveText("Copilot");
     await page.locator("#dashboard-copilot-request").fill("Rename this active view");
     await page.locator("#dashboard-copilot-prompt").evaluate((form) => form.requestSubmit());
     await expect(page.locator("#dashboard-copilot-request")).toHaveValue("");
