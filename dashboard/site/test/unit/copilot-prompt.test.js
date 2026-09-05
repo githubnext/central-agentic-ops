@@ -31,6 +31,10 @@ describe('Copilot dashboard prompt', () => {
     prompt.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     expect(input.value).toBe('');
     socket.emit({ type: 'debug', message: 'Starting dashboard view update.', details: { view: 'Overview' } });
+    socket.emit({ type: 'status', message: 'Reading the current view…' });
+    socket.emit({ type: 'reasoning-delta', reasoningId: 'reasoning-1', content: 'The view needs ' });
+    socket.emit({ type: 'reasoning-delta', reasoningId: 'reasoning-1', content: 'a clearer trend.' });
+    socket.emit({ type: 'reasoning-message', reasoningId: 'reasoning-1', content: 'The view needs a clearer trend.' });
     socket.emit({ type: 'assistant-delta', content: 'Adding ' });
     socket.emit({ type: 'assistant-delta', content: 'a trend.' });
     socket.emit({ type: 'assistant-message', content: 'Added a trend.' });
@@ -42,7 +46,12 @@ describe('Copilot dashboard prompt', () => {
     expect(prompt.querySelector('dialog')).toBeNull();
     expect(prompt.querySelector('.dashboard-copilot-message-user')?.textContent).toContain('Add a trend');
     expect(prompt.querySelector('.dashboard-copilot-message-assistant strong')).toBeNull();
-    expect(prompt.querySelector('.dashboard-copilot-message-assistant')?.textContent).toBe('Added a trend.');
+    expect(prompt.querySelector('.dashboard-copilot-message-update')?.textContent)
+      .toBe('Reading the current view…');
+    expect(prompt.querySelector('.dashboard-copilot-message-reasoning')?.textContent)
+      .toBe('The view needs a clearer trend.');
+    expect(prompt.querySelector('.dashboard-copilot-message-response')?.textContent)
+      .toBe('Added a trend.');
     expect(prompt.querySelector('#dashboard-copilot-status')?.textContent).toBe('Updated.');
     expect(debugMock).toHaveBeenCalledWith(
       '[dashboard-copilot]',
@@ -71,7 +80,7 @@ describe('Copilot dashboard prompt', () => {
     socket.emit({ type: 'assistant-message', content: 'I found the active view.' });
     socket.emit({ type: 'assistant-message', content: 'Added a second card.' });
     socket.emit({ type: 'done' });
-    expect(prompt.querySelectorAll('.dashboard-copilot-message')).toHaveLength(5);
+    expect(prompt.querySelectorAll('.dashboard-copilot-message')).toHaveLength(7);
     expect(prompt.querySelector('.dashboard-copilot-conversation')?.textContent)
       .toContain('I found the active view.');
     expect(prompt.querySelector('.dashboard-copilot-conversation')?.textContent)

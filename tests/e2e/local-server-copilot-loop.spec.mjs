@@ -60,6 +60,12 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
         prompt: async ({ viewDashboardPath, onEvent }) => {
           const document = JSON.parse(await readFile(viewDashboardPath, "utf8"));
           document.dashboard.pages[0].title = "Updated by Copilot";
+          onEvent({ type: "status", message: "Checking the current dashboard…" });
+          onEvent({
+            type: "reasoning-message",
+            reasoningId: "test-reasoning",
+            content: "The title should make the requested change easy to see.",
+          });
           onEvent({ type: "assistant-message", content: "Updated the active view title." });
           await writeFile(viewDashboardPath, JSON.stringify(document, null, 2));
           return { aborted: false };
@@ -80,8 +86,14 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
     await expect(page.locator("#dashboard-copilot-request")).toHaveValue("");
 
     await expect(page.locator("#dashboard-copilot-status")).toHaveText("Updated.");
-    await expect(page.locator(".dashboard-copilot-message-assistant"))
+    await expect(page.locator(".dashboard-copilot-message-update"))
+      .toContainText("Checking the current dashboard");
+    await expect(page.locator(".dashboard-copilot-message-reasoning"))
+      .toContainText("The title should make the requested change easy to see.");
+    await expect(page.locator(".dashboard-copilot-message-response"))
       .toContainText("Updated the active view title.");
+    expect(await page.locator(".app-shell").evaluate((shell) =>
+      getComputedStyle(shell).gridTemplateColumns.split(" ")[0])).toBe("348px");
     await expect(page.getByText("Updated by Copilot", { exact: true }).first()).toBeVisible();
     const nextView = page.locator("[data-nav-page-id]").filter({ visible: true }).nth(1);
     await nextView.click();

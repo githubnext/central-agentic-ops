@@ -624,6 +624,18 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           onEvent({ type: "assistant-delta", content: event.data.deltaContent });
         } else if (event.type === "assistant.message") {
           onEvent({ type: "assistant-message", content: event.data.content });
+        } else if (event.type === "assistant.reasoning_delta") {
+          onEvent({
+            type: "reasoning-delta",
+            content: event.data.deltaContent,
+            reasoningId: event.data.reasoningId,
+          });
+        } else if (event.type === "assistant.reasoning") {
+          onEvent({
+            type: "reasoning-message",
+            content: event.data.content,
+            reasoningId: event.data.reasoningId,
+          });
         } else if (event.type === "tool.execution_start") {
           onEvent({ type: "status", message: `Running ${event.data.toolName}…` });
         } else if (event.type === "tool.execution_complete") {
@@ -643,6 +655,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         session = await client.createSession({
           workingDirectory,
           enableSkills: true,
+          streaming: true,
           skillDirectories,
           availableTools: [
             "builtin:skill",
@@ -716,7 +729,11 @@ The original dashboard source most likely defining this view is ${JSON.stringify
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Do not use grep, shell, filesystem, or generic file tools. Use read_dashboard_language_reference when language vocabulary is needed, then use only read_current_dashboard_view, validate_current_dashboard_view, and save_current_dashboard_view to inspect, validate, and save the selected page. Run validate_current_dashboard_view until it passes, then use save_current_dashboard_view. Complete the edit rather than only describing it.`,
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Do not use grep, shell, filesystem, or generic file tools. Use read_dashboard_language_reference when language vocabulary is needed, then use only read_current_dashboard_view, validate_current_dashboard_view, and save_current_dashboard_view to inspect, validate, and save the selected page. Run validate_current_dashboard_view until it passes, then use save_current_dashboard_view.
+
+JavaScript, HTML, CSS, and all other application files are outside this session's scope. Do not propose or attempt changes to them because they require a full application reload; make the requested improvement only through the selected dashboard.json page.
+
+After saving the validated dashboard page, respond with a short, plain-language summary of what changed in the dashboard and what the user will now see. Avoid implementation details, JSON field names, schema terminology, file paths, and developer-oriented language. Complete the edit rather than only describing it.`,
           });
         } catch (error) {
           if (aborted) return { aborted: true };
