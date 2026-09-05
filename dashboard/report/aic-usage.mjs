@@ -153,8 +153,12 @@ async function parseFirewallAudit(file) {
       const raw = JSON.parse(line);
       const host = parseFirewallHost(firstText(raw.host, raw.dest, raw.url));
       const timestamp = Number(raw.ts);
+      if (!Number.isFinite(timestamp) || host.host === "unknown") {
+        malformed += 1;
+        continue;
+      }
       entries.push({
-        observedAt: Number.isFinite(timestamp) ? new Date(timestamp * 1000).toISOString() : null,
+        observedAt: new Date(timestamp * 1000).toISOString(),
         ...host,
         protocol: firewallProtocol(raw, host.port),
         decision: firewallDecision(raw),
@@ -229,6 +233,10 @@ async function readFirewallTelemetry(runRoot, files, summary) {
       firewall.firewallEvidenceState = "available";
       firewall.firewallEvidenceCompleteness = "complete";
     }
+    if (firewall.firewallEvidenceError && firewall.firewallEvidenceState === "available") {
+      firewall.firewallEvidenceState = "partial";
+      firewall.firewallEvidenceCompleteness = "partial";
+    }
     const timestamps = parsed.entries.map((entry) => Date.parse(entry.observedAt)).filter(Number.isFinite);
     if (timestamps.length > 0) {
       firewall.firewallEvidenceHorizonStart = new Date(Math.min(...timestamps)).toISOString();
@@ -253,6 +261,7 @@ async function readFirewallTelemetry(runRoot, files, summary) {
       firewall.firewallEvidenceFreshness = "unknown";
       firewall.firewallEvidenceSource = "run-summary-legacy";
       firewall.firewallEvidenceReference = "run_summary.json";
+      firewall.firewallEvidenceError ||= "Legacy summary only; authoritative request and policy attribution may be incomplete.";
     }
   }
 
@@ -487,9 +496,21 @@ async function main() {
             ...common,
             aic,
           });
+          const security = await readRunSecurityTelemetry(temporaryRoot, runId);
+          if (
+            common.createdAt
+            && ["available", "partial", "disabled", "no-traffic"].includes(security.firewall.firewallEvidenceState)
+            && !security.firewall.firewallEvidenceHorizonStart
+          ) {
+            security.firewall.firewallEvidenceHorizonStart = common.createdAt;
+            security.firewall.firewallEvidenceHorizonEnd = common.createdAt;
+          }
+          if (security.firewall.firewallEvidenceSource !== "none" && security.firewall.firewallEvidenceFreshness === "unknown") {
+            security.firewall.firewallEvidenceFreshness = "fresh";
+          }
           securityRuns.set(`${repository}:${runId}`, {
             ...common,
-            security: await readRunSecurityTelemetry(temporaryRoot, runId),
+            security,
           });
         }
       } catch (error) {

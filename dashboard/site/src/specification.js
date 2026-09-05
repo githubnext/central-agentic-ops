@@ -368,7 +368,7 @@ export const SOURCE_FIELDS = {
   'mcp-calls': ['organization', 'repository', 'workflow', 'run', 'mcp-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-tool', 'mcp-status', 'response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
   'mcp-servers': ['organization', 'repository', 'workflow', 'run', 'mcp-server-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-status', 'tool-calls', 'failed-calls', 'total-response-bytes', 'max-response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
   'security-observations': ['organization', 'repository', 'workflow', 'run', 'security-observation', 'security-feature', 'security-analysis', 'security-signal', 'security-status', 'security-subject', 'security-count', 'observed-at', 'run-link'],
-  'firewall-observations': ['organization', 'repository', 'workflow', 'run', 'firewall-observation', 'run-conclusion', 'rollout-mode', 'observed-at', 'firewall-expected', 'firewall-enabled', 'firewall-evidence-available', 'evidence-state', 'evidence-completeness', 'evidence-freshness', 'evidence-error', 'evidence-source', 'evidence-reference', 'evidence-horizon-start', 'evidence-horizon-end', 'requested-horizon-start', 'requested-horizon-end', 'evidence-coverage-percent', 'last-successful-collection-at', 'gh-aw-firewall-version', 'policy-manifest-available', 'policy-source', 'policy-manifest-identity', 'domain', 'host', 'port', 'protocol', 'decision', 'request-count', 'policy-rule-id', 'policy-rule-order', 'policy-rule-action', 'policy-rule-protocol', 'policy-domain-pattern', 'policy-rule-description', 'baseline-request-count', 'request-volume-change', 'previous-decision', 'current-decision', 'is-new-destination', 'is-removed-destination', 'decision-changed', 'first-seen-at', 'last-seen-at', 'drift-state', 'review-state', 'run-link', 'evidence-link'],
+  'firewall-observations': ['organization', 'repository', 'workflow', 'run', 'firewall-observation', 'run-conclusion', 'rollout-mode', 'observed-at', 'firewall-expected', 'firewall-enabled', 'enforcement-label', 'firewall-evidence-available', 'evidence-state', 'evidence-label', 'evidence-completeness', 'evidence-freshness', 'evidence-error', 'evidence-source', 'evidence-reference', 'evidence-horizon-start', 'evidence-horizon-end', 'requested-horizon-start', 'requested-horizon-end', 'evidence-coverage-percent', 'last-successful-collection-at', 'gh-aw-firewall-version', 'policy-manifest-available', 'policy-source', 'policy-manifest-identity', 'domain', 'host', 'port', 'protocol', 'decision', 'decision-label', 'request-count', 'policy-rule-id', 'policy-rule-order', 'policy-rule-action', 'policy-rule-protocol', 'policy-domain-pattern', 'policy-rule-description', 'baseline-request-count', 'request-volume-change', 'previous-decision', 'current-decision', 'is-new-destination', 'is-removed-destination', 'decision-changed', 'first-seen-at', 'last-seen-at', 'drift-state', 'drift-label', 'review-state', 'review-label', 'review-priority', 'run-link', 'evidence-link'],
   'firewall-policy-rules': ['organization', 'repository', 'workflow', 'run', 'observed-at', 'rule-id', 'rule-order', 'action', 'protocol', 'domain-pattern', 'description', 'hit-count', 'ssl-bump-enabled', 'dlp-enabled', 'host-access-enabled', 'policy-source', 'policy-manifest-identity', 'run-link', 'evidence-link'],
   'coverage-diagnostics': ['kind', 'title', 'effect', 'technical-detail', 'endpoint', 'rate-limit-reset', 'snapshot-age-seconds'],
   'repository-coverage': ['label', 'value'],
@@ -497,14 +497,14 @@ export const TEMPORAL_FIELD_NAMES = [
   'maturity-at',
   'published-at',
   'reset-at',
-  'projected-exhaustion-at'
-  ,'evidence-horizon-start'
-  ,'evidence-horizon-end'
-  ,'requested-horizon-start'
-  ,'requested-horizon-end'
-  ,'last-successful-collection-at'
-  ,'first-seen-at'
-  ,'last-seen-at'
+  'projected-exhaustion-at',
+  'evidence-horizon-start',
+  'evidence-horizon-end',
+  'requested-horizon-start',
+  'requested-horizon-end',
+  'last-successful-collection-at',
+  'first-seen-at',
+  'last-seen-at'
 ];
 
 export const ADDITIVE_MEASURE_FIELDS = [
@@ -519,9 +519,9 @@ export const ADDITIVE_MEASURE_FIELDS = [
   'tool-calls',
   'failed-calls',
   'total-response-bytes',
-  'safe-output-count'
-  ,'request-count'
-  ,'hit-count'
+  'safe-output-count',
+  'request-count',
+  'hit-count'
 ];
 
 export const NON_ADDITIVE_MEASURE_FIELDS = [
@@ -537,12 +537,13 @@ export const NON_ADDITIVE_MEASURE_FIELDS = [
   'projected-remaining-at-reset',
   'runway-ratio',
   'operation-consumed',
-  'max-response-bytes'
-  ,'port'
-  ,'policy-rule-order'
-  ,'baseline-request-count'
-  ,'request-volume-change'
-  ,'evidence-coverage-percent'
+  'max-response-bytes',
+  'port',
+  'policy-rule-order',
+  'baseline-request-count',
+  'request-volume-change',
+  'evidence-coverage-percent',
+  'review-priority'
 ];
 
 export const ERROR_CODES = {

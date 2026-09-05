@@ -233,10 +233,10 @@ describe('dashboard document validation', () => {
     });
     expect(domains.encoding.columns).toEqual(expect.arrayContaining([
       expect.objectContaining({ field: 'domain' }),
-      expect.objectContaining({ field: 'decision' }),
+      expect.objectContaining({ field: 'decision-label' }),
       expect.objectContaining({ field: 'request-count', title: 'Requests' }),
       expect.objectContaining({ field: 'policy-rule-id', title: 'Policy rule' }),
-      expect.objectContaining({ field: 'drift-state', title: 'Change' }),
+      expect.objectContaining({ field: 'drift-label', title: 'Change' }),
       expect.objectContaining({ field: 'run' })
     ]));
     expect(domains.encoding.href).toEqual({ field: 'evidence-link', type: 'nominal' });

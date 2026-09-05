@@ -120,7 +120,7 @@ jobs:
           CAO_ACTIVITY_CACHE_MATCHED_KEY: ${{ steps.activity-cache.outputs.cache-matched-key }}
           REPORT_CONTROL_POLICY: .github/workflows/cao.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
-          REPORT_RUN_WINDOW_HOURS: "168"
+          REPORT_RUN_WINDOW_HOURS: "720"
         run: |
           node "$GITHUB_TELEMETRY" before refresh-activity || true
           node "$ACTIVITY_INDEXER"

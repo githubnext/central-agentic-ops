@@ -639,6 +639,11 @@ test("dashboard source bridge detects rollout mode from run titles with punctuat
       && row["security-subject"] === "api.github.com:443"
       && row["security-status"] === "allowed"
       && row["security-count"] === 8));
+    assert.ok(sources["firewall-observations"].rows.some((row) => row.domain === "api.github.com"
+      && row.port === 443
+      && row.protocol === "https"
+      && row.decision === "allowed"
+      && row["request-count"] === 8));
     assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
       && row["security-subject"] === "create_issue"));
     assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
@@ -1829,5 +1834,6 @@ test("dashboard source bridge preserves firewall evidence states, policy attribu
       && row["review-state"] === "evidence-missing"
       && row["request-count"] === null));
     assert.ok(sources["firewall-policy-rules"].rows.some((row) => row["rule-id"] === "new-domain"
-      && row["domain-pattern"] === "new.example"));
+      && row["domain-pattern"] === "new.example"
+      && row["hit-count"] === 1));
 });

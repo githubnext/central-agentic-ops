@@ -1117,7 +1117,7 @@
             "disclosure": "essential",
             "encoding": {
               "x": {
-                "field": "firewall-enabled",
+                "field": "enforcement-label",
                 "type": "ordinal",
                 "title": "Enforcement"
               },
@@ -1152,6 +1152,10 @@
               },
               "order-by": [
                 {
+                  "field": "review-priority",
+                  "direction": "asc"
+                },
+                {
                   "field": "observed-at",
                   "direction": "desc"
                 }
@@ -1165,7 +1169,12 @@
             "encoding": {
               "columns": [
                 {
-                  "field": "review-state",
+                  "field": "review-priority",
+                  "type": "quantitative",
+                  "title": "Priority"
+                },
+                {
+                  "field": "review-label",
                   "type": "ordinal",
                   "title": "State",
                   "display": "status"
@@ -1187,13 +1196,13 @@
                   "type": "quantitative"
                 },
                 {
-                  "field": "drift-state",
+                  "field": "drift-label",
                   "type": "ordinal",
                   "title": "Change",
                   "display": "status"
                 },
                 {
-                  "field": "current-decision",
+                  "field": "decision-label",
                   "type": "ordinal",
                   "title": "Decision",
                   "display": "status"
@@ -1272,7 +1281,7 @@
             "disclosure": "essential",
             "encoding": {
               "x": {
-                "field": "drift-state",
+                "field": "drift-label",
                 "type": "ordinal",
                 "title": "Change"
               },
@@ -1397,7 +1406,7 @@
                   "type": "nominal"
                 },
                 {
-                  "field": "decision",
+                  "field": "decision-label",
                   "type": "ordinal",
                   "display": "status"
                 },
@@ -1430,7 +1439,7 @@
                   "title": "Last seen"
                 },
                 {
-                  "field": "drift-state",
+                  "field": "drift-label",
                   "type": "ordinal",
                   "title": "Change",
                   "display": "status"
@@ -1511,13 +1520,13 @@
             "encoding": {
               "columns": [
                 {
-                  "field": "firewall-enabled",
+                  "field": "enforcement-label",
                   "type": "ordinal",
                   "title": "Enforcement",
                   "display": "status"
                 },
                 {
-                  "field": "evidence-state",
+                  "field": "evidence-label",
                   "type": "ordinal",
                   "title": "Availability",
                   "display": "status"

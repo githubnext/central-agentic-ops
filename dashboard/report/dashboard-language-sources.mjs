@@ -853,9 +853,10 @@ function firewallRows(run) {
 function parseDestination(value) {
     const text = String(value || "").trim();
     if (!text || text === "(unknown)") return { domain: "unknown", host: "unknown", port: null, protocol: "unknown" };
+    const explicitPort = text.match(/^(?:https?:\/\/)?(?:\[[^\]]+\]|[^/:]+):(\d+)(?:\/|$)/)?.[1];
     try {
       const parsed = new URL(text.includes("://") ? text : `https://${text}`);
-      const port = parsed.port ? Number(parsed.port) : null;
+      const port = explicitPort ? Number(explicitPort) : parsed.port ? Number(parsed.port) : null;
       return {
         domain: parsed.hostname.toLowerCase(),
         host: parsed.hostname.toLowerCase(),
@@ -967,6 +968,10 @@ function rawFirewallObservationRows(usage) {
           "first-seen-at": observation.observedAt || base["observed-at"],
           "last-seen-at": observation.observedAt || base["observed-at"],
         };
+        if (base["firewall-enabled"] === "disabled") row["review-state"] = "enforcement-disabled";
+        else if (["partial", "unavailable", "malformed", "unknown"].includes(base["evidence-state"])) {
+          row["review-state"] = "evidence-missing";
+        }
         row["request-count"] += positiveCount(observation.requestCount ?? 1);
         if (Date.parse(observation.observedAt) < Date.parse(row["first-seen-at"])) row["first-seen-at"] = observation.observedAt;
         if (Date.parse(observation.observedAt) > Date.parse(row["last-seen-at"])) row["last-seen-at"] = observation.observedAt;
@@ -1001,6 +1006,12 @@ function rawFirewallObservationRows(usage) {
           "first-seen-at": null,
           "last-seen-at": null,
           "review-state": reviewState,
+          "review-priority": {
+            "enforcement-disabled": 1,
+            "evidence-missing": 2,
+            unknown: 8,
+            stable: 9,
+          }[reviewState] ?? 8,
         }];
       }
       return [...grouped.values()];
@@ -1031,15 +1042,30 @@ function firewallObservationRows(usage) {
           row["is-new-destination"] = Boolean(previous && row.domain !== "unknown" && !baseline);
           row["is-removed-destination"] = false;
           row["decision-changed"] = Boolean(baseline && baseline.decision !== row.decision);
-          if (row["review-state"]) row["drift-state"] = "unknown";
+          if (row["review-state"] || row["evidence-completeness"] !== "complete") row["drift-state"] = "unknown";
           else if (!previous) row["drift-state"] = "unknown";
           else if (!baseline) row["drift-state"] = row.decision === "allowed" ? "newly-allowed" : row.decision === "denied" ? "newly-denied" : "unknown";
           else if (row["decision-changed"]) row["drift-state"] = "decision-changed";
           else if (Math.abs(row["request-volume-change"] || 0) >= Math.max(5, baseline["request-count"] * 0.5)) row["drift-state"] = "volume-change";
           else row["drift-state"] = "stable";
-          row["review-state"] ||= ["newly-allowed", "newly-denied", "decision-changed", "volume-change"].includes(row["drift-state"])
-            ? row["drift-state"]
-            : "stable";
+          row["review-state"] ||= row.decision === "denied"
+            && row["drift-state"] === "stable"
+            && row["run-conclusion"] === "failure"
+            ? "repeated-denial"
+            : ["newly-allowed", "newly-denied", "decision-changed", "volume-change"].includes(row["drift-state"])
+              ? row["drift-state"]
+              : "stable";
+          row["review-priority"] = {
+            "enforcement-disabled": 1,
+            "evidence-missing": 2,
+            "newly-allowed": 3,
+            "decision-changed": 4,
+            "newly-denied": 5,
+            "volume-change": 6,
+            "repeated-denial": 7,
+            unknown: 8,
+            stable: 9,
+          }[row["review-state"]] ?? 8;
           result.push(row);
         }
         if (previous) {
@@ -1062,15 +1088,39 @@ function firewallObservationRows(usage) {
               "decision-changed": false,
               "drift-state": "removed",
               "review-state": "stable",
+              "review-priority": 9,
             });
           }
         }
-        previous = current.filter((row) => row.domain !== "unknown");
+        previous = current[0]?.["evidence-completeness"] === "complete"
+          ? current.filter((row) => row.domain !== "unknown")
+          : null;
       }
     }
+    const reviewLabels = {
+      "enforcement-disabled": "Enforcement disabled",
+      "evidence-missing": "Evidence missing",
+      "newly-allowed": "Newly allowed",
+      "newly-denied": "New denial",
+      "decision-changed": "Decision changed",
+      "volume-change": "Request volume changed",
+      "repeated-denial": "Repeated denial",
+      stable: "Stable",
+      unknown: "Unknown",
+    };
     return result.map((row, index) => ({
       ...row,
       "firewall-observation": `${row.organization}/${row.repository}:${row.workflow}:${row.run}:${row.domain}:${row.port ?? ""}:${row.protocol}:${row.decision}:${index}`,
+      "enforcement-label": row["firewall-enabled"] === "enabled" ? "Enabled"
+        : row["firewall-enabled"] === "disabled" ? "Enforcement disabled" : "Unknown",
+      "evidence-label": row["evidence-state"] === "no-traffic" ? "No observed traffic"
+        : row["evidence-state"] === "disabled" ? "Enforcement disabled"
+          : ["unavailable", "malformed", "unknown"].includes(row["evidence-state"]) ? "Evidence missing"
+            : row["evidence-state"] === "partial" ? "Partial evidence" : "Evidence available",
+      "decision-label": row.decision === "allowed" ? "Allowed by policy"
+        : row.decision === "denied" ? "Denied by policy" : "Unknown",
+      "drift-label": reviewLabels[row["drift-state"]] || "Unknown",
+      "review-label": reviewLabels[row["review-state"]] || "Unknown",
     }));
   }
 
@@ -1079,6 +1129,18 @@ function firewallPolicyRuleRows(usage) {
       const firewall = run.security?.firewall || {};
       const base = firewallRunBase(run, usage);
       const hitByRule = new Map((firewall.policyAnalysis?.rule_hits || []).map((entry) => [entry?.rule?.id, positiveCount(entry?.hits)]));
+      if (!Array.isArray(firewall.policyAnalysis?.rule_hits) && Array.isArray(firewall.observations)) {
+        for (const observation of firewall.observations) {
+          const destination = parseDestination(observation.host || observation.domain);
+          const normalized = {
+            domain: observation.domain || destination.domain,
+            protocol: observation.protocol || destination.protocol,
+            decision: observation.decision === "blocked" ? "denied" : observation.decision || "unknown",
+          };
+          const rule = firewallRuleFor(firewall.policyManifest, normalized);
+          if (rule?.id) hitByRule.set(rule.id, (hitByRule.get(rule.id) || 0) + positiveCount(observation.requestCount ?? 1));
+        }
+      }
       return (firewall.policyManifest?.rules || []).flatMap((rule) => (rule.domains?.length ? rule.domains : ["all"]).map((domain) => ({
         ...base,
         "rule-id": rule.id || "unknown",

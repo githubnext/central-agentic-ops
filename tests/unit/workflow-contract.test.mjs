@@ -2721,6 +2721,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: local-server\.mjs\n\s+destination: \.github\/aw\/dashboard\/local-server\.mjs/);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
+  assert.match(activityWorkflow, /REPORT_RUN_WINDOW_HOURS: "720"/);
   assert.doesNotMatch(buildWorkflow, /workflow_call:/);
   assert.match(buildWorkflow, /workflow_dispatch:[\s\S]*?site-path:[\s\S]*?default: cao[\s\S]*?mode:[\s\S]*?default: live[\s\S]*?request-id:/);
   assert.match(buildWorkflow, /run-name: CAO Dashboard Build \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);

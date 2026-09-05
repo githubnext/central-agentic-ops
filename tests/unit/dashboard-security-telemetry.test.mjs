@@ -70,6 +70,9 @@ test("dashboard telemetry extracts bounded security aggregates without retaining
     assert.deepEqual(telemetry.accessControl.fileDenials, { read: 1 });
     assert.deepEqual(telemetry.accessControl.toolDenials, { mcp: 1 });
     assert.equal(telemetry.firewall.analysis.blocked_requests, 1);
+    assert.equal(telemetry.firewall.firewallEvidenceState, "partial");
+    assert.equal(telemetry.firewall.firewallEvidenceSource, "run-summary-legacy");
+    assert.match(telemetry.firewall.firewallEvidenceError, /Legacy summary only/);
     assert.equal(telemetry.integrity.summary.total_filtered, 2);
     assert.equal(telemetry.integrity.totalToolCalls, 5);
     assert.deepEqual(telemetry.mcp, {
@@ -200,6 +203,18 @@ test("dashboard telemetry classifies authoritative, empty, malformed, and disabl
     const malformedTelemetry = await readRunSecurityTelemetry(root, 52);
     assert.equal(malformedTelemetry.firewall.firewallEvidenceState, "malformed");
     assert.equal(malformedTelemetry.firewall.firewallEvidenceAvailable, false);
+
+    const partial = path.join(root, "run-54", "sandbox", "firewall", "audit");
+    await mkdir(partial, { recursive: true });
+    await writeFile(path.join(root, "run-54", "aw_info.json"), JSON.stringify({ firewall: "squid" }));
+    await writeFile(path.join(partial, "audit.jsonl"), [
+      JSON.stringify({ ts: 1788411660, host: "api.github.com:443", method: "CONNECT", status: 200 }),
+      "{not-json}",
+    ].join("\n"));
+    const partialTelemetry = await readRunSecurityTelemetry(root, 54);
+    assert.equal(partialTelemetry.firewall.firewallEvidenceState, "partial");
+    assert.equal(partialTelemetry.firewall.firewallEvidenceCompleteness, "partial");
+    assert.equal(partialTelemetry.firewall.observations.length, 1);
 
     await mkdir(path.join(root, "run-53"), { recursive: true });
     await writeFile(path.join(root, "run-53", "aw_info.json"), JSON.stringify({ firewall: "disabled" }));
