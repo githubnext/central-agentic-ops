@@ -40,39 +40,19 @@ describe('dashboard document validation', () => {
 
   it('collapses trailing table views outside Overview and Dashboard Next', () => {
     const document = JSON.parse(authoritativeDashboardSource);
-    const collapsedTableIds = new Set([
-      'readiness-operational-observations',
-      'mcp-server-inventory',
-      'repositories-activity',
-      'repository-authored-workflows',
-      'workflow-report-table',
-      'package-workflow-table',
-      'package-dispatch-table',
-      'package-report-table',
-      'runtime-episode-attribution-gap',
-      'runs-runs-source',
-      'safe-output-diagnostics',
-      'graders-observations-source',
-      'evals-observations-source',
-      'usage-usage-source',
-      'findings-source',
-      'data-health-sources',
-      'workflow-updates',
-      'admission-decision-ledger',
-      'preview-issue-ledger'
-    ]);
     const dashboardNextIds = new Set(['home', 'work', 'agents', 'evidence', 'insights']);
 
     for (const page of document.dashboard.pages) {
-      const views = page.definition?.views ?? page.views ?? page.sections?.flatMap(
-        (/** @type {{ views: unknown[] }} */ section) => section.views
-      ) ?? [];
-      for (const view of views.filter((/** @type {unknown} */ candidate) => typeof candidate === 'object')) {
-        if (page.id === 'overview' || dashboardNextIds.has(page.id)) {
+      const views = page.definition?.views ?? page.views ?? [];
+      if (page.id === 'overview' || dashboardNextIds.has(page.id)) {
+        for (const view of views) {
           expect(view.disclosure).not.toBe('supplemental');
-        } else if (collapsedTableIds.has(view.id)) {
-          expect(view.disclosure).toBe('supplemental');
         }
+        continue;
+      }
+      const trailingView = views.at(-1);
+      if (trailingView?.mark === 'table') {
+        expect(trailingView.disclosure).toBe('supplemental');
       }
     }
   });
