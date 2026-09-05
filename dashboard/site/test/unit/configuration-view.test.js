@@ -62,6 +62,7 @@ describe('Configuration dashboard view', () => {
     expect(rendered.textContent).toContain('Sets the inherited execution mode.');
     expect(rendered.querySelector('.configuration-raw code')?.textContent).toBe(raw);
     expect(rendered.querySelectorAll('.configuration-entry')).not.toHaveLength(0);
+    expect(/** @type {HTMLDetailsElement | null} */ (rendered.querySelector('details.configuration-entry'))?.open).toBe(true);
   });
 
   it('copies the raw policy and reports invalid structured content', async () => {

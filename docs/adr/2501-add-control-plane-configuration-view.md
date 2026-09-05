@@ -1,3 +1,8 @@
+---
+title: Add Control Plane configuration view
+description: Record the dashboard configuration view for explaining and diagnosing CAO policy.
+---
+
 # ADR 2501: Add Control Plane configuration view
 
 ## Status

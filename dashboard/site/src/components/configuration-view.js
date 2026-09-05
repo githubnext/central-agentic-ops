@@ -88,7 +88,7 @@ function renderEntry(name, value, path, depth = 0) {
     {
       className: 'configuration-entry',
       style: `--configuration-depth: ${depth}`,
-      ...(children.length > 0 ? { open: '' } : {})
+      ...(children.length > 0 ? { open: true } : {})
     },
     ...(children.length > 0 ? [h('summary', null, ...content.slice(0, 2)), ...content.slice(2)] : content)
   );
