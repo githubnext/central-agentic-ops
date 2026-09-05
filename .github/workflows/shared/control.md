@@ -156,7 +156,7 @@ jobs:
           name: cao-admission
           path: ${{ runner.temp }}/cao/admission.json
           if-no-files-found: error
-          retention-days: 8
+          retention-days: "8"
 
       - name: Generate CAO admission gate writer token
         id: cao_admission_gate_writer_token
@@ -306,7 +306,7 @@ jobs:
           name: cao-control-precompute
           path: /tmp/gh-aw/agent/control-precompute.json
           if-no-files-found: error
-          retention-days: 1
+          retention-days: "1"
 
   agent:
     pre-steps:
