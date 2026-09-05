@@ -57,7 +57,8 @@ describe('time-window filter bar', () => {
     const filterBar = renderFilterBar({ filters: ['mode:review', 'mode:live'], 'time-range': '24h' }, vi.fn());
     const toggle = filterBar.querySelector('.filter-toggle');
 
-    expect(toggle?.textContent).toContain('Filter2');
+    expect(toggle?.textContent).toContain('Filter');
+    expect(toggle?.querySelector('.count-badge')?.textContent).toBe('2');
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(filterBar.classList.contains('time-window-expanded')).toBe(false);
 

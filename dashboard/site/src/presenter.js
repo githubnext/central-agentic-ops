@@ -1077,7 +1077,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     if (activePageId && activePageId !== pageId) {
       const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
       if (activePage) {
-        if (dashboardHorizon && reportActions && activePage.contains(dashboardHorizon)) {
+        if (dashboardHorizon && reportActions) {
           reportActions.prepend(dashboardHorizon);
         }
         pageState.set(activePageId, {
