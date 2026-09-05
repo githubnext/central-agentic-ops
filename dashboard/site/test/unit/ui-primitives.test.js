@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderEmptyTableRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendList, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderEmptyTableRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendList, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat, slugify } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -251,5 +251,17 @@ describe('ui primitives', () => {
     expect(rendered.firstChild).toBe(prefix);
     expect(rendered.querySelector('span')?.textContent).toBe('Window');
     expect(rendered.querySelector('select')).toBe(select);
+  });
+});
+
+describe('slugify', () => {
+  it('lowercases and hyphenates non-alphanumeric runs', () => {
+    expect(slugify('Package Utilization')).toBe('package-utilization');
+    expect(slugify('  Leading & Trailing  ')).toBe('leading-trailing');
+  });
+
+  it('falls back when no matchable characters remain', () => {
+    expect(slugify('###', 'section')).toBe('section');
+    expect(slugify('')).toBe('');
   });
 });

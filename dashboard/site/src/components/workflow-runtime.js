@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLinkOrFallback } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatUtcDateTime, renderLegendList, renderPanelHeader, renderTableHeadRow, renderVitalStat } from './ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderLegendList, renderPanelHeader, renderTableHeadRow, renderVitalStat, slugify } from './ui-primitives.js';
 import { text } from './count-formatters.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -628,9 +628,4 @@ function formatObservationDate(value) {
 function finiteNumber(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
-}
-
-/** @param {string} value */
-function slugify(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }

@@ -359,3 +359,15 @@ export function renderLabeledControl(label, control, options = {}) {
 export function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
+
+/**
+ * Converts arbitrary text into a lowercase, hyphen-separated slug suitable for
+ * use in DOM ids (e.g. heading anchors). Falls back to `fallback` when the
+ * input has no matchable characters.
+ * @param {string} value
+ * @param {string} [fallback]
+ * @returns {string}
+ */
+export function slugify(value, fallback = '') {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || fallback;
+}

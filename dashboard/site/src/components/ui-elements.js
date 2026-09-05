@@ -8,7 +8,7 @@ import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
 import { renderPackageRouteView } from './package-route-view.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
-import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, renderIconSpan } from './ui-primitives.js';
+import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, renderIconSpan, slugify } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -80,7 +80,7 @@ export function elementHandlesEmptyRows(name) {
  */
 function renderDomainAttentionElement(context) {
   const rows = rowsFor(context, 'overview-attention-domains');
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
+  const headingId = `${context.pageId}-${slugify(context.title, 'element')}-heading`;
   return h(
     'section',
     { className: 'overview-observability', 'aria-labelledby': headingId },
@@ -126,7 +126,7 @@ function renderDomainAttentionElement(context) {
  */
 function renderPackageStatusGridElement(context) {
   const rows = rowsFor(context, 'overview-managed-packages');
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
+  const headingId = `${context.pageId}-${slugify(context.title, 'element')}-heading`;
   return h(
     'section',
     { className: 'overview-package-status', 'aria-labelledby': headingId },
@@ -527,11 +527,4 @@ function stringValue(value) {
  */
 function capitalize(value) {
   return value.length === 0 ? value : `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
-}
-
-/**
- * @param {string} value
- */
-function slugify(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'element';
 }

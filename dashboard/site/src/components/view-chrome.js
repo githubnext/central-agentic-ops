@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
-import { formatUtcDateTime, renderDlRow, renderListWithFallback, renderSectionHeading, renderTooltip } from './ui-primitives.js';
+import { formatUtcDateTime, renderDlRow, renderListWithFallback, renderSectionHeading, renderTooltip, slugify } from './ui-primitives.js';
 import { titleCase } from './count-formatters.js';
 
 /**
@@ -17,7 +17,7 @@ import { titleCase } from './count-formatters.js';
  * @returns {HTMLElement}
  */
 export function renderPageSection(pageId, title, content, headingTag = 'h3', description) {
-  const headingId = `${pageId}-${slugifyText(title)}-heading`;
+  const headingId = `${pageId}-${slugify(title, 'section')}-heading`;
   const tooltip = description
     ? renderTooltip({
         id: `${headingId}-description`,
@@ -260,10 +260,3 @@ export function renderLayoutSectionChrome(pageId, section, count) {
   );
 }
 
-/**
- * @param {string} value
- * @returns {string}
- */
-function slugifyText(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
-}
