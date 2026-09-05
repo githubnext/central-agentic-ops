@@ -994,10 +994,11 @@ function formatTimelineTick(value) {
 }
 
 /**
- * @param {{ x: string, y: number, color: string | null }} point
+ * @param {{ x: string, y: number, color: string | null, source?: Record<string, unknown> }} point
  * @param {{ name: string, symbol: string, significant: number } | null} [unit]
  * @returns {string}
  */
 function chartPointLabel(point, unit = null) {
-  return `${point.x}: ${formatNumber(point.y, unit)}${point.color ? `, ${point.color}` : ''}`;
+  const clusterCount = Number(point.source?.['cluster-count']);
+  return `${point.x}: ${formatNumber(point.y, unit)}${point.color ? `, ${point.color}` : ''}${clusterCount > 1 ? `, cluster of ${formatNumber(clusterCount, null)} observations` : ''}`;
 }

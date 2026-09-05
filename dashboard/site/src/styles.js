@@ -232,6 +232,8 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .view-disclosure[open] .view-disclosure-hint::after { content: "Hide details"; font-size: .75rem; }
 .view-disclosure > .page-section { padding: 0 14px 14px; }
 .chart-widget { min-height: 230px; display: grid; place-items: center; margin: 12px 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.chart-clustering-progress { min-height: 230px; display: grid; place-content: center; justify-items: center; gap: 10px; margin: 12px 0; color: var(--muted); font-size: .8125rem; }
+.chart-clustering-progress progress { width: min(240px, 70vw); }
 .chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
 .line-chart-widget svg, .dot-chart-widget svg, .scatter-chart-widget svg { width: 100%; max-height: none; }
 .pie-chart-track { stroke: var(--border-muted); }

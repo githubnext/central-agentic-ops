@@ -74,4 +74,29 @@ describe('dashboard data operations', () => {
       ]
     }]);
   });
+
+  it('clusters 100,000 scatter points to a bounded worker result while preserving series', () => {
+    const start = Date.parse('2026-09-01T00:00:00Z');
+    const points = Array.from({ length: 100_000 }, (_, index) => ({
+      key: `point-${index}`,
+      x: new Date(start + (index * 1_000)).toISOString(),
+      y: index % 101,
+      color: `lane-${index % 4}`,
+      link: null
+    }));
+    const clustered = /** @type {typeof points} */ (processDataRequest({
+      operation: 'cluster-scatter-points',
+      data: points,
+      limit: 400
+    }));
+
+    expect(clustered).toHaveLength(400);
+    expect(new Set(clustered.map((point) => point.color))).toEqual(new Set([
+      'lane-0',
+      'lane-1',
+      'lane-2',
+      'lane-3'
+    ]));
+    expect(clustered.every((point) => Number.isFinite(Date.parse(point.x)) && Number.isFinite(point.y))).toBe(true);
+  });
 });

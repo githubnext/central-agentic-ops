@@ -389,6 +389,21 @@ describe('chart element helpers', () => {
     expect(scatter.querySelector('svg')?.getAttribute('aria-label')).toBe('Scatter chart with 3 points');
   });
 
+  it('exposes scatter cluster sizes in accessible point labels', () => {
+    const scatter = renderChartWidget('scatter', [{
+      x: '2026-09-04T10:00:00Z',
+      y: 72,
+      color: 'max 5000',
+      source: { 'cluster-count': 250 }
+    }], [{ name: 'max 5000', className: 'chart-series-1' }], null, 'Remaining', {
+      name: 'Percent',
+      symbol: '%',
+      significant: 0.1
+    });
+
+    expect(scatter.querySelector('.chart-point')?.getAttribute('aria-label')).toContain('cluster of 250 observations');
+  });
+
   it('dims historical line context and emphasizes the selected window', () => {
     const points = [
       { x: '2026-09-03T10:00:00Z', y: 2, color: 'worker', highlighted: false },
