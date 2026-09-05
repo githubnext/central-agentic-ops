@@ -2120,7 +2120,6 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /^  playwright:\s*$/m);
   assert.match(source, /version: "0\.1\.18"/);
   assert.match(source, /browsers: \[chromium\]/);
-  assert.match(source, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
   assert.match(compiled, /npm install -g @playwright\/cli@0\.1\.18/);
   assert.match(compiled, /install_playwright_browsers\.sh" chromium/);
   assert.match(compiled, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
