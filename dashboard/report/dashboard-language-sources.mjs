@@ -938,13 +938,14 @@ function detectionSignal(state, verdict, warningText) {
 
 export function detectionObservationRows(usage, jobs = []) {
   const securityRuns = Array.isArray(usage.securityRuns) ? usage.securityRuns : [];
+  const observationKey = (repository, run) => `${String(repository || "").trim().toLowerCase()}:${String(run)}`;
   const securityByRun = new Map(securityRuns.map((run) => [
-    `${String(run.repository || "").toLowerCase()}:${run.runId}`,
+    observationKey(run.repository, run.runId),
     run,
   ]));
   const detectionJobs = jobs.filter((job) => String(job.job || "").toLowerCase() === "detection");
   const jobByRun = new Map(detectionJobs.map((job) => [
-    `${String(job.organization || "").toLowerCase()}/${String(job.repository || "").toLowerCase()}:${job.run}`,
+    observationKey([job.organization, job.repository].filter(Boolean).join("/"), job.run),
     job,
   ]));
   const keys = new Set([...securityByRun.keys(), ...jobByRun.keys()]);
@@ -984,7 +985,7 @@ export function detectionObservationRows(usage, jobs = []) {
       "verdict-available": verdictAvailable ? "true" : "false",
       "usable-verdict-percent": verdictAvailable ? 100 : 0,
       "detection-state": state,
-      "detection-state-label": state.split("-").map((part) => `${part[0].toUpperCase()}${part.slice(1)}`).join(" "),
+      "detection-state-label": state.split("-").map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(" "),
       "detection-count": 1,
       "prompt-injection-detected": verdict.promptInjection === true ? "true" : "false",
       "secret-leak-detected": verdict.secretLeak === true ? "true" : "false",
