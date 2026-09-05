@@ -623,6 +623,7 @@ describe('presenter built-in and custom pages', () => {
       'GitHub API',
       'Updates',
       'Dispatches',
+      'Firewall',
       'Workflows',
       'Repositories',
       'Packages',
@@ -838,6 +839,7 @@ describe('presenter built-in and custom pages', () => {
       'GitHub API',
       'Updates',
       'Dispatches',
+      'Firewall',
       'Workflows',
       'Repositories',
       'Packages',
@@ -877,7 +879,7 @@ describe('presenter built-in and custom pages', () => {
     expect(horizonHelp).toBeNull();
     expect(horizonTooltip).toBeNull();
 
-    for (const pageId of ['runtime', 'security', 'operational-value']) {
+    for (const pageId of ['runtime', 'security', 'firewall', 'operational-value']) {
       const filterBar = activatePage(rendered, pageId)?.querySelector('.filter-bar');
       expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');

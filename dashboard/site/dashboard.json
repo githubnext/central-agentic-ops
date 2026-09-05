@@ -1307,7 +1307,7 @@
             "mark": "element",
             "element": "summary-grid",
             "layout": "full",
-            "disclosure": "supplemental"
+            "disclosure": "essential"
           },
           {
             "id": "security-signals",

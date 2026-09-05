@@ -269,7 +269,7 @@ describe('dashboard document validation', () => {
     if (!invalidContext.ok) {
       expect(invalidContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[9].views[3].encoding.actions[0].context[9]'
+        path: '$.dashboard.pages[10].views[3].encoding.actions[0].context[9]'
       }));
     }
     detailsView.encoding.actions[0].context.pop();
