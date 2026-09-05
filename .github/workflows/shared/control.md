@@ -77,7 +77,12 @@ jobs:
           set -euo pipefail
           source_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/aw/cao"
           target_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/cao"
-          if [ -f "$source_dir/control.mjs" ] && [ -f "$source_dir/policy.mjs" ]; then
+          if [ ! -f "$source_dir/control.mjs" ] || [ ! -f "$source_dir/policy.mjs" ]; then
+            source_dir="$target_dir"
+          fi
+          test -f "$source_dir/control.mjs"
+          test -f "$source_dir/policy.mjs"
+          if [ "$source_dir" != "$target_dir" ]; then
             mkdir -p "$target_dir"
             cp "$source_dir/control.mjs" "$source_dir/policy.mjs" "$target_dir/"
           fi
@@ -298,6 +303,8 @@ pre-agent-steps:
       if [ ! -f "$source_dir/control.mjs" ] || [ ! -f "$source_dir/policy.mjs" ]; then
         source_dir="${GITHUB_WORKSPACE:-.}/.cao/.github/cao"
       fi
+      test -f "$source_dir/control.mjs"
+      test -f "$source_dir/policy.mjs"
       target_dir="${GITHUB_WORKSPACE:-.}/.github/cao"
       mkdir -p "$target_dir"
       cp "$source_dir/control.mjs" "$source_dir/policy.mjs" "$target_dir/"
