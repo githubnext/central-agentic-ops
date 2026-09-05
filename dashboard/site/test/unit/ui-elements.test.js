@@ -68,6 +68,7 @@ describe('UI elements', () => {
 
     expect(rendered?.querySelector('a')?.getAttribute('href')).toBe('#runtime-evidence');
     expect(rendered?.querySelectorAll('a')).toHaveLength(1);
+    expect(rendered?.querySelector('.signal-item')?.className).toContain('signal-informational');
   });
 
   it('renders canonical attention as a complete priority-first action region', () => {

@@ -512,7 +512,7 @@ function renderSignal(row, index, isCanonicalAttention = false) {
   const evidence = stringValue(row.evidence) || (isCanonicalAttention
     ? [stringValue(row['expected-actor']), age].filter(Boolean).join(' · ')
     : '');
-  const tone = stringValue(row.tone) || canonicalAttentionTone(consequence);
+  const tone = stringValue(row.tone) || (isCanonicalAttention ? canonicalAttentionTone(consequence) : '');
   const content = [
     isCanonicalAttention
       ? h(
