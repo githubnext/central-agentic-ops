@@ -1214,7 +1214,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     sources.runs.metadata["coverage-start"] = new Date(
       Date.parse(generatedAt) - deployed.runHealth.windowHours * 3_600_000,
     ).toISOString();
-    for (const name of ["run-performance", "job-performance", "safe-output-performance"]) {
+    for (const name of ["run-performance", "job-performance"]) {
       sources[name].metadata["coverage-end"] = generatedAt;
       sources[name].metadata["coverage-start"] = sources.runs.metadata["coverage-start"];
     }
