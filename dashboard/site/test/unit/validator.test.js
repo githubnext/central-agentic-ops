@@ -135,27 +135,54 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('defines the security assurance view without a findings summary table', () => {
+  it('defines firewall review and assurance views on the security page', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const security = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'security');
     expect(security.sections.map((/** @type {{ views: string[] }} */ section) => section.views)).toEqual([
+      ['security-firewall-decisions', 'security-firewall-trend', 'security-firewall-domains'],
       ['security-summary', 'security-signals'],
       ['security-output-ledger']
     ]);
     expect(security.views).not.toContainEqual(expect.objectContaining({ id: 'security-findings-summary' }));
-    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
-  });
-
-  it('defines a filterable firewall domain table on the usage page', () => {
-    const document = JSON.parse(authoritativeDashboardSource);
-    const usage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'usage');
-    const domains = usage.definition.views.find(
-      (/** @type {{ id: string }} */ view) => view.id === 'usage-firewall-domains'
+    const decisions = security.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-decisions'
+    );
+    const trend = security.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-trend'
+    );
+    const domains = security.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-domains'
     );
 
+    expect(decisions).toMatchObject({
+      mark: 'chart',
+      chart: 'pie',
+      disclosure: 'essential',
+      data: {
+        source: 'security-observations',
+        filters: {
+          'security-feature': ['firewall'],
+          'security-analysis': ['summary']
+        }
+      }
+    });
+    expect(trend).toMatchObject({
+      mark: 'chart',
+      chart: 'line',
+      disclosure: 'essential',
+      data: {
+        source: 'security-observations',
+        time: { range: '30d' },
+        filters: {
+          'security-feature': ['firewall'],
+          'security-analysis': ['summary']
+        }
+      }
+    });
     expect(domains).toMatchObject({
       mark: 'table',
       controls: 'interactive',
+      disclosure: 'essential',
       data: {
         source: 'security-observations',
         filters: {
@@ -170,6 +197,7 @@ describe('dashboard document validation', () => {
       expect.objectContaining({ field: 'security-count', title: 'Requests' }),
       expect.objectContaining({ field: 'run' })
     ]));
+    expect(domains.encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
