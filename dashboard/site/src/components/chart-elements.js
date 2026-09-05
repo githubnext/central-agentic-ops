@@ -428,7 +428,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       maximumTime = Math.max(maximumTime, time);
     }
     const timelineTicks = isScatterChart
-      ? scatterChartTimelineTicks(parsedTimes, minimumTime, maximumTime)
+      ? scatterChartTimeAxisTicks(parsedTimes, minimumTime, maximumTime)
       : lineChartTimelineTicks(xValues);
     let maximum = 1;
     for (const point of points) {
@@ -944,12 +944,13 @@ function lineChartTimelineTicks(values) {
  * @param {number} maximum
  * @returns {string[]}
  */
-function scatterChartTimelineTicks(values, minimum, maximum) {
+function scatterChartTimeAxisTicks(values, minimum, maximum) {
   const validValues = [...new Set(values.filter(Number.isFinite))];
   const tickCount = Math.min(validValues.length, MAX_TIMELINE_TICKS);
   if (tickCount === 0) return [];
   if (tickCount === 1 || maximum === minimum) return [new Date(minimum).toISOString()];
 
+  // Equal time intervals align these flex-distributed labels with proportional scatter positions.
   return Array.from(
     { length: tickCount },
     (_, index) => new Date(minimum + ((index / (tickCount - 1)) * (maximum - minimum))).toISOString()
