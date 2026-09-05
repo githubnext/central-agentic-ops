@@ -148,7 +148,11 @@ steps:
       WINDOW_END=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .created_at)
       WINDOW_START=$(date -u -d "$WINDOW_END - 24 hours" +%Y-%m-%dT%H:%M:%SZ)
 
+      RATE_BEFORE=$(gh api rate_limit --jq '.rate.remaining' 2>/dev/null || echo "unknown")
+      RATE_LIMIT_TOTAL=$(gh api rate_limit --jq '.rate.limit' 2>/dev/null || echo "unknown")
+
       RAW_LOGS=/tmp/gh-aw/token-audit/workflow-logs.raw.json
+      LOG_STDERR=/tmp/gh-aw/token-audit/workflow-logs.stderr.txt
       LOG_EXIT=0
       gh aw logs \
         --repo "$TARGET_REPO" \
@@ -159,7 +163,37 @@ steps:
         --timeout 10 \
         --max-github-api-rate-limit -2000 \
         --max-storage 1024 \
-        > "$RAW_LOGS" || LOG_EXIT=$?
+        > "$RAW_LOGS" 2> "$LOG_STDERR" || LOG_EXIT=$?
+
+      RATE_AFTER=$(gh api rate_limit --jq '.rate.remaining' 2>/dev/null || echo "unknown")
+      RATE_LIMIT_HIT=false
+      if grep -qiE "rate limit exceeded|secondary rate limit|403 forbidden|you have exceeded a secondary rate limit" "$LOG_STDERR" 2>/dev/null; then
+        RATE_LIMIT_HIT=true
+      elif [[ "$RATE_BEFORE" =~ ^[0-9]+$ ]] && [ "$RATE_BEFORE" -lt "$RATE_LIMIT_LOW_THRESHOLD" ]; then
+        RATE_LIMIT_HIT=true
+      elif [[ "$RATE_AFTER" =~ ^[0-9]+$ ]] && [ "$RATE_AFTER" -lt "$RATE_LIMIT_LOW_THRESHOLD" ]; then
+        RATE_LIMIT_HIT=true
+      fi
+
+      jq -n \
+        --arg remaining_before "$RATE_BEFORE" \
+        --arg remaining_after "$RATE_AFTER" \
+        --arg limit "$RATE_LIMIT_TOTAL" \
+        --argjson rate_limit_hit "$RATE_LIMIT_HIT" \
+        --arg exit_code "$LOG_EXIT" \
+        --arg stderr_excerpt "$(tail -c 2000 "$LOG_STDERR" 2>/dev/null || echo "")" \
+        '{
+          remaining_before: $remaining_before,
+          remaining_after: $remaining_after,
+          limit: $limit,
+          rate_limit_hit: $rate_limit_hit,
+          exit_code: ($exit_code | tonumber? // $exit_code),
+          stderr_excerpt: $stderr_excerpt
+        }' > /tmp/gh-aw/token-audit/github-rate-limit-logs.json
+
+      if [ "$RATE_LIMIT_HIT" = "true" ]; then
+        echo "⚠️ GitHub API rate limit issue detected while downloading logs (remaining before=$RATE_BEFORE, after=$RATE_AFTER, limit=$RATE_LIMIT_TOTAL)"
+      fi
 
       if jq -e . "$RAW_LOGS" >/dev/null 2>&1; then
         jq --arg windowStart "$WINDOW_START" --arg windowEnd "$WINDOW_END" '
@@ -194,7 +228,12 @@ steps:
       FORECAST_DIR=/tmp/gh-aw/token-audit
       FORECAST_JSON="$FORECAST_DIR/forecast.json"
       FORECAST_METADATA="$FORECAST_DIR/forecast-metadata.txt"
+      FORECAST_STDERR="$FORECAST_DIR/forecast.stderr.txt"
       mkdir -p "$FORECAST_DIR"
+
+      RATE_LIMIT_LOW_THRESHOLD=50
+      RATE_BEFORE=$(gh api rate_limit --jq '.rate.remaining' 2>/dev/null || echo "unknown")
+      RATE_LIMIT_TOTAL=$(gh api rate_limit --jq '.rate.limit' 2>/dev/null || echo "unknown")
 
       FORECAST_EXIT_CODE=0
       gh aw forecast \
@@ -206,7 +245,37 @@ steps:
         --timeout 10 \
         --verbose \
         --json \
-        > "$FORECAST_JSON" || FORECAST_EXIT_CODE=$?
+        > "$FORECAST_JSON" 2> "$FORECAST_STDERR" || FORECAST_EXIT_CODE=$?
+
+      RATE_AFTER=$(gh api rate_limit --jq '.rate.remaining' 2>/dev/null || echo "unknown")
+      RATE_LIMIT_HIT=false
+      if grep -qiE "rate limit exceeded|secondary rate limit|403 forbidden|you have exceeded a secondary rate limit" "$FORECAST_STDERR" 2>/dev/null; then
+        RATE_LIMIT_HIT=true
+      elif [[ "$RATE_BEFORE" =~ ^[0-9]+$ ]] && [ "$RATE_BEFORE" -lt "$RATE_LIMIT_LOW_THRESHOLD" ]; then
+        RATE_LIMIT_HIT=true
+      elif [[ "$RATE_AFTER" =~ ^[0-9]+$ ]] && [ "$RATE_AFTER" -lt "$RATE_LIMIT_LOW_THRESHOLD" ]; then
+        RATE_LIMIT_HIT=true
+      fi
+
+      jq -n \
+        --arg remaining_before "$RATE_BEFORE" \
+        --arg remaining_after "$RATE_AFTER" \
+        --arg limit "$RATE_LIMIT_TOTAL" \
+        --argjson rate_limit_hit "$RATE_LIMIT_HIT" \
+        --arg exit_code "$FORECAST_EXIT_CODE" \
+        --arg stderr_excerpt "$(tail -c 2000 "$FORECAST_STDERR" 2>/dev/null || echo "")" \
+        '{
+          remaining_before: $remaining_before,
+          remaining_after: $remaining_after,
+          limit: $limit,
+          rate_limit_hit: $rate_limit_hit,
+          exit_code: ($exit_code | tonumber? // $exit_code),
+          stderr_excerpt: $stderr_excerpt
+        }' > "$FORECAST_DIR/github-rate-limit-forecast.json"
+
+      if [ "$RATE_LIMIT_HIT" = "true" ]; then
+        echo "⚠️ GitHub API rate limit issue detected while computing forecast (remaining before=$RATE_BEFORE, after=$RATE_AFTER, limit=$RATE_LIMIT_TOTAL)"
+      fi
 
       FORECAST_JSON_VALID=false
       if jq -e '(.period | type == "string") and (.workflows | type == "array")' "$FORECAST_JSON" >/dev/null 2>&1; then
@@ -218,6 +287,7 @@ steps:
         printf 'json_valid=%s\n' "$FORECAST_JSON_VALID"
         printf 'repository=%s\n' "$TARGET_REPOSITORY"
         printf 'generated_at=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        printf 'rate_limit_hit=%s\n' "$RATE_LIMIT_HIT"
       } > "$FORECAST_METADATA"
 
       echo "Forecast exit code: $FORECAST_EXIT_CODE"
@@ -290,6 +360,10 @@ The 30-day forecast is at `/tmp/gh-aw/token-audit/forecast.json`, and command st
 gh aw forecast --repo "$TARGET_REPO" --days 30 --period month --sample 100 --concurrency 8 --timeout 10 --verbose --json
 ```
 
+### GitHub API rate-limit status
+
+`/tmp/gh-aw/token-audit/github-rate-limit-logs.json` and `/tmp/gh-aw/token-audit/github-rate-limit-forecast.json` record the GitHub API rate-limit state observed around the `gh aw logs` and `gh aw forecast` calls: `remaining_before`, `remaining_after`, `limit`, `rate_limit_hit` (a boolean heuristic based on stderr text and remaining-quota depletion), `exit_code`, and a truncated `stderr_excerpt`. Read both files. If either has `rate_limit_hit: true`, treat that as a likely explanation for missing or incomplete data and call it out explicitly in the issue instead of describing the window as merely idle.
+
 Use these current forecast fields:
 
 | Field | Meaning |
@@ -361,6 +435,7 @@ Handle null/missing `aic` and `token_usage` by treating them as 0.
 4. Sum the same percentile across workflows to produce repository weekly and monthly scenarios. Label these totals as sums of per-workflow projections, not an independently simulated portfolio confidence interval.
 5. Convert forecast AIC to estimated USD by multiplying by `0.01`. Keep enough decimal places that a positive cost never renders as `$0.00`.
 6. Flag data quality limitations, including zero sampled runs, zero AIC despite sampled runs, `is_reliable=false`, stale samples, missing workflows, a nonzero command exit, invalid JSON, and intervals whose P90 is more than twice P50.
+7. Read `github-rate-limit-logs.json` and `github-rate-limit-forecast.json`. If either reports `rate_limit_hit: true`, flag it as a data-quality limitation and report the observed `remaining_before`/`remaining_after`/`limit` values so a zero-data or partial-data result can be attributed to GitHub API rate limiting rather than a genuinely idle window.
 
 Use these percentile definitions consistently:
 
@@ -451,7 +526,7 @@ State that repository totals are sums of per-workflow projections. Then include 
 
 ### Forecast Confidence and Data Quality
 
-State whether the forecast command completed, identify unreliable or missing workflow projections, and explain material interval width or sampling limitations. Use `none` when no limitation was detected; never omit this section.
+State whether the forecast command completed, identify unreliable or missing workflow projections, and explain material interval width or sampling limitations. Report GitHub API rate-limit status from `github-rate-limit-logs.json` and `github-rate-limit-forecast.json` (remaining/limit before and after each call); if either shows `rate_limit_hit: true`, state this explicitly as the likely cause of missing or incomplete data. Use `none` when no limitation was detected; never omit this section.
 
 ### 📈 Trends
 
