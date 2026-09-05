@@ -3760,6 +3760,35 @@ dashboard:
     expect(result.ok).toBe(true);
   });
 
+  it('DLS-VIEW-005 accepts temporal scatter charts with unbucketed observations', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: rate-limit-scatter
+  title: Rate-limit scatter
+  pages:
+    - id: github-api
+      kind: custom
+      views:
+        - id: remaining
+          data:
+            source: github-api-rate-limits
+          mark: chart
+          chart: scatter
+          encoding:
+            x:
+              field: observed-at
+              type: temporal
+            y:
+              field: remaining-percent
+              type: quantitative
+            color:
+              field: maximum-lane
+              type: nominal
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('accepts unbucketed categorical swimlanes and rejects quantitative or aggregated lanes', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const overview = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'overview');

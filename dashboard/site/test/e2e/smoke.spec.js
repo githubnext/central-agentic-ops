@@ -121,6 +121,7 @@ test('GitHub API rate-limit dashboard remains operable at desktop and narrow wid
         'credential-type': 'app',
         resource: 'core',
         bucket: 'core · reader',
+        'maximum-lane': 'core · reader · max 5000',
         'history-series': 'core · reader',
         remaining: 1000,
         limit: 5000,

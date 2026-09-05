@@ -120,7 +120,7 @@ describe('chart element helpers', () => {
   });
 
   it('distinguishes missing chart data from an insufficient sample', () => {
-    for (const chartType of ['bar', 'histogram', 'line', 'pie']) {
+    for (const chartType of ['bar', 'histogram', 'line', 'pie', 'scatter']) {
       const chart = renderChartWidget(chartType, [], []);
 
       expect(chart.getAttribute('data-chart-widget')).toBe(chartType);
@@ -361,6 +361,26 @@ describe('chart element helpers', () => {
     expect(dot.querySelector('[data-chart-reference="core"]')?.getAttribute('data-chart-reference-value')).toBe('5000');
     expect(dot.querySelector('.line-chart-series')).toBeNull();
     expect(dot.querySelector('svg')?.getAttribute('aria-label')).toBe('Dot chart with 3 points and 2 reference lines');
+  });
+
+  it('renders temporal scatter observations at proportional timestamps without connecting them', () => {
+    const points = [
+      { x: '2026-09-04T10:00:00Z', y: 98, color: 'max 5000' },
+      { x: '2026-09-04T11:00:00Z', y: 50, color: 'max 5000' },
+      { x: '2026-09-04T14:00:00Z', y: 10, color: 'max 30' }
+    ];
+    const scatter = renderChartWidget('scatter', points, listChartSeries(points), null, 'Remaining', {
+      name: 'Percent',
+      symbol: '%',
+      significant: 0.1
+    });
+    const xCoordinates = [...scatter.querySelectorAll('.scatter-chart-point')]
+      .map((point) => point.getAttribute('cx'));
+
+    expect(scatter.getAttribute('data-chart-widget')).toBe('scatter');
+    expect(xCoordinates).toEqual(['0', '25', '100']);
+    expect(scatter.querySelector('.line-chart-series')).toBeNull();
+    expect(scatter.querySelector('svg')?.getAttribute('aria-label')).toBe('Scatter chart with 3 points');
   });
 
   it('dims historical line context and emphasizes the selected window', () => {
