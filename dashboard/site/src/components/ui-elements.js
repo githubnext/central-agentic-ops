@@ -12,6 +12,7 @@ import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, r
 import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
+import { renderConfigurationView } from './configuration-view.js';
 import { modeBadgeClassName } from './badge.js';
 import { rowsFor as rowsForSource } from './source-rows.js';
 /**
@@ -51,10 +52,11 @@ const ELEMENT_RENDERERS = new Map([
   ['package-reports', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'reports' } })],
   ['package-route', renderPackageRouteView],
   ['workflow-route', renderWorkflowRouteView],
-  ['outcome-detail', renderOutcomeDetail]
+  ['outcome-detail', renderOutcomeDetail],
+  ['configuration-policy', renderConfigurationView]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'package-route', 'workflow-route', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'package-route', 'workflow-route', 'outcome-detail', 'configuration-policy']);
 
 /**
  * @param {string} name

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -13,7 +14,22 @@ function diagnostic(value, fallback) {
   return (message || fallback).slice(0, 700);
 }
 
-function unavailableSettings(repository, reason) {
+function policySnapshot(policyPath, readPolicy) {
+  try {
+    const source = readPolicy(policyPath, "utf8");
+    let document = null;
+    try {
+      document = JSON.parse(source);
+    } catch {
+      // The runtime resolver supplies the authoritative parse diagnostic.
+    }
+    return { policy_document: document, policy_source: source };
+  } catch {
+    return { policy_document: null, policy_source: "" };
+  }
+}
+
+function unavailableSettings(repository, reason, snapshot) {
   return {
     allowed_owners: [repository.split("/", 1)[0]],
     allowed_repositories: [repository],
@@ -26,11 +42,19 @@ function unavailableSettings(repository, reason) {
       status: "unavailable",
       reason,
     },
+    ...snapshot,
   };
 }
 
-export function resolveDashboardControlSettings({ repository, controlProgram, policyPath, execute = spawnSync }) {
+export function resolveDashboardControlSettings({
+  repository,
+  controlProgram,
+  policyPath,
+  execute = spawnSync,
+  readPolicy = readFileSync,
+}) {
   if (!REPOSITORY_PATTERN.test(repository)) throw new Error("GITHUB_REPOSITORY must use owner/repository form");
+  const snapshot = policySnapshot(policyPath, readPolicy);
 
   let result;
   try {
@@ -39,7 +63,7 @@ export function resolveDashboardControlSettings({ repository, controlProgram, po
       env: { ...process.env, GITHUB_REPOSITORY: repository },
     });
   } catch (error) {
-    return unavailableSettings(repository, diagnostic(error?.message, "control policy resolver crashed"));
+    return unavailableSettings(repository, diagnostic(error?.message, "control policy resolver crashed"), snapshot);
   }
 
   if (result.error || result.status !== 0) {
@@ -47,7 +71,7 @@ export function resolveDashboardControlSettings({ repository, controlProgram, po
       result.stderr || result.error?.message || result.stdout,
       `control policy resolver exited with status ${result.status ?? "unknown"}`,
     );
-    return unavailableSettings(repository, reason);
+    return unavailableSettings(repository, reason, snapshot);
   }
 
   try {
@@ -61,9 +85,10 @@ export function resolveDashboardControlSettings({ repository, controlProgram, po
         status: "available",
         reason: "",
       },
+      ...snapshot,
     };
   } catch (error) {
-    return unavailableSettings(repository, diagnostic(error?.message, "control policy resolver returned invalid JSON"));
+    return unavailableSettings(repository, diagnostic(error?.message, "control policy resolver returned invalid JSON"), snapshot);
   }
 }
 

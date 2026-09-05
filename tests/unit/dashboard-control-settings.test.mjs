@@ -11,6 +11,7 @@ const options = {
 test("dashboard control settings retain successful policy resolution", () => {
   const settings = resolveDashboardControlSettings({
     ...options,
+    readPolicy: () => '{"version":1,"control-plane":{}}',
     execute: () => ({
       status: 0,
       stdout: JSON.stringify({
@@ -25,6 +26,8 @@ test("dashboard control settings retain successful policy resolution", () => {
   assert.deepEqual(settings.policy_resolution, { status: "available", reason: "" });
   assert.deepEqual(settings.allowed_repositories, ["acme/target"]);
   assert.deepEqual(settings.packages, { dependabot: { enabled: true } });
+  assert.deepEqual(settings.policy_document, { version: 1, "control-plane": {} });
+  assert.equal(settings.policy_source, '{"version":1,"control-plane":{}}');
 });
 
 test("dashboard control settings report policy refusal without widening scope", () => {
@@ -45,6 +48,8 @@ test("dashboard control settings report policy refusal without widening scope", 
       status: "unavailable",
       reason: "control-plane is required",
     },
+    policy_document: null,
+    policy_source: "",
   });
 });
 

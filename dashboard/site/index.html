@@ -189,6 +189,45 @@
       });
 
       const fixtureSources = {
+        "configuration-summary": {
+          source: "configuration-summary",
+          rows: [
+            { status: "Valid", count: 1 },
+            { status: "Guidance", count: 1 },
+          ],
+          metadata: metadata("configuration-summary-fixture"),
+        },
+        "configuration-policy": {
+          source: "configuration-policy",
+          rows: [{
+            path: ".github/workflows/cao.json",
+            document: {
+              version: 1,
+              "control-plane": {
+                scope: { "allowed-owners": ["githubnext"], "allowed-repositories": ["githubnext/gh-aw-cao"] },
+                defaults: { mode: "review", "max-repositories": 1, "rollout-percent": 100 },
+                packages: { "self-care": { mode: "review", workers: { "dashboard-review": { workflow: "self-care-dashboard-review" } } } },
+              },
+            },
+            raw: '{\n  "version": 1,\n  "control-plane": {\n    "scope": {\n      "allowed-owners": ["githubnext"],\n      "allowed-repositories": ["githubnext/gh-aw-cao"]\n    },\n    "defaults": {\n      "mode": "review",\n      "max-repositories": 1,\n      "rollout-percent": 100\n    }\n  }\n}',
+            diagnostics: [
+              { severity: "valid", path: ".github/workflows/cao.json", title: "Policy is valid", detail: "The runtime policy resolver accepted this revision." },
+              { severity: "guidance", path: "control-plane.packages.self-care.mode", title: "self-care is review-only", detail: "Review mode produces proposals in the control repository and cannot mutate targets." },
+            ],
+          }],
+          metadata: metadata("configuration-policy-fixture"),
+        },
+        "configuration-actions": {
+          source: "configuration-actions",
+          rows: [{
+            action: "Promote self-care to live",
+            path: "control-plane.packages.self-care.mode",
+            current: "review",
+            recommended: "live",
+            prompt: 'Update .github/workflows/cao.json so control-plane.packages.self-care.mode is "live". Preserve all existing scope and rollout limits, verify target-owned authority, and validate the policy before committing.',
+          }],
+          metadata: metadata("configuration-actions-fixture"),
+        },
         organizations: {
           source: "organizations",
           rows: [

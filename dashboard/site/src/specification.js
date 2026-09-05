@@ -47,7 +47,8 @@ export const VIEW_ELEMENT_VALUES = [
   'package-reports',
   'package-route',
   'workflow-route',
-  'outcome-detail'
+  'outcome-detail',
+  'configuration-policy'
 ];
 export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
 export const PACKAGE_ROUTE_BODY_VALUES = ['insights', 'workflows', 'dispatches', 'reports'];

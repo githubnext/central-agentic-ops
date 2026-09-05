@@ -27,6 +27,9 @@ const sourceNames = [
   "github-api-rate-limits",
   "github-api-collector-health",
   "github-api-call-stacks",
+  "configuration-summary",
+  "configuration-policy",
+  "configuration-actions",
 ];
 const AIC_TO_USD = 0.01;
 export const GITHUB_RATE_LIMIT_THRESHOLDS = Object.freeze({
@@ -990,6 +993,120 @@ function operationalValueGraderRows(values) {
   });
 }
 
+function configurationData(controlSettings) {
+  const document = controlSettings.policy_document;
+  const resolution = controlSettings.policy_resolution ?? {};
+  const diagnostics = [];
+  const actions = [];
+  if (resolution.status !== "available") {
+    diagnostics.push({
+      severity: "error",
+      path: ".github/workflows/cao.json",
+      title: "Policy validation failed",
+      detail: resolution.reason || "The control policy could not be resolved.",
+    });
+  } else {
+    diagnostics.push({
+      severity: "valid",
+      path: ".github/workflows/cao.json",
+      title: "Policy is valid",
+      detail: "The runtime policy resolver accepted this revision.",
+    });
+  }
+
+  const control = document?.["control-plane"];
+  if (control && typeof control === "object" && !Array.isArray(control)) {
+    const scope = control.scope;
+    if (!Array.isArray(scope?.["allowed-repositories"])) {
+      diagnostics.push({
+        severity: "warning",
+        path: "control-plane.scope.allowed-repositories",
+        title: "Repository scope is owner-wide",
+        detail: "Without an explicit repository allowlist, every repository under an allowed owner may be discovered.",
+      });
+    }
+    const packages = control.packages && typeof control.packages === "object" ? control.packages : {};
+    if (Object.keys(packages).length === 0) {
+      diagnostics.push({
+        severity: "warning",
+        path: "control-plane.packages",
+        title: "No packages are configured",
+        detail: "Operations remain inactive until a package and its workers are declared.",
+      });
+    }
+    const defaultMode = control.defaults?.mode ?? "review";
+    for (const [packageName, policy] of Object.entries(packages)) {
+      if (!policy || typeof policy !== "object" || Array.isArray(policy) || policy.enabled === false) continue;
+      const mode = policy.mode ?? defaultMode;
+      if (mode === "review") {
+        const path = `control-plane.packages.${packageName}.mode`;
+        diagnostics.push({
+          severity: "guidance",
+          path,
+          title: `${packageName} is review-only`,
+          detail: "Review mode produces proposals in the control repository and cannot mutate targets.",
+        });
+        actions.push({
+          action: `Promote ${packageName} to live`,
+          path,
+          current: "review",
+          recommended: "live",
+          prompt: `Update .github/workflows/cao.json so ${path} is "live". Preserve all existing scope and rollout limits, verify target-owned authority for ${packageName}, and validate the policy before committing.`,
+        });
+      }
+      if (mode === "live") {
+        diagnostics.push({
+          severity: "guidance",
+          path: `control-plane.packages.${packageName}`,
+          title: `${packageName} live mode requires target authority`,
+          detail: "Each live target must authorize this control repository on its protected default branch.",
+        });
+      }
+      for (const [workerName, worker] of Object.entries(policy.workers ?? {})) {
+        if (worker?.enabled !== false) continue;
+        const path = `control-plane.packages.${packageName}.workers.${workerName}.enabled`;
+        actions.push({
+          action: `Enable ${workerName}`,
+          path,
+          current: "false",
+          recommended: "true",
+          prompt: `Update .github/workflows/cao.json so ${path} is true. Preserve the worker workflow slug and all package limits, then validate the policy before committing.`,
+        });
+      }
+    }
+  }
+
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    diagnostics.push({
+      severity: "warning",
+      path: ".github/workflows/cao.json",
+      title: "Structured policy unavailable",
+      detail: "Fix the JSON syntax or restore the policy file to inspect individual entries.",
+    });
+  }
+
+  const summary = Object.entries(
+    diagnostics.reduce((counts, item) => {
+      const label = item.severity === "error"
+        ? "Errors"
+        : item.severity === "warning" ? "Warnings" : item.severity === "guidance" ? "Guidance" : "Valid";
+      counts[label] = (counts[label] ?? 0) + 1;
+      return counts;
+    }, {}),
+  ).map(([status, count]) => ({ status, count }));
+
+  return {
+    summary,
+    policy: [{
+      path: ".github/workflows/cao.json",
+      document,
+      raw: controlSettings.policy_source || "",
+      diagnostics,
+    }],
+    actions,
+  };
+}
+
 export function buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory = {}, controlSettings = {}, githubTelemetry = [] }) {
   const generatedAt = report.generatedAt || deployed.generatedAt || new Date().toISOString();
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
@@ -1026,6 +1143,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const usageAvailable = usage.available === true;
   const usageComplete = usage.complete === true;
   const valueAvailable = operationalValues.records !== undefined;
+  const configuration = configurationData(controlSettings);
 
   const sources = Object.fromEntries(sourceNames.map((name) => [name, source(name, [], generatedAt, false, false)]));
   sources.organizations = source("organizations", organizations, generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
@@ -1075,6 +1193,9 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     coverageDiagnosticRows(deployed, usage, controlSettings, report),
     generatedAt,
   );
+  sources["configuration-summary"] = source("configuration-summary", configuration.summary, generatedAt);
+  sources["configuration-policy"] = source("configuration-policy", configuration.policy, generatedAt);
+  sources["configuration-actions"] = source("configuration-actions", configuration.actions, generatedAt);
   sources["repository-coverage"] = source(
     "repository-coverage",
     repositoryCoverageRows(deployed),
