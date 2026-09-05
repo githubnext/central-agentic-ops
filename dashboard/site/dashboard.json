@@ -1275,7 +1275,6 @@
             "id": "mcp-status-distribution",
             "title": "MCP success, failure, and missing rate",
             "description": "Observed MCP server health by workflow run distinguishes successful activity, reported failures, and missing telemetry.",
-            "intent": "Identify whether MCP activity is healthy and whether telemetry gaps limit the diagnosis.",
             "data": {
               "source": "mcp-servers"
             },
@@ -1302,7 +1301,6 @@
             "id": "mcp-response-size-distribution",
             "title": "Response payload size distribution",
             "description": "Automatically binned MCP response sizes surface unusually large tool payloads that may increase latency and AI Credit consumption.",
-            "intent": "Locate oversized MCP responses that warrant tool or query optimization.",
             "data": {
               "source": "mcp-calls"
             },
@@ -1329,7 +1327,6 @@
             "id": "mcp-server-inventory",
             "title": "Observed MCP servers",
             "description": "Server identity, available version metadata, call volume, failures, and response payload totals remain attributable to workflow runs.",
-            "intent": "Inventory MCP servers and versions, then open the originating workflow run for investigation.",
             "data": {
               "source": "mcp-servers",
               "order-by": [
