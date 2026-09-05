@@ -8,6 +8,7 @@ import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRoutePageShell } from './route-page-shell.js';
 import { rowsFor } from './source-rows.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
+import { workflowRouteComposition } from './workflow-route-composition.js';
 
 /**
  * @typedef {{
@@ -66,6 +67,15 @@ export function renderWorkflowRouteShell(context, config) {
       };
     }
   });
+}
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {import('./workflow-route-composition.js').WorkflowRouteBody} body
+ * @returns {HTMLElement}
+ */
+export function renderWorkflowRouteBody(context, body) {
+  return renderWorkflowRouteShell(context, workflowRouteComposition(body));
 }
 
 /**

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { renderWorkflowRuntime } from '../../src/components/workflow-runtime.js';
+import { renderWorkflowRouteBody } from '../../src/components/workflow-route-shell.js';
 import { renderWorkflowRouteView } from '../../src/components/workflow-route-view.js';
 
 const completeMetadata = {
@@ -278,6 +279,14 @@ describe('renderWorkflowRuntime', () => {
       pageId: 'workflow-detail',
       elementConfig: { body: 'insights' }
     });
+    selectWorkflow(rendered);
+
+    expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Insights');
+    expect(rendered.querySelector('.workflow-runtime-metrics')).not.toBeNull();
+  });
+
+  it('renders reusable workflow route bodies without page-specific branching', () => {
+    const rendered = renderWorkflowRouteBody(context(), 'insights');
     selectWorkflow(rendered);
 
     expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Insights');

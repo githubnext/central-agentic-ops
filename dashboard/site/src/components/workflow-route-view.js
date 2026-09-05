@@ -2,13 +2,14 @@
  * Declarative workflow route view composition primitives.
  */
 
-import { workflowRouteComposition } from './workflow-route-composition.js';
-import { renderWorkflowRouteShell } from './workflow-route-shell.js';
+import { renderWorkflowRouteBody } from './workflow-route-shell.js';
+import { selectWorkflowRouteBody } from './workflow-route-composition.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @returns {HTMLElement}
  */
 export function renderWorkflowRouteView(context) {
-  return renderWorkflowRouteShell(context, workflowRouteComposition(context.elementConfig?.body));
+  const body = selectWorkflowRouteBody(context.elementConfig?.body);
+  return renderWorkflowRouteBody(context, body);
 }

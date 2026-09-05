@@ -2,8 +2,8 @@
  * Workflow route composition registry shared by declarative route views.
  */
 
-import { selectNamedComposition } from './route-composition.js';
 import { WORKFLOW_ROUTE_BODY_RENDERERS } from './workflow-route-bodies.js';
+import { selectRouteBody } from './route-view-body.js';
 
 /**
  * @typedef {'insights'|'reports'|'runs'} WorkflowRouteBody
@@ -69,14 +69,27 @@ const WORKFLOW_ROUTE_BODY_COMPOSITIONS = /** @type {Readonly<Record<WorkflowRout
   }
 });
 
-const DEFAULT_WORKFLOW_ROUTE_BODY = 'reports';
+export const DEFAULT_WORKFLOW_ROUTE_BODY = 'reports';
+export const WORKFLOW_ROUTE_BODY_VALUES = /** @type {const} */ (['insights', 'reports', 'runs']);
+const WORKFLOW_ROUTE_BODY_REGISTRY = {
+  defaultBody: /** @type {WorkflowRouteBody} */ (DEFAULT_WORKFLOW_ROUTE_BODY),
+  values: WORKFLOW_ROUTE_BODY_COMPOSITIONS,
+  /** @param {unknown} value @returns {value is WorkflowRouteBody} */
+  isValue: (value) => typeof value === 'string' && WORKFLOW_ROUTE_BODY_VALUES.includes(/** @type {WorkflowRouteBody} */ (value))
+};
 
 /**
  * @param {unknown} body
  * @returns {WorkflowRouteBodyComposition}
  */
 export function workflowRouteComposition(body) {
-  return /** @type {WorkflowRouteBodyComposition} */ (
-    selectNamedComposition(WORKFLOW_ROUTE_BODY_COMPOSITIONS, body, DEFAULT_WORKFLOW_ROUTE_BODY)
-  );
+  return WORKFLOW_ROUTE_BODY_COMPOSITIONS[selectWorkflowRouteBody(body)];
+}
+
+/**
+ * @param {unknown} body
+ * @returns {WorkflowRouteBody}
+ */
+export function selectWorkflowRouteBody(body) {
+  return selectRouteBody(WORKFLOW_ROUTE_BODY_REGISTRY, body);
 }

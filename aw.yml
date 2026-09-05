@@ -14,3 +14,5 @@ resources:
     destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
+  - source: dashboard/site/src/components/route-view-body.js
+    destination: .github/aw/dashboard/site/src/components/route-view-body.js

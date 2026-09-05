@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { renderWorkflowDetail } from '../../src/components/workflow-detail.js';
+import { renderWorkflowRouteBody } from '../../src/components/workflow-route-shell.js';
 
 const metadata = {
   'source-id': 'fixture',
@@ -217,6 +218,20 @@ describe('renderWorkflowDetail', () => {
     }));
 
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
+  });
+
+  it('reuses the reports body composition directly', () => {
+    const rendered = renderWorkflowRouteBody(context(), 'reports');
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: {
+        parameter: 'workflow',
+        value: 'githubnext/gh-aw-cao:.github/workflows/ambient-context.md'
+      }
+    }));
+
+    expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Reports');
+    expect(rendered.querySelector('.workflow-identity')).not.toBeNull();
   });
 
   it('reuses the shared route page shell for workflow tabs and chrome', () => {
