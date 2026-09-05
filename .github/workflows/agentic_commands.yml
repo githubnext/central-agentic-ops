@@ -63,7 +63,7 @@ jobs:
         env:
           GH_AW_SLASH_ROUTING: '{"matt":[{"workflow":"mattpocock-skills-reviewer","events":["pull_request_comment","pull_request_review_comment"],"status_comment":true}],"souschef":[{"workflow":"pr-sous-chef","events":["pull_request_comment"],"ai_reaction":"eyes","status_comment":true}]}'
           GH_AW_LABEL_ROUTING: '{}'
-          GH_AW_HELP_COMMANDS: '[{"command":"matt","description":"Reviews ready pull requests with pinned Matt Pocock engineering skills and repository-specific change context.","centralized":true,"decentralized":false,"source_file":"mattpocock-skills-reviewer"},{"command":"souschef","description":"Nudges open pull requests toward a focused pr-finisher pass without mutating branches or broadening repository authority.","centralized":true,"decentralized":false,"source_file":"pr-sous-chef"}]'
+          GH_AW_HELP_COMMANDS: '[{"command":"matt","description":"Reviews ready pull requests with pinned Matt Pocock engineering skills and repository-specific change context.","centralized":true,"decentralized":false,"source_file":"mattpocock-skills-reviewer"},{"command":"souschef","description":"Fixes actionable blockers on open pull requests and pushes validated changes to their branches.","centralized":true,"decentralized":false,"source_file":"pr-sous-chef"}]'
           GH_AW_HELP_COMMAND_ENABLED: 'true'
           GH_AW_SLASH_COMMAND_DOCS_URL: 'https://github.github.com/gh-aw/reference/command-triggers/'
         with:

@@ -42,7 +42,7 @@ safe-outputs:
     hide-older-comments: true
   push-to-pull-request-branch:
     allowed-files:
-      - "docs/adr/**"
+      - "adr/**"
     if-no-changes: ignore
     commit-title-suffix: " [design-decision-gate]"
   noop:
@@ -100,15 +100,15 @@ Ensure that significant changes have an explicit Architecture Decision Record (A
 1. Read `/tmp/gh-aw/agent/decision-gate-summary.json`.
 2. If `requires_adr` is false, call `noop` with the measured core additions and stop.
 3. Read the pre-fetched `pr.json`, `pr-files.json`, and `pr.diff`. When `diff_available` is false, use file metadata only and do not fetch the oversized diff.
-4. Search the pull request body, changed files, and existing `docs/adr/*.md` files for an ADR. Read only likely records identified by title, pull request number, or links.
+4. Search the pull request body, changed files, and existing `adr/*.md` files for an ADR. Read only likely records identified by title, pull request number, or links.
 5. A complete ADR must contain `Context`, `Decision`, `Alternatives Considered`, and `Consequences`.
 6. If a complete ADR exists, compare it with the implementation:
    - comment once that it aligns, or
    - comment once with specific divergences and the required correction.
 7. If no complete ADR exists, invoke the `adr-writer` agent with only the pre-fetched evidence.
-8. If the agent can infer one concrete architectural decision, zero-pad the pull request number to four digits and create `docs/adr/{NNNN}-{kebab-case-title}.md`, then use `push-to-pull-request-branch` and post one comment linking the draft.
+8. If the agent can infer one concrete architectural decision, zero-pad the pull request number to four digits and create `adr/{NNNN}-{kebab-case-title}.md`, then use `push-to-pull-request-branch` and post one comment linking the draft.
 9. If the decision is not inferable, post one comment listing the missing decision context. Do not invent rationale or alternatives.
-10. Stop immediately after the safe output. Never modify files outside `docs/adr/`.
+10. Stop immediately after the safe output. Never modify files outside `adr/`.
 
 All evidence and conclusions must remain scoped to this repository and pull request.
 
@@ -136,5 +136,5 @@ Requirements:
 - Mark missing context as `Not inferable from current pull request evidence`.
 - Do not invent stakeholder intent, constraints, rejected technologies, or performance claims.
 - Return JSON only:
-  - success: `{"status":"draft","filename":"docs/adr/NNNN-title.md","content":"..."}`;
+  - success: `{"status":"draft","filename":"adr/NNNN-title.md","content":"..."}`;
   - insufficient evidence: `{"status":"insufficient_evidence","missing":["..."]}`.

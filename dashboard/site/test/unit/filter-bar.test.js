@@ -126,4 +126,23 @@ describe('time-window filter bar', () => {
     expect(secondChange.mock.calls.at(-1)?.[0]).toEqual(new Map([['mode', []]]));
     expect(JSON.parse(localStorage.getItem(HORIZON_FILTER_STORAGE_KEY) ?? '{}').modes).toEqual([]);
   });
+
+  it('falls back to default modes when persisted modes array contains only invalid entries', async () => {
+    localStorage.setItem(
+      HORIZON_FILTER_STORAGE_KEY,
+      JSON.stringify({ range: '24h', modes: ['corrupted_mode', 'invalid'] })
+    );
+    const onChange = vi.fn();
+    const filterBar = renderFilterBar({ filters: [] }, onChange, {
+      defaultRange: '24h',
+      referenceEnd: '2026-09-04T12:00:00Z'
+    });
+    document.body.append(filterBar);
+    await Promise.resolve();
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      new Map([['mode', ['review', 'live', 'unknown']]]),
+      expect.anything()
+    );
+  });
 });

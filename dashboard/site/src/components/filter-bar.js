@@ -125,9 +125,13 @@ function renderHorizonControl(defaultRange, referenceEnd, onChange) {
   const persistedStart = typeof persisted.start === 'string' ? persisted.start : null;
   const persistedEnd = typeof persisted.end === 'string' ? persisted.end : null;
   if (range === 'custom' && !validTimeWindow(persistedStart, persistedEnd)) range = defaultRange;
-  const persistedModes = Array.isArray(persisted.modes)
-    ? [...new Set(persisted.modes.filter((mode) => MODE_OPTIONS.includes(mode)))]
-    : MODE_OPTIONS;
+  let persistedModes = MODE_OPTIONS;
+  if (Array.isArray(persisted.modes)) {
+    const validModes = [...new Set(persisted.modes.filter((mode) => MODE_OPTIONS.includes(mode)))];
+    if (validModes.length > 0 || persisted.modes.length === 0) {
+      persistedModes = validModes;
+    }
+  }
 
   const select = /** @type {HTMLSelectElement} */ (h(
     'select',

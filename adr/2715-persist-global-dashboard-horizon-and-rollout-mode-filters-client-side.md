@@ -1,8 +1,13 @@
+---
+title: Persist global dashboard horizon and rollout-mode filters client-side
+description: Record the client-side persistence and global sharing of dashboard horizon and rollout-mode filters decision.
+---
+
 # ADR 2715: Persist global dashboard horizon and rollout-mode filters client-side
 
 ## Status
 
-Draft
+Proposed
 
 ## Context
 
