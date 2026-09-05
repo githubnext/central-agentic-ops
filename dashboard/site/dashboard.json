@@ -2227,8 +2227,11 @@
               ]
             },
             "mark": "element",
-            "element": "package-insights",
-            "layout": "full"
+            "element": "package-route",
+            "layout": "full",
+            "config": {
+              "body": "insights"
+            }
           }
         ]
       },
@@ -2277,8 +2280,11 @@
               ]
             },
             "mark": "element",
-            "element": "package-detail",
-            "layout": "full"
+            "element": "package-route",
+            "layout": "full",
+            "config": {
+              "body": "workflows"
+            }
           },
           {
             "id": "package-workflow-table",
@@ -2382,8 +2388,11 @@
               ]
             },
             "mark": "element",
-            "element": "package-dispatches",
-            "layout": "full"
+            "element": "package-route",
+            "layout": "full",
+            "config": {
+              "body": "dispatches"
+            }
           },
           {
             "id": "package-failure-reason-distribution",
@@ -2601,8 +2610,11 @@
               ]
             },
             "mark": "element",
-            "element": "package-reports",
-            "layout": "full"
+            "element": "package-route",
+            "layout": "full",
+            "config": {
+              "body": "reports"
+            }
           },
           {
             "id": "package-report-table",

@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
-import { renderPackageNavigation } from './package-detail.js';
+import { renderPackageRouteView } from './package-route-view.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, renderIconSpan } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
@@ -27,7 +27,7 @@ import { rowsFor as rowsForSource } from './source-rows.js';
  *   titleLink?: Record<string, unknown>,
  *   element?: string,
  *   viewId?: string,
- *   elementConfig?: { body?: 'insights'|'reports'|'runs' },
+ *   elementConfig?: { body?: 'insights'|'reports'|'runs'|'workflows'|'dispatches' },
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */
@@ -45,15 +45,16 @@ const ELEMENT_RENDERERS = new Map([
   ['package-utilization', ({ sources }) => renderPackageUtilization(sources)],
   ['package-run-trend', ({ sources }) => renderRunTrend(sources)],
   ['package-summary-table', ({ sources }) => renderPackageSummary(sources)],
-  ['package-insights', (context) => renderPackageNavigation(context, 'insights')],
-  ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
-  ['package-dispatches', (context) => renderPackageNavigation(context, 'dispatches')],
-  ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
+  ['package-insights', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'insights' } })],
+  ['package-detail', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'workflows' } })],
+  ['package-dispatches', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'dispatches' } })],
+  ['package-reports', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'reports' } })],
+  ['package-route', renderPackageRouteView],
   ['workflow-route', renderWorkflowRouteView],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-route', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'package-route', 'workflow-route', 'outcome-detail']);
 
 /**
  * @param {string} name

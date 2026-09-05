@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { renderPackageNavigation } from '../../src/components/package-detail.js';
+import { renderPackageRouteView } from '../../src/components/package-route-view.js';
 
 const metadata = {
   'source-id': 'fixture',
@@ -145,11 +146,12 @@ function context() {
 
 describe('renderPackageNavigation', () => {
   it('renders weekly operational-value plots for only the selected package workers', () => {
-    const rendered = renderPackageNavigation({
+    const rendered = renderPackageRouteView({
       ...context(),
       pageId: 'package-insights',
-      sourceNames: ['workflows', 'operational-values']
-    }, 'insights');
+      sourceNames: ['workflows', 'operational-values'],
+      elementConfig: { body: 'insights' }
+    });
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
       detail: { parameter: 'package', value: 'ambient-context' }
     }));
@@ -165,7 +167,7 @@ describe('renderPackageNavigation', () => {
   });
 
   it('renders reusable navigation for the selected package workflow view', () => {
-    const rendered = renderPackageNavigation(context(), 'workflows');
+    const rendered = renderPackageNavigation(context());
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
       detail: { parameter: 'package', value: 'ambient-context' }
     }));
@@ -179,7 +181,7 @@ describe('renderPackageNavigation', () => {
   describe('dispatch navigation', () => {
     it('renders package-scoped dispatch navigation and identity', () => {
       const host = document.createElement('div');
-      const rendered = renderPackageNavigation({ ...context(), pageId: 'package-dispatches' }, 'dispatches');
+      const rendered = renderPackageRouteView({ ...context(), pageId: 'package-dispatches', elementConfig: { body: 'dispatches' } });
       host.append(rendered);
       let detail;
       host.addEventListener('dashboard-route-allocation', (event) => {
@@ -207,7 +209,7 @@ describe('renderPackageNavigation', () => {
       const rendered = renderPackageNavigation({
         ...context(),
         sources: { ...context().sources, workflows: { source: 'workflows', metadata, rows: targetModeWorkflows } }
-      }, 'workflows');
+      });
       host.append(rendered);
       let detail;
       host.addEventListener('dashboard-route-allocation', (event) => {
@@ -224,7 +226,7 @@ describe('renderPackageNavigation', () => {
 
   it('reallocates package title, description, mode, and parent navigation', () => {
     const host = document.createElement('div');
-    const rendered = renderPackageNavigation(context(), 'workflows');
+    const rendered = renderPackageNavigation(context());
     host.append(rendered);
     let detail;
     host.addEventListener('dashboard-route-allocation', (event) => {
@@ -245,7 +247,7 @@ describe('renderPackageNavigation', () => {
 
   describe('report navigation', () => {
     it('renders route-scoped package navigation', () => {
-      const rendered = renderPackageNavigation({ ...context(), pageId: 'package-reports' }, 'reports');
+      const rendered = renderPackageRouteView({ ...context(), pageId: 'package-reports', elementConfig: { body: 'reports' } });
       rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
         detail: { parameter: 'package', value: 'ambient-context' }
       }));
@@ -256,7 +258,7 @@ describe('renderPackageNavigation', () => {
 
     it('reallocates package report identity and renders explicit empty states', () => {
       const host = document.createElement('div');
-      const rendered = renderPackageNavigation({ ...context(), pageId: 'package-reports' }, 'reports');
+      const rendered = renderPackageRouteView({ ...context(), pageId: 'package-reports', elementConfig: { body: 'reports' } });
       host.append(rendered);
       let detail;
       host.addEventListener('dashboard-route-allocation', (event) => {
@@ -279,8 +281,9 @@ describe('renderPackageNavigation', () => {
       expect(rendered.textContent).toBe('Package not found.');
 
       const unavailableContext = context();
-      const unavailable = renderPackageNavigation({
+      const unavailable = renderPackageRouteView({
         ...unavailableContext,
+        elementConfig: { body: 'reports' },
         pageId: 'package-reports',
         sources: {
           ...unavailableContext.sources,
@@ -290,7 +293,7 @@ describe('renderPackageNavigation', () => {
             rows: []
           }
         }
-      }, 'reports');
+      });
       unavailable.dispatchEvent(new CustomEvent('dashboard-route-change', {
         detail: { parameter: 'package', value: 'ambient-context' }
       }));
@@ -299,7 +302,7 @@ describe('renderPackageNavigation', () => {
   });
 
   it('renders explicit empty states for missing and invalid package routes', () => {
-    const rendered = renderPackageNavigation(context(), 'workflows');
+    const rendered = renderPackageNavigation(context());
     expect(rendered.textContent).toBe('Select a package to view its workflows.');
 
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
@@ -317,8 +320,9 @@ describe('renderPackageNavigation', () => {
     const unavailableContext = context();
 
     for (const selectedView of /** @type {const} */ (['workflows', 'dispatches', 'reports'])) {
-      const rendered = renderPackageNavigation({
+      const rendered = renderPackageRouteView({
         ...unavailableContext,
+        elementConfig: { body: selectedView },
         sources: {
           ...unavailableContext.sources,
           workflows: {
@@ -327,7 +331,7 @@ describe('renderPackageNavigation', () => {
             rows: []
           }
         }
-      }, selectedView);
+      });
       rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
         detail: { parameter: 'package', value: 'ambient-context' }
       }));
