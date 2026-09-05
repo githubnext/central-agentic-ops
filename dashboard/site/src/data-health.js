@@ -23,7 +23,7 @@ const COVERAGE_CONTRACTS = Object.freeze([
   { area: 'Repositories', source: 'repositories', denominator: 'metadata' },
   { area: 'Workflows', source: 'workflows', denominator: 'metadata' },
   { area: 'Run queries', source: 'runs', denominator: 'metadata' },
-  { area: 'Runs', source: 'runs', denominator: 'metadata' },
+  { area: 'Runs', source: 'runs', denominator: 'metadata', expectedKey: 'run-records-expected', observedKey: 'run-records-observed' },
   { area: 'Usage telemetry', source: 'usage', parent: 'runs' },
   { area: 'Detection evidence', source: 'detection-observations', parent: 'runs' },
   { area: 'Firewall evidence', source: 'firewall-observations', parent: 'runs' },
@@ -195,17 +195,18 @@ function overallConfidence(domains) {
 }
 
 /**
- * @param {{ area: string, source: string, denominator?: string, parent?: string }} contract
+ * @param {{ area: string, source: string, denominator?: string, parent?: string, expectedKey?: string, observedKey?: string }} contract
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Array<Record<string, any>>} reconciliationRows
  */
 function coverageDiagnostic(contract, sources, reconciliationRows) {
   const source = sources[contract.source];
   const metadata = source?.metadata ?? {};
-  let expected = finiteCount(metadata['coverage-expected']);
-  let observed = finiteCount(metadata['coverage-observed']);
+  let expected = finiteCount(metadata[contract.expectedKey ?? 'coverage-expected']);
+  let observed = finiteCount(metadata[contract.observedKey ?? 'coverage-observed']);
   if (contract.parent) {
-    const relationship = reconciliationRows.find((row) => row.relationship.endsWith(`→ ${contract.area.replace(' evidence', '').replace(' telemetry', '').toLowerCase()}`));
+    const suffix = `→ ${contract.area.replace(' evidence', '').replace(' telemetry', '')}`.toLowerCase();
+    const relationship = reconciliationRows.find((row) => String(row.relationship).toLowerCase().endsWith(suffix));
     expected = relationship ? finiteCount(relationship.expected) : uniqueKeys(sources[contract.parent]?.rows, runKey).size;
     observed = relationship ? finiteCount(relationship.observed) : uniqueKeys(source?.rows, runKey).size;
   }

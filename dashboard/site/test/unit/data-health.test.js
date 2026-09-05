@@ -110,8 +110,8 @@ describe('coverage and collection provenance', () => {
   it('distinguishes complete zero activity from missing collection', () => {
     const sources = completeSources();
     sources.runs.rows = [];
-    sources.runs.metadata['coverage-expected'] = 0;
-    sources.runs.metadata['coverage-observed'] = 0;
+    sources.runs.metadata['run-records-expected'] = 0;
+    sources.runs.metadata['run-records-observed'] = 0;
     let row = /** @type {any} */ (deriveDataHealthSources(sources)['data-health-coverage'].rows.find((item) => item.area === 'Runs'));
     expect(row).toMatchObject({ expected: 0, observed: 0, 'coverage-percent': '100%', state: 'complete' });
 
