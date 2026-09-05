@@ -105,7 +105,7 @@ pre-agent-steps:
     run: |
       mkdir -p "$EXPR_GITHUB_WORKSPACE/.playwright" "$PLAYWRIGHT_BROWSERS_PATH"
       set +e
-      # The installer package supplies the browser binary; its version is independent of the playwright-cli tool version.
+      # This browser payload is validated with playwright-cli 0.1.18; update both together after a preflight check.
       timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install --with-deps chromium \
         > "$EXPR_GITHUB_WORKSPACE/.playwright/chromium-install.log" 2>&1
       INSTALL_STATUS=$?
@@ -140,7 +140,7 @@ pre-agent-steps:
         --config="$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json" \
         > "$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log" 2>&1
       PREFLIGHT_STATUS=$?
-      playwright-cli -s=preflight-chrome close >> "$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log" 2>&1
+      playwright-cli -s=preflight-chrome close >> "$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log" 2>&1 || true
       set -e
       if [ $PREFLIGHT_STATUS -ne 0 ]; then
         echo "Playwright preflight failed; agent will report the infrastructure blocker."
