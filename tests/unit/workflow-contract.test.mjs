@@ -2110,6 +2110,7 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
 
 test("SelfCare dashboard reviewer checks deployments through stakeholder personas", () => {
   const source = workflow("self-care-dashboard-review.md");
+  const compiled = workflow("self-care-dashboard-review.lock.yml");
 
   assert.match(source, /name: "SelfCare \/ Dashboard"/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: dashboard-review/);
@@ -2117,6 +2118,13 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/self-care-dashboard-review\/expected-inventory\.json/);
   assert.match(source, /githubnext\.github\.io\/gh-aw-cao\/cao\//);
   assert.match(source, /^  playwright:\s*$/m);
+  assert.match(source, /version: "0\.1\.18"/);
+  assert.match(source, /browsers: \[chromium\]/);
+  assert.match(compiled, /npm install -g @playwright\/cli@0\.1\.18/);
+  assert.match(compiled, /install_playwright_browsers\.sh" chromium/);
+  assert.match(compiled, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
+  assert.doesNotMatch(compiled, /npx --yes playwright@.* install --with-deps chromium/);
+  assert.match(source, /playwright-cli -s=preflight-chrome open about:blank[\s\S]*--browser=chromium/);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
@@ -2158,7 +2166,7 @@ test("SelfCare dashboard performance worker rotates trace-backed persona improve
   assert.match(source, /dashboard-performance-rotation\.json/);
   assert.match(source, /advance `cursor` to the position after the evaluated candidate/);
   assert.match(source, /DASHBOARD_PERFORMANCE_OUTPUT_DIR="\$evidence_root\/before"/);
-  assert.match(source, /upload-artifact:[\s\S]*?self-care-dashboard-performance\/\*\*/);
+  assert.match(source, /upload-artifact:[\s\S]*?self-care-dashboard-performance-evidence\/\*\*/);
   assert.match(source, /labels: \[self-care, self-care:dashboard-performance\]/);
   assert.match(source, /title-prefix: "\[self-care:dashboard-performance\] "/);
   assert.match(source, /draft: true/);
