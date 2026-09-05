@@ -1256,6 +1256,174 @@
         ]
       },
       {
+        "id": "mcps",
+        "kind": "custom",
+        "title": "MCP activity",
+        "navigation-label": "MCPs",
+        "icon": "mcp",
+        "class-name": "mcps-page",
+        "description": "Diagnose MCP reliability, response payload sizes, and observed server versions across agentic workflow runs.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "mcp-status-distribution",
+            "title": "MCP success, failure, and missing rate",
+            "description": "Observed MCP server health by workflow run distinguishes successful activity, reported failures, and missing telemetry.",
+            "intent": "Identify whether MCP activity is healthy and whether telemetry gaps limit the diagnosis.",
+            "data": {
+              "source": "mcp-servers"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "mcp-status",
+                "type": "ordinal",
+                "title": "Status"
+              },
+              "y": {
+                "field": "mcp-server-observation",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Server observations"
+              }
+            }
+          },
+          {
+            "id": "mcp-response-size-distribution",
+            "title": "Response payload size distribution",
+            "description": "Automatically binned MCP response sizes surface unusually large tool payloads that may increase latency and AI Credit consumption.",
+            "intent": "Locate oversized MCP responses that warrant tool or query optimization.",
+            "data": {
+              "source": "mcp-calls"
+            },
+            "mark": "chart",
+            "chart": "histogram",
+            "table": false,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "mcp-observation",
+                "type": "nominal",
+                "title": "MCP call"
+              },
+              "y": {
+                "field": "response-bytes",
+                "type": "quantitative",
+                "aggregate": "none",
+                "title": "Response bytes"
+              }
+            }
+          },
+          {
+            "id": "mcp-server-inventory",
+            "title": "Observed MCP servers",
+            "description": "Server identity, available version metadata, call volume, failures, and response payload totals remain attributable to workflow runs.",
+            "intent": "Inventory MCP servers and versions, then open the originating workflow run for investigation.",
+            "data": {
+              "source": "mcp-servers",
+              "order-by": [
+                {
+                  "field": "failed-calls",
+                  "direction": "desc"
+                },
+                {
+                  "field": "max-response-bytes",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No MCP server activity was observed.",
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "mcp-server",
+                  "type": "nominal",
+                  "title": "MCP server"
+                },
+                {
+                  "field": "mcp-server-version",
+                  "type": "nominal",
+                  "title": "Server version"
+                },
+                {
+                  "field": "mcp-protocol-version",
+                  "type": "nominal",
+                  "title": "Protocol version"
+                },
+                {
+                  "field": "gh-aw-version",
+                  "type": "nominal",
+                  "title": "gh-aw version"
+                },
+                {
+                  "field": "mcp-status",
+                  "type": "ordinal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "tool-calls",
+                  "type": "quantitative",
+                  "title": "Calls"
+                },
+                {
+                  "field": "failed-calls",
+                  "type": "quantitative",
+                  "title": "Failures"
+                },
+                {
+                  "field": "total-response-bytes",
+                  "type": "quantitative",
+                  "title": "Response bytes"
+                },
+                {
+                  "field": "max-response-bytes",
+                  "type": "quantitative",
+                  "title": "Largest response"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal"
+                },
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      },
+      {
         "id": "security",
         "kind": "custom",
         "title": "Security & data quality",
@@ -5510,6 +5678,7 @@
         "pages": [
           "dispatches",
           "firewall",
+          "mcps",
           "workflows",
           "repositories",
           "packages",

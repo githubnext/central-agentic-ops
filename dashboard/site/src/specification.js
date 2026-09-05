@@ -273,6 +273,8 @@ export const SOURCE_VALUES = [
   'evals',
   'eval-observations',
   'usage',
+  'mcp-calls',
+  'mcp-servers',
   'security-observations',
   'coverage-diagnostics',
   'repository-coverage',
@@ -344,6 +346,8 @@ export const SOURCE_FIELDS = {
   evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'mcp-calls': ['organization', 'repository', 'workflow', 'run', 'mcp-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-tool', 'mcp-status', 'response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
+  'mcp-servers': ['organization', 'repository', 'workflow', 'run', 'mcp-server-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-status', 'tool-calls', 'failed-calls', 'total-response-bytes', 'max-response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
   'security-observations': ['organization', 'repository', 'workflow', 'run', 'security-observation', 'security-feature', 'security-analysis', 'security-signal', 'security-status', 'security-subject', 'security-count', 'observed-at', 'run-link'],
   'coverage-diagnostics': ['kind', 'title', 'effect', 'technical-detail', 'endpoint', 'rate-limit-reset', 'snapshot-age-seconds'],
   'repository-coverage': ['label', 'value'],
@@ -433,6 +437,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   evals: ['eval'],
   'eval-observations': ['eval', 'run'],
   usage: ['invocation'],
+  'mcp-calls': ['mcp-observation'],
+  'mcp-servers': ['mcp-server-observation'],
   'security-observations': ['security-observation'],
   'repository-coverage': ['label'],
   'runtime-episode-summary': ['label'],
@@ -474,7 +480,12 @@ export const ADDITIVE_MEASURE_FIELDS = [
   'cache-write-tokens',
   'reasoning-tokens',
   'aic',
-  'security-count'
+  'security-count',
+  'response-bytes',
+  'tool-calls',
+  'failed-calls',
+  'total-response-bytes',
+  'max-response-bytes'
 ];
 
 export const NON_ADDITIVE_MEASURE_FIELDS = [
