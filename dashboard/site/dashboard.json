@@ -3588,6 +3588,211 @@
         }
       },
       {
+        "id": "detection",
+        "kind": "custom",
+        "title": "Detection",
+        "icon": "shield-check",
+        "class-name": "detection-page",
+        "description": "Diagnostics and execution performance for the threat-detection job.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "detection-job-conclusions",
+            "title": "Detection job conclusions",
+            "description": "Current conclusion distribution highlights failed, cancelled, and incomplete threat-detection jobs.",
+            "data": {
+              "source": "job-performance",
+              "filters": {
+                "job": [
+                  "detection"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "job-conclusion",
+                "type": "ordinal",
+                "title": "Conclusion"
+              },
+              "y": {
+                "field": "job",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Jobs"
+              }
+            }
+          },
+          {
+            "id": "detection-job-duration-trend",
+            "title": "Detection job duration trend",
+            "description": "Daily mean duration reveals performance regressions in completed threat-detection jobs.",
+            "data": {
+              "source": "job-performance",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "job": [
+                  "detection"
+                ],
+                "job-status": [
+                  "completed"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Started"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean duration",
+                "unit": "human-duration"
+              },
+              "color": {
+                "field": "job-conclusion",
+                "type": "ordinal",
+                "title": "Conclusion"
+              }
+            }
+          },
+          {
+            "id": "detection-job-runner-performance",
+            "title": "Detection time by runner",
+            "description": "Mean duration by runner identifies infrastructure-specific performance differences.",
+            "data": {
+              "source": "job-performance",
+              "filters": {
+                "job": [
+                  "detection"
+                ],
+                "job-status": [
+                  "completed"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": true,
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "x": {
+                "field": "runner",
+                "type": "nominal",
+                "title": "Runner"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean duration",
+                "unit": "human-duration"
+              }
+            }
+          },
+          {
+            "id": "detection-job-ledger",
+            "title": "Detection job diagnostics",
+            "description": "Recent threat-detection jobs provide status, conclusion, duration, runner, workflow, and run evidence for investigation.",
+            "data": {
+              "source": "job-performance",
+              "filters": {
+                "job": [
+                  "detection"
+                ]
+              },
+              "order-by": [
+                {
+                  "field": "started-at",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No detection jobs were observed in the current run window.",
+            "layout": "full",
+            "disclosure": "essential",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "job-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "job-conclusion",
+                  "type": "nominal",
+                  "title": "Conclusion",
+                  "display": "status"
+                },
+                {
+                  "field": "job-duration-seconds",
+                  "type": "quantitative",
+                  "title": "Duration",
+                  "unit": "human-duration"
+                },
+                {
+                  "field": "runner",
+                  "type": "nominal",
+                  "title": "Runner"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "organization",
+                  "type": "nominal"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "title": "Started"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      },
+      {
         "id": "dispatches",
         "kind": "custom",
         "title": "Dispatches",
@@ -6181,6 +6386,7 @@
       {
         "label": "Explore",
         "pages": [
+          "detection",
           "dispatches",
           "firewall",
           "workflows",
