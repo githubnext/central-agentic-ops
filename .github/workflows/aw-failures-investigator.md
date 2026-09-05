@@ -66,6 +66,7 @@ imports:
       package: aw-doctor
       role: worker
       worker: failures-investigator
+  - uses: shared/activity-cache.md
 
 permissions:
   contents: read
@@ -187,6 +188,12 @@ steps:
         function runApiJson(endpoint, params) {
           const query = new URLSearchParams(params).toString();
           return runJson(['api', `${endpoint}?${query}`]);
+        }
+
+        function runPaginatedApiJson(endpoint, params) {
+          const query = new URLSearchParams({ ...params, per_page: '100' }).toString();
+          const pages = runJson(['api', '--paginate', '--slurp', `${endpoint}?${query}`]);
+          return Array.isArray(pages) ? pages.flat() : [];
         }
 
         function isFailureConclusion(conclusion) {
@@ -345,22 +352,22 @@ steps:
             'number,title,state,url,labels,createdAt,updatedAt',
           ]) || []
         ).filter((issue) => String(issue.title || '').startsWith(TITLE_PREFIX));
-        const sourceFailureIssues = (
-          runJson([
-            'issue',
-            'list',
-            '--repo',
-            REPO,
-            '--state',
-            'open',
-            '--label',
-            SOURCE_FAILURE_LABEL,
-            '--limit',
-            '100',
-            '--json',
-            'number,title,body,state,url,labels,createdAt,updatedAt',
-          ]) || []
-        ).filter((issue) => String(issue.title || '').startsWith(SOURCE_FAILURE_PREFIX));
+        const sourceFailureIssues = runPaginatedApiJson(`repos/${REPO}/issues`, {
+          state: 'open',
+          labels: SOURCE_FAILURE_LABEL,
+        })
+          .filter((issue) => !issue.pull_request)
+          .filter((issue) => String(issue.title || '').startsWith(SOURCE_FAILURE_PREFIX))
+          .map((issue) => ({
+            number: issue.number,
+            title: issue.title,
+            body: issue.body,
+            state: issue.state,
+            url: issue.html_url,
+            labels: issue.labels,
+            createdAt: issue.created_at,
+            updatedAt: issue.updated_at,
+          }));
 
         const payload = {
           generated_at: isoformatZ(new Date()),
