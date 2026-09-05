@@ -5276,6 +5276,182 @@
         ]
       },
       {
+        "id": "admission",
+        "kind": "custom",
+        "title": "Admission",
+        "icon": "shield-check",
+        "description": "Pre-activation decisions and gate behavior for control-plane orchestrators and workers.",
+        "filter-bar": {
+          "filters": [
+            "workflow-role:orchestrator",
+            "workflow-role:worker"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "admission-decision-distribution",
+            "title": "Admission decisions",
+            "description": "Authorized and denied pre-activation evaluations show whether control-plane work is clearing its safety boundary.",
+            "intent": "See the current distribution of authorized and denied control-plane admission decisions.",
+            "data": {
+              "source": "admissions"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "admission-status",
+                "type": "nominal",
+                "title": "Decision"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Evaluations"
+              }
+            }
+          },
+          {
+            "id": "admission-decision-trend",
+            "title": "Admission trend",
+            "description": "Daily decisions reveal changes in authorization behavior across orchestrators and workers.",
+            "intent": "Detect changes in authorized and denied admission volume over time.",
+            "data": {
+              "source": "admissions"
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Evaluations"
+              },
+              "color": {
+                "field": "admission-status",
+                "type": "nominal",
+                "title": "Decision"
+              }
+            }
+          },
+          {
+            "id": "admission-failed-gates",
+            "title": "Denied by gate",
+            "description": "Failed gate counts identify which pre-activation checks most often prevent execution.",
+            "intent": "Prioritize remediation using the admission gates responsible for denied runs.",
+            "data": {
+              "source": "admission-checks",
+              "filters": {
+                "check-status": [
+                  "failed"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "check",
+                "type": "nominal",
+                "title": "Gate"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Denied runs"
+              },
+              "color": {
+                "field": "workflow-role",
+                "type": "nominal",
+                "title": "Role"
+              }
+            }
+          },
+          {
+            "id": "admission-decision-ledger",
+            "title": "Admission evidence",
+            "description": "Latest structured pre-activation records preserve the decision, failing gate, reason, role, and run provenance.",
+            "intent": "Inspect and open the exact run behind each admission decision.",
+            "data": {
+              "source": "admissions",
+              "order-by": {
+                "field": "observed-at",
+                "direction": "desc"
+              },
+              "limit": 100
+            },
+            "mark": "table",
+            "layout": "full",
+            "empty-message": "No structured admission records were observed in the current run window.",
+            "encoding": {
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                },
+                {
+                  "field": "package",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                {
+                  "field": "workflow-role",
+                  "type": "nominal",
+                  "title": "Role"
+                },
+                {
+                  "field": "admission-status",
+                  "type": "nominal",
+                  "title": "Decision",
+                  "display": "status"
+                },
+                {
+                  "field": "failed-check",
+                  "type": "nominal",
+                  "title": "Failed gate"
+                },
+                {
+                  "field": "admission-reason",
+                  "type": "nominal",
+                  "title": "Reason"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal",
+                  "title": "Control repository"
+                },
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
         "id": "configuration",
         "kind": "custom",
         "title": "Configuration",
@@ -5494,6 +5670,7 @@
         "label": "Control plane",
         "pages": [
           "configuration",
+          "admission",
           "preview",
           "readiness",
           "data-health",

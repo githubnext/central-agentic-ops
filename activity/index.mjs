@@ -1,7 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { actionsLog as log } from "./actions-log.mjs";
+import { admissionRecordFromArchive } from "./admission-evidence.mjs";
 import {
   extractCaoFailureMessage,
   isFailedConclusion,
@@ -75,7 +76,9 @@ async function github(url, attempt = 0, authToken = token, responseType = "json"
     "X-GitHub-Api-Version": "2022-11-28",
   } });
   if (response.ok) return {
-    body: responseType === "text" ? await response.text() : await response.json(),
+    body: responseType === "text"
+      ? await response.text()
+      : responseType === "binary" ? Buffer.from(await response.arrayBuffer()) : await response.json(),
     headers: response.headers,
   };
   if ((response.status === 403 || response.status === 429) && attempt < 3) {
@@ -402,6 +405,9 @@ async function collectRunHealth(registryByRepository, previousIndex) {
               jobsCollected: true,
               jobs: previousRun.jobs,
             } : {}),
+            ...(previousRun?.admission && previousRun.runAttempt === run.run_attempt ? {
+              admission: previousRun.admission,
+            } : {}),
           } });
         }
         if (runs.length < 100) break;
@@ -411,6 +417,58 @@ async function collectRunHealth(registryByRepository, previousIndex) {
       available = false;
       complete = false;
       log.warning`${error.message}; run health will be unavailable for ${repositoryName}`;
+    }
+  });
+
+  const admissionEvidence = { available: true, complete: true };
+  const recordsByRepository = new Map();
+  for (const { run } of records.values()) {
+    if (!recordsByRepository.has(run.repository)) recordsByRepository.set(run.repository, new Map());
+    recordsByRepository.get(run.repository).set(String(run.runId), run);
+  }
+  await mapWithConcurrency([...recordsByRepository], 4, async ([repositoryName, repositoryRuns]) => {
+    try {
+      const artifactsByRun = new Map();
+      for (let artifactPage = 1; artifactPage <= auditMaxPages; artifactPage += 1) {
+        const response = await github(`/repos/${repositoryName}/actions/artifacts?name=cao-admission&per_page=100&page=${artifactPage}`);
+        const artifacts = response.body.artifacts || [];
+        for (const artifact of artifacts) {
+          const runId = String(artifact.workflow_run?.id || "");
+          if (!artifact.expired && repositoryRuns.has(runId) && !artifactsByRun.has(runId)) {
+            artifactsByRun.set(runId, artifact);
+          }
+        }
+        if (artifacts.length < 100) break;
+        if (artifactPage === auditMaxPages) admissionEvidence.complete = false;
+      }
+      const admissionDirectory = path.join(process.env.RUNNER_TEMP || "/tmp", "cao-activity", "admissions");
+      await mkdir(admissionDirectory, { recursive: true });
+      await mapWithConcurrency([...artifactsByRun], 4, async ([runId, artifact]) => {
+        const run = repositoryRuns.get(runId);
+        if (run.admission) return;
+        const archivePath = path.join(admissionDirectory, `${artifact.id}.zip`);
+        try {
+          const response = await github(`/repos/${repositoryName}/actions/artifacts/${artifact.id}/zip`, 0, token, "binary");
+          if (response.body.length > 1024 * 1024) throw new Error("admission artifact exceeds 1 MB");
+          await writeFile(archivePath, response.body);
+          const admission = admissionRecordFromArchive(archivePath, {
+            repository: repositoryName,
+            runId,
+            runAttempt: run.runAttempt,
+          });
+          if (!admission) throw new Error("admission artifact is invalid");
+          run.admission = admission;
+        } catch (error) {
+          admissionEvidence.complete = false;
+          log.warning`${error.message}; admission evidence will be unavailable for run ${runId}`;
+        } finally {
+          await unlink(archivePath).catch(() => {});
+        }
+      });
+    } catch (error) {
+      admissionEvidence.available = false;
+      admissionEvidence.complete = false;
+      log.warning`${error.message}; admission evidence will be unavailable for ${repositoryName}`;
     }
   });
 
@@ -504,6 +562,7 @@ async function collectRunHealth(registryByRepository, previousIndex) {
     refreshStart: reusable ? overlapStart.toISOString() : windowStart.toISOString(),
     windowStart: windowStart.toISOString(),
     pages: page,
+    admissionEvidence,
     totals,
   };
 }
@@ -712,6 +771,7 @@ const inventory = {
     windowStart: runHealth.windowStart,
     windowHours: runWindowHours,
     pages: runHealth.pages,
+    admissionEvidence: runHealth.admissionEvidence,
   },
   bundles,
   standaloneWorkflows,

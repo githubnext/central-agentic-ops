@@ -462,6 +462,37 @@ function admissionDirectory() {
   return join(environment("RUNNER_TEMP", "/tmp"), "cao");
 }
 
+function writeAdmissionRecord(result, options, workflowSha) {
+  const directory = admissionDirectory();
+  mkdirSync(directory, { recursive: true });
+  const failedIndex = result.authorized ? -1 : failedAdmissionCheckIndex(result.reason);
+  const checks = ADMISSION_CHECKS.map(([check], index) => ({
+    check,
+    status: result.authorized || index < failedIndex
+      ? "passed"
+      : index === failedIndex ? "failed" : "not-evaluated",
+  }));
+  writeJson(join(directory, "admission.json"), {
+    schema_version: 1,
+    observed_at: new Date().toISOString(),
+    repository: options.controlRepository,
+    workflow: environment("GITHUB_WORKFLOW"),
+    workflow_sha: workflowSha,
+    run_id: environment("GITHUB_RUN_ID"),
+    run_attempt: parseInteger(environment("GITHUB_RUN_ATTEMPT"), 1),
+    package: options.packageName,
+    role: options.role,
+    worker: options.workerName,
+    target_repository: options.targetRepository,
+    authorized: Boolean(result.authorized),
+    reason: result.reason || "unknown",
+    failed_check: failedIndex >= 0 ? ADMISSION_CHECKS[failedIndex][0] : null,
+    checks,
+    ...(result.github_api_capacity ? { github_api_capacity: result.github_api_capacity } : {}),
+    ...(result.runner_disk_capacity ? { runner_disk_capacity: result.runner_disk_capacity } : {}),
+  });
+}
+
 function admit() {
   const options = policyOptions({ normalizeOrchestrator: true });
   const workflowSha = environment("GITHUB_WORKFLOW_SHA");
@@ -491,6 +522,7 @@ function admit() {
     result = { authorized: false, reason: error.message };
   }
 
+  writeAdmissionRecord(result, options, workflowSha);
   const monthlyCreditBudget = result.authorized ? result.monthly_ai_credit_budget : 0;
   const outputs = {
     authorized: result.authorized,

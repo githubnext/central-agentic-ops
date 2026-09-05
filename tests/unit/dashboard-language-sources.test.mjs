@@ -303,6 +303,95 @@ test("dashboard source bridge carries API capacity admission blocks into run row
     report: { generatedAt: "2026-09-02T21:00:00Z", records: [] },
   });
 
+  test("dashboard source bridge exposes structured admission decisions and gate checks", () => {
+    const admission = {
+      schemaVersion: 1,
+      observedAt: "2026-09-05T10:00:00.000Z",
+      repository: "githubnext/gh-aw-cao",
+      workflow: "Dependabot",
+      workflowSha: "1111111111111111111111111111111111111111",
+      runId: "42",
+      runAttempt: 1,
+      package: "dependabot",
+      role: "orchestrator",
+      worker: "",
+      targetRepository: "",
+      authorized: false,
+      reason: "package-disabled",
+      failedCheck: "Package",
+      checks: [
+        { check: "Runtime revision", status: "passed" },
+        { check: "Package", status: "failed" },
+      ],
+    };
+    const sources = buildDashboardLanguageSources({
+      deployed: {
+        generatedAt: "2026-09-05T10:05:00.000Z",
+        discovery: { complete: true },
+        runHealth: {
+          available: true,
+          complete: true,
+          windowHours: 168,
+          admissionEvidence: { available: true, complete: true },
+        },
+        bundles: [],
+        workflows: [{
+          repository: "githubnext/gh-aw-cao",
+          path: ".github/workflows/dependabot.lock.yml",
+          name: "Dependabot",
+          role: "orchestrator",
+          state: "active",
+          runHealth: { runRecords: [{
+            runId: 42,
+            runAttempt: 1,
+            status: "completed",
+            conclusion: "success",
+            admission,
+          }] },
+        }],
+      },
+      usage: { available: true, complete: true, runs: [] },
+      operationalValues: { records: [] },
+      report: { generatedAt: "2026-09-05T10:05:00.000Z", records: [] },
+    });
+
+    assert.equal(sources.admissions.metadata.completeness, "complete");
+    assert.deepEqual(sources.admissions.rows[0], {
+      organization: "githubnext",
+      repository: "gh-aw-cao",
+      workflow: ".github/workflows/dependabot.md",
+      run: "42",
+      "observed-at": "2026-09-05T10:00:00.000Z",
+      package: "dependabot",
+      "workflow-role": "orchestrator",
+      worker: "",
+      "target-repository": "",
+      "admission-status": "denied",
+      "admission-reason": "package-disabled",
+      "failed-check": "Package",
+      "github-api-status": "unknown",
+      "github-api-remaining": null,
+      "github-api-required": null,
+      "github-api-reset-at": "",
+      "runner-disk-status": "unknown",
+      "runner-disk-available-mb": null,
+      "runner-disk-required-mb": null,
+      "run-link": {
+        relation: "run",
+        href: "https://github.com/githubnext/gh-aw-cao/actions/runs/42",
+        label: "Run 42",
+      },
+    });
+    assert.deepEqual(sources["admission-checks"].rows.map((row) => ({
+      check: row.check,
+      order: row["check-order"],
+      status: row["check-status"],
+    })), [
+      { check: "Runtime revision", order: 1, status: "passed" },
+      { check: "Package", order: 2, status: "failed" },
+    ]);
+  });
+
   assert.deepEqual(
     Object.fromEntries(Object.entries(sources.runs.rows[0]).filter(([key]) => [
       "admission-status", "admission-reason", "failure-job", "failure-message", "failure-step", "resource", "resource-reset-at", "resource-wait-hours",
