@@ -602,8 +602,8 @@ describe('presenter built-in and custom pages', () => {
       /** @param {{ label?: string }} section */
       (section) => section.label === 'Control plane'
     );
-    expect(labels).toEqual(['Attention', 'Dashboard Next', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
-    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, true, false, false, false]);
+    expect(labels).toEqual(['Attention', 'Dashboard Next', 'Investigate', 'Insights', 'Control plane', 'Explore', 'Package operations']);
+    expect(sections.map((section) => /** @type {HTMLDetailsElement} */ (section).open)).toEqual([true, false, true, true, false, false, false]);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.closest('.nav-section')?.textContent).toContain('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.closest('.nav-section')?.textContent).toContain('Investigate');
     expect(rendered.querySelector('[data-nav-page-id="preview"]')?.closest('.nav-section')?.textContent).toContain('Control plane');
@@ -619,6 +619,7 @@ describe('presenter built-in and custom pages', () => {
       'Runtime',
       'Performance',
       'Security',
+      'Experiments',
       'Value',
       'Cost',
       'Configuration',
@@ -846,6 +847,7 @@ describe('presenter built-in and custom pages', () => {
       'Runtime',
       'Performance',
       'Security',
+      'Experiments',
       'Value',
       'Cost',
       'Configuration',

@@ -762,6 +762,35 @@ test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavail
             threatDetection: { available: false },
           },
         },
+        {
+          repository: "githubnext/gh-aw-cao",
+          workflowName: "Security",
+          workflowPath: ".github/workflows/security.lock.yml",
+          runId: 103,
+          mode: "review",
+          createdAt: "2026-09-03T05:00:00Z",
+          security: {
+            accessControl: { available: false, fileDenials: {}, toolDenials: {} },
+            firewall: { available: false },
+            integrity: { available: false, totalToolCalls: 0, summary: {} },
+            mcp: {
+              available: true,
+              cliVersion: "0.88.0",
+              servers: [{
+                serverName: "github",
+                serverVersion: "1.0.0",
+                protocolVersion: "2025-06-18",
+                toolCallCount: 2,
+                errorCount: 1,
+                totalOutputSize: 10,
+                maxOutputSize: 10,
+              }],
+              calls: [],
+              failures: [{ serverName: "github", status: "failure" }],
+            },
+            threatDetection: { available: false },
+          },
+        },
       ],
     },
     operationalValues: { records: [] },
@@ -773,6 +802,8 @@ test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavail
   const serverRow = sources["mcp-servers"].rows.find((row) => row.run === "102");
   assert.equal(serverRow["mcp-status"], "failure");
   assert.equal(serverRow["failed-calls"], 1);
+  const aggregatedFailureRow = sources["mcp-servers"].rows.find((row) => row.run === "103");
+  assert.equal(aggregatedFailureRow["failed-calls"], 1);
 });
 
 test("dashboard source bridge exposes run and job performance dimensions", () => {

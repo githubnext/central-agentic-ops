@@ -49,7 +49,8 @@ export const VIEW_ELEMENT_VALUES = [
   'workflow-route',
   'outcome-detail',
   'outcome-detail-section',
-  'configuration-policy'
+  'configuration-policy',
+  'experiments-evaluation'
 ];
 export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
 export const PACKAGE_ROUTE_BODY_VALUES = ['insights', 'workflows', 'dispatches', 'reports'];
@@ -353,12 +354,12 @@ export const SOURCE_FIELDS = {
   'admission-checks': ['organization', 'repository', 'workflow', 'run', 'observed-at', 'package', 'workflow-role', 'worker', 'target-repository', 'admission-status', 'admission-reason', 'failed-check', 'check', 'check-order', 'check-status', 'github-api-status', 'github-api-remaining', 'github-api-required', 'github-api-reset-at', 'runner-disk-status', 'runner-disk-available-mb', 'runner-disk-required-mb', 'run-link'],
   'run-performance': ['organization', 'repository', 'workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode', 'run-duration-seconds', 'sandbox-runtime', 'engine', 'model', 'run-link'],
   'job-performance': ['organization', 'repository', 'workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode', 'job', 'job-status', 'job-conclusion', 'job-duration-seconds', 'runner', 'runner-name', 'runner-group', 'sandbox-runtime', 'engine', 'model', 'run-link'],
-  experiments: ['experiment', 'experiment-name', 'observed-at'],
-  'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
-  graders: ['grader', 'grader-name', 'observed-at'],
-  'grader-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'grader', 'value', 'status', 'rollout-mode', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'evaluator-digest', 'observed-at', 'run-link'],
-  evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
-  'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
+  experiments: ['organization', 'repository', 'package', 'workflow', 'experiment', 'experiment-name', 'control-variant', 'candidate-variant', 'primary-metric', 'primary-source', 'state', 'readiness', 'decision', 'normalized-effect', 'evidence-strength', 'last-observation', 'observed-at'],
+  'experiment-assignments': ['organization', 'repository', 'package', 'workflow', 'run', 'experiment', 'variant', 'assignment-at', 'included', 'exclusion-reason', 'observed-at', 'assignment-link', 'artifact-link', 'trace-link'],
+  graders: ['grader', 'grader-name', 'role', 'direction', 'unit', 'threshold', 'observed-at'],
+  'grader-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'grader', 'value', 'status', 'included', 'exclusion-reason', 'role', 'direction', 'unit', 'threshold', 'rollout-mode', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'evaluator-digest', 'observed-at', 'run-link', 'evidence-link', 'grader-link'],
+  evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'role', 'direction', 'observed-at'],
+  'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'eval', 'eval-result', 'status', 'included', 'exclusion-reason', 'role', 'direction', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at', 'evidence-link', 'eval-link'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'mcp-calls': ['organization', 'repository', 'workflow', 'run', 'mcp-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-tool', 'mcp-status', 'response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
   'mcp-servers': ['organization', 'repository', 'workflow', 'run', 'mcp-server-observation', 'mcp-server', 'mcp-server-version', 'mcp-protocol-version', 'mcp-status', 'tool-calls', 'failed-calls', 'total-response-bytes', 'max-response-bytes', 'rollout-mode', 'engine-version', 'gh-aw-version', 'observed-at', 'run-link'],
