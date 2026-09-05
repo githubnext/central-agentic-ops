@@ -68,9 +68,10 @@ describe('dashboard document validation', () => {
         (/** @type {{ views: unknown[] }} */ section) => section.views
       ) ?? [];
       for (const view of views.filter((/** @type {unknown} */ candidate) => typeof candidate === 'object')) {
-        if (collapsedTableIds.has(view.id)) expect(view.disclosure).toBe('supplemental');
         if (page.id === 'overview' || dashboardNextIds.has(page.id)) {
           expect(view.disclosure).not.toBe('supplemental');
+        } else if (collapsedTableIds.has(view.id)) {
+          expect(view.disclosure).toBe('supplemental');
         }
       }
     }
