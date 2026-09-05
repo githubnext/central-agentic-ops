@@ -388,13 +388,14 @@ function renderChartView(context) {
   if (pending) {
     clustering.then((clustered) => {
       const rendered = renderVisualization(clustered);
-      visualization?.replaceWith(...rendered.chartContent, ...(rendered.table ? [rendered.table] : []));
+      visualization?.removeAttribute('aria-busy');
+      visualization?.classList.remove('chart-clustering-progress');
+      visualization?.replaceChildren(...rendered.chartContent, ...(rendered.table ? [rendered.table] : []));
     }).catch(() => {
-      visualization?.replaceWith(h(
-        'div',
-        { className: 'chart-widget scatter-chart-widget', role: 'status' },
-        'Unable to prepare this scatter visualization.'
-      ));
+      visualization?.removeAttribute('aria-busy');
+      visualization?.classList.replace('chart-clustering-progress', 'chart-widget');
+      visualization?.classList.add('scatter-chart-widget');
+      visualization?.replaceChildren('Unable to prepare this scatter visualization.');
     });
   } else if (chartType === 'pie') {
     section.append(

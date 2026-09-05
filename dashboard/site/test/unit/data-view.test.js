@@ -207,10 +207,12 @@ describe('data view renderer', () => {
       toText: String
     });
 
-    expect(rendered?.querySelector('.chart-clustering-progress')?.textContent).toContain('Clustering 100,000 scatter points');
-    expect(rendered?.querySelector('.chart-clustering-progress')?.getAttribute('aria-busy')).toBe('true');
+    const progress = rendered?.querySelector('.chart-clustering-progress') ?? null;
+    expect(progress?.textContent).toContain('Clustering 100,000 scatter points');
+    expect(progress?.getAttribute('aria-busy')).toBe('true');
     await vi.waitFor(() => {
-      expect(rendered?.querySelector('.chart-clustering-progress')).toBeNull();
+      expect(rendered?.contains(progress)).toBe(true);
+      expect(progress?.getAttribute('aria-busy')).toBeNull();
       expect(rendered?.querySelectorAll('.scatter-chart-point')).toHaveLength(400);
       expect(rendered?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(400);
     });
