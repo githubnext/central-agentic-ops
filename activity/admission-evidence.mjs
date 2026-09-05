@@ -11,7 +11,7 @@ function capacity(value, fields) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   return Object.fromEntries(fields.flatMap((field) => {
     const current = value[field];
-    if (typeof current === "boolean" || typeof current === "number" && Number.isFinite(current)) return [[field, current]];
+    if (typeof current === "boolean" || (typeof current === "number" && Number.isFinite(current))) return [[field, current]];
     const normalized = text(current);
     return normalized === null ? [] : [[field, normalized]];
   }));

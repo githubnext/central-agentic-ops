@@ -33,6 +33,7 @@ const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
 const FAILURE_EVIDENCE_RUNS_PER_WORKFLOW = 5;
 const CAO_PRECOMPUTE_STEP = "Run CAO control precompute";
+const MAX_ADMISSION_ARTIFACT_BYTES = 1024 * 1024;
 if (!Number.isInteger(runWindowHours) || runWindowHours < 1 || runWindowHours > 24 * 31) {
   throw new Error("REPORT_RUN_WINDOW_HOURS must be an integer from 1 through 744");
 }
@@ -68,6 +69,29 @@ function markdownSourceUrl(lockUrl = "") {
   return `${lockUrl.slice(0, -".lock.yml".length)}.md?plain=1`;
 }
 
+async function boundedResponseBuffer(response, maximumBytes) {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
+    throw new Error(`response exceeds ${maximumBytes} bytes`);
+  }
+  if (!response.body) return Buffer.alloc(0);
+  const chunks = [];
+  let length = 0;
+  const reader = response.body.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > maximumBytes) throw new Error(`response exceeds ${maximumBytes} bytes`);
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    if (length > maximumBytes) await reader.cancel().catch(() => {});
+  }
+  return Buffer.concat(chunks, length);
+}
+
 async function github(url, attempt = 0, authToken = token, responseType = "json") {
   const response = await fetch(`https://api.github.com${url}`, { headers: {
     Accept: "application/vnd.github+json",
@@ -78,7 +102,9 @@ async function github(url, attempt = 0, authToken = token, responseType = "json"
   if (response.ok) return {
     body: responseType === "text"
       ? await response.text()
-      : responseType === "binary" ? Buffer.from(await response.arrayBuffer()) : await response.json(),
+      : responseType === "binary"
+        ? await boundedResponseBuffer(response, MAX_ADMISSION_ARTIFACT_BYTES)
+        : await response.json(),
     headers: response.headers,
   };
   if ((response.status === 403 || response.status === 429) && attempt < 3) {
@@ -449,7 +475,6 @@ async function collectRunHealth(registryByRepository, previousIndex) {
         const archivePath = path.join(admissionDirectory, `${artifact.id}.zip`);
         try {
           const response = await github(`/repos/${repositoryName}/actions/artifacts/${artifact.id}/zip`, 0, token, "binary");
-          if (response.body.length > 1024 * 1024) throw new Error("admission artifact exceeds 1 MB");
           await writeFile(archivePath, response.body);
           const admission = admissionRecordFromArchive(archivePath, {
             repository: repositoryName,
