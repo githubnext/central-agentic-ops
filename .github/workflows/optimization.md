@@ -49,7 +49,6 @@ env:
 
 environment: central-agentic-ops
 
-if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md

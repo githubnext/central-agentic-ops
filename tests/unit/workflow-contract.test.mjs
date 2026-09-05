@@ -567,7 +567,7 @@ test("control workflows deny before activation through one shared admission cont
       name,
     );
     assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, name);
-    assert.match(source, /^if: needs\.pre_activation\.outputs\.cao_authorized == 'true'$/m, name);
+    assert.doesNotMatch(source, /^if: needs\.pre_activation\.outputs\.cao_authorized == 'true'$/m, name);
 
     const generatedName = name.replace(/\.md$/, ".lock.yml");
     const generated = workflow(generatedName);
