@@ -36,7 +36,7 @@ on:
     actions: read
 
 jobs:
-  pre-activation:
+  activation:
     outputs:
       cao_authorized: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
       cao_reason: ${{ steps.cao_precompute.outputs.reason || steps.cao_admission.outputs.reason }}
@@ -49,7 +49,7 @@ env:
 
 environment: central-agentic-ops
 
-if: needs.pre_activation.outputs.cao_authorized == 'true'
+if: needs.activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md
