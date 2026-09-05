@@ -225,13 +225,19 @@ describe('dashboard document validation', () => {
           id: 'detection-job-duration-trend',
           mark: 'chart',
           chart: 'line',
-          data: { source: 'job-performance', filters: { job: ['detection'] } }
+          data: {
+            source: 'job-performance',
+            filters: { job: ['detection'], 'job-status': ['completed'] }
+          }
         },
         {
           id: 'detection-job-runner-performance',
           mark: 'chart',
           chart: 'bar',
-          data: { source: 'job-performance', filters: { job: ['detection'] } }
+          data: {
+            source: 'job-performance',
+            filters: { job: ['detection'], 'job-status': ['completed'] }
+          }
         },
         {
           id: 'detection-job-ledger',

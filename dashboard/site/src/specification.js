@@ -131,6 +131,7 @@ export const FILTER_DIMENSION_VALUES = [
   'run-status',
   'run-conclusion',
   'job',
+  'job-status',
   'outcome-category',
   'outcome-state',
   'rollout-mode',

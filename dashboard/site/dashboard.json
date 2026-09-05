@@ -3649,6 +3649,9 @@
               "filters": {
                 "job": [
                   "detection"
+                ],
+                "job-status": [
+                  "completed"
                 ]
               }
             },
@@ -3687,6 +3690,9 @@
               "filters": {
                 "job": [
                   "detection"
+                ],
+                "job-status": [
+                  "completed"
                 ]
               }
             },
