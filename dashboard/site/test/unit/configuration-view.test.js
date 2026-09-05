@@ -114,8 +114,7 @@ describe('Configuration dashboard view', () => {
     const copyButton = rendered.querySelector('.configuration-copy-button');
     if (!(copyButton instanceof HTMLButtonElement)) throw new Error('copy button did not render');
     copyButton.click();
-    await Promise.resolve();
+    await vi.waitFor(() => expect(rendered.querySelector('.configuration-copy-status')?.textContent).toBe('Copied.'));
     expect(writeText).toHaveBeenCalledWith('{bad json');
-    expect(rendered.querySelector('.configuration-copy-status')?.textContent).toBe('Copied.');
   });
 });
