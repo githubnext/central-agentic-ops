@@ -1116,6 +1116,17 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     /**
      * @param {HTMLElement | undefined} page
      */
+    const placeDashboardHorizon = (page) => {
+      const filterInput = page?.querySelector('.filter-control input');
+      if (dashboardHorizon && filterInput) {
+        filterInput.before(dashboardHorizon);
+      } else if (dashboardHorizon && reportActions) {
+        reportActions.prepend(dashboardHorizon);
+      }
+    };
+    /**
+     * @param {HTMLElement | undefined} page
+     */
     const restoreScroll = (page) => {
       const sectionId = parameters.get('section')?.trim();
       const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
@@ -1158,6 +1169,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
         renderedPage.dataset.routeValue = currentPage.dataset.routeValue ?? '';
         currentPage.replaceWith(renderedPage);
         pages[pageIndex] = renderedPage;
+        placeDashboardHorizon(renderedPage);
         if (deferPopulation) {
           dispatchPageRoute(renderedPage, renderedPage.dataset.routeParameter ?? '', renderedPage.dataset.routeValue);
           restoreScroll(renderedPage);
@@ -1191,12 +1203,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     updateNavigationLinks(links, pageId);
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
-    const filterInput = page?.querySelector('.filter-control input');
-    if (dashboardHorizon && filterInput) {
-      filterInput.before(dashboardHorizon);
-    } else if (dashboardHorizon && reportActions) {
-      reportActions.prepend(dashboardHorizon);
-    }
+    placeDashboardHorizon(page);
     const routeNavigationPage = page?.dataset.routeNavigationPage;
     if (routeNavigationPage && availableIds.has(routeNavigationPage)) {
       const navigationLink = links.find((link) => getNavigationPageId(link) === routeNavigationPage);
