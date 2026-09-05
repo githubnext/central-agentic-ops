@@ -92,7 +92,6 @@ export function renderCopilotPrompt(socket) {
     const message = h(
       'div',
       { className: 'dashboard-copilot-message dashboard-copilot-message-assistant' },
-      h('strong', null, 'Copilot'),
       h('div', { className: 'dashboard-copilot-message-content' }, content)
     );
     conversation.append(message);

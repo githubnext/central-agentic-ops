@@ -41,6 +41,8 @@ describe('Copilot dashboard prompt', () => {
     expect(prompt.querySelector('#dashboard-copilot-title')?.textContent).toBe('Copilot');
     expect(prompt.querySelector('dialog')).toBeNull();
     expect(prompt.querySelector('.dashboard-copilot-message-user')?.textContent).toContain('Add a trend');
+    expect(prompt.querySelector('.dashboard-copilot-message-assistant strong')).toBeNull();
+    expect(prompt.querySelector('.dashboard-copilot-message-assistant')?.textContent).toBe('Added a trend.');
     expect(prompt.querySelector('#dashboard-copilot-status')?.textContent).toBe('Updated.');
     expect(debugMock).toHaveBeenCalledWith(
       '[dashboard-copilot]',

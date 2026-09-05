@@ -72,7 +72,7 @@ body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5
 .dashboard-copilot-conversation { max-height: 180px; display: flex; flex-direction: column; gap: 8px; overflow: auto; scrollbar-width: thin; }
 .dashboard-copilot-conversation:empty { display: none; }
 .dashboard-copilot-message { display: grid; gap: 2px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: .75rem; line-height: 1.35; }
-.dashboard-copilot-message > strong { color: var(--muted); font-size: .6875rem; }
+.dashboard-copilot-message-user > strong { color: var(--muted); font-size: .6875rem; }
 .dashboard-copilot-message-user { align-self: flex-end; background: var(--copilot-accent-muted); border-color: color-mix(in srgb, var(--copilot-accent) 42%, var(--border)); }
 .dashboard-copilot-message-assistant { align-self: stretch; background: var(--canvas); }
 .dashboard-copilot-message-content { white-space: pre-wrap; overflow-wrap: anywhere; }

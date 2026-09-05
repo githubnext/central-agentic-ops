@@ -31,6 +31,7 @@ import {
 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { bundleDashboardFiles } from "./report/bundle-dashboards.mjs";
+import { validateDashboardDocument } from "./site/src/validator.js";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const executeFile = promisify(execFile);
@@ -40,6 +41,7 @@ const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".
 const socketEndpoint = "/__dashboard_socket";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
 const devServerPidFileName = ".cao-dashboard-dev-server.json";
+const maxCopilotDashboardRepairAttempts = 3;
 const trustedDashboardWorkflowPaths = new Set([
   ".github/workflows/dashboard-build.yml",
   ".github/workflows/dashboard.yml",
@@ -202,6 +204,18 @@ function isLoopbackHost(host) {
 
 function normalizeDashboardJson(source) {
   return JSON.stringify(JSON.parse(source), null, 2);
+}
+
+function formatDashboardValidationErrors(errors) {
+  return errors
+    .map((error) => `${error.code} at ${error.path}: ${error.message}`)
+    .join("\n");
+}
+
+function validateDashboardSource(source) {
+  const result = validateDashboardDocument(source);
+  if (result.ok) return;
+  throw new Error(`Dashboard validation failed:\n${formatDashboardValidationErrors(result.errors)}`);
 }
 
 function dashboardPageIndex(document, view) {
@@ -465,6 +479,21 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         if (pageIndex < 0) throw new Error("The selected dashboard view no longer exists.");
         return { document, pageIndex };
       };
+      const validateViewCandidate = async (source) => {
+        const candidate = JSON.parse(source);
+        const { document, pageIndex } = await readViewDocument();
+        const currentPage = document.dashboard.pages[pageIndex];
+        if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+          throw new Error("Dashboard page must be a JSON object.");
+        }
+        if (candidate.id !== currentPage.id) {
+          throw new Error("Dashboard page id cannot change.");
+        }
+        document.dashboard.pages[pageIndex] = candidate;
+        const normalized = JSON.stringify(document, null, 2);
+        validateDashboardSource(normalized);
+        return { candidate, document, pageIndex, normalized };
+      };
       const tools = [
         defineTool("read_dashboard_language_reference", {
           description: "Read the canonical Dashboard Language vocabulary used by the local renderer.",
@@ -517,15 +546,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           defer: "never",
           handler: async ({ source }) => {
             try {
-              const candidate = JSON.parse(source);
-              const { document, pageIndex } = await readViewDocument();
-              const currentPage = document.dashboard.pages[pageIndex];
-              if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
-                throw new Error("Dashboard page must be a JSON object.");
-              }
-              if (candidate.id !== currentPage.id) {
-                throw new Error("Dashboard page id cannot change.");
-              }
+              await validateViewCandidate(source);
               console.log("Validated Copilot dashboard view candidate.", {
                 view,
                 bytes: Buffer.byteLength(source),
@@ -552,16 +573,8 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           defer: "never",
           handler: async ({ source }) => {
             try {
-              const candidate = JSON.parse(source);
-              const { document, pageIndex } = await readViewDocument();
-              if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
-                throw new Error("Dashboard page must be a JSON object.");
-              }
-              if (candidate.id !== document.dashboard.pages[pageIndex].id) {
-                throw new Error("Dashboard page id cannot change.");
-              }
+              const { candidate, document, pageIndex, normalized } = await validateViewCandidate(source);
               document.dashboard.pages[pageIndex] = candidate;
-              const normalized = JSON.stringify(document, null, 2);
               await writeFile(viewDashboardPath, normalized);
               console.log("Saved normalized Copilot dashboard view.", {
                 path: viewDashboardPath,
@@ -713,6 +726,64 @@ Built-in views come from the site's dashboard.json. Package views come from thei
             ...errorMetadata(error),
           });
           throw error;
+        }
+        for (let repairAttempt = 1; ; repairAttempt += 1) {
+          if (aborted) return { aborted: true };
+          const savedSource = await readFile(viewDashboardPath, "utf8");
+          const validation = validateDashboardDocument(savedSource);
+          if (validation.ok) {
+            onEvent({
+              type: "status",
+              message: repairAttempt === 1
+                ? "Dashboard validation passed."
+                : "Dashboard repaired and validation passed.",
+            });
+            break;
+          }
+          const validationErrors = formatDashboardValidationErrors(validation.errors);
+          console.log("Copilot dashboard validation failed; continuing the session for repair.", {
+            sessionId: session.sessionId,
+            view,
+            repairAttempt,
+            errorCount: validation.errors.length,
+          });
+          onEvent({
+            type: "status",
+            message: "Dashboard validation failed. Copilot is fixing it…",
+          });
+          onEvent({
+            type: "debug",
+            message: "Authoritative dashboard validation failed; continuing the same Copilot session.",
+            details: {
+              view,
+              repairAttempt,
+              errorCount: validation.errors.length,
+            },
+          });
+          if (repairAttempt > maxCopilotDashboardRepairAttempts) {
+            throw new Error(
+              `Dashboard validation still failed after ${maxCopilotDashboardRepairAttempts} repair attempts:\n${validationErrors}`,
+            );
+          }
+          try {
+            await session.sendAndWait({
+              prompt: `The saved dashboard.json did not pass the authoritative Dashboard Language validator.
+
+Continue this same editing session and fix the current view. Use read_current_dashboard_view, then validate_current_dashboard_view and save_current_dashboard_view. Do not only describe the fix.
+
+Validation errors:
+${validationErrors}`,
+            });
+          } catch (error) {
+            if (aborted) return { aborted: true };
+            console.log("Copilot dashboard repair request failed.", {
+              sessionId: session.sessionId,
+              view,
+              repairAttempt,
+              ...errorMetadata(error),
+            });
+            throw error;
+          }
         }
         console.log("Copilot dashboard request completed.", { sessionId: session.sessionId, view });
         return { aborted };
@@ -1016,13 +1087,14 @@ export async function startDashboardServer({
       let normalizedSource;
       try {
         normalizedSource = normalizeDashboardJson(savedSource);
+        validateDashboardSource(normalizedSource);
       } catch (error) {
-        console.log("Copilot dashboard request left invalid JSON.", {
+        console.log("Copilot dashboard request left an invalid dashboard source.", {
           view: payload.view,
           viewDashboardPath,
           ...errorMetadata(error),
         });
-        throw new Error("Copilot produced invalid dashboard JSON.");
+        throw new Error("Copilot produced an invalid dashboard.");
       }
       if (savedSource !== normalizedSource) {
         await writeFile(viewDashboardPath, normalizedSource);

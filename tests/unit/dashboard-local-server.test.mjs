@@ -257,9 +257,14 @@ test("local dashboard server optionally prompts Copilot to update the active vie
         payload.onEvent({ type: "assistant-delta", content: "Updating dashboard…" });
         await promptGate.promise;
         if (runtimeStopped) return { aborted: true };
-        const source = payload.request === "Produce invalid JSON"
-          ? "{ invalid"
-          : JSON.stringify(JSON.parse(dashboard("package-one")));
+        let source = JSON.stringify(JSON.parse(dashboard("package-one")));
+        if (payload.request === "Produce invalid JSON") {
+          source = "{ invalid";
+        } else if (payload.request === "Produce invalid dashboard") {
+          const invalidDashboard = JSON.parse(source);
+          invalidDashboard.dashboard.pages[0].views[0].mark = "invalid-mark";
+          source = JSON.stringify(invalidDashboard);
+        }
         await writeFile(payload.viewDashboardPath, source);
         return { aborted: false };
       },
@@ -325,6 +330,16 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       request: "Produce invalid JSON",
     }));
     assert.equal((await invalidJsonError).type, "error");
+    await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
+
+    const invalidDashboardError = nextSocketMessage(socket, (message) =>
+      message.type === "error" && /could not update/.test(message.message));
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Produce invalid dashboard",
+    }));
+    assert.equal((await invalidDashboardError).type, "error");
     socket.close();
   } finally {
     await preview.close();
