@@ -3,14 +3,14 @@
   "dashboard": {
     "id": "self-care-dashboard",
     "title": "SelfCare",
-    "description": "Track dashboard build-time investigations and clustered failures across represented public projects.",
+    "description": "Track dashboard performance improvements, build-time investigations, and clustered failures across represented public projects.",
     "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "self-care-dashboard",
         "kind": "custom",
         "title": "SelfCare",
-        "description": "Track build-time investigations, speed attainment, and remediation findings for clustered public-project failures.",
+        "description": "Track Lighthouse improvements, build-time investigations, speed attainment, and remediation findings for clustered public-project failures.",
         "icon": "check-circle",
         "views": [
           {
@@ -166,6 +166,85 @@
                 "field": "operational-value-definition",
                 "type": "nominal"
               }
+            }
+          },
+          {
+            "id": "self-care-dashboard-performance-runs",
+            "title": "Dashboard performance runs",
+            "description": "Run conclusions for trace-backed CFO, CTO, and CSO Lighthouse evaluations.",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/self-care-dashboard-performance.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "encoding": {
+              "x": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "self-care-dashboard-performance-outcomes",
+            "title": "Dashboard performance improvements",
+            "description": "Draft pull requests for one trace-backed Lighthouse bottleneck at a time; publication does not establish realized performance improvement.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/self-care-dashboard-performance.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No dashboard performance improvements were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Improvement"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
             }
           },
           {

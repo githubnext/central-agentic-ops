@@ -63,13 +63,27 @@ export function renderPanelHeader(headingId, heading, description, options = {})
 }
 
 /**
+ * Renders a single `<div><dt>{term}</dt><dd>{description}</dd></div>` row for
+ * use inside a `<dl>`, optionally followed by a trailing detail paragraph.
+ * Shared by vital-stat metrics, metadata summary rows, and definition-list
+ * rows across the dashboard.
+ * @param {Node | string | Array<Node | string | null>} term
+ * @param {unknown} description
+ * @param {string} [detail]
+ * @returns {HTMLElement}
+ */
+export function renderDlRow(term, description, detail) {
+  return h('div', null, h('dt', null, ...(Array.isArray(term) ? term : [term])), h('dd', null, description), detail ? h('p', null, detail) : null);
+}
+
+/**
  * @param {string} label
  * @param {unknown} value
  * @param {string} [detail]
  * @returns {HTMLElement}
  */
 export function renderVitalStat(label, value, detail) {
-  return h('div', null, h('dt', null, label), h('dd', null, value), detail ? h('p', null, detail) : null);
+  return renderDlRow(label, value, detail);
 }
 
 /**

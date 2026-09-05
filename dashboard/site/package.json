@@ -7,6 +7,7 @@
     "lint": "eslint .",
     "test": "vitest run --environment jsdom",
     "test:e2e": "npx playwright test --config=playwright.config.mjs",
+    "test:performance": "node ./test/performance/lighthouse.mjs",
     "validate:corpus": "node ./scripts/validate-corpus.mjs",
     "dev": "cd .. && node local-server.mjs --copilot"
   },
@@ -17,6 +18,7 @@
     "eslint": "^9.34.0",
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
+    "lighthouse": "^13.4.1",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "yaml": "^2.9.0"
