@@ -42,6 +42,47 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
     }],
   });
 
+  test("dashboard source bridge explains configuration health and proposes bounded rollout actions", () => {
+    const document = {
+      version: 1,
+      "control-plane": {
+        scope: { "allowed-owners": ["acme"] },
+        packages: {
+          dependabot: {
+            mode: "review",
+            workers: {
+              updater: { workflow: "dependabot-updater", enabled: false },
+            },
+          },
+        },
+      },
+    };
+    const sources = buildDashboardLanguageSources({
+      deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+      usage: {},
+      operationalValues: { records: [] },
+      report: { generatedAt: "2026-09-04T12:00:00Z", records: [] },
+      controlSettings: {
+        policy_resolution: { status: "available", reason: "" },
+        policy_document: document,
+        policy_source: JSON.stringify(document, null, 2),
+      },
+    });
+
+    assert.deepEqual(sources["configuration-summary"].rows, [
+      { status: "Valid", count: 1 },
+      { status: "Warnings", count: 1 },
+      { status: "Guidance", count: 1 },
+    ]);
+    assert.equal(sources["configuration-policy"].rows[0].document, document);
+    assert.match(sources["configuration-policy"].rows[0].raw, /"control-plane"/);
+    assert.deepEqual(
+      sources["configuration-actions"].rows.map((row) => row.action),
+      ["Promote dependabot to live", "Enable updater"],
+    );
+    assert.match(sources["configuration-actions"].rows[0].prompt, /target-owned authority/);
+  });
+
   assert.deepEqual(sources["github-api-rate-limits"].rows, [{
     "observation-id": "unknown:after:app:core:2026-09-04T11:59:00Z",
     "operation-execution-id": "unknown",
