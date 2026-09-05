@@ -26,6 +26,7 @@ const sourceNames = [
   "operational-values",
   "github-api-rate-limits",
   "github-api-collector-health",
+  "github-api-call-stacks",
 ];
 const AIC_TO_USD = 0.01;
 export const GITHUB_RATE_LIMIT_THRESHOLDS = Object.freeze({
@@ -284,6 +285,28 @@ export function githubCollectorRows(entries = []) {
     "cache-folders": entry.activityCache?.folderCount ?? 0,
     "rate-limit-error": rateLimitDiagnostic(entry),
   }));
+}
+
+export function githubStackTraceRows(entries = []) {
+  return entries.flatMap((entry) => {
+    const executionId = entry.pairId || "unknown";
+    const traceId = `${executionId}:${entry.phase || "unknown"}:${entry.observedAt || "unknown"}`;
+    return (Array.isArray(entry.stackTrace) ? entry.stackTrace : []).flatMap((frame, index) => {
+      if (typeof frame !== "string" || !frame.trim()) return [];
+      return [{
+        "observed-at": entry.observedAt,
+        "operation-execution-id": executionId,
+        phase: entry.phase || "unknown",
+        operation: entry.operation || "unknown",
+        outcome: entry.outcome || "unknown",
+        credential: credential(entry),
+        "stack-frame-id": `${traceId}:${index}`,
+        "stack-parent-id": index > 0 ? `${traceId}:${index - 1}` : "",
+        "stack-depth": index,
+        "stack-frame": frame.trim(),
+      }];
+    });
+  });
 }
 
 function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
@@ -1084,6 +1107,15 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   sources["github-api-collector-health"] = source(
     "github-api-collector-health",
     githubCollectorRows(githubTelemetry),
+    generatedAt,
+    githubTelemetry.length > 0,
+    githubComplete,
+    githubFreshness,
+    githubAsOf,
+  );
+  sources["github-api-call-stacks"] = source(
+    "github-api-call-stacks",
+    githubStackTraceRows(githubTelemetry),
     generatedAt,
     githubTelemetry.length > 0,
     githubComplete,

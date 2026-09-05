@@ -121,6 +121,36 @@ function renderApiPage(rateLimitSource = {
           'cache-folders': 1,
           'rate-limit-error': ''
         }]
+      },
+      'github-api-call-stacks': {
+        source: 'github-api-call-stacks',
+        metadata,
+        rows: [
+          {
+            'observed-at': '2026-09-04T12:00:00Z',
+            'operation-execution-id': 'run-1',
+            phase: 'after',
+            operation: 'refresh-activity',
+            outcome: 'success',
+            credential: 'reader',
+            'stack-frame-id': 'run-1:after:0',
+            'stack-parent-id': '',
+            'stack-depth': 0,
+            'stack-frame': 'at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)'
+          },
+          {
+            'observed-at': '2026-09-04T12:00:00Z',
+            'operation-execution-id': 'run-1',
+            phase: 'after',
+            operation: 'refresh-activity',
+            outcome: 'success',
+            credential: 'reader',
+            'stack-frame-id': 'run-1:after:1',
+            'stack-parent-id': 'run-1:after:0',
+            'stack-depth': 1,
+            'stack-frame': 'at main (activity/github-telemetry.mjs:150:9)'
+          }
+        ]
       }
     }
   });
@@ -151,7 +181,7 @@ describe('GitHub API rate-limit dashboard', () => {
       }
     });
     expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential')).toHaveLength(4);
-    expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'supplemental')).toHaveLength(4);
+    expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'supplemental')).toHaveLength(5);
     expect(apiPage.views[0]).toMatchObject({
       id: 'github-api-remaining-trend',
       chart: 'line',
@@ -190,12 +220,18 @@ describe('GitHub API rate-limit dashboard', () => {
     const { page } = renderApiPage();
     const supplemental = [...(page?.querySelectorAll('details[data-disclosure="supplemental"]') ?? [])];
 
-    expect(supplemental).toHaveLength(4);
+    expect(supplemental).toHaveLength(5);
     expect(supplemental.map((view) => view.querySelector('summary')?.textContent)).toEqual(expect.arrayContaining([
       expect.stringContaining('Raw quota observations'),
-      expect.stringContaining('Collector and cache health')
+      expect.stringContaining('Collector and cache health'),
+      expect.stringContaining('Collection call stacks')
     ]));
     expect(page?.textContent).toContain('Collection completeness, retrieval failures, and activity-cache state');
+    const stackTable = page?.querySelector('[aria-labelledby="github-api-call-stacks-heading"] table');
+    expect(stackTable?.getAttribute('role')).toBe('treegrid');
+    expect(stackTable?.querySelectorAll('tbody tr[aria-level]')).toHaveLength(2);
+    expect(stackTable?.querySelector('tbody tr:nth-child(2)')?.getAttribute('aria-level')).toBe('2');
+    expect(stackTable?.textContent).toContain('activity/github-telemetry.mjs:150:9');
   });
 
   it('exposes stale, partial, unavailable, and empty source states without fabricated quota values', () => {

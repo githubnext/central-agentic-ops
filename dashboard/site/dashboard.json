@@ -335,7 +335,8 @@
               "github-api-reset-horizon",
               "github-api-operation-consumption",
               "github-api-observations",
-              "github-api-collector-health"
+              "github-api-collector-health",
+              "github-api-call-stacks"
             ]
           }
         ],
@@ -850,6 +851,72 @@
                   "field": "rate-limit-error",
                   "type": "nominal",
                   "title": "Retrieval error"
+                }
+              ]
+            }
+          },
+          {
+            "id": "github-api-call-stacks",
+            "title": "Collection call stacks",
+            "description": "JavaScript stack frames captured when rate-limit telemetry is collected identify the source locations that initiated each observation.",
+            "data": {
+              "source": "github-api-call-stacks",
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                },
+                {
+                  "field": "operation-execution-id",
+                  "direction": "asc"
+                },
+                {
+                  "field": "stack-depth",
+                  "direction": "asc"
+                }
+              ]
+            },
+            "mark": "table",
+            "tree": {
+              "id-field": "stack-frame-id",
+              "parent-field": "stack-parent-id"
+            },
+            "controls": "static",
+            "column-summaries": false,
+            "layout": "full",
+            "disclosure": "supplemental",
+            "empty-message": "Collection call stacks are unavailable for the selected time range.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "stack-frame",
+                  "type": "nominal",
+                  "title": "Stack frame"
+                },
+                {
+                  "field": "operation",
+                  "type": "nominal",
+                  "title": "Operation"
+                },
+                {
+                  "field": "phase",
+                  "type": "nominal",
+                  "title": "Phase"
+                },
+                {
+                  "field": "credential",
+                  "type": "nominal",
+                  "title": "Credential"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed (UTC)"
+                },
+                {
+                  "field": "operation-execution-id",
+                  "type": "nominal",
+                  "title": "Execution"
                 }
               ]
             }

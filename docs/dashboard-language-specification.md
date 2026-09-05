@@ -646,6 +646,8 @@ A view may set the structural `layout` hint to `full`, `half`, or `third`. The v
 
 A table view may set `controls` to `interactive` or `static`; an omitted value defaults to `interactive`. Interactive tables may expose filtering, sorting, summaries, and progressive row disclosure. Static tables expose all rows in source order without those controls. A table may set `empty-message` to a non-empty textual description shown inside its zero-row table body.
 
+A table view may set `tree` to a mapping containing `id-field` and `parent-field`. Both values name distinct canonical source fields. The presenter orders each parent before its children, indents the first encoded column by hierarchy depth, and exposes the result as an accessible tree grid. Rows with an empty or unavailable parent are roots. Tree tables must use `controls: static` so filtering, sorting, summaries, and progressive row disclosure cannot separate a child from its ancestors.
+
 ### 11.2 Data Narrowing
 
 View `data` contains `source` for `metric`, `table`, and `chart`, or a non-empty unique `sources` sequence for `element`. Callout views do not contain `data`. Every data-bearing view may also contain:

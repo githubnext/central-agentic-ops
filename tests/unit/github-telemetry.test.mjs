@@ -25,6 +25,10 @@ test("GitHub telemetry records rate-limit and bounded cache metadata without tok
       cacheRoot,
       ledgerPath,
       now: () => new Date("2026-09-04T12:00:00Z"),
+      stackTrace: [
+        "at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)",
+        "at main (activity/github-telemetry.mjs:150:9)",
+      ],
       execute: () => ({
         status: 0,
         stdout: JSON.stringify({
@@ -45,6 +49,10 @@ test("GitHub telemetry records rate-limit and bounded cache metadata without tok
       remaining: 4_875,
       resetAt: "2026-09-04T13:20:00.000Z",
     });
+    assert.deepEqual(entry.stackTrace, [
+      "at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)",
+      "at main (activity/github-telemetry.mjs:150:9)",
+    ]);
     const ledger = await readFile(ledgerPath, "utf8");
     assert.doesNotMatch(ledger, /secret-token-value/);
     assert.deepEqual(JSON.parse(ledger), entry);

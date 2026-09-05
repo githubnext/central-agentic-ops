@@ -18,6 +18,10 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
         core: { limit: 5_000, used: 125, remaining: 4_875, resetAt: "2026-09-04T13:00:00Z" },
       },
       rateLimitError: null,
+      stackTrace: [
+        "at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)",
+        "at main (activity/github-telemetry.mjs:150:9)",
+      ],
       activityCache: { hydrated: true, bytes: 1024, entryCount: 6, folderCount: 2 },
     }],
   });
@@ -65,6 +69,32 @@ test("dashboard source bridge expands GitHub telemetry resources", () => {
     "cache-folders": 2,
     "rate-limit-error": "",
   }]);
+  assert.deepEqual(sources["github-api-call-stacks"].rows, [
+    {
+      "observed-at": "2026-09-04T11:59:00Z",
+      "operation-execution-id": "unknown",
+      phase: "after",
+      operation: "refresh-activity",
+      outcome: "success",
+      credential: "app",
+      "stack-frame-id": "unknown:after:2026-09-04T11:59:00Z:0",
+      "stack-parent-id": "",
+      "stack-depth": 0,
+      "stack-frame": "at recordGithubTelemetry (activity/github-telemetry.mjs:100:16)",
+    },
+    {
+      "observed-at": "2026-09-04T11:59:00Z",
+      "operation-execution-id": "unknown",
+      phase: "after",
+      operation: "refresh-activity",
+      outcome: "success",
+      credential: "app",
+      "stack-frame-id": "unknown:after:2026-09-04T11:59:00Z:1",
+      "stack-parent-id": "unknown:after:2026-09-04T11:59:00Z:0",
+      "stack-depth": 1,
+      "stack-frame": "at main (activity/github-telemetry.mjs:150:9)",
+    },
+  ]);
   assert.equal(sources["github-api-rate-limits"].metadata.availability, "available");
   assert.equal(sources["github-api-rate-limits"].metadata.completeness, "complete");
 });

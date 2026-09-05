@@ -92,6 +92,7 @@ export async function recordGithubTelemetry({
   ledgerPath = process.env.CAO_GH_LEDGER || DEFAULT_LEDGER_PATH,
   execute = spawnSync,
   now = () => new Date(),
+  stackTrace = new Error().stack?.split(/\r?\n/).slice(1).map((frame) => frame.trim()).filter(Boolean) || [],
 }) {
   let rateLimit = {};
   let rateLimitError = null;
@@ -120,6 +121,7 @@ export async function recordGithubTelemetry({
     job: process.env.GITHUB_JOB || null,
     runId: process.env.GITHUB_RUN_ID || null,
     runAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
+    stackTrace,
     rateLimit,
     rateLimitError,
     activityCache: await collectActivityCacheState(cacheRoot),
