@@ -35,6 +35,7 @@ tools:
   edit:
   playwright:
     version: "0.1.18"
+    browsers: [chrome, chromium]
 network:
   allowed:
     - defaults
@@ -61,8 +62,6 @@ steps:
       cache: npm
   - name: Install development dependencies
     run: npm ci
-  - name: Install Playwright Chromium
-    run: npm exec playwright install --with-deps chromium
   - name: Build bounded pull request queue
     env:
       GH_TOKEN: ${{ github.token }}

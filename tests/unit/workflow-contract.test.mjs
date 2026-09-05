@@ -746,7 +746,7 @@ test("repository PR automation remains bounded and adapted to CAO", () => {
   assert.match(sousChef, /push-to-pull-request-branch:/);
   assert.match(sousChef, /bash:\n\s+- "\*"/);
   assert.match(sousChef, /npm ci/);
-  assert.match(sousChef, /playwright install --with-deps chromium/);
+  assert.match(sousChef, /browsers: \[chrome, chromium\]/);
   assert.match(sousChef, /Chrome for Testing/);
   assert.match(sousChef, /if and only if the pushed commit modifies one or more `\.lock\.yml` files/);
   assert.doesNotMatch(sousChef, /mention `@copilot`/);
