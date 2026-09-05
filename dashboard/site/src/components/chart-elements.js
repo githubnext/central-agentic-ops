@@ -755,7 +755,11 @@ function renderHeatmapChart(points, valueLabel, unit) {
             ...columns.map((column) => {
               const point = cells.get(JSON.stringify([column, row]));
               if (!point) {
-                return h('td', { className: 'heatmap-cell heatmap-cell-empty', 'aria-label': `${column}, ${row}: no observation` }, '—');
+                return h('td', {
+                  className: 'heatmap-cell heatmap-cell-empty',
+                  tabIndex: 0,
+                  'aria-label': `${column}, ${row}: no observation`
+                }, '—');
               }
               const value = toNumber(point.y);
               const formatted = formatNumber(value, unit);

@@ -164,6 +164,7 @@ describe('chart element helpers', () => {
     expect(chart.querySelectorAll('.heatmap-cell')).toHaveLength(4);
     expect([...chart.querySelectorAll('.heatmap-cell[tabindex="0"]')].map((cell) => cell.getAttribute('aria-label'))).toContain('build, ubuntu, Mean job time: 62 s');
     expect(chart.querySelector('.heatmap-cell-empty')?.getAttribute('aria-label')).toBe('test, macos: no observation');
+    expect(chart.querySelector('.heatmap-cell-empty')?.getAttribute('tabindex')).toBe('0');
     expect([...chart.querySelectorAll('.heatmap-cell[tabindex="0"]')].map((cell) => cell.textContent)).toContain('62 s');
   });
 
