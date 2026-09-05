@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
 import { formatUtcDateTime, renderDlRow, renderListWithFallback, renderSectionHeading, renderTooltip } from './ui-primitives.js';
-import { titleCase } from './count-formatters.js';
+import { formatCount, titleCase } from './count-formatters.js';
 
 /**
  * @param {string} pageId
@@ -255,7 +255,7 @@ export function renderLayoutSectionChrome(pageId, section, count) {
     { className: 'layout-section-header' },
     sectionHeading,
     count !== null && section['count-label']
-      ? h('strong', null, `${count.toLocaleString('en')} ${section['count-label']}`)
+      ? h('strong', null, `${formatCount(count)} ${section['count-label']}`)
       : null
   );
 }

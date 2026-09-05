@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { formatAggregateValue, formatNumber, formatRelativeTime } from '../view-formatters.js';
-import { titleCase } from './count-formatters.js';
+import { formatCount, titleCase } from './count-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
 import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderOutcomeLink, renderWorkflowRunLink } from './link-content.js';
@@ -379,7 +379,7 @@ function renderChartView(context) {
         'div',
         { className: 'chart-clustering-progress', role: 'status', 'aria-live': 'polite', 'aria-busy': 'true' },
         h('progress', null),
-        `Clustering ${points.length.toLocaleString('en')} scatter points…`
+        `Clustering ${formatCount(points.length)} scatter points…`
       )
     : null;
   const section = renderPageSection(

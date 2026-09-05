@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { effect, state } from '../reactive.js';
 import { renderHistogramBins } from './histogram.js';
-import { formatCountNoun } from './count-formatters.js';
+import { formatCount, formatCountNoun } from './count-formatters.js';
 import { renderDefinitionListRows } from './view-chrome.js';
 import { formatMediumUtcDateTime, renderTableSummaryEmpty } from './ui-primitives.js';
 import { formatClockDuration, formatPercent } from '../view-formatters.js';
@@ -149,7 +149,7 @@ function renderQuantitativeSummary(summary) {
     { className: 'table-summary-quantitative' },
     renderHistogramBins({
       bins: summary.bins,
-      label: `${summary.label} distribution, ${summary.count.toLocaleString('en')} values`
+      label: `${summary.label} distribution, ${formatCount(summary.count)} values`
     }),
     h(
       'dl',

@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { processRows, processTableSummaries } from '../data-processor.js';
+import { formatCount } from './count-formatters.js';
 import { renderReactiveTableSummaryRow, renderTableSummaryRow } from './table-summary.js';
 import { renderEmptyTableRow, renderLabeledControl } from './ui-primitives.js';
 
@@ -328,7 +329,7 @@ function applyProcessed(result, apply) {
  * @param {string} [pluralNoun]
  */
 function formatResultCount(shown, matched, noun = 'result', pluralNoun = `${noun}s`) {
-  return `Showing ${shown.toLocaleString('en')} of ${matched.toLocaleString('en')} ${matched === 1 ? noun : pluralNoun}`;
+  return `Showing ${formatCount(shown)} of ${formatCount(matched)} ${matched === 1 ? noun : pluralNoun}`;
 }
 
 /**
