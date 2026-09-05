@@ -149,6 +149,7 @@ export const FILTER_DIMENSION_VALUES = [
   'security-feature',
   'security-analysis',
   'security-status',
+  'detection-state',
   'detection-state'
 ];
 
@@ -410,8 +411,8 @@ export const SOURCE_FIELDS = {
   'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link']
 };
 
-export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'  ,'detection-state'
-];
+export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
+export const DETECTION_STATE_VALUES = ['clean', 'threat', 'degraded', 'tooling-failure', 'skipped', 'unknown'];
 export const WORKFLOW_ACTIVE_VALUES = ['true', 'false', 'unknown'];
 export const WORKFLOW_ROLE_VALUES = ['orchestrator', 'worker', 'standalone'];
 export const RUN_STATUS_VALUES = ['queued', 'in-progress', 'completed', 'unknown'];
