@@ -12,3 +12,12 @@ import { renderPackageRouteShell } from './package-route-shell.js';
 export function renderPackageRouteView(context) {
   return renderPackageRouteShell(context, packageRouteComposition(context.elementConfig?.body));
 }
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {'insights'|'workflows'|'dispatches'|'reports'} variant
+ * @returns {HTMLElement}
+ */
+export function renderPackageRouteVariant(context, variant) {
+  return renderPackageRouteShell(context, packageRouteComposition(variant));
+}

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { renderPackageNavigation } from '../../src/components/package-detail.js';
-import { renderPackageRouteView } from '../../src/components/package-route-view.js';
+import { renderPackageRouteVariant, renderPackageRouteView } from '../../src/components/package-route-view.js';
 
 const metadata = {
   'source-id': 'fixture',
@@ -176,6 +176,16 @@ describe('renderPackageNavigation', () => {
     expect(rendered.querySelector('.package-tabs')?.textContent).toBe('InsightsWorkflowsDispatchesReports');
     expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
     expect(rendered.textContent).not.toContain('Other');
+  });
+
+  it('renders workflow tab composition through the reusable package route variant primitive', () => {
+    const rendered = renderPackageRouteVariant(context(), 'workflows');
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'package', value: 'ambient-context' }
+    }));
+
+    expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
+    expect(rendered.querySelector('.package-tabs')?.textContent).toBe('InsightsWorkflowsDispatchesReports');
   });
 
   describe('dispatch navigation', () => {
