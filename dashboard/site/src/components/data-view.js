@@ -389,6 +389,12 @@ function renderChartView(context) {
     clustering.then((clustered) => {
       const rendered = renderVisualization(clustered);
       visualization?.replaceWith(...rendered.chartContent, ...(rendered.table ? [rendered.table] : []));
+    }).catch(() => {
+      visualization?.replaceWith(h(
+        'div',
+        { className: 'chart-widget scatter-chart-widget', role: 'status' },
+        'Unable to prepare this scatter visualization.'
+      ));
     });
   } else if (chartType === 'pie') {
     section.append(
