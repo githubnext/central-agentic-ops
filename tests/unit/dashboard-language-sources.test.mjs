@@ -747,6 +747,14 @@ test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavail
                 errorCount: 0,
                 totalOutputSize: 0,
                 maxOutputSize: 0,
+              }, {
+                serverName: "idle",
+                serverVersion: "1.0.0",
+                protocolVersion: "2025-06-18",
+                toolCallCount: 0,
+                errorCount: 0,
+                totalOutputSize: 0,
+                maxOutputSize: 0,
               }],
               calls: [],
               failures: [
@@ -766,8 +774,9 @@ test("dashboard source bridge omits mcp-calls rows when mcp telemetry is unavail
   assert.equal(sources["mcp-calls"].rows.filter((row) => row.run === "101").length, 0);
 
   const serverRows = sources["mcp-servers"].rows.filter((row) => row.run === "102");
-  assert.equal(serverRows.find((row) => row["mcp-server"] === "playwright")["failed-calls"], 2);
+  assert.equal(serverRows.find((row) => row["mcp-server"] === "playwright")["failed-calls"], 1);
   assert.equal(serverRows.find((row) => row["mcp-server"] === "github")["failed-calls"], 1);
+  assert.equal(serverRows.find((row) => row["mcp-server"] === "idle")["mcp-status"], "missing");
 });
 
 test("dashboard source bridge exposes run and job performance dimensions", () => {

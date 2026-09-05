@@ -925,6 +925,12 @@ function mcpStatus(value) {
   return normalized ? "failure" : "missing";
 }
 
+function mcpServerStatus(server) {
+  const failedCalls = positiveCount(server.errorCount);
+  if (failedCalls > 0) return "failure";
+  return positiveCount(server.toolCallCount) > 0 ? "success" : "missing";
+}
+
 function mcpCallRows(usage) {
   return (usage.securityRuns || []).flatMap((run) => {
     const mcp = run.security?.mcp;
@@ -1014,7 +1020,8 @@ function mcpServerRows(usage) {
         totalOutputSize: 0,
         maxOutputSize: 0,
       };
-      server.errorCount = positiveCount(server.errorCount) + failureCount;
+      // Failure rows may duplicate the reported server summary, so treat them as a floor rather than adding twice.
+      server.errorCount = Math.max(positiveCount(server.errorCount), failureCount);
       servers.set(serverName, server);
     }
     return [...servers.values()].map((server) => ({
@@ -1023,7 +1030,7 @@ function mcpServerRows(usage) {
       "mcp-server": server.serverName || "unknown",
       "mcp-server-version": server.serverVersion || "unknown",
       "mcp-protocol-version": server.protocolVersion || "unknown",
-      "mcp-status": server.errorCount > 0 ? "failure" : "success",
+      "mcp-status": mcpServerStatus(server),
       "tool-calls": positiveCount(server.toolCallCount),
       "failed-calls": positiveCount(server.errorCount),
       "total-response-bytes": positiveCount(server.totalOutputSize),
