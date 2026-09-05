@@ -130,7 +130,7 @@ function renderRawPolicy(raw) {
 export function renderConfigurationView(context) {
   const row = context.sources['configuration-policy']?.rows?.[0];
   if (!row) return null;
-  const document = row.document;
+  const policyDocument = row.document;
   const diagnostics = Array.isArray(row.diagnostics) ? row.diagnostics.filter(isPlainObject) : [];
   const headingId = `${context.pageId}-configuration-heading`;
   return h('section', { className: 'configuration-view', 'aria-labelledby': headingId },
@@ -142,10 +142,10 @@ export function renderConfigurationView(context) {
       headingTag: 'h2'
     }),
     renderDiagnostics(diagnostics),
-    isPlainObject(document)
+    isPlainObject(policyDocument)
       ? h('section', { className: 'configuration-entries', 'aria-label': 'Explained policy entries' },
           h('h3', null, 'Explained entries'),
-          renderEntry('.github/workflows/cao.json', document, '$'))
+          renderEntry('.github/workflows/cao.json', policyDocument, '$'))
       : h('p', { className: 'configuration-unavailable' }, 'The policy cannot be explained until it contains valid JSON.'),
     renderRawPolicy(String(row.raw ?? ''))
   );
