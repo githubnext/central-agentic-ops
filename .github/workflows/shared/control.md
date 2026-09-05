@@ -256,6 +256,9 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  activation:
+    if: needs.pre_activation.outputs.cao_authorized == 'true'
+
   agent:
     pre-steps:
       - name: Download CAO control precompute artifact
