@@ -25,6 +25,6 @@ npm run test:e2e
 npm run test:performance
 ```
 
-The performance suite audits CFO, CTO, and CSO dashboard journeys with Lighthouse. It writes machine-readable reports, browser traces, and a summary under `test-results/lighthouse/`; CI retains that directory as the `dashboard-lighthouse-performance` artifact.
+The performance suite audits CFO, CTO, and CSO dashboard journeys with Lighthouse. It writes machine-readable reports, browser traces, and a summary under `test-results/lighthouse/`. The SelfCare Dashboard Performance worker runs the suite and retains its evidence artifact.
 
 Application source is browser-compatible JavaScript ESM with no runtime dependencies; test tooling remains development-only.

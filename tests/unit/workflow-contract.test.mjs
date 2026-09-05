@@ -2329,15 +2329,13 @@ test("dashboard CI runs the package quality gates", () => {
   const jobs = generatedJobs(source);
   const lintUnit = jobs.get("lint-unit");
   const playwrightIntegration = jobs.get("playwright-integration");
-  const lighthousePerformance = jobs.get("lighthouse-performance");
 
   assert.match(source, /dashboard\/site\/\*\*/);
   assert.match(source, /working-directory: dashboard\/site/);
   assert.match(source, /cache-dependency-path: dashboard\/site\/package-lock\.json/);
-  assert.deepEqual([...jobs.keys()], ["lint-unit", "playwright-integration", "lighthouse-performance"]);
+  assert.deepEqual([...jobs.keys()], ["lint-unit", "playwright-integration"]);
   assert.deepEqual(lintUnit.needs, []);
   assert.deepEqual(playwrightIntegration.needs, []);
-  assert.deepEqual(lighthousePerformance.needs, []);
   for (const command of ["npm run typecheck", "npm run lint", "npm test"]) {
     assert.match(lintUnit.block, new RegExp(`run: ${command.replaceAll(".", "\\.")}`));
   }
@@ -2348,11 +2346,7 @@ test("dashboard CI runs the package quality gates", () => {
   assert.match(playwrightIntegration.block, /npx playwright install --with-deps chromium/);
   assert.match(playwrightIntegration.block, /run: npm run test:e2e/);
   assert.doesNotMatch(playwrightIntegration.block, /run: npm (?:run (?:typecheck|lint)|test)$/m);
-  assert.match(lighthousePerformance.block, /run: npm run test:performance/);
-  assert.match(lighthousePerformance.block, /uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
-  assert.match(lighthousePerformance.block, /name: dashboard-lighthouse-performance/);
-  assert.match(lighthousePerformance.block, /path: dashboard\/site\/test-results\/lighthouse\//);
-  assert.match(lighthousePerformance.block, /if: always\(\)/);
+  assert.doesNotMatch(source, /test:performance|lighthouse/i);
 });
 
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
