@@ -72,7 +72,7 @@ export function admissionRecordFromArchive(archivePath, expected = {}) {
     maxBuffer: MAX_RECORD_BYTES,
     timeout: 10_000,
   });
-  if (result.status !== 0 || !result.stdout || Buffer.byteLength(result.stdout) >= MAX_RECORD_BYTES) return null;
+  if (result.error || result.status !== 0 || !result.stdout || Buffer.byteLength(result.stdout) >= MAX_RECORD_BYTES) return null;
   try {
     return normalizeAdmissionRecord(JSON.parse(result.stdout), expected);
   } catch {

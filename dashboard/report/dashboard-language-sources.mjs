@@ -632,7 +632,7 @@ function admissionRows(deployed) {
         "run-link": link("run", workflowRunUrl(workflow.repository, run.runId), `Run ${run.runId}`),
       };
       admissions.push(row);
-      for (const [index, check] of admission.checks.entries()) {
+      for (const [index, check] of (admission.checks || []).entries()) {
         checks.push({
           ...row,
           check: check.check,
