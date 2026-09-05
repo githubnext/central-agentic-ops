@@ -2240,18 +2240,62 @@
           {
             "id": "outcome-record",
             "title": "Outcome",
-            "data": {
-              "sources": [
-                "outcomes"
-              ]
-            },
+            "description": "Rendered from reusable discussion and metadata sections bound to the selected outcome.",
             "title-link": {
               "href-field": "external-link",
               "identifier-field": "outcome-number"
             },
             "mark": "element",
             "element": "outcome-detail",
+            "data": {
+              "sources": [
+                "outcomes"
+              ]
+            },
             "layout": "full"
+          },
+          {
+            "id": "outcome-discussion",
+            "title": "Outcome discussion",
+            "data": {
+              "sources": [
+                "outcomes"
+              ]
+            },
+            "mark": "element",
+            "element": "outcome-detail-section",
+            "config": {
+              "body": "discussion"
+            },
+            "layout": "full"
+          },
+          {
+            "id": "outcome-metadata",
+            "title": "Outcome metadata",
+            "data": {
+              "sources": [
+                "outcomes"
+              ]
+            },
+            "mark": "element",
+            "element": "outcome-detail-section",
+            "config": {
+              "body": "metadata"
+            },
+            "layout": "full"
+          }
+        ],
+        "sections": [
+          {
+            "id": "outcome-summary",
+            "title": "Outcome",
+            "layout": "full",
+            "views": [
+              "outcome-disposition",
+              "outcome-record",
+              "outcome-discussion",
+              "outcome-metadata"
+            ]
           }
         ]
       },
@@ -3586,6 +3630,188 @@
             }
           ]
         }
+      },
+      {
+        "id": "safe-outputs",
+        "kind": "custom",
+        "title": "Safe Outputs",
+        "navigation-label": "Safe Outputs",
+        "icon": "shield-check",
+        "class-name": "safe-outputs-page",
+        "description": "Safe-output volume, diagnostic signals, and per-run delivery performance.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "safe-output-distribution",
+            "title": "Safe-output disposition",
+            "description": "Distribution of delivered outputs and explicit no-op or incomplete execution signals.",
+            "data": {
+              "source": "safe-output-performance"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "safe-output-label",
+                "type": "nominal",
+                "title": "Disposition"
+              },
+              "y": {
+                "field": "safe-output-count",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "Safe outputs"
+              },
+              "color": {
+                "field": "safe-output-status",
+                "type": "nominal",
+                "title": "Status"
+              }
+            }
+          },
+          {
+            "id": "safe-output-trend",
+            "title": "Safe-output trend",
+            "description": "Daily output and diagnostic volume highlights changes in delivery, no-op, missing-data, missing-tool, and incomplete-report behavior.",
+            "data": {
+              "source": "safe-output-performance",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day",
+                "title": "Observed"
+              },
+              "y": {
+                "field": "safe-output-count",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "Safe outputs"
+              },
+              "color": {
+                "field": "safe-output-label",
+                "type": "nominal",
+                "title": "Disposition"
+              }
+            }
+          },
+          {
+            "id": "safe-output-workflow-performance",
+            "title": "Safe outputs by workflow",
+            "description": "Mean items per observed workflow run, split by output or diagnostic disposition.",
+            "data": {
+              "source": "safe-output-performance"
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "workflow",
+                "type": "nominal",
+                "title": "Workflow"
+              },
+              "y": {
+                "field": "safe-output-count",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean items per run"
+              },
+              "color": {
+                "field": "safe-output-label",
+                "type": "nominal",
+                "title": "Disposition"
+              }
+            }
+          },
+          {
+            "id": "safe-output-diagnostics",
+            "title": "Safe-output diagnostics",
+            "description": "Run-level evidence for delivered outputs and explicit noop, missing_data, missing_tool, or report_incomplete signals.",
+            "data": {
+              "source": "safe-output-performance",
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "column-summaries": true,
+            "empty-message": "No safe-output activity was reported in the selected horizon.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "safe-output-kind",
+                  "type": "nominal",
+                  "title": "Signal"
+                },
+                {
+                  "field": "safe-output-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "safe-output-count",
+                  "type": "quantitative",
+                  "title": "Items"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal",
+                  "title": "Repository"
+                },
+                {
+                  "field": "run-conclusion",
+                  "type": "nominal",
+                  "title": "Conclusion",
+                  "display": "status"
+                },
+                {
+                  "field": "rollout-mode",
+                  "type": "nominal",
+                  "title": "Mode",
+                  "display": "mode"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "full"
+          }
+        ]
       },
       {
         "id": "detection",
@@ -5884,6 +6110,7 @@
       {
         "label": "Explore",
         "pages": [
+          "safe-outputs",
           "detection",
           "dispatches",
           "firewall",
