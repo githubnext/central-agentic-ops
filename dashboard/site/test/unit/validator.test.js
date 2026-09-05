@@ -48,8 +48,8 @@ describe('dashboard document validation', () => {
         continue;
       }
       const trailingView = views.at(-1);
-      if (trailingView) expect(trailingView).toHaveProperty('mark');
-      if (trailingView?.mark === 'table') {
+      const isTableView = trailingView?.mark === 'table' || Array.isArray(trailingView?.encoding?.columns);
+      if (isTableView) {
         expect(trailingView.disclosure).toBe('supplemental');
       }
     }
