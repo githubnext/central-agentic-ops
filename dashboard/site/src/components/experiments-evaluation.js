@@ -270,7 +270,9 @@ function renderDecisionTable(experiments, selectedId, onSelect) {
             h('td', null, `${experiment.controlN} / ${experiment.candidateN}`, experiment.excluded ? h('small', null, `${experiment.excluded} excluded`) : null),
             h('td', null, renderEffect(experiment.normalizedEffect)),
             h('td', null, experiment.evidenceStrength),
-            h('td', null, statusBadge(experiment.regressingGuardrails.length ? `${experiment.guardrailCount - experiment.regressingGuardrails.length}/${experiment.guardrailCount} passing` : `${experiment.guardrailCount}/${experiment.guardrailCount} passing`, experiment.regressingGuardrails.length ? 'danger' : 'success')),
+            h('td', null, experiment.guardrailCount === 0
+              ? statusBadge('Not configured', 'neutral')
+              : statusBadge(`${experiment.guardrailCount - experiment.regressingGuardrails.length}/${experiment.guardrailCount} passing`, experiment.regressingGuardrails.length ? 'danger' : 'success')),
             h('td', null, statusBadge(experiment.readiness, experiment.readiness === 'READY' ? 'success' : 'attention')),
             h('td', null, statusBadge(experiment.decision, decisionTone(experiment.decision))),
             h('td', null, formatDate(experiment.lastObservation))
@@ -287,7 +289,7 @@ function renderExperimentDetails(model, experimentId) {
   if (!experiment) return h('div');
   const metrics = metricSummaries(experiment.observations, experiment.control, experiment.candidate);
   const evalMetrics = metrics.filter((metric) => metric.sourceType === 'eval');
-  const graderRegressions = metrics.filter((metric) => metric.sourceType === 'grader').sort((left, right) => left.normalizedEffect - right.normalizedEffect);
+  const graderRegressions = metrics.filter((metric) => metric.sourceType === 'grader' && metric.regression).sort((left, right) => left.normalizedEffect - right.normalizedEffect);
   return h(
     'div',
     { className: 'experiment-detail', 'data-selected-experiment': experiment.id },
@@ -423,7 +425,7 @@ function renderGraderDiagnostics(metrics) {
     { className: 'experiment-section', 'aria-labelledby': 'grader-diagnostics-title' },
     sectionHeading('grader-diagnostics-title', 'Grader regressions', 'Largest direction-aware regressions are ranked first.'),
     metrics.length === 0
-      ? partialState('No grader observations are available for this experiment.')
+      ? partialState('No grader regressions are present in the available observations.')
       : h(
         'ol',
         { className: 'grader-ranking' },
