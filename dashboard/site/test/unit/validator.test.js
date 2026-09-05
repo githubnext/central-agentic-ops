@@ -91,6 +91,7 @@ describe('dashboard document validation', () => {
         }
       ]
     });
+
     expect(preview.views[1].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
       'package',
       'workflow-name',
@@ -99,6 +100,30 @@ describe('dashboard document validation', () => {
       'repository',
       'observed-at'
     ]);
+  });
+
+  it('defines the control-plane Admission page from structured admission sources', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const admission = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'admission');
+
+    expect(admission.views.map((/** @type {{ id: string }} */ view) => view.id)).toEqual([
+      'admission-decision-distribution',
+      'admission-decision-trend',
+      'admission-failed-gates',
+      'admission-decision-ledger'
+    ]);
+    expect(admission.views[0]).toMatchObject({
+      mark: 'chart',
+      chart: 'pie',
+      data: { source: 'admissions' }
+    });
+    expect(admission.views[2]).toMatchObject({
+      data: {
+        source: 'admission-checks',
+        filters: { 'check-status': ['failed'] }
+      }
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
   it('defines workflow update inventory and version distribution views', () => {

@@ -6,6 +6,8 @@ includes:
   - .github/workflows/activity.yml
   - .github/workflows/cao-maintenance.yml
 resources:
+  - source: admission-evidence.mjs
+    destination: .github/aw/activity/admission-evidence.mjs
   - source: actions-log.mjs
     destination: .github/aw/activity/actions-log.mjs
   - source: failure-evidence.mjs
