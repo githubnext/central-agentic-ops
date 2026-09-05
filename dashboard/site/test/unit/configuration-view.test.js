@@ -34,14 +34,14 @@ function context(row) {
 }
 
 describe('Configuration dashboard view', () => {
-  it('keeps Configuration in the Control plane group with a chart first', () => {
+  it('keeps Configuration in the Control plane group without a chart', () => {
     const dashboard = JSON.parse(readFileSync(resolve('dashboard.json'), 'utf8')).dashboard;
     const page = dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'configuration');
     const group = dashboard.navigation.find((/** @type {{ label: string }} */ candidate) => candidate.label === 'Control plane');
 
     expect(group.pages).toContain('configuration');
-    expect(page.views[0]).toMatchObject({ mark: 'chart', chart: 'pie' });
-    expect(page.views).toHaveLength(3);
+    expect(page.views.every((/** @type {{ mark: string }} */ view) => view.mark !== 'chart')).toBe(true);
+    expect(page.views).toHaveLength(2);
   });
 
   it('renders validation guidance, explains entries, and safely renders raw JSON', () => {
@@ -62,6 +62,7 @@ describe('Configuration dashboard view', () => {
     expect(rendered.textContent).toContain('Sets the inherited execution mode.');
     expect(rendered.querySelector('.configuration-raw code')?.textContent).toBe(raw);
     expect(rendered.querySelectorAll('.configuration-entry')).not.toHaveLength(0);
+    expect(/** @type {HTMLDetailsElement | null} */ (rendered.querySelector('details.configuration-entries'))?.open).toBe(false);
     expect(/** @type {HTMLDetailsElement | null} */ (rendered.querySelector('details.configuration-entry'))?.open).toBe(true);
   });
 

@@ -36,6 +36,9 @@ test("every production dashboard page starts with an executive summary or prescr
       const isExperimentsEvaluation = page.id === "experiments"
         && summary.mark === "element"
         && summary.element === "experiments-evaluation";
+      const isConfigurationPolicy = page.id === "configuration"
+        && summary.mark === "element"
+        && summary.element === "configuration-policy";
       const isAttentionFirstHome = page.id === "home"
         && page["class-name"] === "dashboard-next-home-page"
         && summary.id === "home-attention"
@@ -54,6 +57,7 @@ test("every production dashboard page starts with an executive summary or prescr
           || isSummaryTable
           || isSummaryGrid
           || isExperimentsEvaluation
+          || isConfigurationPolicy
           || isAttentionFirstHome,
         `${path}: page "${page.id}" must start with an executive summary or its prescribed attention view`,
       );

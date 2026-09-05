@@ -152,8 +152,8 @@ export function renderConfigurationView(context) {
     }),
     renderDiagnostics(diagnostics),
     isPlainObject(policyDocument)
-      ? h('section', { className: 'configuration-entries', 'aria-label': 'Explained policy entries' },
-          h('h3', null, 'Explained entries'),
+      ? h('details', { className: 'configuration-entries' },
+          h('summary', null, 'Explained entries'),
           renderEntry('.github/workflows/cao.json', policyDocument, '$'))
       : h('p', { className: 'configuration-unavailable' }, 'The policy cannot be explained until it contains valid JSON.'),
     renderRawPolicy(String(row.raw ?? ''))
