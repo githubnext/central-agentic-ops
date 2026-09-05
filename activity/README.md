@@ -16,7 +16,7 @@ $RUNNER_TEMP/cao-activity/
     └── run-*/
 ```
 
-Snapshots use the immutable key `cao-activity-${github.run_id}-${github.run_attempt}` and the restore prefix `cao-activity-`. Consumers restore the latest scheduled snapshot by prefix. Cache scope and eviction follow [GitHub Actions cache restrictions](https://docs.github.com/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). The cache is an optimization, not durable historical authority.
+Snapshots use the immutable key `cao-activity-logs-${github.run_id}-${github.run_attempt}` and the restore prefix `cao-activity-logs-`. Consumers restore the latest scheduled snapshot by prefix. Cache scope and eviction follow [GitHub Actions cache restrictions](https://docs.github.com/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). The cache is an optimization, not durable historical authority.
 
 The activity workflow runs `gh aw logs` for the control repository on its schedule and saves the command's JSON result and downloaded usage, agent, detection, and grader artifacts without normalizing or aggregating them.
 

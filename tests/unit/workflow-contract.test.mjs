@@ -2653,8 +2653,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const deployedWorkflows = readFileSync(join(root, "activity", "index.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
   const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
-  const activityEntrypoints = new Set(["aic-usage.mjs", "control-settings.mjs", "inventory.mjs", "operational-values.mjs", "records.mjs"]);
-  const buildEntrypoints = new Set(["bundle-dashboards.mjs", "configure-site.mjs", "dashboard-language-sources.mjs"]);
+  const buildEntrypoints = new Set(["aic-usage.mjs", "bundle-dashboards.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "inventory.mjs", "operational-values.mjs", "records.mjs"]);
   const normalizeInclude = (entry, sourcePrefix = "") => typeof entry === "string"
     ? { source: entry, destination: entry, kind: "action-workflow" }
     : { ...entry, source: `${sourcePrefix}${entry.source}` };
@@ -2673,11 +2672,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(buildWorkflow, /inputs\.mode|Refresh activity data/);
   assert.match(buildWorkflow, /run-name: CAO Dashboard Build \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
   assert.doesNotMatch(buildWorkflow, /DISPATCH_WORKFLOW: activity\.yml|Dispatch activity refresh/);
-  assert.match(buildWorkflow, /Restore cached activity logs[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}[\s\S]*?restore-keys:[\s\S]*?cao-activity-/);
+  assert.match(buildWorkflow, /Restore cached activity logs[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}[\s\S]*?restore-keys:[\s\S]*?cao-activity-logs-/);
   assert.doesNotMatch(activityWorkflow, /workflow_call:/);
   assert.match(activityWorkflow, /workflow_dispatch:[\s\S]*?request-id:/);
   assert.match(activityWorkflow, /run-name: CAO Activity \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
-  assert.match(activityWorkflow, /key: cao-activity-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.match(activityWorkflow, /key: cao-activity-logs-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(activityWorkflow, /gh aw logs[\s\S]*?--repo "\$GITHUB_REPOSITORY"[\s\S]*?--output "\$RUNNER_TEMP\/cao-activity\/logs"[\s\S]*?--json > "\$RUNNER_TEMP\/cao-activity\/gh-aw-logs\.json"/);
   assert.match(maintenanceWorkflow, /workflow_dispatch:[\s\S]*?command:[\s\S]*?clear-cache/);
   assert.match(maintenanceWorkflow, /permissions:[\s\S]*?actions: write/);
@@ -2720,10 +2719,10 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(aicUsage, /targets\.push\(`\$\{workflow\.repository\}\/\$\{workflow\.path\}`\)/);
   assert.doesNotMatch(aicUsage, /--stdin|mapWithConcurrency|REPORT_AIC_CONCURRENCY/);
   assert.doesNotMatch(activityWorkflow, /REPORT_AIC_CONCURRENCY/);
-  assert.match(activityWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
-  assert.match(activityWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
+  assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
+  assert.match(buildWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
-  assert.match(activityWorkflow, /Save operational-value observation cache/);
+  assert.match(buildWorkflow, /Save operational-value observation cache/);
   assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.4/);
   assert.match(deployedWorkflows, /const \{ staleRegistration, \.\.\.capabilities \} = await workflowCapabilities/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
@@ -2755,9 +2754,6 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     const assetPath = join(root, "dashboard", "report", assetName);
     assert.ok(existsSync(assetPath), `missing report script ${assetName}`);
     assert.match(dashboardManifest, new RegExp(`destination: \\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
-    if (activityEntrypoints.has(assetName)) {
-      assert.match(activityWorkflow, new RegExp(`DASHBOARD_REPORT_ROOT/${assetName.replace(".", "\\.")}`));
-    }
     if (buildEntrypoints.has(assetName)) {
       assert.match(buildWorkflow, new RegExp(`DASHBOARD_REPORT_ROOT/${assetName.replace(".", "\\.")}`));
     }
@@ -2798,7 +2794,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.equal((workflow.match(/steps\.activity-app-token\.outputs\.token \|\| github\.token/g) || []).length, 2);
   assert.match(workflow, /gh aw logs[\s\S]*?--artifacts usage,agent,detection,graders/);
   assert.doesNotMatch(workflow, /Collect AI Credit usage|Collect operational-value observations|Collect durable dashboard records|cao-gh\.jsonl/);
-  assert.match(workflow, /cao-activity-\$\{\{ github\.run_id \}\}-/);
+  assert.match(workflow, /cao-activity-logs-\$\{\{ github\.run_id \}\}-/);
   assert.match(maintenanceWorkflow, /name: CAO Maintenance/);
   assert.match(readme, /raw `gh aw logs` results/);
   assert.match(readme, /Dashboard builds consume the latest cache/);
