@@ -243,9 +243,14 @@ function arrangeTreeRows(rows, idField, parentField) {
   }
   /** @type {Map<string, Array<Record<string, unknown>>>} */
   const children = new Map();
+  /** @type {Array<Record<string, unknown>>} */
+  const roots = [];
   for (const row of rows) {
     const parentId = String(row[parentField] ?? '');
-    if (!parentId || !byId.has(parentId)) continue;
+    if (!parentId || !byId.has(parentId)) {
+      roots.push(row);
+      continue;
+    }
     const siblings = children.get(parentId) || [];
     siblings.push(row);
     children.set(parentId, siblings);
@@ -261,10 +266,7 @@ function arrangeTreeRows(rows, idField, parentField) {
     result.push({ row, depth });
     for (const child of children.get(String(row[idField] ?? '')) || []) append(child, depth + 1);
   };
-  for (const row of rows) {
-    const parentId = String(row[parentField] ?? '');
-    if (!parentId || !byId.has(parentId)) append(row, 0);
-  }
+  for (const row of roots) append(row, 0);
   for (const row of rows) append(row, 0);
   return result;
 }
