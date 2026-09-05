@@ -372,4 +372,30 @@ describe('UI elements', () => {
     expect(rendered?.textContent).toContain('Pull Request');
     expect(rendered?.querySelector('.workflow-runtime-metrics')).toBeNull();
   });
+
+  it('renders outcome-detail-section when elementConfig omits the section property', () => {
+    const rendered = renderUiElement('outcome-detail-section', {
+      pageId: 'outcome-detail',
+      title: 'Discussion',
+      sourceNames: ['outcomes'],
+      elementConfig: { body: 'discussion' },
+      scope: { 'safe-output': 'outcome-1' },
+      headingTag: 'h3',
+      contextDetails: [],
+      sources: {
+        outcomes: {
+          source: 'outcomes',
+          metadata,
+          rows: [{
+            'safe-output': 'outcome-1',
+            'outcome-body-html': '<p>Discussion content</p>',
+            'published-at': '2026-08-31T01:26:00Z',
+            'observed-at': '2026-08-31T01:49:00Z'
+          }]
+        }
+      }
+    });
+
+    expect(rendered?.className).toBe('discussion-post');
+  });
 });
