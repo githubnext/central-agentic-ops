@@ -69,6 +69,17 @@ export function renderExternalLink(link) {
 }
 
 /**
+ * Renders a safe link when present, falling back to plain content otherwise.
+ * @param {SafeLink | null} link
+ * @param {string} [labelOverride] Overrides the link's label when present.
+ * @param {unknown} [fallback] Content rendered when no safe link is available.
+ * @returns {HTMLElement | unknown}
+ */
+export function renderExternalLinkOrFallback(link, labelOverride, fallback = null) {
+  return link ? renderExternalLink(labelOverride ? { ...link, label: labelOverride } : link) : fallback;
+}
+
+/**
  * Renders a workflow run label as a link when the row includes a safe run link.
  * @param {Record<string, unknown>} row
  * @param {string} label
