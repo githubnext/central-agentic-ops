@@ -1,3 +1,8 @@
+---
+title: Restructure Dashboard Home Page Around an Attention-First, Work-Item-Oriented View
+description: Record the dashboard's attention-first home page and work-item-oriented view decision.
+---
+
 # ADR 2572: Restructure Dashboard Home Page Around an Attention-First, Work-Item-Oriented View
 
 ## Status
