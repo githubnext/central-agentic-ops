@@ -219,6 +219,21 @@ describe('renderWorkflowDetail', () => {
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
   });
 
+  it('reuses the shared route page shell for workflow tabs and chrome', () => {
+    const rendered = renderWorkflowDetail(context());
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: {
+        parameter: 'workflow',
+        value: 'githubnext/gh-aw-cao:.github/workflows/ambient-context.md'
+      }
+    }));
+
+    expect(rendered.querySelector('[data-route-view]')).toBeNull();
+    expect(rendered.querySelector('.workflow-tabs')).not.toBeNull();
+    expect(rendered.querySelector('.workflow-identity')).not.toBeNull();
+  });
+
   it('renders explicit empty states for missing and invalid workflow routes', () => {
     const rendered = renderWorkflowDetail(context());
     expect(rendered.textContent).toBe('Select a workflow to view its reports.');
