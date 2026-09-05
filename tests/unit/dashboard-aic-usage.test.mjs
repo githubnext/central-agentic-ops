@@ -59,6 +59,7 @@ process.stdout.write(JSON.stringify({
     });
     const usage = JSON.parse(await readFile(outputPath, "utf8"));
     assert.equal(usage.schemaVersion, 3);
+    assert.equal(usage.securityWindowHours, 24);
     assert.deepEqual(usage.runs[0].data, {
       findings: [{ severity: "high", total: 3 }],
     });

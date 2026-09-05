@@ -271,6 +271,7 @@ async function main() {
       generatedAt: new Date().toISOString(),
       windowStart: inventory.runHealth?.windowStart || null,
       windowHours: inventory.runHealth?.windowHours || null,
+      securityWindowHours: inventory.runHealth?.windowHours || null,
       available: repositories.every((entry) => entry.available),
       complete: repositories.every((entry) => entry.complete),
       securityAvailable: collectionAvailable,
