@@ -44,6 +44,7 @@ describe('view formatter helpers', () => {
     expect(formatNumber(-2.5, { name: 'AI Credits', symbol: 'AIC', significant: 1 })).toBe('-3 AIC');
     expect(formatNumber(1.24, { name: 'Dollars', symbol: 'USD', significant: 0.01 })).toBe('1.24 USD');
     const duration = { name: 'Human-friendly duration', symbol: 's', significant: 1, format: 'duration' };
+    expect(formatNumber(45, duration)).toBe('45s');
     expect(formatNumber(5_000, duration)).toBe('1h 23m');
     expect(formatNumber(90, duration)).toBe('1m 30s');
     expect(formatNumber(97_200, duration)).toBe('1d 3h');
