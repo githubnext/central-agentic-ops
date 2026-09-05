@@ -45,7 +45,7 @@ describe('time-window filter bar', () => {
     start.value = '2026-09-04T08:00';
     end.value = '2026-09-04T10:00';
     start.dispatchEvent(new Event('change'));
-    filterBar.querySelector('button')?.click();
+    [...filterBar.querySelectorAll('button')].find((button) => button.textContent === 'Apply')?.click();
 
     const selected = onChange.mock.calls.at(-1)?.[1];
     expect(selected.range).toBe('custom');
