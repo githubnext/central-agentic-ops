@@ -75,6 +75,7 @@ import {
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
   VIEW_TITLE_LINK_KEYS,
+  OUTCOME_DETAIL_SECTION_BODY_VALUES,
   PACKAGE_ROUTE_BODY_VALUES,
   WORKFLOW_ROUTE_BODY_VALUES,
   WORKFLOW_ACTIVE_VALUES,
@@ -1615,11 +1616,13 @@ function validateView(view, viewNode, path, viewIds, errors) {
     } else {
       const configNode = getValueNodeByKey(viewNode, 'config');
       validateObjectKeys(configNode, VIEW_ELEMENT_CONFIG_KEYS, `${path}.config`, errors);
-      if ((view.element === 'workflow-route' || view.element === 'package-route') && view.config.body !== undefined) {
+      if ((view.element === 'workflow-route' || view.element === 'package-route' || view.element === 'outcome-detail-section') && view.config.body !== undefined) {
         validateStringField(view.config.body, `${path}.config.body`, true, errors);
        const allowedBodies = view.element === 'workflow-route'
          ? WORKFLOW_ROUTE_BODY_VALUES
-         : PACKAGE_ROUTE_BODY_VALUES;
+         : view.element === 'package-route'
+           ? PACKAGE_ROUTE_BODY_VALUES
+           : OUTCOME_DETAIL_SECTION_BODY_VALUES;
        if (typeof view.config.body === 'string' && !allowedBodies.includes(view.config.body)) {
          errors.push(createError(
            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
@@ -1630,7 +1633,7 @@ function validateView(view, viewNode, path, viewIds, errors) {
       } else if (view.config.body !== undefined) {
        errors.push(createError(
          ERROR_CODES.missingOrInvalidRequiredField,
-         'config.body is supported only for the workflow-route and package-route elements.',
+         'config.body is supported only for the workflow-route, package-route, and outcome-detail-section elements.',
          `${path}.config.body`
        ));
       }

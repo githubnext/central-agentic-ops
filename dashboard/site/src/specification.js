@@ -48,10 +48,12 @@ export const VIEW_ELEMENT_VALUES = [
   'package-route',
   'workflow-route',
   'outcome-detail',
+  'outcome-detail-section',
   'configuration-policy'
 ];
 export const WORKFLOW_ROUTE_BODY_VALUES = ['insights', 'reports', 'runs'];
 export const PACKAGE_ROUTE_BODY_VALUES = ['insights', 'workflows', 'dispatches', 'reports'];
+export const OUTCOME_DETAIL_SECTION_BODY_VALUES = ['discussion', 'metadata'];
 export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'scatter', 'swimlane'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
