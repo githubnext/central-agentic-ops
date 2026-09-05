@@ -492,5 +492,6 @@ export const ERROR_CODES = {
   invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010',
   invalidEntityRelationshipOrSourceGrain: 'DLS-E011',
   missingRequiredProvenanceOrDataStateMetadata: 'DLS-E012',
-  invalidProgressiveDisclosureConfiguration: 'DLS-E013'
+  invalidProgressiveDisclosureConfiguration: 'DLS-E013',
+  ambiguousOrConflictingFields: 'DLS-E014'
 };

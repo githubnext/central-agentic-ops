@@ -1566,7 +1566,7 @@ function validateView(view, viewNode, path, viewIds, errors) {
       if (view.element === 'workflow-route') {
         if (view.config.body !== undefined && view.config.layout !== undefined) {
           errors.push(createError(
-            ERROR_CODES.missingOrInvalidRequiredField,
+            ERROR_CODES.ambiguousOrConflictingFields,
             'workflow-route config.body and config.layout are mutually exclusive.',
             `${path}.config`
           ));

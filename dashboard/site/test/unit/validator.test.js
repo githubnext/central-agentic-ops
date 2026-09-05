@@ -399,7 +399,7 @@ dashboard:
     expect(invalid.ok).toBe(false);
     if (!invalid.ok) {
       expect(invalid.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E003',
+        code: 'DLS-E014',
         path: '$.dashboard.pages[0].views[0].config'
       }));
     }
