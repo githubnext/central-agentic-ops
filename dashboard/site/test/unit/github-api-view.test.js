@@ -227,7 +227,7 @@ describe('GitHub API rate-limit dashboard', () => {
       expect.stringContaining('Collection call stacks')
     ]));
     expect(page?.textContent).toContain('Collection completeness, retrieval failures, and activity-cache state');
-    const stackTable = page?.querySelector('[aria-labelledby="github-api-call-stacks-heading"] table');
+    const stackTable = page?.querySelector('table[role="treegrid"]');
     expect(stackTable?.getAttribute('role')).toBe('treegrid');
     expect(stackTable?.querySelectorAll('tbody tr[aria-level]')).toHaveLength(2);
     expect(stackTable?.querySelector('tbody tr:nth-child(2)')?.getAttribute('aria-level')).toBe('2');

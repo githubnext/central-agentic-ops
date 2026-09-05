@@ -239,6 +239,7 @@ function renderTableView(context) {
  */
 function arrangeTreeRows(rows, idField, parentField) {
   const byId = new Map(rows.map((row) => [String(row[idField] ?? ''), row]));
+  /** @type {Map<string, Array<Record<string, unknown>>>} */
   const children = new Map();
   for (const row of rows) {
     const parentId = String(row[parentField] ?? '');
@@ -246,8 +247,11 @@ function arrangeTreeRows(rows, idField, parentField) {
     siblings.push(row);
     children.set(parentId, siblings);
   }
+  /** @type {Array<{ row: Record<string, unknown>, depth: number }>} */
   const result = [];
+  /** @type {Set<Record<string, unknown>>} */
   const visited = new Set();
+  /** @param {Record<string, unknown>} row @param {number} depth */
   const append = (row, depth) => {
     if (visited.has(row)) return;
     visited.add(row);

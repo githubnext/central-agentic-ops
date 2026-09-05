@@ -869,10 +869,6 @@
                 {
                   "field": "operation-execution-id",
                   "direction": "asc"
-                },
-                {
-                  "field": "stack-depth",
-                  "direction": "asc"
                 }
               ]
             },

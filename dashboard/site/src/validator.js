@@ -1495,41 +1495,56 @@ function validateView(view, viewNode, path, viewIds, errors) {
         `${path}.table`
       ));
     }
+  }
 
-    if (view.tree !== undefined) {
-      const treePath = `${path}.tree`;
-      if (!isPlainObject(view.tree)) {
-        errors.push(createError(
-          ERROR_CODES.missingOrInvalidRequiredField,
-          'tree must be a mapping.',
-          treePath
-        ));
-      } else {
-        validateObjectKeys(getValueNodeByKey(viewNode, 'tree'), TREE_TABLE_KEYS, treePath, errors);
-        validateRequiredIdentifier(view.tree['id-field'], `${treePath}.id-field`, 'tree id field', errors);
-        validateRequiredIdentifier(view.tree['parent-field'], `${treePath}.parent-field`, 'tree parent field', errors);
-        if (view.tree['id-field'] === view.tree['parent-field']) {
+  if (view.tree !== undefined) {
+    const treePath = `${path}.tree`;
+    if (!isPlainObject(view.tree)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'tree must be a mapping.',
+        treePath
+      ));
+    } else {
+      validateObjectKeys(getValueNodeByKey(viewNode, 'tree'), TREE_TABLE_KEYS, treePath, errors);
+      validateRequiredIdentifier(view.tree['id-field'], `${treePath}.id-field`, 'tree id field', errors);
+      validateRequiredIdentifier(view.tree['parent-field'], `${treePath}.parent-field`, 'tree parent field', errors);
+      const treeSource = isPlainObject(view.data) && typeof view.data.source === 'string'
+        ? view.data.source
+        : null;
+      const sourceFields = treeSource
+        ? SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (treeSource)]
+        : null;
+      for (const field of [view.tree['id-field'], view.tree['parent-field']]) {
+        if (typeof field === 'string' && sourceFields && !sourceFields.includes(field)) {
           errors.push(createError(
-            ERROR_CODES.missingOrInvalidRequiredField,
-            'tree id-field and parent-field must be different.',
+            ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+            'tree fields must be declared by data.source.',
             treePath
           ));
         }
       }
-      if (view.mark !== 'table') {
+      if (view.tree['id-field'] === view.tree['parent-field']) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,
-          'tree is allowed only when mark is "table".',
+          'tree id-field and parent-field must be different.',
           treePath
         ));
       }
-      if (view.controls !== 'static') {
-        errors.push(createError(
-          ERROR_CODES.missingOrInvalidRequiredField,
-          'tree tables must use static controls to preserve hierarchy.',
-          `${path}.controls`
-        ));
-      }
+    }
+    if (view.mark !== 'table') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'tree is allowed only when mark is "table".',
+        treePath
+      ));
+    }
+    if (view.controls !== 'static') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'tree tables must use static controls to preserve hierarchy.',
+        `${path}.controls`
+      ));
     }
   }
 
