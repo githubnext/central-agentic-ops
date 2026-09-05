@@ -135,22 +135,26 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('defines firewall review and assurance views on the security page', () => {
+  it('defines firewall activity in a dedicated Explore page', () => {
     const document = JSON.parse(authoritativeDashboardSource);
+    const firewall = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'firewall');
     const security = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'security');
     expect(security.sections.map((/** @type {{ views: string[] }} */ section) => section.views)).toEqual([
-      ['security-firewall-decisions', 'security-firewall-trend', 'security-firewall-domains'],
       ['security-summary', 'security-signals'],
       ['security-output-ledger']
     ]);
+    expect(security.views).not.toContainEqual(expect.objectContaining({ id: 'security-firewall-decisions' }));
     expect(security.views).not.toContainEqual(expect.objectContaining({ id: 'security-findings-summary' }));
-    const decisions = security.views.find(
+    expect(document.dashboard.navigation.find(
+      (/** @type {{ label: string }} */ section) => section.label === 'Explore'
+    ).pages).toContain('firewall');
+    const decisions = firewall.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-decisions'
     );
-    const trend = security.views.find(
+    const trend = firewall.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-trend'
     );
-    const domains = security.views.find(
+    const domains = firewall.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-domains'
     );
 
@@ -206,6 +210,7 @@ describe('dashboard document validation', () => {
     const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');
     const runsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-table');
     const detailsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-run-details');
+    const runsPageIndex = document.dashboard.pages.indexOf(runsPage);
     expect(runsView).toMatchObject({
       description: expect.any(String),
       controls: 'static',
@@ -265,7 +270,7 @@ describe('dashboard document validation', () => {
     if (!invalidContext.ok) {
       expect(invalidContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[9].views[3].encoding.actions[0].context[9]'
+        path: `$.dashboard.pages[${runsPageIndex}].views[3].encoding.actions[0].context[9]`
       }));
     }
     detailsView.encoding.actions[0].context.pop();
@@ -276,7 +281,7 @@ describe('dashboard document validation', () => {
     if (!duplicateContext.ok) {
       expect(duplicateContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[9].views[3].encoding.actions[0].context[9]'
+        path: `$.dashboard.pages[${runsPageIndex}].views[3].encoding.actions[0].context[9]`
       }));
     }
     detailsView.encoding.actions[0].context.pop();
@@ -287,7 +292,7 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[9].views[3].encoding.actions[0].when.field'
+        path: `$.dashboard.pages[${runsPageIndex}].views[3].encoding.actions[0].when.field`
       }));
     }
   });
