@@ -4400,6 +4400,39 @@
           },
           "views": [
             {
+              "id": "experiment-decision-summary",
+              "title": "Experiment decision summary",
+              "description": "Counts experiment decisions for the current filters without treating workflow execution success as experiment success.",
+              "data": {
+                "source": "experiments"
+              },
+              "mark": "table",
+              "layout": "full",
+              "encoding": {
+                "columns": [
+                  {
+                    "field": "decision",
+                    "type": "nominal",
+                    "title": "Decision"
+                  },
+                  {
+                    "field": "experiment",
+                    "type": "nominal",
+                    "aggregate": "distinct-count",
+                    "as": "experiments",
+                    "title": "Experiments"
+                  },
+                  {
+                    "field": "normalized-effect",
+                    "type": "quantitative",
+                    "aggregate": "mean",
+                    "as": "mean-normalized-effect",
+                    "title": "Mean normalized effect"
+                  }
+                ]
+              }
+            },
+            {
               "id": "experiments-evaluation",
               "title": "Experiment decisions and evidence",
               "description": "Controlled comparisons retain distinct experiment, observation, grader or eval, run, and evidence semantics.",
