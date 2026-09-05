@@ -1,3 +1,8 @@
+---
+title: Populate Dashboard Work-Item Sources
+description: Record the decision to populate work-item dashboard sources from telemetry.
+---
+
 # ADR 2742: Populate work-items, attention-signals, agent-assignments, and evidence-records dashboard sources
 
 ## Status
