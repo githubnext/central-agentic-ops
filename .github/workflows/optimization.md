@@ -35,12 +35,6 @@ on:
     contents: read
     actions: read
 
-jobs:
-  activation:
-    outputs:
-      cao_authorized: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
-      cao_reason: ${{ steps.cao_precompute.outputs.reason || steps.cao_admission.outputs.reason }}
-
 env:
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
@@ -48,8 +42,6 @@ env:
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 environment: central-agentic-ops
-
-if: needs.activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md

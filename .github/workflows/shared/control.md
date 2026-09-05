@@ -162,6 +162,14 @@ jobs:
           echo "::error title=CAO admission could not verify runner disk capacity::Free disk space could not be read for ${CAO_DISK_PATH}. See the admission summary for next steps."
           exit 1
 
+      - name: CAO admission denied
+        if: ${{ steps.cao_admission.outputs.authorized != 'true' }}
+        env:
+          CAO_ADMISSION_REASON: ${{ steps.cao_admission.outputs.reason }}
+        run: |
+          echo "::error title=CAO admission denied::${CAO_ADMISSION_REASON}. See the admission summary for next steps."
+          exit 1
+
       - name: Install gh-aw CLI when monthly budget is enabled
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
         uses: github/gh-aw-actions/setup-cli@v0.88.4
@@ -218,12 +226,14 @@ jobs:
           CAO_API_REQUIRED: ${{ steps.cao_precompute.outputs.github_api_required }}
           CAO_API_RESET_AT: ${{ steps.cao_precompute.outputs.github_api_reset_at }}
         run: |
-          echo "::warning title=CAO precompute blocked by GitHub API capacity::${CAO_API_REMAINING} of ${CAO_API_LIMIT} core requests remain; ${CAO_API_REQUIRED} required. Retry after ${CAO_API_RESET_AT}. See the admission summary for next steps."
+          echo "::error title=CAO precompute blocked by GitHub API capacity::${CAO_API_REMAINING} of ${CAO_API_LIMIT} core requests remain; ${CAO_API_REQUIRED} required. Retry after ${CAO_API_RESET_AT}. See the admission summary for next steps."
+          exit 1
 
       - name: "CAO precompute blocked: GitHub API capacity unavailable"
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-unavailable' }}
         run: |
-          echo "::warning title=CAO precompute could not verify GitHub API capacity::Check authentication and GitHub API status. See the admission summary for next steps."
+          echo "::error title=CAO precompute could not verify GitHub API capacity::Check authentication and GitHub API status. See the admission summary for next steps."
+          exit 1
 
       - name: Validate CAO control precompute artifact
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}

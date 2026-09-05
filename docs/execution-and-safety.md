@@ -9,7 +9,7 @@ Use this page when implementing or reviewing control-plane behavior. For the arc
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
-| [CAO admission runtime](admission.md) | Pre-activation policy validation and package, role, and request authorization | Repository inventory, target access, live target authority, or routing computation |
+| [CAO admission runtime](admission.md) | Activation-time policy validation and package, role, and request authorization | Repository inventory, target access, live target authority, or routing computation |
 | Shared control | Authentication, common environment, mode interpretation, review requirements, authorized-run precomputation, control envelope | Package ranking or worker workflow-specific mutation policy |
 | orchestrator workflow | Package mode, review destination, target selection, ranking, dispatch limits, eligible worker workflow list | Direct target mutation or credential duplication |
 | worker workflow | Repository analysis, declared safe outputs, permissions, and execution limits | Repository discovery, downstream dispatch, or mode escalation |
@@ -23,9 +23,9 @@ The execution boundary is the key architectural fact: orchestrators and workers 
 ![The control plane contains rollout policy and operation packages. Central orchestrators and workers inspect remote targets, emit declared safe outputs across the repository boundary, and correlate results with the originating central run.](assets/central-execution-how-it-works.svg)
 
 1. A schedule trigger or `workflow_dispatch` starts a package orchestrator workflow.
-2. Before activation, `.github/workflows/shared/control.md` fetches `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` at the exact workflow commit and runs the `admit` command against policy from that same revision.
-3. A denied or invalid request skips activation and records the reason in the workflow summary. An admitted run executes the `precompute` command in the same pre-activation job to resolve routing, repository inventory, target-owned live authority, budgets, and worker workflow availability.
-4. Pre-activation uploads only the resulting non-secret `control-precompute.json`. The agent job restores and validates that artifact before checkout; CAO policy and precompute credentials do not cross into the agent job.
+2. During activation, `.github/workflows/shared/control.md` fetches `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` at the exact workflow commit and runs the `admit` command against policy from that same revision.
+3. A denied or invalid request prevents agent execution and records the reason in the workflow summary. An admitted run executes the `precompute` command in the same activation job to resolve routing, repository inventory, target-owned live authority, budgets, and worker workflow availability.
+4. Activation uploads only the resulting non-secret `control-precompute.json`. The agent job restores and validates that artifact before checkout; CAO policy and precompute credentials do not cross into the agent job.
 5. The admitted workflow imports shared control with its package mode and review repository.
 6. The orchestrator workflow ranks eligible repositories using package-specific discovery rules and applies `max_repos` and dispatch limits.
 7. The orchestrator workflow dispatches each eligible worker workflow with the standard control envelope.

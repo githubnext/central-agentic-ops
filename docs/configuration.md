@@ -34,7 +34,7 @@ This minimal policy enables the installed Dependabot package and its workers in 
 }
 ```
 
-Commit the file before running an installed operation. A missing or invalid document fails closed. An undeclared package skips activation before repository discovery or agent execution. See [Admission Gates](admission.md) for the exact pre-activation checks and the checks deferred to authorized-run precompute.
+Commit the file before running an installed operation. A missing or invalid document fails closed. An undeclared package prevents agent execution before repository discovery. See [Admission Gates](admission.md) for the exact activation checks and the checks deferred to authorized-run precompute.
 
 The schema defaults are:
 

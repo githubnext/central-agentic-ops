@@ -1,16 +1,16 @@
 ---
 title: Admission Gates
-description: Understand what Central Agentic Ops checks before activation and what authorized-run precompute checks before agent execution.
+description: Understand what Central Agentic Ops checks during activation before agent execution.
 ---
 
-Central Agentic Ops admits a run only when its checked-in control policy authorizes the workflow identity and requested limits. Admission happens in the gh-aw pre-activation job, before activation and before any agent executes.
+Central Agentic Ops admits a run only when its checked-in control policy authorizes the workflow identity and requested limits. Admission and authorized-run precompute happen in the gh-aw activation job before any agent executes.
 
 ```text
-trigger -> pre-activation admission -> authorized-run precompute -> activation -> agent
-                 | denied              | blocked
-                 +----------------------+-> no agent execution
-                 | fresh API capacity denial
-                 +-> persist reset time -> later scheduled run rechecks after expiry
+trigger -> framework pre-activation -> activation admission -> authorized-run precompute -> agent
+                                            | denied              | blocked
+                                            +----------------------+-> no agent execution
+                                            | fresh API capacity denial
+                                            +-> persist reset time -> later scheduled run rechecks after expiry
 ```
 
 Admission reads the advisory `CAO_GITHUB_API_GATE` repository variable before probing live API capacity. A valid active gate stops the run without another rate-limit request. Missing, malformed, expired, or implausibly distant gate values are ignored, and admission uses the authoritative live probe instead. A fresh admission or precompute capacity denial best-effort records its reset time; the gate expires without a cleanup operation and can only suppress work, never authorize it.
@@ -55,7 +55,7 @@ Admission is deliberately lightweight and repository-local. Once admitted, `.git
 | Computes policy ceilings | Applies repository, rollout, dispatch, and monthly AI Credit limits |
 | Uses only the control repository revision | Confirms installed worker workflow availability and binds output routing |
 
-Failure in either phase prevents agent execution. Admission denial skips activation; precompute fails closed when an authorized run cannot establish a required remote fact. Successful precompute uploads only `control-precompute.json`; the agent job restores and validates that non-secret artifact before checkout or model invocation.
+Failure in either phase fails activation and prevents agent execution. Admission denial stops before precompute; precompute fails closed when an authorized run cannot establish a required remote fact. Successful precompute uploads only `control-precompute.json`; the agent job restores and validates that non-secret artifact before checkout or model invocation.
 
 ## Connect Setup and Policy
 
@@ -81,9 +81,9 @@ The [Configuration Reference](configuration.md) defines every policy field. The 
 | `inventory` | Validates scan, cell, and batch limits. | Performs bounded discovery and deterministic batching. |
 | `monthly-ai-credit-budget` | Validates and returns the package budget. | Reads usage and admits only work that fits the remaining budget. |
 
-## Diagnose a Skipped Run
+## Diagnose a Blocked Run
 
-Open the run summary and expand **Central Agentic Ops admission**. An authorized run names its package and role, and every check in the list is marked ✅. A denied run records a reason, marks every check before the failing one ✅, marks the exact failing check ❌, and leaves activation skipped. The ❌ marker identifies which row of the table below to consult; later checks are left unmarked because admission stopped before reaching them.
+Open the run summary and expand **Central Agentic Ops admission**. An authorized run names its package and role, and every check in the list is marked ✅. A denied run records a reason, marks every check before the failing one ✅, marks the exact failing check ❌, and leaves agent execution skipped. The ❌ marker identifies which row of the table below to consult; later checks are left unmarked because admission stopped before reaching them.
 
 | Reason | Check marked ❌ | Configuration or setup to check |
 | --- | --- | --- |
