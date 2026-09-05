@@ -3223,7 +3223,7 @@ dashboard:
     }
   });
 
-  it('DLS-UNIT-001 DLS-UNIT-002 accepts declared units referenced by field definitions', () => {
+  it('DLS-UNIT-001 DLS-UNIT-002 DLS-UNIT-004 accepts declared units referenced by field definitions', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: unit-dashboard
@@ -3233,6 +3233,11 @@ dashboard:
       name: AI Credits
       symbol: AIC
       significant: 1
+    human-duration:
+      name: Human-friendly duration
+      symbol: s
+      significant: 1
+      format: duration
   pages:
     - id: summary
       kind: custom
@@ -3250,6 +3255,37 @@ dashboard:
 `);
 
     expect(result.ok).toBe(true);
+  });
+
+  it('DLS-UNIT-004 rejects unknown formats and invalid duration unit definitions', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-duration-unit-dashboard
+  title: Invalid Duration Unit Dashboard
+  units:
+    invalid-duration:
+      name: Invalid duration
+      symbol: ms
+      significant: 0.1
+      format: compact-duration
+    malformed-duration:
+      name: Malformed duration
+      symbol: ms
+      significant: 0.1
+      format: duration
+  pages:
+    - id: summary
+      kind: built-in
+      page: overview
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.units.invalid-duration.format' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.units.malformed-duration' })
+      ]));
+    }
   });
 
   it('DLS-UNIT-001 DLS-UNIT-002 rejects malformed unit definitions and unknown references', () => {

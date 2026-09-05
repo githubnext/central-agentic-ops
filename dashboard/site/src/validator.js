@@ -59,6 +59,7 @@ import {
   TIME_KEYS,
   TOOLTIP_KEYS,
   UNIT_DEFINITION_KEYS,
+  UNIT_FORMAT_VALUES,
   BUILT_IN_PAGE_REQUIRED_SOURCES,
   BUILT_IN_PAGE_REQUIRED_FIELDS,
   TIME_UNIT_VALUES,
@@ -99,7 +100,7 @@ import {
  */
 
 /**
- * @typedef {{ name: string, symbol: string, significant: number }} UnitDefinition
+ * @typedef {{ name: string, symbol: string, significant: number, format?: string }} UnitDefinition
  */
 
 /**
@@ -610,6 +611,23 @@ function validateDashboard(dashboard, dashboardNode, errors) {
           'unit significant must be a finite positive number.',
           `${path}.significant`
         ));
+      }
+      if (definition.format !== undefined) {
+        validateStringField(definition.format, `${path}.format`, true, errors);
+        if (typeof definition.format === 'string' && !UNIT_FORMAT_VALUES.includes(definition.format)) {
+          errors.push(createError(
+            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+            'unit format must use one canonical unit format value.',
+            `${path}.format`
+          ));
+        }
+        if (definition.format === 'duration' && (definition.symbol !== 's' || definition.significant !== 1)) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            'duration units must use symbol "s" and significant 1.',
+            path
+          ));
+        }
       }
     }
     return unitIds;

@@ -921,6 +921,8 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.querySelector('[data-chart-widget="histogram"]')).not.toBeNull();
     expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(2);
     expect(page?.querySelectorAll('[data-chart-widget="bar"]')).toHaveLength(3);
+    expect(page?.textContent).toContain('1m 0s');
+    expect(page?.textContent).toContain('2m 30s');
     expect(page?.textContent).toContain('gvisor');
     expect(page?.textContent).toContain('gpt-5.4');
   });
