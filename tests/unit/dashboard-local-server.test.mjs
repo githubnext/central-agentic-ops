@@ -240,6 +240,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
   const promptGate = Promise.withResolvers();
   let runtimeClosed = false;
   let runtimeStopped = false;
+  const disconnectedSessions = [];
 
   const preview = await startDashboardServer({
     siteRoot: root,
@@ -271,6 +272,10 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       stop: async () => {
         runtimeStopped = true;
         promptGate.resolve();
+        return true;
+      },
+      disconnect: async (sessionKey) => {
+        disconnectedSessions.push(sessionKey);
         return true;
       },
       close: async () => {
@@ -309,6 +314,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     assert.equal(prompts.length, 1);
     assert.equal(prompts[0].view, "package-one");
     assert.equal(prompts[0].request, "Add a failure trend");
+    assert.match(prompts[0].sessionKey, /^[a-f0-9]{32}$/);
     const expectedViewDashboardPath = await realpath(path.join(packageDirectory, "dashboard.json"));
     assert.equal(prompts[0].viewDashboardPath, expectedViewDashboardPath);
     assert.deepEqual(prompts[0].editableDashboardPaths, [
@@ -341,6 +347,11 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     }));
     assert.equal((await invalidDashboardError).type, "error");
     socket.close();
+    while (disconnectedSessions.length === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    assert.ok(prompts.every((prompt) => prompt.sessionKey === prompts[0].sessionKey));
+    assert.deepEqual(disconnectedSessions, [prompts[0].sessionKey]);
   } finally {
     await preview.close();
     await rm(root, { recursive: true, force: true });

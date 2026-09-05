@@ -33,6 +33,11 @@ describe('Copilot dashboard prompt', () => {
     socket.emit({ type: 'debug', message: 'Starting dashboard view update.', details: { view: 'Overview' } });
     socket.emit({ type: 'status', message: 'Reading the current view…' });
     socket.emit({ type: 'status', message: '' });
+    socket.emit({
+      type: 'tool-refused',
+      message: 'Refused python3: shell command not allowed.',
+      details: { tool: 'python3', reason: 'shell command not allowed' }
+    });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'empty-reasoning', content: '' });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'blank-reasoning', content: '   ' });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'reasoning-1', content: 'The view needs ' });
@@ -54,6 +59,8 @@ describe('Copilot dashboard prompt', () => {
     expect(prompt.querySelector('.dashboard-copilot-message-assistant strong')).toBeNull();
     expect(prompt.querySelector('.dashboard-copilot-message-update')?.textContent)
       .toBe('Reading the current view…');
+    expect(prompt.querySelector('.dashboard-copilot-message-refusal')?.textContent)
+      .toBe('Refused python3: shell command not allowed.');
     expect(prompt.querySelector('.dashboard-copilot-message-reasoning')?.textContent)
       .toBe('A trend card will make the change clearer.');
     expect(prompt.querySelectorAll('.dashboard-copilot-message-reasoning')).toHaveLength(1);
@@ -89,7 +96,7 @@ describe('Copilot dashboard prompt', () => {
     socket.emit({ type: 'assistant-message', content: 'I found the active view.' });
     socket.emit({ type: 'assistant-message', content: 'Added a second card.' });
     socket.emit({ type: 'done' });
-    expect(prompt.querySelectorAll('.dashboard-copilot-message')).toHaveLength(7);
+    expect(prompt.querySelectorAll('.dashboard-copilot-message')).toHaveLength(8);
     expect(prompt.querySelector('.dashboard-copilot-conversation')?.textContent)
       .toContain('I found the active view.');
     expect(prompt.querySelector('.dashboard-copilot-conversation')?.textContent)

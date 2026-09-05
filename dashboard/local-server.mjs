@@ -533,9 +533,10 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
   const skillDirectories = await repositorySkillDirectories(workingDirectory);
   console.log("Configured Copilot repository skills.", { skillDirectories });
 
-  let activeSession = null;
+  const sessions = new Map();
   return {
     async prompt({
+      sessionKey,
       view,
       request,
       bundledDashboardPath,
@@ -544,7 +545,19 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
       onEvent = () => {},
       signal,
     }) {
-      console.log("Creating Copilot dashboard session.", {
+      let entry = sessions.get(sessionKey);
+      const context = entry?.context ?? {};
+      Object.assign(context, {
+        view,
+        bundledDashboardPath,
+        editableDashboardPaths,
+        viewDashboardPath,
+        onEvent,
+        aborted: false,
+      });
+      console.log(entry ? "Reusing Copilot dashboard session." : "Creating Copilot dashboard session.", {
+        sessionKey,
+        sessionId: entry?.session.sessionId,
         view,
         bundledDashboardPath,
         viewDashboardPath,
@@ -555,8 +568,8 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         description,
       });
       const readViewDocument = async () => {
-        const document = JSON.parse(await readFile(viewDashboardPath, "utf8"));
-        const pageIndex = dashboardPageIndex(document, view);
+        const document = JSON.parse(await readFile(context.viewDashboardPath, "utf8"));
+        const pageIndex = dashboardPageIndex(document, context.view);
         if (pageIndex < 0) throw new Error("The selected dashboard view no longer exists.");
         return { document, pageIndex };
       };
@@ -576,11 +589,11 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         return { candidate, document, pageIndex, normalized };
       };
       const validateDashboardJson = async () => {
-        const source = await readFile(viewDashboardPath, "utf8");
+        const source = await readFile(context.viewDashboardPath, "utf8");
         const result = validateDashboardDocument(source);
         return {
           ok: result.ok,
-          path: viewDashboardPath,
+          path: context.viewDashboardPath,
           errors: result.ok ? [] : result.errors,
         };
       };
@@ -617,8 +630,8 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             const { document, pageIndex } = await readViewDocument();
             const source = JSON.stringify(document.dashboard.pages[pageIndex], null, 2);
             console.log("Read current dashboard view for Copilot.", {
-              path: viewDashboardPath,
-              view,
+              path: context.viewDashboardPath,
+              view: context.view,
               bytes: Buffer.byteLength(source),
             });
             return source;
@@ -638,7 +651,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             try {
               await validateViewCandidate(source);
               console.log("Validated Copilot dashboard view candidate.", {
-                view,
+                view: context.view,
                 bytes: Buffer.byteLength(source),
               });
               return { ok: true };
@@ -663,7 +676,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           handler: async () => {
             const result = await validateDashboardJson();
             console.log("Ran dashboard validator for Copilot.", {
-              path: viewDashboardPath,
+              path: context.viewDashboardPath,
               ok: result.ok,
               errorCount: result.errors.length,
             });
@@ -684,16 +697,16 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             try {
               const { candidate, document, pageIndex, normalized } = await validateViewCandidate(source);
               document.dashboard.pages[pageIndex] = candidate;
-              await writeFile(viewDashboardPath, normalized);
+              await writeFile(context.viewDashboardPath, normalized);
               console.log("Saved normalized Copilot dashboard view.", {
-                path: viewDashboardPath,
-                view,
+                path: context.viewDashboardPath,
+                view: context.view,
                 bytes: Buffer.byteLength(normalized),
               });
               return { ok: true };
             } catch (error) {
               console.log("Rejected invalid Copilot dashboard view save.", {
-                path: viewDashboardPath,
+                path: context.viewDashboardPath,
                 ...errorMetadata(error),
               });
               return {
@@ -704,8 +717,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           },
         }),
       ];
-      let session;
-      let aborted = false;
+      let session = entry?.session;
       const toolExecutions = new Map();
       const handleSessionEvent = (event) => {
         const sessionId = session?.sessionId;
@@ -714,7 +726,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             .filter((skill) => skill.enabled)
             .map((skill) => skill.commandName || skill.name);
           console.log("Copilot dashboard skills loaded.", { skills });
-          onEvent({
+          context.onEvent({
             type: "status",
             message: skills.includes("generate-dashboard-ir")
               ? "Dashboard authoring skill loaded."
@@ -726,19 +738,19 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             path: event.data.path,
             source: event.data.source,
           });
-          onEvent({ type: "status", message: `Using /${event.data.name}…` });
+          context.onEvent({ type: "status", message: `Using /${event.data.name}…` });
         } else if (event.type === "assistant.message_delta") {
-          onEvent({ type: "assistant-delta", content: event.data.deltaContent });
+          context.onEvent({ type: "assistant-delta", content: event.data.deltaContent });
         } else if (event.type === "assistant.message") {
-          onEvent({ type: "assistant-message", content: event.data.content });
+          context.onEvent({ type: "assistant-message", content: event.data.content });
         } else if (event.type === "assistant.reasoning_delta") {
-          onEvent({
+          context.onEvent({
             type: "reasoning-delta",
             content: event.data.deltaContent,
             reasoningId: event.data.reasoningId,
           });
         } else if (event.type === "assistant.reasoning") {
-          onEvent({
+          context.onEvent({
             type: "reasoning-message",
             content: event.data.content,
             reasoningId: event.data.reasoningId,
@@ -760,7 +772,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
                 }
               : undefined,
           });
-          onEvent({ type: "status", message: `Running ${event.data.toolName}…` });
+          context.onEvent({ type: "status", message: `Running ${event.data.toolName}…` });
         } else if (event.type === "tool.execution_complete") {
           const execution = toolExecutions.get(event.data.toolCallId);
           toolExecutions.delete(event.data.toolCallId);
@@ -798,7 +810,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             ),
             telemetry: redactedLogValue(event.data.toolTelemetry),
           });
-          onEvent({
+          context.onEvent({
             type: "status",
             message: event.data.success
               ? "Applying dashboard update…"
@@ -829,12 +841,12 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             sessionId,
             error: redactedLogValue(event.data),
           });
-          onEvent({ type: "error", message: event.data.message });
+          context.onEvent({ type: "error", message: event.data.message });
         } else if (event.type === "session.idle" && event.data.aborted) {
-          aborted = true;
+          context.aborted = true;
         }
       };
-      try {
+      if (!entry) try {
         const workspaceRoot = await canonicalPath(workingDirectory);
         const workspacePath = (path) => canonicalPath(
           isAbsolute(path) ? path : join(workspaceRoot, path),
@@ -919,6 +931,16 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
                   }
                 : redactedLogValue(permission),
             });
+            if (decision.kind === "reject") {
+              const tool = permission.kind === "shell"
+                ? shellCommandIdentifiers(permission).join(" | ") || "bash"
+                : permission.kind;
+              context.onEvent({
+                type: "tool-refused",
+                message: `Refused ${tool}: ${reason}.`,
+                details: { tool, reason },
+              });
+            }
             return decision;
           },
           onEvent: handleSessionEvent,
@@ -927,41 +949,32 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         console.log("Copilot dashboard session creation failed.", errorMetadata(error));
         throw error;
       }
-      console.log("Copilot dashboard session created.", { sessionId: session.sessionId, view });
-      let disconnected = false;
-      const disconnect = async () => {
-        if (disconnected) return;
-        disconnected = true;
-        console.log("Disconnecting Copilot dashboard session.", { sessionId: session.sessionId });
-        await session.disconnect().catch((error) => {
-          console.log("Copilot dashboard session disconnect failed.", {
+      if (!entry) {
+        entry = { session, context };
+        sessions.set(sessionKey, entry);
+      }
+      console.log("Copilot dashboard session ready.", {
+        sessionKey,
+        sessionId: session.sessionId,
+        view,
+      });
+      const stopOnAbort = () => {
+        context.aborted = true;
+        console.log("Stopping active Copilot dashboard turn.", {
+          sessionKey,
+          sessionId: session.sessionId,
+        });
+        void session.abort().catch((error) => {
+          console.log("Copilot dashboard turn abort failed.", {
             sessionId: session.sessionId,
             ...errorMetadata(error),
           });
         });
       };
-      const sessionHandle = {
-        async stop() {
-          if (aborted) return;
-          aborted = true;
-          console.log("Stopping Copilot dashboard session.", { sessionId: session.sessionId });
-          await session.abort().catch((error) => {
-            console.log("Copilot dashboard session abort failed.", {
-              sessionId: session.sessionId,
-              ...errorMetadata(error),
-            });
-          });
-          await disconnect();
-        },
-      };
-      activeSession = sessionHandle;
-      const stopOnAbort = () => {
-        void sessionHandle.stop();
-      };
       signal?.addEventListener("abort", stopOnAbort, { once: true });
       try {
         if (signal?.aborted) {
-          await sessionHandle.stop();
+          stopOnAbort();
           return { aborted: true };
         }
         console.log("Sending Copilot dashboard request.", {
@@ -980,14 +993,14 @@ The original dashboard source most likely defining this view is ${JSON.stringify
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON dashboard changes are supported. You may inspect files in the workspace, search with grep, and use common read-only shell commands to understand existing data, conventions, and related dashboards. Workspace read and write tools are available, but modify only the selected dashboard.json. Use read_dashboard_language_reference when language vocabulary is needed, then use read_current_dashboard_view and validate_current_dashboard_view to inspect and validate the selected page. Prefer save_current_dashboard_view for the final write, then run validate_dashboard_json. Do not finish until validate_dashboard_json returns ok: true.
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON dashboard changes are supported. You may inspect files in the workspace, search with grep, and use common read-only shell commands to understand existing data, conventions, and related dashboards. Workspace read and write tools are available, but modify only the selected dashboard.json. Do not create, read, or write files under /tmp; use repository files and the dashboard-specific tools instead. Use read_dashboard_language_reference when language vocabulary is needed, then use read_current_dashboard_view and validate_current_dashboard_view to inspect and validate the selected page. Prefer save_current_dashboard_view for the final write, then run validate_dashboard_json. Do not finish until validate_dashboard_json returns ok: true.
 
 JavaScript, HTML, CSS, and all other application files are outside this session's scope. Do not propose or attempt changes to them because they require a full application reload; make the requested improvement only through the selected dashboard.json page.
 
 After saving the validated dashboard page, respond with a short, plain-language summary of what changed in the dashboard and what the user will now see. Avoid implementation details, JSON field names, schema terminology, file paths, and developer-oriented language. Complete the edit rather than only describing it.`,
           });
         } catch (error) {
-          if (aborted) return { aborted: true };
+          if (context.aborted) return { aborted: true };
           console.log("Copilot dashboard session request failed.", {
             sessionId: session.sessionId,
             view,
@@ -996,7 +1009,7 @@ After saving the validated dashboard page, respond with a short, plain-language 
           throw error;
         }
         for (let repairAttempt = 1; ; repairAttempt += 1) {
-          if (aborted) return { aborted: true };
+          if (context.aborted) return { aborted: true };
           const savedSource = await readFile(viewDashboardPath, "utf8");
           const validation = validateDashboardDocument(savedSource);
           if (validation.ok) {
@@ -1043,7 +1056,7 @@ Validation errors:
 ${validationErrors}`,
             });
           } catch (error) {
-            if (aborted) return { aborted: true };
+            if (context.aborted) return { aborted: true };
             console.log("Copilot dashboard repair request failed.", {
               sessionId: session.sessionId,
               view,
@@ -1054,20 +1067,36 @@ ${validationErrors}`,
           }
         }
         console.log("Copilot dashboard request completed.", { sessionId: session.sessionId, view });
-        return { aborted };
+        return { aborted: context.aborted };
       } finally {
         signal?.removeEventListener("abort", stopOnAbort);
-        if (activeSession === sessionHandle) activeSession = null;
-        await disconnect();
+        context.onEvent = () => {};
       }
     },
-    async stop() {
-      if (!activeSession) return false;
-      await activeSession.stop();
+    async stop(sessionKey) {
+      const entry = sessions.get(sessionKey);
+      if (!entry) return false;
+      entry.context.aborted = true;
+      await entry.session.abort();
+      return true;
+    },
+    async disconnect(sessionKey) {
+      const entry = sessions.get(sessionKey);
+      if (!entry) return false;
+      sessions.delete(sessionKey);
+      entry.context.aborted = true;
+      console.log("Disconnecting WebSocket Copilot dashboard session.", {
+        sessionKey,
+        sessionId: entry.session.sessionId,
+      });
+      await entry.session.abort().catch(() => {});
+      await entry.session.disconnect();
       return true;
     },
     async close() {
-      await activeSession?.stop();
+      await Promise.all([...sessions.keys()].map(async (sessionKey) => {
+        await this.disconnect(sessionKey);
+      }));
       const errors = await client.stop();
       for (const error of errors) console.log("Copilot shutdown error.", errorMetadata(error));
     },
@@ -1225,6 +1254,7 @@ export async function startDashboardServer({
     throw error;
   }
   const sockets = new Set();
+  const socketSessionKeys = new WeakMap();
   const capability = randomBytes(24).toString("hex");
   const routePrefix = `/${capability}`;
   const socketPath = `${routePrefix}${socketEndpoint}`;
@@ -1260,6 +1290,10 @@ export async function startDashboardServer({
   };
 
   const runCopilotRequest = async (socket, payload) => {
+    const sessionKey = socketSessionKeys.get(socket);
+    if (!sessionKey) {
+      throw new Error("Copilot WebSocket session is unavailable.");
+    }
     const traceId = typeof payload?.traceId === "string"
       && /^[A-Za-z0-9-]{8,80}$/.test(payload.traceId)
       ? payload.traceId
@@ -1291,7 +1325,7 @@ export async function startDashboardServer({
 
     copilotRequestActive = true;
     const controller = new AbortController();
-    copilotRequest = { socket, controller, traceId };
+    copilotRequest = { socket, controller, traceId, sessionKey };
     try {
       const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
         resolvedCatalogRoot,
@@ -1328,6 +1362,7 @@ export async function startDashboardServer({
       });
       onEvent({ type: "started" });
       const result = await copilotRuntime.prompt({
+        sessionKey,
         traceId,
         view: payload.view,
         request: payload.request.trim(),
@@ -1454,7 +1489,7 @@ export async function startDashboardServer({
     } else if (command?.type === "copilot.stop") {
       if (socket === copilotRequest?.socket) {
         copilotRequest.controller.abort();
-        await copilotRuntime?.stop();
+        await copilotRuntime?.stop(copilotRequest.sessionKey);
       }
     } else if (command?.type === "browser.trace"
         && typeof command.traceId === "string"
@@ -1693,6 +1728,8 @@ export async function startDashboardServer({
       "\r\n",
     ].join("\r\n"));
     sockets.add(socket);
+    const sessionKey = randomBytes(16).toString("hex");
+    socketSessionKeys.set(socket, sessionKey);
     console.log("Dashboard preview socket connected.", { socketCount: sockets.size });
     let incoming = Buffer.alloc(0);
     let removed = false;
@@ -1702,8 +1739,14 @@ export async function startDashboardServer({
       sockets.delete(socket);
       if (socket === copilotRequest?.socket) {
         copilotRequest.controller.abort();
-        void copilotRuntime?.stop();
+        void copilotRuntime?.stop(sessionKey);
       }
+      void copilotRuntime?.disconnect?.(sessionKey).catch((error) => {
+        console.log("Copilot WebSocket session disconnect failed.", {
+          sessionKey,
+          ...errorMetadata(error),
+        });
+      });
       for (const [traceId, acknowledgement] of renderAcknowledgements) {
         if (acknowledgement.socket === socket) {
           acknowledgement.reject(new Error("The browser disconnected before rendering the dashboard update."));

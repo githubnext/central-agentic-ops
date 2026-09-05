@@ -93,7 +93,7 @@ export function renderCopilotPrompt(socket) {
   let activeReasoningId = '';
   /**
    * @param {string} content
-   * @param {'response'|'reasoning'|'update'} kind
+   * @param {'response'|'reasoning'|'update'|'refusal'} kind
    */
   const appendAssistantMessage = (content = '', kind = 'response') => {
     if (!content.trim()) return null;
@@ -259,6 +259,11 @@ export function renderCopilotPrompt(socket) {
     } else if (streamEvent.type === 'status' && typeof streamEvent.message === 'string') {
       toolbarStatus.textContent = streamEvent.message;
       appendStatusMessage(streamEvent.message);
+    } else if (streamEvent.type === 'tool-refused' && typeof streamEvent.message === 'string') {
+      if (!streamEvent.message.trim()) return;
+      appendAssistantMessage(streamEvent.message, 'refusal');
+      toolbarStatus.textContent = 'A tool was refused; Copilot is continuing.';
+      debugCopilotUpdate(streamEvent.message, streamEvent.details, activeTraceId);
     } else if (streamEvent.type === 'reloaded') {
       toolbarStatus.textContent = 'Updated.';
       browserTrace(socket, 'copilot.preview.confirmed', activeTraceId, { view: activeViewName });

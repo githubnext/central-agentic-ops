@@ -62,6 +62,11 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
           document.dashboard.pages[0].title = "Updated by Copilot";
           onEvent({ type: "status", message: "Checking the current dashboard…" });
           onEvent({
+            type: "tool-refused",
+            message: "Refused python3: shell command not allowed.",
+            details: { tool: "python3", reason: "shell command not allowed" },
+          });
+          onEvent({
             type: "reasoning-message",
             reasoningId: "test-reasoning",
             content: "The title should make the requested change easy to see.",
@@ -88,6 +93,8 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
     await expect(page.locator("#dashboard-copilot-status")).toHaveText("Updated.");
     await expect(page.locator(".dashboard-copilot-message-update"))
       .toContainText("Checking the current dashboard");
+    await expect(page.locator(".dashboard-copilot-message-refusal"))
+      .toContainText("Refused python3: shell command not allowed.");
     await expect(page.locator(".dashboard-copilot-message-reasoning"))
       .toContainText("The title should make the requested change easy to see.");
     await expect(page.locator(".dashboard-copilot-message-response"))
