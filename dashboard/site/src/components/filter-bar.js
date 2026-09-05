@@ -56,10 +56,18 @@ export function renderFilterBar(config, onChange, options = {}) {
     timeControl?.element
   );
   if (timeControl) {
-    scopeLabel.addEventListener('click', () => {
-      const expanded = scopeLabel.getAttribute('aria-expanded') !== 'true';
+    /** @param {boolean} expanded */
+    const setExpanded = (expanded) => {
       scopeLabel.setAttribute('aria-expanded', String(expanded));
       root.classList.toggle('time-window-expanded', expanded);
+    };
+    scopeLabel.addEventListener('click', () => {
+      setExpanded(scopeLabel.getAttribute('aria-expanded') !== 'true');
+    });
+    root.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || scopeLabel.getAttribute('aria-expanded') !== 'true') return;
+      setExpanded(false);
+      scopeLabel.focus();
     });
   }
   filters.addEventListener('input', () => {
