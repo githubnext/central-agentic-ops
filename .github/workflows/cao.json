@@ -153,6 +153,12 @@
     "packages": {
       "self-care": {
         "authority": "githubnext/gh-aw-cao"
+      },
+      "aw-doctor": {
+        "authority": "githubnext/gh-aw-cao"
+      },
+      "dependabot": {
+        "authority": "githubnext/gh-aw-cao"
       }
     }
   }
