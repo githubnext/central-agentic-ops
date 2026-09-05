@@ -146,3 +146,68 @@ test("dashboard telemetry preserves missing tool_call output_size as null", asyn
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("dashboard telemetry classifies authoritative, empty, malformed, and disabled firewall artifacts", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "dashboard-firewall-"));
+  try {
+    const authoritative = path.join(root, "run-50", "sandbox", "firewall", "audit");
+    await mkdir(authoritative, { recursive: true });
+    await writeFile(path.join(root, "run-50", "aw_info.json"), JSON.stringify({
+      firewall: "squid",
+      awf_version: "0.28.12",
+    }));
+    await writeFile(path.join(authoritative, "policy-manifest.json"), JSON.stringify({
+      version: 1,
+      generatedAt: "2026-09-03T05:00:00Z",
+      rules: [{
+        id: "github-api",
+        order: 1,
+        action: "allow",
+        aclName: "github_api",
+        protocol: "https",
+        domains: [".github.com"],
+        description: "GitHub API",
+      }],
+    }));
+    await writeFile(path.join(authoritative, "audit.jsonl"), [
+      JSON.stringify({ _schema: "audit/v0.28.12", ts: 1788411660, host: "api.github.com:443", method: "CONNECT", status: 200, decision: "TCP_TUNNEL:HIER_DIRECT" }),
+      JSON.stringify({ _schema: "audit/v0.28.12", ts: 1788411720, host: "blocked.example:80", method: "GET", status: 403, decision: "TCP_DENIED:HIER_NONE" }),
+    ].join("\n"));
+
+    const telemetry = await readRunSecurityTelemetry(root, 50);
+    assert.equal(telemetry.firewall.firewallEvidenceState, "available");
+    assert.equal(telemetry.firewall.firewallEvidenceCompleteness, "complete");
+    assert.equal(telemetry.firewall.firewallEnabled, true);
+    assert.equal(telemetry.firewall.awfVersion, "0.28.12");
+    assert.deepEqual(telemetry.firewall.observations.map(({ domain, port, protocol, decision }) => ({
+      domain, port, protocol, decision,
+    })), [
+      { domain: "api.github.com", port: 443, protocol: "https", decision: "allowed" },
+      { domain: "blocked.example", port: 80, protocol: "http", decision: "denied" },
+    ]);
+    assert.equal(telemetry.firewall.firewallEvidenceReference, "sandbox/firewall/audit/audit.jsonl");
+
+    const noTraffic = path.join(root, "run-51", "sandbox", "firewall", "audit");
+    await mkdir(noTraffic, { recursive: true });
+    await writeFile(path.join(root, "run-51", "aw_info.json"), JSON.stringify({ firewall: "squid" }));
+    await writeFile(path.join(noTraffic, "audit.jsonl"), "");
+    assert.equal((await readRunSecurityTelemetry(root, 51)).firewall.firewallEvidenceState, "no-traffic");
+
+    const malformed = path.join(root, "run-52", "sandbox", "firewall", "audit");
+    await mkdir(malformed, { recursive: true });
+    await writeFile(path.join(root, "run-52", "aw_info.json"), JSON.stringify({ firewall: "squid" }));
+    await writeFile(path.join(malformed, "audit.jsonl"), "{not-json}\n");
+    const malformedTelemetry = await readRunSecurityTelemetry(root, 52);
+    assert.equal(malformedTelemetry.firewall.firewallEvidenceState, "malformed");
+    assert.equal(malformedTelemetry.firewall.firewallEvidenceAvailable, false);
+
+    await mkdir(path.join(root, "run-53"), { recursive: true });
+    await writeFile(path.join(root, "run-53", "aw_info.json"), JSON.stringify({ firewall: "disabled" }));
+    const disabled = await readRunSecurityTelemetry(root, 53);
+    assert.equal(disabled.firewall.firewallEvidenceState, "disabled");
+    assert.equal(disabled.firewall.firewallEnabled, false);
+    assert.equal(disabled.firewall.firewallEvidenceCompleteness, "complete");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

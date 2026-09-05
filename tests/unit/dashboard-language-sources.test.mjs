@@ -1687,3 +1687,147 @@ test("dashboard source bridge carries outcome detail content and presentation me
     { category: "noop", role: "worker", state: "ignored" },
   );
 });
+
+test("dashboard source bridge preserves firewall evidence states, policy attribution, and workflow-scoped drift", () => {
+    const firewall = (overrides = {}) => ({
+      available: true,
+      analysis: null,
+      observations: [],
+      policyManifest: null,
+      firewallExpected: true,
+      firewallEnabled: true,
+      firewallEvidenceAvailable: true,
+      firewallEvidenceState: "available",
+      firewallEvidenceCompleteness: "complete",
+      firewallEvidenceFreshness: "fresh",
+      firewallEvidenceError: "",
+      firewallEvidenceSource: "firewall-audit",
+      firewallEvidenceReference: "sandbox/firewall/audit/audit.jsonl",
+      firewallEvidenceHorizonStart: "2026-08-10T00:00:00Z",
+      firewallEvidenceHorizonEnd: "2026-09-03T05:00:00Z",
+      awfVersion: "0.28.12",
+      ...overrides,
+    });
+    const security = (firewallTelemetry) => ({
+      firewall: firewallTelemetry,
+      accessControl: { available: false },
+      integrity: { available: false },
+      mcp: { available: false, servers: [], calls: [], failures: [] },
+      threatDetection: { available: false },
+    });
+    const common = {
+      repository: "githubnext/gh-aw-cao",
+      workflowPath: ".github/workflows/security.lock.yml",
+      conclusion: "success",
+      mode: "review",
+    };
+    const sources = buildDashboardLanguageSources({
+      deployed: {
+        generatedAt: "2026-09-03T06:00:00Z",
+        discovery: { complete: true },
+        runHealth: { available: true, complete: true },
+        bundles: [],
+        workflows: [],
+      },
+      usage: {
+        available: true,
+        complete: true,
+        securityAvailable: true,
+        securityComplete: false,
+        firewallRequestedHorizonStart: "2026-08-04T06:00:00Z",
+        firewallRequestedHorizonEnd: "2026-09-03T06:00:00Z",
+        firewallEvidenceHorizonStart: "2026-08-10T00:00:00Z",
+        firewallEvidenceHorizonEnd: "2026-09-03T05:00:00Z",
+        firewallLastSuccessfulCollectionAt: "2026-09-03T06:00:00Z",
+        runs: [],
+        securityRuns: [
+          {
+            ...common,
+            runId: 40,
+            createdAt: "2026-09-01T05:00:00Z",
+            security: security(firewall({
+              observations: [
+                { observedAt: "2026-09-01T05:01:00Z", domain: "api.github.com", host: "api.github.com", port: 443, protocol: "https", decision: "allowed" },
+                { observedAt: "2026-09-01T05:02:00Z", domain: "old.example", host: "old.example", port: 443, protocol: "https", decision: "allowed" },
+              ],
+            })),
+          },
+          {
+            ...common,
+            runId: 41,
+            createdAt: "2026-09-02T05:00:00Z",
+            security: security(firewall({
+              observations: [
+                { observedAt: "2026-09-02T05:01:00Z", domain: "api.github.com", host: "api.github.com", port: 443, protocol: "https", decision: "denied" },
+                { observedAt: "2026-09-02T05:02:00Z", domain: "new.example", host: "new.example", port: 443, protocol: "https", decision: "allowed" },
+              ],
+              policyManifest: {
+                version: 1,
+                generatedAt: "2026-09-02T04:00:00Z",
+                rules: [{
+                  id: "new-domain",
+                  order: 1,
+                  action: "allow",
+                  aclName: "new_domain",
+                  protocol: "https",
+                  domains: ["new.example"],
+                  description: "Approved destination",
+                }],
+              },
+            })),
+          },
+          {
+            ...common,
+            workflowPath: ".github/workflows/other.lock.yml",
+            runId: 42,
+            createdAt: "2026-09-02T06:00:00Z",
+            security: security(firewall({
+              observations: [
+                { observedAt: "2026-09-02T06:01:00Z", domain: "new.example", host: "new.example", port: 443, protocol: "https", decision: "allowed" },
+              ],
+            })),
+          },
+          {
+            ...common,
+            runId: 43,
+            createdAt: "2026-09-03T05:00:00Z",
+            security: security(firewall({
+              available: false,
+              observations: [],
+              firewallEvidenceAvailable: false,
+              firewallEvidenceState: "unavailable",
+              firewallEvidenceCompleteness: "unknown",
+              firewallEvidenceFreshness: "unknown",
+              firewallEvidenceError: "Artifact download failed.",
+            })),
+          },
+        ],
+      },
+      operationalValues: { records: [] },
+      report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+    });
+
+    const observations = sources["firewall-observations"];
+    assert.equal(observations.metadata.completeness, "partial");
+    assert.equal(observations.metadata["coverage-start"], "2026-08-10T00:00:00Z");
+    assert.ok(observations.rows.some((row) => row.run === "41"
+      && row.domain === "api.github.com"
+      && row["drift-state"] === "decision-changed"
+      && row["previous-decision"] === "allowed"
+      && row["current-decision"] === "denied"));
+    assert.ok(observations.rows.some((row) => row.run === "41"
+      && row.domain === "new.example"
+      && row["drift-state"] === "newly-allowed"
+      && row["policy-rule-id"] === "new-domain"));
+    assert.ok(observations.rows.some((row) => row.run === "41"
+      && row.domain === "old.example"
+      && row["drift-state"] === "removed"));
+    assert.ok(observations.rows.some((row) => row.run === "42"
+      && row.domain === "new.example"
+      && row["drift-state"] === "unknown"));
+    assert.ok(observations.rows.some((row) => row.run === "43"
+      && row["review-state"] === "evidence-missing"
+      && row["request-count"] === null));
+    assert.ok(sources["firewall-policy-rules"].rows.some((row) => row["rule-id"] === "new-domain"
+      && row["domain-pattern"] === "new.example"));
+});
