@@ -43,7 +43,7 @@ tools:
 
 jobs:
   pre-activation:
-    pre-steps:
+    steps:
       - name: Generate CAO pre-activation GitHub App token
         id: cao_pre_activation_app_token
         env:
