@@ -96,6 +96,7 @@ export function renderCopilotPrompt(socket) {
    * @param {'response'|'reasoning'|'update'} kind
    */
   const appendAssistantMessage = (content = '', kind = 'response') => {
+    if (!content.trim()) return null;
     const message = h(
       'div',
       {
@@ -110,8 +111,16 @@ export function renderCopilotPrompt(socket) {
     scrollConversation();
     return contentElement;
   };
+  const reuseLatestReasoningMessage = () => {
+    const previous = conversation.lastElementChild;
+    if (!previous?.classList.contains('dashboard-copilot-message-reasoning')) return null;
+    return /** @type {HTMLElement | null} */ (
+      previous.querySelector('.dashboard-copilot-message-content')
+    );
+  };
   /** @param {string} content */
   const appendStatusMessage = (content) => {
+    if (!content.trim()) return;
     const previous = conversation.lastElementChild;
     if (previous?.classList.contains('dashboard-copilot-message-update')) {
       const previousContent = previous.querySelector('.dashboard-copilot-message-content');
@@ -206,11 +215,16 @@ export function renderCopilotPrompt(socket) {
     if (streamEvent.type === 'debug' && typeof streamEvent.message === 'string') {
       debugCopilotUpdate(streamEvent.message, streamEvent.details, activeTraceId);
     } else if (streamEvent.type === 'assistant-delta' && typeof streamEvent.content === 'string') {
-      if (!assistantContent) assistantContent = appendAssistantMessage();
+      if (!streamEvent.content) return;
+      if (!assistantContent) {
+        assistantContent = appendAssistantMessage(streamEvent.content);
+      } else {
+        assistantContent.textContent += streamEvent.content;
+      }
       assistantResponse += streamEvent.content;
-      if (assistantContent) assistantContent.textContent += streamEvent.content;
       scrollConversation();
     } else if (streamEvent.type === 'assistant-message' && typeof streamEvent.content === 'string') {
+      if (!streamEvent.content.trim()) return;
       if (!assistantContent) assistantContent = appendAssistantMessage(streamEvent.content);
       else assistantContent.textContent = streamEvent.content;
       assistantResponse = streamEvent.content;
@@ -218,15 +232,24 @@ export function renderCopilotPrompt(socket) {
       debugCopilotMessage('assistant', assistantResponse, activeTraceId);
       assistantContent = null;
     } else if (streamEvent.type === 'reasoning-delta' && typeof streamEvent.content === 'string') {
+      if (!streamEvent.content) return;
       if (!reasoningContent || activeReasoningId !== streamEvent.reasoningId) {
-        reasoningContent = appendAssistantMessage('', 'reasoning');
+        reasoningContent = reuseLatestReasoningMessage()
+          ?? appendAssistantMessage(streamEvent.content, 'reasoning');
         activeReasoningId = streamEvent.reasoningId ?? '';
+        if (reasoningContent?.textContent === streamEvent.content) {
+          scrollConversation();
+          return;
+        }
       }
       if (reasoningContent) reasoningContent.textContent += streamEvent.content;
       scrollConversation();
     } else if (streamEvent.type === 'reasoning-message' && typeof streamEvent.content === 'string') {
+      if (!streamEvent.content.trim()) return;
       if (!reasoningContent || activeReasoningId !== streamEvent.reasoningId) {
-        reasoningContent = appendAssistantMessage(streamEvent.content, 'reasoning');
+        reasoningContent = reuseLatestReasoningMessage()
+          ?? appendAssistantMessage(streamEvent.content, 'reasoning');
+        if (reasoningContent) reasoningContent.textContent = streamEvent.content;
       } else {
         reasoningContent.textContent = streamEvent.content;
       }

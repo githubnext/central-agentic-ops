@@ -652,6 +652,10 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         }
       };
       try {
+        const workspaceRoot = await canonicalPath(workingDirectory);
+        const workspacePath = (path) => canonicalPath(
+          isAbsolute(path) ? path : join(workspaceRoot, path),
+        );
         session = await client.createSession({
           workingDirectory,
           enableSkills: true,
@@ -660,6 +664,11 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           availableTools: [
             "builtin:skill",
             "builtin:task_complete",
+            "builtin:view",
+            "builtin:glob",
+            "builtin:rg",
+            "builtin:grep",
+            "builtin:bash",
             "custom:read_dashboard_language_reference",
             "custom:read_current_dashboard_view",
             "custom:validate_current_dashboard_view",
@@ -667,8 +676,26 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           ],
           tools,
           onPermissionRequest: async (permission) => {
-            console.log("Denied unexpected Copilot permission request.", { kind: permission.kind });
-            return { kind: "reject", feedback: "This session only permits the dashboard editing tools." };
+            if (permission.kind === "read" && !permission.requestSandboxBypass) {
+              const requestedPath = await workspacePath(permission.path);
+              if (isWithin(workspaceRoot, requestedPath)) return { kind: "approved" };
+            }
+            if (permission.kind === "shell"
+                && !permission.requestSandboxBypass
+                && !permission.hasWriteFileRedirection
+                && permission.possibleUrls.length === 0
+                && permission.commands.length > 0
+                && permission.commands.every((command) => command.readOnly)) {
+              const possiblePaths = await Promise.all(permission.possiblePaths.map(workspacePath));
+              if (possiblePaths.every((path) => isWithin(workspaceRoot, path))) {
+                return { kind: "approved" };
+              }
+            }
+            console.log("Denied non-read-only Copilot permission request.", { kind: permission.kind });
+            return {
+              kind: "reject",
+              feedback: "This session permits workspace reads and read-only shell commands only.",
+            };
           },
           onEvent: handleSessionEvent,
         });
@@ -729,7 +756,7 @@ The original dashboard source most likely defining this view is ${JSON.stringify
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Do not use grep, shell, filesystem, or generic file tools. Use read_dashboard_language_reference when language vocabulary is needed, then use only read_current_dashboard_view, validate_current_dashboard_view, and save_current_dashboard_view to inspect, validate, and save the selected page. Run validate_current_dashboard_view until it passes, then use save_current_dashboard_view.
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. You may inspect files in the workspace and use read-only shell commands to understand existing data, conventions, and related dashboards. Do not use shell commands or general file tools to modify anything. Use read_dashboard_language_reference when language vocabulary is needed, then use read_current_dashboard_view, validate_current_dashboard_view, and save_current_dashboard_view to inspect, validate, and save the selected page. Run validate_current_dashboard_view until it passes, then use save_current_dashboard_view.
 
 JavaScript, HTML, CSS, and all other application files are outside this session's scope. Do not propose or attempt changes to them because they require a full application reload; make the requested improvement only through the selected dashboard.json page.
 

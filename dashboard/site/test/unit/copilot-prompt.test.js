@@ -32,9 +32,13 @@ describe('Copilot dashboard prompt', () => {
     expect(input.value).toBe('');
     socket.emit({ type: 'debug', message: 'Starting dashboard view update.', details: { view: 'Overview' } });
     socket.emit({ type: 'status', message: 'Reading the current view…' });
+    socket.emit({ type: 'status', message: '' });
+    socket.emit({ type: 'reasoning-delta', reasoningId: 'empty-reasoning', content: '' });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'reasoning-1', content: 'The view needs ' });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'reasoning-1', content: 'a clearer trend.' });
     socket.emit({ type: 'reasoning-message', reasoningId: 'reasoning-1', content: 'The view needs a clearer trend.' });
+    socket.emit({ type: 'reasoning-message', reasoningId: 'reasoning-2', content: 'A trend card will make the change clearer.' });
+    socket.emit({ type: 'assistant-message', content: '' });
     socket.emit({ type: 'assistant-delta', content: 'Adding ' });
     socket.emit({ type: 'assistant-delta', content: 'a trend.' });
     socket.emit({ type: 'assistant-message', content: 'Added a trend.' });
@@ -49,7 +53,10 @@ describe('Copilot dashboard prompt', () => {
     expect(prompt.querySelector('.dashboard-copilot-message-update')?.textContent)
       .toBe('Reading the current view…');
     expect(prompt.querySelector('.dashboard-copilot-message-reasoning')?.textContent)
-      .toBe('The view needs a clearer trend.');
+      .toBe('A trend card will make the change clearer.');
+    expect(prompt.querySelectorAll('.dashboard-copilot-message-reasoning')).toHaveLength(1);
+    expect([...prompt.querySelectorAll('.dashboard-copilot-message-content')]
+      .every((message) => message.textContent?.trim())).toBe(true);
     expect(prompt.querySelector('.dashboard-copilot-message-response')?.textContent)
       .toBe('Added a trend.');
     expect(prompt.querySelector('#dashboard-copilot-status')?.textContent).toBe('Updated.');
