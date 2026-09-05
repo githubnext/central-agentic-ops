@@ -10,14 +10,6 @@ on:
         required: false
         type: string
         default: cao
-      mode:
-        description: Refresh activity data or use only the most recently cached snapshot.
-        required: false
-        type: choice
-        options:
-          - live
-          - cache
-        default: live
       request-id:
         description: Correlation identifier supplied by a dispatching workflow.
         required: false
@@ -27,67 +19,19 @@ permissions:
   contents: read
 
 jobs:
-  activity:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    outputs:
-      run-id: ${{ steps.dispatch.outputs.run-id }}
-      run-attempt: ${{ steps.dispatch.outputs.run-attempt }}
-      skipped: ${{ steps.dispatch.outputs.skipped }}
-    permissions:
-      actions: write
-      contents: read
-    steps:
-      - name: Checkout trusted dashboard source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.workflow_sha }}
-          persist-credentials: false
-
-      - name: Check for a cached activity snapshot
-        if: inputs.mode == 'cache'
-        id: cache-check
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/cao-activity
-          key: cao-activity-lookup-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            cao-activity-
-          lookup-only: true
-
-      - name: Dispatch activity refresh
-        id: dispatch
-        if: inputs.mode == 'live' || steps.cache-check.outputs.cache-matched-key == ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DISPATCH_WORKFLOW: activity.yml
-          DISPATCH_REF: ${{ github.ref_name }}
-          DISPATCH_RUN_NAME: CAO Activity / dashboard-build-${{ github.run_id }}-${{ github.run_attempt }}
-          DISPATCH_INPUTS: '{"request-id":"dashboard-build-${{ github.run_id }}-${{ github.run_attempt }}"}'
-        run: |
-          if [[ -f .github/aw/dashboard/dispatch-workflow.mjs ]]; then
-            node .github/aw/dashboard/dispatch-workflow.mjs
-          else
-            node dashboard/dispatch-workflow.mjs
-          fi
-
-  build:
-    needs: activity
-    if: always() && needs.activity.result == 'success' && needs.activity.outputs.skipped != 'true'
-    runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
+      issues: read
+      pull-requests: read
     steps:
       - name: Validate dashboard site path
         env:
           DASHBOARD_SITE_PATH: ${{ inputs.site-path }}
-          DASHBOARD_MODE: ${{ inputs.mode }}
         run: |
-          if [[ "$DASHBOARD_MODE" != "live" && "$DASHBOARD_MODE" != "cache" ]]; then
-            echo "mode must be 'live' or 'cache'" >&2
-            exit 1
-          fi
           if [[ "$DASHBOARD_SITE_PATH" != "." && ! "$DASHBOARD_SITE_PATH" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
             echo "site-path must be '.' or a relative URL path" >&2
             exit 1
@@ -105,35 +49,122 @@ jobs:
 
       - name: Resolve dashboard source layout
         run: |
-          if [[ -f .github/aw/dashboard/report/dashboard-language-sources.mjs && -f .github/aw/dashboard/site/index.html ]]; then
+          if [[ -f .github/aw/dashboard/report/dashboard-language-sources.mjs && -f .github/aw/dashboard/site/index.html && -f .github/aw/activity/index.mjs ]]; then
             echo "DASHBOARD_LAYOUT=installed" >> "$GITHUB_ENV"
             echo "DASHBOARD_REPORT_ROOT=.github/aw/dashboard/report" >> "$GITHUB_ENV"
-          elif [[ -f dashboard/report/records.mjs && -f dashboard/site/scripts/build.mjs ]]; then
+            echo "ACTIVITY_INDEXER=.github/aw/activity/index.mjs" >> "$GITHUB_ENV"
+          elif [[ -f dashboard/report/records.mjs && -f dashboard/site/scripts/build.mjs && -f activity/index.mjs ]]; then
             echo "DASHBOARD_LAYOUT=source" >> "$GITHUB_ENV"
             echo "DASHBOARD_REPORT_ROOT=dashboard/report" >> "$GITHUB_ENV"
+            echo "ACTIVITY_INDEXER=activity/index.mjs" >> "$GITHUB_ENV"
           else
             echo "Dashboard package sources are unavailable" >&2
             exit 1
           fi
 
-      - name: Restore collected activity data
+      - name: Generate GitHub App token for dashboard data
+        id: dashboard-app-token
+        env:
+          GH_AW_IGNORE_IF_MISSING_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
+        if: ${{ vars.GH_AW_GITHUB_READ_APP_ID != '' && env.GH_AW_IGNORE_IF_MISSING_PRIVATE_KEY != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GH_AW_GITHUB_READ_APP_ID }}
+          private-key: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          github-api-url: ${{ github.api_url }}
+          permission-actions: read
+          permission-contents: read
+          permission-issues: read
+          permission-pull-requests: read
+
+      - name: Restore cached activity logs
+        id: activity-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/cao-activity
-          key: ${{ format('cao-activity-{0}-{1}', needs.activity.outputs.run-id, needs.activity.outputs.run-attempt) }}
+          key: cao-activity-lookup-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             cao-activity-
 
-      - name: Require collected activity data
-        env:
-          ACTIVITY_DATA_ROOT: ${{ runner.temp }}/cao-activity
+      - name: Require cached activity logs
         run: |
-          for file in control-settings.json control-plane-inventory.json deployed-workflows.json aic-usage.json operational-values.json dashboard-records.json; do
-            if [[ ! -f "$ACTIVITY_DATA_ROOT/$file" ]]; then
-              echo "Collected activity data is unavailable: $file" >&2
-              exit 1
-            fi
-          done
+          if [[ ! -f "$RUNNER_TEMP/cao-activity/gh-aw-logs.json" ]]; then
+            echo "Cached activity logs are unavailable; wait for the scheduled CAO Activity workflow" >&2
+            exit 1
+          fi
+
+      - name: Resolve authoritative control policy
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node "$DASHBOARD_REPORT_ROOT/control-settings.mjs" \
+            .github/cao/src/control.mjs \
+            .github/workflows/cao.json \
+            "$RUNNER_TEMP/cao-activity/control-settings.json"
+
+      - name: Extract control-plane inventory
+        env:
+          REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
+        run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
+
+      - name: Transform activity logs into the deployed workflow index
+        env:
+          GITHUB_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+          REPORT_RUN_WINDOW_HOURS: "168"
+        run: node "$ACTIVITY_INDEXER"
+
+      - name: Install gh-aw CLI
+        uses: github/gh-aw-actions/setup-cli@23e16337f3568b3c18bb04a976793f282a016755 # v0.88.4
+        env:
+          GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
+        with:
+          version: v0.88.4
+
+      - name: Restore operational-value observation cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/dashboard-operational-values
+          key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-
+
+      - name: Transform cached logs into AI Credit usage
+        env:
+          GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
+          REPORT_AIC_CACHE: ${{ runner.temp }}/cao-activity/logs
+          REPORT_AIC_USAGE: ${{ runner.temp }}/cao-activity/aic-usage.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+        run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
+
+      - name: Collect operational-value observations
+        env:
+          GH_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-activity/operational-values.json
+          REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
+          REPORT_VALUE_CONCURRENCY: "3"
+          REPORT_VALUE_REPLAY_CACHE: .cache/dashboard-operational-values/replay
+        run: node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
+
+      - name: Save operational-value observation cache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/dashboard-operational-values
+          key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Collect durable dashboard records
+        env:
+          GITHUB_TOKEN: ${{ steps.dashboard-app-token.outputs.token || github.token }}
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
+          REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+          REPORT_RECORDS: ${{ runner.temp }}/cao-activity/dashboard-records.json
+        run: node "$DASHBOARD_REPORT_ROOT/records.mjs"
 
       - name: Assemble Dashboard Language site
         env:
