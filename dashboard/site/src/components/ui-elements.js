@@ -13,6 +13,7 @@ import { renderDefinitionList } from './view-chrome.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
 import { modeBadgeClassName } from './badge.js';
+import { rowsFor as rowsForSource } from './source-rows.js';
 /**
  * @typedef {{
  *   pageId: string,
@@ -508,7 +509,7 @@ function safeNavigationHref(value) {
  * @param {string} sourceName
  */
 function rowsFor(context, sourceName) {
-  return Array.isArray(context.sources[sourceName]?.rows) ? context.sources[sourceName].rows : [];
+  return rowsForSource(context.sources, sourceName);
 }
 
 /**
