@@ -107,7 +107,15 @@ jobs:
       - name: Build documentation
         run: npm run docs:build
 
+      - name: Restore dashboard from cache
+        id: dashboard-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: dist
+          key: cao-dashboard-${{ needs.dashboard.outputs.run-id }}-${{ needs.dashboard.outputs.run-attempt }}
+
       - name: Mount dashboard at /cao
+        if: steps.dashboard-cache.outputs.cache-hit != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: central-agentic-ops-dashboard
