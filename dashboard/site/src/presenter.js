@@ -718,22 +718,10 @@ function renderPage(page, sources, units, dashboardDefaults) {
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(
-      { ...payload, 'filter-bar': payload['filter-bar'] ?? { filters: [] } },
-      title,
-      sources,
-      units,
-      dashboardDefaults
-    );
+    return renderCustomPage(payload, title, sources, units, dashboardDefaults);
   }
 
-  return renderCustomPage(
-    { ...page, 'filter-bar': page['filter-bar'] ?? { filters: [] } },
-    title,
-    sources,
-    units,
-    dashboardDefaults
-  );
+  return renderCustomPage(page, title, sources, units, dashboardDefaults);
 }
 
 /**

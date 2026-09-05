@@ -566,7 +566,7 @@ The optional page `navigation-label` provides a concise sidebar label when the p
 
 The optional page `class-name` is a canonical identifier that a renderer adds to the page container. It lets a document opt into page-specific presentation without requiring the renderer to infer styling from a page ID or built-in page name.
 
-The optional page `filter-bar` declares page-specific filters shared by built-in and custom pages. Its required `filters` sequence contains unique `field:value` tokens in display order and MUST NOT contain `mode` or `rollout-mode` filters. The presenter applies edits automatically to matching source fields, treating values for one field as alternatives and filters for different fields as conjunctive. The presenter also provides global time-horizon and rollout-mode controls whose user-selected values are client-side settings shared by all pages and persisted in local storage. All rollout modes are active by default.
+The optional page `filter-bar` enables filtering for a built-in or custom page and may declare page-specific filters. Its required `filters` sequence contains unique `field:value` tokens in display order and MUST NOT contain `mode` or `rollout-mode` filters. The presenter applies edits automatically to matching source fields, treating values for one field as alternatives and filters for different fields as conjunctive. The presenter also provides time-horizon and rollout-mode controls whose user-selected values are global client-side settings shared by all filter bars and persisted in local storage. All rollout modes are active by default.
 
 ### 10.2 Required Content
 
@@ -586,7 +586,7 @@ The optional page `filter-bar` declares page-specific filters shared by built-in
 - **DLS-PAGE-014:** Every built-in page **MUST** honor the dashboard scope, time, and filters and expose availability, completeness, and freshness independently.
 - **DLS-PAGE-015:** The `packages` page **MUST** expose centrally managed package inventory, rollout-mode filtering, actual package AIC against summed per-run limits without treating missing usage as zero, the complete-attempt AIC allowance, retained usage coverage, and time-ordered successful, failed, and cancelled package-run trends.
 - **DLS-PAGE-016:** When `class-name` is present, it **MUST** be a canonical identifier and a renderer **MUST** add it to the page container without deriving additional CSS class names from `id` or `page`.
-- **DLS-PAGE-017:** When `filter-bar` is present, it **MUST** contain a non-empty sequence of unique canonical `field:value` filter tokens, **MUST NOT** contain `mode` or `rollout-mode` filters, and **MUST** be rendered as an editable control before the page views. A presenter **MUST** apply valid filter edits automatically. A presenter **MUST** provide global client-side time-horizon and rollout-mode controls on every page, persist those settings in local storage, and activate all rollout modes by default.
+- **DLS-PAGE-017:** When `filter-bar` is present, it **MUST** contain a sequence of unique canonical `field:value` filter tokens, **MUST NOT** contain `mode` or `rollout-mode` filters, and **MUST** be rendered as an editable control before the page views. A presenter **MUST** apply valid filter edits automatically. A presenter **MUST** provide time-horizon and rollout-mode controls, persist those settings globally in local storage across filter bars, and activate all rollout modes by default.
 
 ---
 

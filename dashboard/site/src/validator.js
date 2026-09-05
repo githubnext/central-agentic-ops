@@ -840,10 +840,10 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
   }
 
   validateObjectKeys(filterBarNode, PAGE_FILTER_BAR_KEYS, path, errors);
-  if (!Array.isArray(filterBar.filters) || filterBar.filters.length === 0) {
+  if (!Array.isArray(filterBar.filters)) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
-      'filter-bar filters must be a non-empty sequence of filter tokens.',
+      'filter-bar filters must be a sequence of filter tokens.',
       `${path}.filters`
     ));
   } else {

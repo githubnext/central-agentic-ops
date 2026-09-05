@@ -1547,6 +1547,7 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
             id: 'cost',
             kind: 'custom',
             title: 'Cost & efficiency',
+            'filter-bar': { filters: [] },
             views: [{
               id: 'usage-count',
               data: { source: 'usage' },
@@ -2787,6 +2788,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             title: 'Outcome',
             description: 'Outcome details.',
             route: { 'hash-query-parameter': 'outcome' },
+            'filter-bar': { filters: [] },
             views: [{
               id: 'outcome-record',
               title: 'Outcome',
