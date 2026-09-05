@@ -320,7 +320,7 @@ export function renderExperimentDetailSection(section, context) {
   if (section === 'grader-diagnostics') return renderGraderDiagnosticsSection(context.metrics ?? []);
   if (section === 'observation-quality') return renderObservationQualitySection(context.experiment ?? {});
   if (section === 'run-evidence') return renderRunEvidenceSection(context.model ?? { runById: new Map() }, context.experiment ?? {});
-  throw new Error(`Unknown experiment detail section: ${section}`);
+  throw new Error(`Unknown experiment detail section: "${section}". Expected one of: metric-comparison, eval-outcomes, grader-diagnostics, observation-quality, run-evidence`);
 }
 
 /** @param {Array<Record<string, any>>} rows @param {(row: Record<string, any>) => string} key @returns {Map<string, number>} */
