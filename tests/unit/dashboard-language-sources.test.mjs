@@ -1,6 +1,140 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildDashboardLanguageSources } from "../../dashboard/report/dashboard-language-sources.mjs";
+import {
+  buildDashboardLanguageSources,
+  detectionObservationRows,
+} from "../../dashboard/report/dashboard-language-sources.mjs";
+
+function detectionRun(runId, verdict, overrides = {}) {
+  return {
+    repository: "githubnext/gh-aw-cao",
+    runId,
+    workflowPath: ".github/workflows/example.lock.yml",
+    createdAt: "2026-09-05T10:00:00Z",
+    mode: "review",
+    security: {
+      threatDetection: verdict === null
+        ? { available: false, verdict: null }
+        : { available: true, verdict },
+    },
+    ...overrides,
+  };
+}
+
+function detectionJob(run, conclusion = "success") {
+  return {
+    organization: "githubnext",
+    repository: "gh-aw-cao",
+    workflow: ".github/workflows/example.md",
+    run: String(run),
+    job: "detection",
+    "job-status": "completed",
+    "job-conclusion": conclusion,
+    "started-at": "2026-09-05T10:00:00Z",
+    "job-duration-seconds": 12,
+    runner: "ubuntu-latest",
+    "run-link": {
+      relation: "run",
+      href: `https://github.com/githubnext/gh-aw-cao/actions/runs/${run}`,
+      label: `View run ${run}`,
+    },
+  };
+}
+
+test("detection observations preserve verdict, warning, tooling, skipped, and unknown states", () => {
+  const clear = { promptInjection: false, secretLeak: false, maliciousPatch: false, warnings: [] };
+  const usage = {
+    generatedAt: "2026-09-05T11:00:00Z",
+    securityAvailable: true,
+    securityRuns: [
+      detectionRun(1, clear),
+      detectionRun(2, { ...clear, promptInjection: true }),
+      detectionRun(3, { ...clear, warnings: [{ field: "patch", code: "ERR_VALIDATION" }] }),
+      detectionRun(4, null),
+      detectionRun(5, null),
+      detectionRun(6, null),
+      detectionRun(8, { ...clear, promptInjection: true, secretLeak: true, maliciousPatch: true }),
+    ],
+  };
+  const rows = detectionObservationRows(usage, [
+    detectionJob(1),
+    detectionJob(2),
+    detectionJob(3),
+    detectionJob(4),
+    detectionJob(5, "failure"),
+    detectionJob(6, "skipped"),
+    detectionJob(8),
+  ]);
+  const byRun = new Map(rows.map((row) => [row.run, row]));
+
+  assert.equal(byRun.get("1")["detection-state"], "clean");
+  assert.equal(byRun.get("1")["usable-verdict-percent"], 100);
+  assert.equal(byRun.get("2")["detection-state"], "threat");
+  assert.equal(byRun.get("2")["detection-signal"], "Prompt injection");
+  assert.equal(byRun.get("3")["detection-state"], "degraded");
+  assert.equal(byRun.get("3")["inspection-warning"], "patch: ERR_VALIDATION");
+  assert.equal(byRun.get("4")["detection-state"], "tooling-failure");
+  assert.equal(byRun.get("5")["detection-state"], "tooling-failure");
+  assert.equal(byRun.get("6")["detection-state"], "skipped");
+  assert.equal(byRun.get("6")["detection-applicable"], "false");
+  assert.equal(byRun.get("8")["detection-state"], "threat");
+  assert.equal(byRun.get("8")["detection-signal"], "Prompt injection, Secret leak, Malicious patch");
+  assert.equal(byRun.get("2")["run-link"].href, "https://github.com/githubnext/gh-aw-cao/actions/runs/2");
+});
+
+test("detection observations do not claim tooling failure when collection is unavailable", () => {
+  const rows = detectionObservationRows({
+    generatedAt: "2026-09-05T11:00:00Z",
+    securityAvailable: false,
+    securityRuns: [],
+  }, [
+    detectionJob(7),
+  ]);
+
+  assert.equal(rows[0]["detection-state"], "unknown");
+  assert.equal(rows[0]["verdict-available"], "false");
+  assert.equal(rows[0]["usable-verdict-percent"], 0);
+});
+
+test("detection observations retain unavailable telemetry without an observed job", () => {
+  const rows = detectionObservationRows({
+    generatedAt: "2026-09-05T11:00:00Z",
+    securityAvailable: true,
+    securityRuns: [detectionRun(9, null)],
+  });
+
+  assert.equal(rows[0]["detection-state"], "unknown");
+  assert.equal(rows[0]["detection-expected"], "unknown");
+  assert.equal(rows[0]["detection-executed"], "unknown");
+});
+
+test("detection source metadata exposes incomplete evidence", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-05T11:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: false, windowHours: 168 },
+      workflows: [],
+      bundles: [],
+    },
+    usage: {
+      generatedAt: "2026-09-05T11:00:00Z",
+      windowHours: 168,
+      available: true,
+      complete: false,
+      securityAvailable: true,
+      securityComplete: false,
+      runs: [],
+      securityRuns: [],
+    },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-05T11:00:00Z", records: [] },
+  });
+
+  assert.equal(sources["detection-observations"].metadata.completeness, "partial");
+  assert.equal(sources["detection-observations"].metadata["coverage-start"], "2026-08-29T11:00:00.000Z");
+  assert.equal(sources["detection-observations"].metadata["coverage-end"], "2026-09-05T11:00:00Z");
+});
 
 test("dashboard source bridge classifies safe-output performance and diagnostics", () => {
   const sources = buildDashboardLanguageSources({
@@ -617,6 +751,9 @@ test("dashboard source bridge detects rollout mode from run titles with punctuat
     assert.ok(rows.some((row) => row["security-feature"] === "threat-detection"
       && row["security-signal"] === "Prompt injection"
       && row["security-status"] === "detected"));
+    assert.equal(sources["detection-observations"].metadata.completeness, "complete");
+    assert.equal(sources["detection-observations"].rows[0]["detection-state"], "threat");
+    assert.equal(sources["detection-observations"].rows[0]["inspection-warning"], "patch: ERR_VALIDATION");
   });
 
   assert.equal(sources.runs.rows[0]["rollout-mode"], "review");

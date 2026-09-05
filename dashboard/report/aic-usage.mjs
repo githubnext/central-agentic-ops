@@ -13,7 +13,7 @@ function runGhAw(targets, maxRunsPerWorkflow, outputDirectory) {
       "aw", "logs", "--json",
       "--output", outputDirectory, "--summary-file", "",
       "--artifacts", "usage,agent,detection",
-      "--start-date", "-2d", "--cache-before", "-2d",
+      "--start-date", "-7d", "--cache-before", "-7d",
       "--count", String(maxRunsPerWorkflow), "--timeout", "15",
       "--max-github-api-rate-limit", "-2000", "--max-storage", "1024",
       ...targets,

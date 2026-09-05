@@ -22,6 +22,7 @@ const sourceNames = [
   "eval-observations",
   "usage",
   "security-observations",
+  "detection-observations",
   "coverage-diagnostics",
   "repository-coverage",
   "outcomes",
@@ -904,6 +905,112 @@ function securityObservationRows(usage) {
   ]);
 }
 
+const DETECTION_FAILURE_CONCLUSIONS = new Set([
+  "failure", "cancelled", "timed-out", "action-required", "stale", "startup-failure",
+]);
+
+export function deriveDetectionState({ verdictAvailable, threatsDetected, warningCount, jobConclusion, telemetryAvailable = true }) {
+  // Precedence preserves security outcomes independently from job mechanics:
+  // threat > tooling failure > degraded > clean > skipped > unknown.
+  if (verdictAvailable && threatsDetected) return "threat";
+  if (DETECTION_FAILURE_CONCLUSIONS.has(jobConclusion)) return "tooling-failure";
+  if (verdictAvailable && warningCount > 0) return "degraded";
+  if (verdictAvailable) return "clean";
+  if (jobConclusion === "skipped") return "skipped";
+  if (telemetryAvailable && jobConclusion === "success") return "tooling-failure";
+  return "unknown";
+}
+
+function detectionSignal(state, verdict, warningText) {
+  if (state === "threat") {
+    return [
+      verdict.promptInjection && "Prompt injection",
+      verdict.secretLeak && "Secret leak",
+      verdict.maliciousPatch && "Malicious patch",
+    ].filter(Boolean).join(", ");
+  }
+  if (state === "degraded") return warningText || "Inspection warning";
+  if (state === "tooling-failure") return "No usable verdict";
+  if (state === "skipped") return "Detection skipped";
+  if (state === "clean") return "Usable verdict; no threats";
+  return "Detection telemetry unavailable";
+}
+
+export function detectionObservationRows(usage, jobs = []) {
+  const securityRuns = Array.isArray(usage.securityRuns) ? usage.securityRuns : [];
+  const securityByRun = new Map(securityRuns.map((run) => [
+    `${String(run.repository || "").toLowerCase()}:${run.runId}`,
+    run,
+  ]));
+  const detectionJobs = jobs.filter((job) => String(job.job || "").toLowerCase() === "detection");
+  const jobByRun = new Map(detectionJobs.map((job) => [
+    `${String(job.organization || "").toLowerCase()}/${String(job.repository || "").toLowerCase()}:${job.run}`,
+    job,
+  ]));
+  const keys = new Set([...securityByRun.keys(), ...jobByRun.keys()]);
+  return [...keys].map((key) => {
+    const run = securityByRun.get(key);
+    const job = jobByRun.get(key);
+    const verdictAvailable = run?.security?.threatDetection?.available === true;
+    const verdict = run?.security?.threatDetection?.verdict || {};
+    const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
+    const threatsDetected = verdictAvailable && Boolean(
+      verdict.promptInjection || verdict.secretLeak || verdict.maliciousPatch,
+    );
+    const jobConclusion = job?.["job-conclusion"] || "unknown";
+    const state = deriveDetectionState({
+      verdictAvailable,
+      threatsDetected,
+      warningCount: warnings.length,
+      jobConclusion,
+      telemetryAvailable: usage.securityAvailable === true,
+    });
+    const warningText = warnings
+      .map((warning) => [warning.field, warning.code].filter(Boolean).join(": "))
+      .filter(Boolean)
+      .join(", ");
+    const repository = run?.repository || [job?.organization, job?.repository].filter(Boolean).join("/");
+    const runId = String(run?.runId ?? job?.run ?? "");
+    return {
+      ...repositoryParts(repository),
+      workflow: run?.workflowPath?.replace(/\.lock\.yml$/, ".md") || run?.workflowName || job?.workflow || "",
+      run: runId,
+      "observed-at": run?.createdAt || job?.["started-at"] || usage.generatedAt,
+      "run-link": job?.["run-link"] || link("run", workflowRunUrl(repository, runId), `View run ${runId}`),
+      "rollout-mode": rolloutMode(run?.mode || job?.["rollout-mode"]),
+      "detection-expected": job ? "true" : "unknown",
+      "detection-applicable": jobConclusion === "skipped" ? "false" : job ? "true" : "unknown",
+      "detection-executed": jobConclusion === "skipped" ? "false" : (job || verdictAvailable) ? "true" : "unknown",
+      "verdict-available": verdictAvailable ? "true" : "false",
+      "usable-verdict-percent": verdictAvailable ? 100 : 0,
+      "detection-state": state,
+      "detection-state-label": state.split("-").map((part) => `${part[0].toUpperCase()}${part.slice(1)}`).join(" "),
+      "detection-count": 1,
+      "prompt-injection-detected": verdict.promptInjection === true ? "true" : "false",
+      "secret-leak-detected": verdict.secretLeak === true ? "true" : "false",
+      "malicious-patch-detected": verdict.maliciousPatch === true ? "true" : "false",
+      "inspection-warning-count": warnings.length,
+      "inspection-warning": warningText,
+      "detection-signal": detectionSignal(state, verdict, warningText),
+      "attention-priority": {
+        threat: 1,
+        "tooling-failure": 2,
+        degraded: 3,
+        unknown: 4,
+        skipped: 5,
+        clean: 6,
+      }[state],
+      "job-status": job?.["job-status"] || "unknown",
+      "job-conclusion": jobConclusion,
+      "job-duration-seconds": job?.["job-duration-seconds"] ?? null,
+      runner: job?.runner || "unknown",
+      engine: run?.engine || job?.engine || "unknown",
+      "requested-model": run?.requestedModel || "unknown",
+      "resolved-model": run?.resolvedModel || job?.model || "unknown",
+    };
+  });
+}
+
 function recordLink(record, relation) {
   const expectedKind = relation === "issue" ? "issue" : "pull-request";
   return record.kind === expectedKind ? link(relation, record.url, `View ${relation.replaceAll("-", " ")}`) : undefined;
@@ -1197,6 +1304,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const runs = runRows(deployed, usage);
   const admission = admissionRows(deployed);
   const performance = performanceRows(deployed, usage);
+  const detectionObservations = detectionObservationRows(usage, performance.jobs);
   const safeOutputPerformance = safeOutputPerformanceRows(usage);
   const records = report.records || [];
   const workflowRoleForRecord = recordWorkflowRoleResolver(workflows);
@@ -1296,6 +1404,13 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     usage.securityAvailable === true,
     usage.securityComplete === true,
   );
+  sources["detection-observations"] = source(
+    "detection-observations",
+    detectionObservations,
+    generatedAt,
+    usage.securityAvailable === true || detectionObservations.length > 0,
+    usage.securityAvailable === true && usage.securityComplete === true && runComplete,
+  );
   if (Number.isFinite(usage.windowHours) && usage.windowHours > 0) {
     sources.usage.metadata["coverage-end"] = generatedAt;
     sources.usage.metadata["coverage-start"] = new Date(
@@ -1304,6 +1419,10 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     // Usage and security telemetry come from the same gh aw logs collection window.
     sources["safe-output-performance"].metadata["coverage-end"] = generatedAt;
     sources["safe-output-performance"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
+    sources["security-observations"].metadata["coverage-end"] = generatedAt;
+    sources["security-observations"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
+    sources["detection-observations"].metadata["coverage-end"] = generatedAt;
+    sources["detection-observations"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",

@@ -148,7 +148,8 @@ export const FILTER_DIMENSION_VALUES = [
   'finding-severity',
   'security-feature',
   'security-analysis',
-  'security-status'
+  'security-status',
+  'detection-state'
 ];
 
 export const PAGE_KIND_VALUES = ['built-in', 'custom'];
@@ -282,6 +283,7 @@ export const SOURCE_VALUES = [
   'eval-observations',
   'usage',
   'security-observations',
+  'detection-observations',
   'coverage-diagnostics',
   'repository-coverage',
   'runtime-episode-summary',
@@ -355,6 +357,7 @@ export const SOURCE_FIELDS = {
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'security-observations': ['organization', 'repository', 'workflow', 'run', 'security-observation', 'security-feature', 'security-analysis', 'security-signal', 'security-status', 'security-subject', 'security-count', 'observed-at', 'run-link'],
+  'detection-observations': ['organization', 'repository', 'workflow', 'run', 'observed-at', 'run-link', 'rollout-mode', 'detection-expected', 'detection-applicable', 'detection-executed', 'verdict-available', 'usable-verdict-percent', 'detection-state', 'detection-state-label', 'detection-count', 'prompt-injection-detected', 'secret-leak-detected', 'malicious-patch-detected', 'inspection-warning-count', 'inspection-warning', 'detection-signal', 'attention-priority', 'job-status', 'job-conclusion', 'job-duration-seconds', 'runner', 'engine', 'requested-model', 'resolved-model'],
   'coverage-diagnostics': ['kind', 'title', 'effect', 'technical-detail', 'endpoint', 'rate-limit-reset', 'snapshot-age-seconds'],
   'repository-coverage': ['label', 'value'],
   'data-health-summary': ['label', 'value'],
@@ -407,7 +410,8 @@ export const SOURCE_FIELDS = {
   'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link']
 };
 
-export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
+export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'  ,'detection-state'
+];
 export const WORKFLOW_ACTIVE_VALUES = ['true', 'false', 'unknown'];
 export const WORKFLOW_ROLE_VALUES = ['orchestrator', 'worker', 'standalone'];
 export const RUN_STATUS_VALUES = ['queued', 'in-progress', 'completed', 'unknown'];
@@ -448,6 +452,7 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   'eval-observations': ['eval', 'run'],
   usage: ['invocation'],
   'security-observations': ['security-observation'],
+  'detection-observations': ['run'],
   'repository-coverage': ['label'],
   'runtime-episode-summary': ['label'],
   'runtime-episodes': ['run'],

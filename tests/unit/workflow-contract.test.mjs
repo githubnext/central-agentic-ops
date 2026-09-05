@@ -2765,7 +2765,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.equal((deployWorkflow.match(/actions\/deploy-pages@/g) || []).length, 1);
   assert.doesNotMatch(activityWorkflow, /actions\/setup-go|go build|go clean|gh-aw-operational-value/);
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
-  assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
+  assert.match(aicUsage, /"--start-date", "-7d", "--cache-before", "-7d"/);
   assert.match(aicUsage, /"--count", String\(maxRunsPerWorkflow\), "--timeout", "15"/);
   assert.match(aicUsage, /"--max-github-api-rate-limit", "-2000", "--max-storage", "1024"/);
   assert.match(aicUsage, /targets\.push\(`\$\{workflow\.repository\}\/\$\{workflow\.path\}`\)/);
