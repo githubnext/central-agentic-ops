@@ -34,11 +34,13 @@ describe('Copilot dashboard prompt', () => {
     socket.emit({ type: 'status', message: 'Reading the current view…' });
     socket.emit({ type: 'status', message: '' });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'empty-reasoning', content: '' });
+    socket.emit({ type: 'reasoning-delta', reasoningId: 'blank-reasoning', content: '   ' });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'reasoning-1', content: 'The view needs ' });
     socket.emit({ type: 'reasoning-delta', reasoningId: 'reasoning-1', content: 'a clearer trend.' });
     socket.emit({ type: 'reasoning-message', reasoningId: 'reasoning-1', content: 'The view needs a clearer trend.' });
     socket.emit({ type: 'reasoning-message', reasoningId: 'reasoning-2', content: 'A trend card will make the change clearer.' });
     socket.emit({ type: 'assistant-message', content: '' });
+    socket.emit({ type: 'assistant-delta', content: '   ' });
     socket.emit({ type: 'assistant-delta', content: 'Adding ' });
     socket.emit({ type: 'assistant-delta', content: 'a trend.' });
     socket.emit({ type: 'assistant-message', content: 'Added a trend.' });

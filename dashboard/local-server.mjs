@@ -218,6 +218,34 @@ function validateDashboardSource(source) {
   throw new Error(`Dashboard validation failed:\n${formatDashboardValidationErrors(result.errors)}`);
 }
 
+const copilotReadOnlyShellCommands = new Set([
+  "basename",
+  "cat",
+  "cut",
+  "diff",
+  "dirname",
+  "du",
+  "file",
+  "find",
+  "git",
+  "grep",
+  "head",
+  "jq",
+  "ls",
+  "pwd",
+  "readlink",
+  "realpath",
+  "rg",
+  "sed",
+  "sort",
+  "stat",
+  "tail",
+  "tree",
+  "tr",
+  "uniq",
+  "wc",
+]);
+
 function dashboardPageIndex(document, view) {
   return document?.dashboard?.pages?.findIndex((page) =>
     [page?.id, page?.title, page?.["navigation-label"]].includes(view)) ?? -1;
@@ -494,6 +522,15 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         validateDashboardSource(normalized);
         return { candidate, document, pageIndex, normalized };
       };
+      const validateDashboardJson = async () => {
+        const source = await readFile(viewDashboardPath, "utf8");
+        const result = validateDashboardDocument(source);
+        return {
+          ok: result.ok,
+          path: viewDashboardPath,
+          errors: result.ok ? [] : result.errors,
+        };
+      };
       const tools = [
         defineTool("read_dashboard_language_reference", {
           description: "Read the canonical Dashboard Language vocabulary used by the local renderer.",
@@ -559,6 +596,25 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
                 error: error instanceof Error ? error.message : "Dashboard page must be valid JSON.",
               };
             }
+          },
+        }),
+        defineTool("validate_dashboard_json", {
+          description: "Run the existing dashboard validator.js against the selected dashboard.json.",
+          parameters: {
+            type: "object",
+            properties: {},
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async () => {
+            const result = await validateDashboardJson();
+            console.log("Ran dashboard validator for Copilot.", {
+              path: viewDashboardPath,
+              ok: result.ok,
+              errorCount: result.errors.length,
+            });
+            return result;
           },
         }),
         defineTool("save_current_dashboard_view", {
@@ -665,13 +721,14 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             "builtin:skill",
             "builtin:task_complete",
             "builtin:view",
-            "builtin:glob",
-            "builtin:rg",
+            "builtin:edit",
+            "builtin:create",
             "builtin:grep",
             "builtin:bash",
             "custom:read_dashboard_language_reference",
             "custom:read_current_dashboard_view",
             "custom:validate_current_dashboard_view",
+            "custom:validate_dashboard_json",
             "custom:save_current_dashboard_view",
           ],
           tools,
@@ -680,12 +737,17 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
               const requestedPath = await workspacePath(permission.path);
               if (isWithin(workspaceRoot, requestedPath)) return { kind: "approved" };
             }
+            if (permission.kind === "write" && !permission.requestSandboxBypass) {
+              const requestedPath = await workspacePath(permission.fileName);
+              if (isWithin(workspaceRoot, requestedPath)) return { kind: "approved" };
+            }
             if (permission.kind === "shell"
                 && !permission.requestSandboxBypass
                 && !permission.hasWriteFileRedirection
                 && permission.possibleUrls.length === 0
                 && permission.commands.length > 0
-                && permission.commands.every((command) => command.readOnly)) {
+                && permission.commands.every((command) =>
+                  command.readOnly && copilotReadOnlyShellCommands.has(command.identifier))) {
               const possiblePaths = await Promise.all(permission.possiblePaths.map(workspacePath));
               if (possiblePaths.every((path) => isWithin(workspaceRoot, path))) {
                 return { kind: "approved" };
@@ -694,7 +756,7 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             console.log("Denied non-read-only Copilot permission request.", { kind: permission.kind });
             return {
               kind: "reject",
-              feedback: "This session permits workspace reads and read-only shell commands only.",
+              feedback: "This session permits workspace file reads and writes, plus common read-only shell commands.",
             };
           },
           onEvent: handleSessionEvent,
@@ -756,7 +818,7 @@ The original dashboard source most likely defining this view is ${JSON.stringify
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. You may inspect files in the workspace and use read-only shell commands to understand existing data, conventions, and related dashboards. Do not use shell commands or general file tools to modify anything. Use read_dashboard_language_reference when language vocabulary is needed, then use read_current_dashboard_view, validate_current_dashboard_view, and save_current_dashboard_view to inspect, validate, and save the selected page. Run validate_current_dashboard_view until it passes, then use save_current_dashboard_view.
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON dashboard changes are supported. You may inspect files in the workspace, search with grep, and use common read-only shell commands to understand existing data, conventions, and related dashboards. Workspace read and write tools are available, but modify only the selected dashboard.json. Use read_dashboard_language_reference when language vocabulary is needed, then use read_current_dashboard_view and validate_current_dashboard_view to inspect and validate the selected page. Prefer save_current_dashboard_view for the final write, then run validate_dashboard_json. Do not finish until validate_dashboard_json returns ok: true.
 
 JavaScript, HTML, CSS, and all other application files are outside this session's scope. Do not propose or attempt changes to them because they require a full application reload; make the requested improvement only through the selected dashboard.json page.
 

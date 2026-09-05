@@ -215,7 +215,7 @@ export function renderCopilotPrompt(socket) {
     if (streamEvent.type === 'debug' && typeof streamEvent.message === 'string') {
       debugCopilotUpdate(streamEvent.message, streamEvent.details, activeTraceId);
     } else if (streamEvent.type === 'assistant-delta' && typeof streamEvent.content === 'string') {
-      if (!streamEvent.content) return;
+      if (!streamEvent.content.trim() && !assistantContent) return;
       if (!assistantContent) {
         assistantContent = appendAssistantMessage(streamEvent.content);
       } else {
@@ -232,7 +232,7 @@ export function renderCopilotPrompt(socket) {
       debugCopilotMessage('assistant', assistantResponse, activeTraceId);
       assistantContent = null;
     } else if (streamEvent.type === 'reasoning-delta' && typeof streamEvent.content === 'string') {
-      if (!streamEvent.content) return;
+      if (!streamEvent.content.trim() && !reasoningContent) return;
       if (!reasoningContent || activeReasoningId !== streamEvent.reasoningId) {
         reasoningContent = reuseLatestReasoningMessage()
           ?? appendAssistantMessage(streamEvent.content, 'reasoning');
