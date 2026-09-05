@@ -22,17 +22,17 @@ export function clusterScatterPoints(points, maximumClusters = MAX_RENDERED_SCAT
   const limit = Math.max(1, Math.floor(maximumClusters));
   if (points.length <= limit) return points;
 
-  /** @type {Map<string, ScatterPoint[]>} */
+  /** @type {Map<string | null, ScatterPoint[]>} */
   const grouped = new Map();
   for (const point of points) {
-    const key = point.color ?? 'value';
+    const key = point.color;
     const series = grouped.get(key) ?? [];
     series.push(point);
     grouped.set(key, series);
   }
 
   const series = [...grouped.entries()]
-    .sort(([left], [right]) => left.localeCompare(right));
+    .sort(([left], [right]) => (left ?? '').localeCompare(right ?? ''));
   const quotas = allocateClusterQuotas(series.map(([, entries]) => entries.length), limit);
 
   return series.flatMap(([name, entries], seriesIndex) => {
@@ -52,7 +52,7 @@ export function clusterScatterPoints(points, maximumClusters = MAX_RENDERED_SCAT
         key: `scatter-cluster:${seriesIndex}:${clusterIndex}`,
         x: timestamps.length > 0 ? new Date(timestamp).toISOString() : cluster[0].x,
         y: values.length > 0 ? y : cluster[0].y,
-        color: name === 'value' ? null : name,
+        color: name,
         link: null,
         source: { 'cluster-count': cluster.length }
       });
