@@ -4,16 +4,18 @@ import { dashboardHorizonHours, formatDashboardHorizon } from '../horizon.js';
 import { octicon } from '../octicons.js';
 import { renderLabeledControl } from './ui-primitives.js';
 
-/** @typedef {{ filters: string[], ['time-range']?: string }} FilterBarConfig */
+/** @typedef {{ filters: string[] }} FilterBarConfig */
 /** @typedef {{ range: string, start: string, end: string }} TimeWindow */
 const FILTER_DEBOUNCE_MS = 500;
-const TIME_RANGE_OPTIONS = ['1h', '6h', '24h', '3d', '1w', '2w', '4w'];
+const TIME_RANGE_OPTIONS = ['1h', '6h', '24h', '3d', '1w', '2w', '4w', '30d'];
+const MODE_OPTIONS = ['review', 'live', 'unknown'];
 const ALL_RECORDED = 'all';
+export const HORIZON_FILTER_STORAGE_KEY = 'central-agentic-ops.dashboard.horizon-filter-settings';
 
 /**
  * @param {FilterBarConfig} config
  * @param {(filters: Map<string, string[]>, timeWindow?: TimeWindow) => void} onChange
- * @param {{ id?: string, referenceEnd?: string }} [options]
+ * @param {{ defaultRange?: string, referenceEnd?: string }} [options]
  * @returns {HTMLElement}
  */
 export function renderFilterBar(config, onChange, options = {}) {
@@ -23,22 +25,22 @@ export function renderFilterBar(config, onChange, options = {}) {
     'aria-label': 'Current filters',
     spellcheck: 'false'
   }));
-  const count = h('span', { className: 'count-badge' }, String(config.filters.length));
+  const count = h('span', { className: 'count-badge' });
   const applyFilters = debounce(onChange, FILTER_DEBOUNCE_MS);
-  /** @type {ReturnType<typeof renderTimeWindowControl> | null | undefined} */
-  let timeControl;
+  /** @type {ReturnType<typeof renderHorizonControl>} */
+  let horizonControl;
   const emit = () => {
     applyFilters.cancel();
-    onChange(parseFilters(filters.value), timeControl?.value());
+    stripModeTokens();
+    const parsed = parseFilters(filters.value);
+    parsed.set('mode', horizonControl.modes());
+    updateCount(parsed);
+    onChange(parsed, horizonControl.value());
   };
-  timeControl = config['time-range']
-    ? renderTimeWindowControl(config['time-range'], options, emit)
-    : null;
+  horizonControl = renderHorizonControl(options.defaultRange ?? '1w', options.referenceEnd, emit);
   const scopeLabel = h(
-    timeControl ? 'button' : 'span',
-    timeControl
-      ? { type: 'button', className: 'scope-label filter-toggle', 'aria-expanded': 'false' }
-      : { className: 'scope-label' },
+    'button',
+    { type: 'button', className: 'scope-label filter-toggle', 'aria-expanded': 'false' },
     octicon('issue'),
     h('strong', null, 'Filter'),
     count
@@ -53,58 +55,86 @@ export function renderFilterBar(config, onChange, options = {}) {
       filters,
       h('span', { className: 'search-control', 'aria-hidden': 'true' }, octicon('eye'))
     ),
-    timeControl?.element
+    horizonControl.element
   );
-  if (timeControl) {
-    /** @param {boolean} expanded */
-    const setExpanded = (expanded) => {
-      scopeLabel.setAttribute('aria-expanded', String(expanded));
-      root.classList.toggle('time-window-expanded', expanded);
-    };
-    scopeLabel.addEventListener('click', () => {
-      setExpanded(scopeLabel.getAttribute('aria-expanded') !== 'true');
-    });
-    root.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape' || scopeLabel.getAttribute('aria-expanded') !== 'true') return;
-      setExpanded(false);
-      scopeLabel.focus();
-      event.stopPropagation();
-    });
-  }
+  /** @param {boolean} expanded */
+  const setExpanded = (expanded) => {
+    scopeLabel.setAttribute('aria-expanded', String(expanded));
+    root.classList.toggle('time-window-expanded', expanded);
+  };
+  scopeLabel.addEventListener('click', () => {
+    setExpanded(scopeLabel.getAttribute('aria-expanded') !== 'true');
+  });
+  root.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || scopeLabel.getAttribute('aria-expanded') !== 'true') return;
+    setExpanded(false);
+    scopeLabel.focus();
+    event.stopPropagation();
+  });
   filters.addEventListener('input', () => {
+    stripModeTokens();
     const parsed = parseFilters(filters.value);
+    parsed.set('mode', horizonControl.modes());
+    updateCount(parsed);
+    applyFilters(parsed, horizonControl.value());
+  });
+  /** Strips `mode:` / `rollout-mode:` tokens from the freeform filter input, since applied
+   * mode values always come from the horizon control's checkboxes, not this text field. */
+  function stripModeTokens() {
+    const cursor = filters.selectionStart;
+    const nextValue = filters.value
+      .split(/\s+/)
+      .filter((token) => {
+        const separator = token.indexOf(':');
+        const field = separator > 0 ? token.slice(0, separator) : '';
+        return field !== 'mode' && field !== 'rollout-mode';
+      })
+      .join(' ');
+    if (nextValue !== filters.value) {
+      filters.value = nextValue;
+      if (cursor !== null) {
+        const nextCursor = Math.min(cursor, nextValue.length);
+        filters.setSelectionRange(nextCursor, nextCursor);
+      }
+    }
+  }
+  /** @param {Map<string, string[]>} parsed */
+  function updateCount(parsed) {
     const filterCount = [...parsed.values()].reduce((total, values) => total + values.length, 0);
     count.textContent = String(filterCount);
     count.setAttribute('aria-label', `${filterCount} filters`);
-    applyFilters(parsed, timeControl?.value());
-  });
-  count.setAttribute('aria-label', `${config.filters.length} filters`);
+  }
+  const initialFilters = parseFilters(filters.value);
+  initialFilters.set('mode', horizonControl.modes());
+  updateCount(initialFilters);
   queueMicrotask(emit);
   return root;
 }
 
 /**
  * @param {string} defaultRange
- * @param {{ id?: string, referenceEnd?: string }} options
+ * @param {string | undefined} referenceEnd
  * @param {() => void} onChange
  */
-function renderTimeWindowControl(defaultRange, options, onChange) {
-  const window = globalThis.window;
-  const prefix = options.id ? `${options.id}.` : '';
-  const parameters = new URLSearchParams(window?.location.search ?? '');
-  const persistedRange = parameters.get(`${prefix}window`);
-  let range = persistedRange === 'custom' || persistedRange === ALL_RECORDED || TIME_RANGE_OPTIONS.includes(persistedRange ?? '')
-    ? /** @type {string} */ (persistedRange)
-    : defaultRange;
+function renderHorizonControl(defaultRange, referenceEnd, onChange) {
+  const persisted = readHorizonSettings();
+  let range = typeof persisted.range === 'string' ? persisted.range : defaultRange;
   if (range === 'All recorded') range = ALL_RECORDED;
   if (!TIME_RANGE_OPTIONS.includes(range) && range !== 'custom' && range !== ALL_RECORDED) range = '1w';
   const initialWindow = relativeTimeWindow(
     range === 'custom' || range === ALL_RECORDED ? defaultRange : range,
-    options.referenceEnd
+    referenceEnd
   );
-  const persistedStart = parameters.get(`${prefix}start`);
-  const persistedEnd = parameters.get(`${prefix}end`);
+  const persistedStart = typeof persisted.start === 'string' ? persisted.start : null;
+  const persistedEnd = typeof persisted.end === 'string' ? persisted.end : null;
   if (range === 'custom' && !validTimeWindow(persistedStart, persistedEnd)) range = defaultRange;
+  let persistedModes = MODE_OPTIONS;
+  if (Array.isArray(persisted.modes)) {
+    const validModes = [...new Set(persisted.modes.filter((mode) => MODE_OPTIONS.includes(mode)))];
+    if (validModes.length > 0 || persisted.modes.length === 0) {
+      persistedModes = validModes;
+    }
+  }
 
   const select = /** @type {HTMLSelectElement} */ (h(
     'select',
@@ -125,32 +155,37 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
     value: localDateTimeValue(range === 'custom' ? persistedEnd : initialWindow.end)
   }));
   const applyCustomRange = h('button', { type: 'button' }, 'Apply');
+  const modeInputs = MODE_OPTIONS.map((mode) => /** @type {HTMLInputElement} */ (h('input', {
+    type: 'checkbox',
+    value: mode,
+    checked: persistedModes.includes(mode)
+  })));
 
   const value = () => {
     if (select.value === ALL_RECORDED) return undefined;
-    if (select.value !== 'custom') return relativeTimeWindow(select.value, options.referenceEnd);
+    if (select.value !== 'custom') return relativeTimeWindow(select.value, referenceEnd);
     const customStart = isoDateTimeValue(start.value);
     const customEnd = isoDateTimeValue(end.value);
     return validTimeWindow(customStart, customEnd)
       ? { range: 'custom', start: customStart, end: customEnd }
       : undefined;
   };
-  const syncUrl = () => {
-    if (!window || !options.id || !['http:', 'https:'].includes(window.location.protocol)) return;
-    const current = new URLSearchParams(window.location.search);
-    current.set(`${prefix}window`, select.value);
+  const modes = () => modeInputs.filter((input) => input.checked).map((input) => input.value);
+  const persist = () => {
+    /** @type {{ range: string, modes: string[], start?: string, end?: string }} */
+    const settings = { range: select.value, modes: modes() };
     if (select.value === 'custom') {
       const selected = value();
       if (selected) {
-        current.set(`${prefix}start`, selected.start);
-        current.set(`${prefix}end`, selected.end);
+        settings.start = selected.start;
+        settings.end = selected.end;
       }
-    } else {
-      current.delete(`${prefix}start`);
-      current.delete(`${prefix}end`);
     }
-    const query = current.toString();
-    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+    try {
+      globalThis.localStorage?.setItem(HORIZON_FILTER_STORAGE_KEY, JSON.stringify(settings));
+    } catch {
+      // The filters still work for the current page when storage is unavailable.
+    }
   };
   const updateValidity = () => {
     const invalid = select.value === 'custom' && !value();
@@ -160,12 +195,12 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
   };
   select.addEventListener('change', () => {
     if (select.value !== 'custom') {
-      const selected = relativeTimeWindow(select.value, options.referenceEnd);
+      const selected = relativeTimeWindow(select.value, referenceEnd);
       start.value = localDateTimeValue(selected.start);
       end.value = localDateTimeValue(selected.end);
     }
     updateValidity();
-    syncUrl();
+    persist();
     onChange();
   });
   for (const input of [start, end]) {
@@ -177,21 +212,44 @@ function renderTimeWindowControl(defaultRange, options, onChange) {
   applyCustomRange.addEventListener('click', () => {
     select.value = 'custom';
     if (!updateValidity()) return;
-    syncUrl();
+    persist();
     onChange();
   });
+  for (const input of modeInputs) {
+    input.addEventListener('change', () => {
+      persist();
+      onChange();
+    });
+  }
 
   return {
     element: h(
       'div',
       { className: 'time-window-control', 'aria-label': 'Evidence window' },
       renderLabeledControl('Window', select, { prefix: octicon('clock') }),
+      h(
+        'fieldset',
+        { className: 'mode-filter-control' },
+        h('legend', null, 'Modes'),
+        ...modeInputs.map((input, index) => h('label', null, input, MODE_OPTIONS[index]))
+      ),
       renderLabeledControl('Start', start),
       renderLabeledControl('Stop', end),
       applyCustomRange
     ),
-    value
+    value,
+    modes
   };
+}
+
+/** @returns {{ range?: unknown, modes?: unknown, start?: unknown, end?: unknown }} */
+function readHorizonSettings() {
+  try {
+    const value = JSON.parse(globalThis.localStorage?.getItem(HORIZON_FILTER_STORAGE_KEY) ?? 'null');
+    return value && typeof value === 'object' ? value : {};
+  } catch {
+    return {};
+  }
 }
 
 /** @param {string} range @param {string | undefined} referenceEnd @returns {TimeWindow} */

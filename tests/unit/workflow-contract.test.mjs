@@ -763,7 +763,7 @@ test("repository PR automation remains bounded and adapted to CAO", () => {
   assert.match(mattReviewer, /reaction: none/);
 
   assert.match(decisionGate, /types: \[opened, reopened, synchronize, labeled, ready_for_review\]/);
-  assert.match(decisionGate, /allowed-files:\n\s+- "docs\/adr\/\*\*"/);
+  assert.match(decisionGate, /allowed-files:\n\s+- "adr\/\*\*"/);
   for (const section of ["Context", "Decision", "Alternatives Considered", "Consequences"]) {
     assert.match(decisionGate, new RegExp(`\`${section}\``));
   }

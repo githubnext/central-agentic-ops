@@ -249,8 +249,8 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
 
   const readinessPage = page.locator('[data-page-id="readiness"]');
   await expect(readinessPage).toBeVisible();
-  await expect(readinessPage.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('mode:review mode:live');
-  await expect(readinessPage.locator('.filter-bar .count-badge')).toHaveText('2');
+  await expect(readinessPage.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('');
+  await expect(readinessPage.locator('.filter-bar .count-badge')).toHaveText('3');
   const readinessNavigation = page.locator('[data-nav-page-id="readiness"]');
   await expect(readinessNavigation).toHaveAttribute('aria-current', 'page');
   await expect(readinessNavigation.locator('svg')).toHaveCount(1);
@@ -291,6 +291,9 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await expect(windowStop).toHaveValue(localStop);
   await readinessPage.getByRole('button', { name: 'Apply' }).click();
   await expect(readinessPage.locator('[aria-label="Time window"]')).toHaveValue('custom');
+  await expect.poll(() => page.evaluate(() => JSON.parse(
+    localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings') ?? '{}'
+  ).range)).toBe('custom');
   await expect(readinessPage).toContainText('Ready to ship');
   await expect(readinessPage).toContainText('1 completed runs observed');
   await expect(readinessPage).not.toContainText('Smoke regression');
@@ -1544,10 +1547,7 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
             id: 'cost',
             kind: 'custom',
             title: 'Cost & efficiency',
-            'filter-bar': {
-              filters: ['mode:review', 'mode:live'],
-              'time-range': 'All recorded'
-            },
+            'filter-bar': { filters: [] },
             views: [{
               id: 'usage-count',
               data: { source: 'usage' },
@@ -1585,18 +1585,23 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect(filterBar.locator('.filter-control > .dashboard-horizon')).toHaveCount(1);
   await expect(page.locator('.report-actions > .dashboard-horizon')).toHaveCount(0);
   const filterInput = filterBar.getByRole('searchbox', { name: 'Current filters' });
-  await expect(filterInput).toHaveValue('mode:review mode:live');
+  await expect(filterInput).toHaveValue('');
   await expect(filterBar.locator('.time-window-control')).toBeHidden();
   await filterBar.getByRole('button', { name: /Filter/ }).click();
-  await expect(filterBar.getByRole('combobox', { name: 'Time window' })).toHaveValue('all');
+  await expect(filterBar.getByRole('combobox', { name: 'Time window' })).toHaveValue('1w');
+  await expect(filterBar.getByRole('checkbox')).toHaveCount(3);
+  expect(await filterBar.getByRole('checkbox').evaluateAll(
+    (inputs) => inputs.every((input) => /** @type {HTMLInputElement} */ (input).checked)
+  )).toBe(true);
   await expect(filterBar.getByRole('link', { name: 'Export JSON' })).toHaveCount(0);
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
 
-  await filterInput.fill('mode:live');
-  await expect(filterBar.locator('.count-badge')).toHaveText('1');
-  await page.waitForTimeout(200);
-  await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
+  await filterBar.getByRole('checkbox', { name: 'review' }).uncheck();
+  await expect(filterBar.locator('.count-badge')).toHaveText('2');
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('1');
+  await expect.poll(() => page.evaluate(() => JSON.parse(
+    localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings') ?? '{}'
+  ).modes)).toEqual(['live', 'unknown']);
   await filterBar.getByRole('button', { name: /Filter/ }).click();
 
   await page.setViewportSize({ width: 400, height: 900 });
@@ -2783,7 +2788,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             title: 'Outcome',
             description: 'Outcome details.',
             route: { 'hash-query-parameter': 'outcome' },
-            'filter-bar': { filters: ['mode:review', 'mode:live'] },
+            'filter-bar': { filters: [] },
             views: [{
               id: 'outcome-record',
               title: 'Outcome',
@@ -2828,7 +2833,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
   await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
   await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
-  await expect(page.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('mode:review mode:live');
+  await expect(page.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');
   await expect(page.locator('.outcome-meta')).toContainText('Live');

@@ -965,16 +965,16 @@ describe('presenter built-in and custom pages', () => {
 
     for (const pageId of ['runtime', 'security', 'firewall', 'operational-value']) {
       const filterBar = (await activatePage(rendered, pageId))?.querySelector('.filter-bar');
-      const expectedFilters = pageId === 'firewall'
-        ? 'mode:review mode:live mode:unknown'
-        : 'mode:review mode:live';
-      expect(filterBar?.querySelector('input')?.value).toBe(expectedFilters);
+      expect(filterBar?.querySelector('input')?.value).toBe('');
+      expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('3');
+      expect([...filterBar?.querySelectorAll('.mode-filter-control input') ?? []].every(
+        (input) => /** @type {HTMLInputElement} */ (input).checked
+      )).toBe(true);
       const filterControl = filterBar?.querySelector('.filter-control');
       const horizon = rendered.querySelector('.dashboard-horizon');
       expect(filterControl).not.toBeNull();
       expect(horizon).not.toBeNull();
       expect(filterControl?.contains(horizon)).toBe(true);
-      expect(filterBar?.querySelector('.count-badge')?.textContent).toBe(pageId === 'firewall' ? '3' : '2');
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
       expect(filterBar?.querySelector('.export-control')).toBeNull();
     }

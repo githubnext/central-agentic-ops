@@ -183,8 +183,7 @@ describe('GitHub API rate-limit dashboard', () => {
       title: 'GitHub API Rate Limits',
       icon: 'meter',
       'filter-bar': {
-        filters: ['phase:after'],
-        'time-range': '24h'
+        filters: ['phase:after']
       }
     });
     expect(apiPage.views.filter((/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential')).toHaveLength(4);

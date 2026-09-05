@@ -803,9 +803,8 @@ dashboard:
     const invalidTokens = JSON.parse(authoritativeDashboardSource);
     const costPage = invalidTokens.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
     costPage['filter-bar'] = {
-      filters: ['mode:review', 'mode:review', 'invalid token'],
-      'time-range': '',
-      export: true,
+      filters: ['mode:review', 'phase:after', 'phase:after', 'invalid token'],
+      'time-range': '24h',
       unknown: true
     };
 
@@ -813,21 +812,22 @@ dashboard:
     expect(rejected.ok).toBe(false);
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[3].filter-bar.filters[0]',
+        message: 'rollout modes are global client settings and must not be declared by a page.'
+      }));
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[3].filter-bar.filters[1]',
+        path: '$.dashboard.pages[3].filter-bar.filters[2]',
         message: 'filter-bar filters must be unique.'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
-        path: '$.dashboard.pages[3].filter-bar.filters[2]'
-      }));
-      expect(rejected.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E003',
-        path: '$.dashboard.pages[3].filter-bar.time-range'
+        path: '$.dashboard.pages[3].filter-bar.filters[3]'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
-        path: '$.dashboard.pages[3].filter-bar.export'
+        path: '$.dashboard.pages[3].filter-bar.time-range'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',

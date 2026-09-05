@@ -842,10 +842,10 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
   }
 
   validateObjectKeys(filterBarNode, PAGE_FILTER_BAR_KEYS, path, errors);
-  if (!Array.isArray(filterBar.filters) || filterBar.filters.length === 0) {
+  if (!Array.isArray(filterBar.filters)) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
-      'filter-bar filters must be a non-empty sequence of filter tokens.',
+      'filter-bar filters must be a sequence of filter tokens.',
       `${path}.filters`
     ));
   } else {
@@ -856,6 +856,12 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
         errors.push(createError(
           ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
           'filter-bar filters must use canonical field:value tokens.',
+          filterPath
+        ));
+      } else if (filter.startsWith('mode:') || filter.startsWith('rollout-mode:')) {
+        errors.push(createError(
+          ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+          'rollout modes are global client settings and must not be declared by a page.',
           filterPath
         ));
       } else if (seen.has(filter)) {
@@ -870,9 +876,6 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
     });
   }
 
-  if (filterBar['time-range'] !== undefined) {
-    validateStringField(filterBar['time-range'], `${path}.time-range`, true, errors);
-  }
 }
 
 /**

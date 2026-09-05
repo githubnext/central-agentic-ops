@@ -40,7 +40,7 @@ import { dashboardHorizonHours, formatDashboardHorizon, formatDashboardHorizonHo
  */
 
 /**
- * @typedef {{ filters: string[], ['time-range']?: string }} PresentableFilterBar
+ * @typedef {{ filters: string[] }} PresentableFilterBar
  */
 
 /**
@@ -860,7 +860,9 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
       };
       result.then(apply).catch(() => {});
     }, {
-      id: page.id,
+      defaultRange: isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.range === 'string'
+        ? dashboardDefaults.time.range
+        : '1w',
       referenceEnd: latestSourceCoverageEnd(page.id === 'readiness'
         ? [sources.runs, sources.findings, sources.outcomes]
         : [...pageSources.values()])
