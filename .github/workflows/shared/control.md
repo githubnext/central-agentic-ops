@@ -50,7 +50,7 @@ jobs:
           CAO_GITHUB_APP_ID: ${{ vars.GH_AW_GITHUB_READ_APP_ID }}
           CAO_GITHUB_APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
         if: ${{ env.CAO_GITHUB_APP_ID != '' && env.CAO_GITHUB_APP_PRIVATE_KEY != '' }}
-        uses: actions/create-github-app-token@v3.2.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.GH_AW_GITHUB_READ_APP_ID }}
           private-key: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
@@ -110,7 +110,7 @@ jobs:
         id: cao_admission_gate_writer_token
         if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-insufficient' && steps.cao_admission.outputs.github_api_gate_active != 'true' }}
         continue-on-error: true
-        uses: actions/create-github-app-token@v3.2.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.GH_AW_GITHUB_WRITE_APP_ID }}
           private-key: ${{ secrets.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY }}
@@ -164,7 +164,7 @@ jobs:
 
       - name: Install gh-aw CLI when monthly budget is enabled
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
-        uses: github/gh-aw-actions/setup-cli@v0.88.4
+        uses: github/gh-aw-actions/setup-cli@23e16337f3568b3c18bb04a976793f282a016755 # v0.88.4
         with:
           version: v0.88.4
 
@@ -193,7 +193,7 @@ jobs:
         id: cao_precompute_gate_writer_token
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' && steps.cao_precompute.outputs.github_api_gate_active != 'true' }}
         continue-on-error: true
-        uses: actions/create-github-app-token@v3.2.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.GH_AW_GITHUB_WRITE_APP_ID }}
           private-key: ${{ secrets.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY }}
@@ -249,7 +249,7 @@ jobs:
 
       - name: Upload CAO control precompute artifact
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cao-control-precompute
           path: /tmp/gh-aw/agent/control-precompute.json
