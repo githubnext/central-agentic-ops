@@ -210,6 +210,7 @@ describe('dashboard document validation', () => {
     const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');
     const runsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-table');
     const detailsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-run-details');
+    const runsPageIndex = document.dashboard.pages.indexOf(runsPage);
     expect(runsView).toMatchObject({
       description: expect.any(String),
       controls: 'static',
@@ -269,7 +270,7 @@ describe('dashboard document validation', () => {
     if (!invalidContext.ok) {
       expect(invalidContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[10].views[3].encoding.actions[0].context[9]'
+        path: `$.dashboard.pages[${runsPageIndex}].views[3].encoding.actions[0].context[9]`
       }));
     }
     detailsView.encoding.actions[0].context.pop();
@@ -280,7 +281,7 @@ describe('dashboard document validation', () => {
     if (!duplicateContext.ok) {
       expect(duplicateContext.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[9].views[3].encoding.actions[0].context[9]'
+        path: `$.dashboard.pages[${runsPageIndex}].views[3].encoding.actions[0].context[9]`
       }));
     }
     detailsView.encoding.actions[0].context.pop();
@@ -291,7 +292,7 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[9].views[3].encoding.actions[0].when.field'
+        path: `$.dashboard.pages[${runsPageIndex}].views[3].encoding.actions[0].when.field`
       }));
     }
   });
