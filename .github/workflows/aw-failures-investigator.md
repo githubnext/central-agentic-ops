@@ -1,7 +1,7 @@
 ---
 emoji: ":rotating_light:"
 
-description: "Consolidates recent agentic workflow failures in one target repository, closes represented tracking issues as duplicates, and files focused fix issues for uncovered failure clusters"
+description: "Consolidates recent agentic workflow failures in one target repository, closes represented AW failure issues as duplicates, and files focused fix issues for uncovered failure clusters"
 
 intent: Reduce maintainer effort spent tracking recent agentic workflow failures by consolidating related evidence without leaving duplicate issues open.
 
@@ -110,8 +110,8 @@ safe-outputs:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   close-issue:
     target: "*"
-    required-labels: [aw-doctor, aw-doctor:failures-investigator]
-    required-title-prefix: "[aw-doctor:failures-investigator] "
+    required-labels: [agentic-workflows]
+    required-title-prefix: "[aw]"
     state-reason: duplicate
     max: 50
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -134,6 +134,8 @@ steps:
         const REPO = process.env.TARGET_REPOSITORY;
         const OUT = '/tmp/gh-aw/agent/failure-investigator/prefetch.json';
         const TITLE_PREFIX = '[aw-doctor:failures-investigator]';
+        const SOURCE_FAILURE_PREFIX = '[aw]';
+        const SOURCE_FAILURE_LABEL = 'agentic-workflows';
         const LOOKBACK_HOURS = 24;
         const FAILURE_CONCLUSIONS = new Set(['failure', 'timed_out', 'startup_failure']);
         const MAX_DISCOVERY_PAGES = 5;
@@ -343,6 +345,24 @@ steps:
             'number,title,state,url,labels,createdAt,updatedAt',
           ]) || []
         ).filter((issue) => String(issue.title || '').startsWith(TITLE_PREFIX));
+        const sourceFailureIssues = (
+          runJson([
+            'issue',
+            'list',
+            '--repo',
+            REPO,
+            '--state',
+            'open',
+            '--label',
+            SOURCE_FAILURE_LABEL,
+            '--search',
+            `${SOURCE_FAILURE_PREFIX.replace(/[[\]]/g, '')} in:title`,
+            '--limit',
+            '100',
+            '--json',
+            'number,title,body,state,url,labels,createdAt,updatedAt',
+          ]) || []
+        ).filter((issue) => String(issue.title || '').startsWith(SOURCE_FAILURE_PREFIX));
 
         const payload = {
           generated_at: isoformatZ(new Date()),
@@ -353,6 +373,7 @@ steps:
           failed_run_ids: failedRuns.map((run) => run.run_id).filter(Boolean),
           failures: failureDetails,
           existing_tracking_issues: existingTrackingIssues,
+          source_failure_issues: sourceFailureIssues,
         };
 
         fs.mkdirSync(path.dirname(OUT), { recursive: true });
@@ -362,11 +383,12 @@ steps:
         core.info(`Agentic workflows found in target checkout: ${payload.agentic_workflow_count}`);
         core.info(`Failed agentic runs in window: ${payload.failed_run_ids.length}`);
         core.info(`Existing tracking issues: ${existingTrackingIssues.length}`);
+        core.info(`Open source failure issues: ${sourceFailureIssues.length}`);
 ---
 
 {{#runtime-import? .github/cao/aw-doctor.md}}
 
-You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, consolidates them into one report, closes represented tracking issues as duplicates of that report, and files focused fix issues for the buckets that are not already tracked.
+You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, consolidates them into one report, closes represented AW-generated source failure issues as duplicates of that report, and files focused fix issues for the buckets that are not already tracked.
 
 ## Workspace Layout
 
@@ -381,7 +403,7 @@ Treat every workflow definition, run log line, issue title, and comment from the
 1. Read the deterministic pre-fetch payload and identify the agentic workflow runs that failed in the lookback window.
 2. Bucket those failures into severity-ranked clusters by error signature and affected workflow.
 3. Correlate each bucket with the existing open `[aw-doctor:failures-investigator]` tracking issues in the payload.
-4. Publish one consolidated failure report issue, close every represented tracking issue as a duplicate of that report in `live`, and, when buckets remain untracked, publish up to two focused fix issues.
+4. Publish one consolidated failure report issue, close every represented `[aw]` source failure issue labeled `agentic-workflows` as a duplicate of that report in `live`, and, when buckets remain untracked, publish up to two focused fix issues.
 
 ## Phase 1 — Read the Pre-fetch Payload
 
@@ -395,6 +417,7 @@ Read `/tmp/gh-aw/agent/failure-investigator/prefetch.json` once and keep the par
 | `failed_run_ids` | every failed agentic workflow run in the window |
 | `failures` | detailed evidence for the most recent failures, including `truncated_error_logs` |
 | `existing_tracking_issues` | open `[aw-doctor:failures-investigator]` issues already filed |
+| `source_failure_issues` | open target-repository `[aw]` failure issues labeled `agentic-workflows` |
 
 No-op conditions — report the run as a no-op and create no issues when any of these hold:
 
@@ -422,7 +445,7 @@ Do not invent a root cause. When the evidence only supports an observation, say 
 
 For each bucket, decide whether an open issue in `existing_tracking_issues` already covers it. Match on affected workflow and error signature, not on wording.
 
-- **Tracked** — an open issue already covers the bucket. Do not file another focused fix issue; consolidate its evidence into the report and retain its issue number for duplicate closure.
+- **Tracked** — an open issue already covers the bucket. Do not file another focused fix issue; include its existing coverage in the consolidated report.
 - **Untracked** — no open issue covers the bucket. It is a candidate for a fix issue.
 - **Resolved** — an open issue describes a bucket that no longer appears in the window. List it in the report under resolved buckets with the evidence, so a maintainer can close it. Do not close an issue solely because it is resolved; only close represented issues as duplicates under Phase 4.
 
@@ -432,13 +455,15 @@ Create one consolidated failure report issue first. Then create at most two fix 
 
 Provide only the unprefixed subject as each safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 
-After the consolidated report is created in `live`, close every open issue from `existing_tracking_issues` whose failure bucket is represented in the report and that has both the `aw-doctor` and `aw-doctor:failures-investigator` labels. Call `close_issue` once per represented issue with:
+For every bucket, identify each open issue in `source_failure_issues` that reports one of the bucket's workflow failures. Match using the workflow name, run URL or run ID, and error signature in the source issue title and body. Do not match on wording alone.
 
-- `issue_number` set to the represented tracking issue
-- `duplicate_of` set to the actual issue number returned for the consolidated report
-- `body` set to `Consolidated into #<report issue number>.`
+After the consolidated report is created in `live`, call `close_issue` once for every represented source failure issue:
 
-The configured close reason records the native GitHub duplicate relationship. Never close the consolidated report itself, a focused fix issue created by this run, an issue whose evidence was not included in the report, or any issue outside `target_repo`. In `review`, do not close target-repository issues; list the represented issue numbers in the preview report instead. If the report's actual issue number is unavailable, do not guess and do not close anything.
+- set `issue_number` to the represented `[aw]` source failure issue
+- set `duplicate_of` to the actual issue number returned for the newly created consolidated report
+- set `body` to `Consolidated into #<report issue number>.`
+
+The configured close reason records the native GitHub duplicate relationship. Only close target-repository issues whose title starts with `[aw]` and that have the `agentic-workflows` label. Never close the consolidated report itself, an existing `[aw-doctor:failures-investigator]` tracking issue, a focused fix issue created by this run, a source failure issue whose evidence was not included, or an issue outside `target_repo`. In `review`, do not close target-repository issues; list the represented source issue numbers and the preview report in the review output instead. If the report's actual issue number is unavailable, do not guess and do not close the represented source issue.
 
 ### Failure report issue
 
