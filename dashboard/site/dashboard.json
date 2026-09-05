@@ -5293,7 +5293,6 @@
             "id": "admission-decision-distribution",
             "title": "Admission decisions",
             "description": "Authorized and denied pre-activation evaluations show whether control-plane work is clearing its safety boundary.",
-            "intent": "See the current distribution of authorized and denied control-plane admission decisions.",
             "data": {
               "source": "admissions"
             },
@@ -5319,7 +5318,6 @@
             "id": "admission-decision-trend",
             "title": "Admission trend",
             "description": "Daily decisions reveal changes in authorization behavior across orchestrators and workers.",
-            "intent": "Detect changes in authorized and denied admission volume over time.",
             "data": {
               "source": "admissions"
             },
@@ -5351,7 +5349,6 @@
             "id": "admission-failed-gates",
             "title": "Denied by gate",
             "description": "Failed gate counts identify which pre-activation checks most often prevent execution.",
-            "intent": "Prioritize remediation using the admission gates responsible for denied runs.",
             "data": {
               "source": "admission-checks",
               "filters": {
@@ -5387,13 +5384,14 @@
             "id": "admission-decision-ledger",
             "title": "Admission evidence",
             "description": "Latest structured pre-activation records preserve the decision, failing gate, reason, role, and run provenance.",
-            "intent": "Inspect and open the exact run behind each admission decision.",
             "data": {
               "source": "admissions",
-              "order-by": {
-                "field": "observed-at",
-                "direction": "desc"
-              },
+              "order-by": [
+                {
+                  "field": "observed-at",
+                  "direction": "desc"
+                }
+              ],
               "limit": 100
             },
             "mark": "table",
