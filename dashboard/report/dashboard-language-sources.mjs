@@ -1015,6 +1015,9 @@ export function detectionObservationRows(usage, jobs = []) {
       "requested-model": run?.requestedModel || "unknown",
       "resolved-model": run?.resolvedModel || job?.model || "unknown",
     };
+  });
+}
+
 function mcpBase(run) {
   return {
     ...repositoryParts(run.repository),

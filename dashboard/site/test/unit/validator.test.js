@@ -230,7 +230,6 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('defines detection health, findings, attention, and supporting reliability views', () => {
   it('defines MCP diagnostics in a dedicated Explore page', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const mcps = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'mcps');
