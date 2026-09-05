@@ -115,7 +115,7 @@ safe-outputs:
     max-uploads: 1
     retention-days: 14
     allowed-paths:
-      - "/tmp/gh-aw/agent/self-care-dashboard-performance/**"
+      - "self-care-dashboard-performance-evidence/**"
     defaults:
       if-no-files: ignore
   noop:
@@ -136,7 +136,7 @@ pre-agent-steps:
     if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: |
       set +e
-      evidence_root=/tmp/gh-aw/agent/self-care-dashboard-performance
+      evidence_root="$GITHUB_WORKSPACE/self-care-dashboard-performance-evidence"
       mkdir -p "$evidence_root"
       DASHBOARD_PERFORMANCE_OUTPUT_DIR="$evidence_root/before" \
         npm --prefix dashboard/site run test:performance
@@ -156,7 +156,7 @@ Improve exactly one dashboard performance bottleneck evidenced by the determinis
 
 ## Evidence and candidate selection
 
-1. Read `AGENTS.md`, `.github/aw/instructions.md`, `dashboard/site/README.md`, `dashboard/site/package.json`, `/tmp/gh-aw/agent/self-care-dashboard-performance/baseline-exit-code`, and every `before/summary.json` and `before/*/lighthouse.report.json` file that exists. Treat the Lighthouse reports and saved trace files as measurement evidence, not as permission to change files.
+1. Read `AGENTS.md`, `.github/aw/instructions.md`, `dashboard/site/README.md`, `dashboard/site/package.json`, `${{ github.workspace }}/self-care-dashboard-performance-evidence/baseline-exit-code`, and every `before/summary.json` and `before/*/lighthouse.report.json` file that exists under `${{ github.workspace }}/self-care-dashboard-performance-evidence/`. Treat the Lighthouse reports and saved trace files as measurement evidence, not as permission to change files.
 2. If the baseline produced no complete summary for all three personas, upload any collected evidence, call `noop` with the exact blocker, and stop.
 3. Build a bounded candidate list from Lighthouse audits below score `1`, estimated savings, Core Web Vitals, long tasks, main-thread work, render-blocking resources, unused bytes, and repeated costs visible in the traces. Require a concrete source-level cause inside the allowed file boundary. Ignore network noise, runner startup, Lighthouse simulation artifacts, and issues that require changing data acquisition, Dashboard Language documents, dependencies, CI, or the performance harness.
 4. Read at most the 20 most recent pull requests created by this workflow. Do not repeat an open change or a previously rejected proposal unless new trace evidence proves a materially different cause.
@@ -179,13 +179,13 @@ After every complete evaluation, including a no-op, advance `cursor` to the posi
 
 ## Validation and output
 
-Collect after-change evidence into `/tmp/gh-aw/agent/self-care-dashboard-performance/after` with:
+Collect after-change evidence into `${{ github.workspace }}/self-care-dashboard-performance-evidence/after` with:
 
-`DASHBOARD_PERFORMANCE_OUTPUT_DIR=/tmp/gh-aw/agent/self-care-dashboard-performance/after npm --prefix dashboard/site run test:performance`
+`DASHBOARD_PERFORMANCE_OUTPUT_DIR=${{ github.workspace }}/self-care-dashboard-performance-evidence/after npm --prefix dashboard/site run test:performance`
 
 Require the selected metric or audit to improve, the performance budget suite to pass, and no persona score to regress by more than 0.02. Then run, from `dashboard/site`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`. Review the final diff and scan changed files for secrets.
 
-Call `upload_artifact` once with name `self-care-dashboard-performance-${{ github.run_id }}` and path `/tmp/gh-aw/agent/self-care-dashboard-performance` before the final result whenever evidence files exist.
+Call `upload_artifact` once with name `self-care-dashboard-performance-${{ github.run_id }}` and path `${{ github.workspace }}/self-care-dashboard-performance-evidence` before the final result whenever evidence files exist.
 
 If the selected source-level fix is focused, before/after evidence proves improvement, and every validation passes, call `create_pull_request` exactly once. Provide only the unprefixed subject; the configured `title-prefix` is added automatically, so do not repeat it or add a semantically equivalent category prefix. Begin the body directly with a concise executive summary, then state `**Action:** Review and merge this draft after confirming the named metric and all three persona budgets in CI.` Keep critical evidence visible, put verbose Lighthouse and trace detail in `<details>`, and include a `### Control Plane` section with correlation ID `${{ inputs.correlation_id }}`, central repository `${{ inputs.central_repo }}`, and control plane run `${{ inputs.control_plane_run_url }}`.
 
