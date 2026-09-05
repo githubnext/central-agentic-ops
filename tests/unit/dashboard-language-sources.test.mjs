@@ -2,6 +2,22 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDashboardLanguageSources } from "../../dashboard/report/dashboard-language-sources.mjs";
 
+test("dashboard source bridge declares work-oriented sources unavailable without authoritative telemetry", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
+    usage: {},
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-05T12:00:00Z", records: [] },
+  });
+
+  for (const sourceName of ["work-items", "attention-signals", "agent-assignments", "evidence-records"]) {
+    assert.deepEqual(sources[sourceName].rows, []);
+    assert.equal(sources[sourceName].metadata.availability, "unavailable");
+    assert.equal(sources[sourceName].metadata.completeness, "partial");
+    assert.equal(sources[sourceName].metadata.freshness, "unknown");
+  }
+});
+
 test("dashboard source bridge classifies safe-output performance and diagnostics", () => {
   const sources = buildDashboardLanguageSources({
     deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
