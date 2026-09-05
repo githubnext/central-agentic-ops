@@ -432,7 +432,7 @@ Create one consolidated failure report issue first. Then create at most two fix 
 
 Provide only the unprefixed subject as each safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 
-After the consolidated report is created in `live`, close every open issue from `existing_tracking_issues` whose failure bucket is represented in the report. Call `close_issue` once per represented issue with:
+After the consolidated report is created in `live`, close every open issue from `existing_tracking_issues` whose failure bucket is represented in the report and that has both the `aw-doctor` and `aw-doctor:failures-investigator` labels. Call `close_issue` once per represented issue with:
 
 - `issue_number` set to the represented tracking issue
 - `duplicate_of` set to the actual issue number returned for the consolidated report

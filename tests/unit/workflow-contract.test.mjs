@@ -2004,6 +2004,7 @@ test("AW Doctor failures worker closes consolidated tracking issues as duplicate
   assert.match(source, /required-labels: \[aw-doctor, aw-doctor:failures-investigator\]/);
   assert.match(source, /required-title-prefix: "\[aw-doctor:failures-investigator\] "/);
   assert.match(source, /state-reason: duplicate/);
+  assert.match(source, /has both the `aw-doctor` and `aw-doctor:failures-investigator` labels/);
   assert.match(source, /`duplicate_of` set to the actual issue number returned for the consolidated report/);
   assert.match(source, /In `review`, do not close target-repository issues/);
 });
