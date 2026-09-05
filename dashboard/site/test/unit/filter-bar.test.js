@@ -118,5 +118,12 @@ describe('time-window filter bar', () => {
         end: '2026-09-04T12:00:00.000Z'
       }
     );
+
+    for (const input of second.querySelectorAll('.mode-filter-control input')) {
+      const checkbox = /** @type {HTMLInputElement} */ (input);
+      if (checkbox.checked) checkbox.click();
+    }
+    expect(secondChange.mock.calls.at(-1)?.[0]).toEqual(new Map([['mode', []]]));
+    expect(JSON.parse(localStorage.getItem(HORIZON_FILTER_STORAGE_KEY) ?? '{}').modes).toEqual([]);
   });
 });
