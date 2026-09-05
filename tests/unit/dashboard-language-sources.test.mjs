@@ -9,6 +9,7 @@ test("dashboard source bridge classifies safe-output performance and diagnostics
       available: true,
       complete: true,
       securityAvailable: true,
+      securityComplete: true,
       generatedAt: "2026-09-05T12:00:00Z",
       securityRuns: [{
         repository: "githubnext/gh-aw-cao",
@@ -42,6 +43,7 @@ test("dashboard source bridge classifies safe-output performance and diagnostics
       { kind: "report_incomplete", status: "warning", count: 1 },
     ],
   );
+  assert.equal(sources["safe-output-performance"].metadata.completeness, "complete");
 });
 
 test("dashboard source bridge expands GitHub telemetry resources", () => {
