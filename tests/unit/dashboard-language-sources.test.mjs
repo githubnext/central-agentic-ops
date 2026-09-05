@@ -82,6 +82,25 @@ test("detection observations preserve verdict, warning, tooling, skipped, and un
   assert.equal(byRun.get("2")["run-link"].href, "https://github.com/githubnext/gh-aw-cao/actions/runs/2");
 });
 
+test("detection observations normalize conclusions and keep usable verdicts independent of job failures", () => {
+  const clear = { promptInjection: false, secretLeak: false, maliciousPatch: false, warnings: [] };
+  const rows = detectionObservationRows({
+    securityAvailable: true,
+    securityRuns: [
+      detectionRun(10, null),
+      detectionRun(11, clear),
+    ],
+  }, [
+    detectionJob(10, "startup_failure"),
+    detectionJob(11, "failure"),
+  ]);
+  const byRun = new Map(rows.map((row) => [row.run, row]));
+
+  assert.equal(byRun.get("10")["detection-state"], "tooling-failure");
+  assert.equal(byRun.get("10")["job-conclusion"], "startup-failure");
+  assert.equal(byRun.get("11")["detection-state"], "clean");
+});
+
 test("detection observations do not claim tooling failure when collection is unavailable", () => {
   const rows = detectionObservationRows({
     generatedAt: "2026-09-05T11:00:00Z",
