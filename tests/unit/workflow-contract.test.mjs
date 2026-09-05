@@ -1996,6 +1996,21 @@ test("AW Doctor compiler security worker runs the full validation suite", () => 
   }
 });
 
+test("AW Doctor failures worker closes target AW failure issues as duplicates", () => {
+  const source = workflow("aw-failures-investigator.md");
+
+  assert.match(source, /intent: Reduce maintainer effort spent tracking recent agentic workflow failures/);
+  assert.match(source, /close-issue:\n\s+target: "\*"/);
+  assert.match(source, /required-labels: \[agentic-workflows\]/);
+  assert.match(source, /required-title-prefix: "\[aw\]"/);
+  assert.match(source, /state-reason: duplicate/);
+  assert.match(source, /runPaginatedApiJson\(`repos\/\$\{REPO\}\/issues`, \{\n\s+state: 'open',\n\s+labels: SOURCE_FAILURE_LABEL,/);
+  assert.match(source, /source_failure_issues: sourceFailureIssues/);
+  assert.match(source, /Only close target-repository issues whose title starts with `\[aw\]` and that have the `agentic-workflows` label/);
+  assert.match(source, /set `duplicate_of` to the actual issue number returned for the newly created consolidated report/);
+  assert.match(source, /In `review`, do not close target-repository issues/);
+});
+
 test("slower package orchestrators run hourly", () => {
   for (const name of [
     "dependabot.md",
