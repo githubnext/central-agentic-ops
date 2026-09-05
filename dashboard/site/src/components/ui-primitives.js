@@ -353,6 +353,24 @@ export function renderLabeledControl(label, control, options = {}) {
 }
 
 /**
+ * Writes text to the clipboard via the async Clipboard API, resolving to
+ * whether the copy succeeded. Shared by the table intent-action dialog and
+ * the raw-policy panel, which both need a best-effort clipboard write that
+ * degrades to a boolean result instead of throwing.
+ * @param {string} content
+ * @returns {Promise<boolean>}
+ */
+export async function copyTextToClipboard(content) {
+  if (typeof navigator?.clipboard?.writeText !== 'function') return false;
+  try {
+    await navigator.clipboard.writeText(content);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * @param {unknown} value
  * @returns {value is Record<string, any>}
  */

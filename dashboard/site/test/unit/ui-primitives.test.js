@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderEmptyTableRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendList, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { describe, expect, it, vi } from 'vitest';
+import { completenessCaveat, coverageWindowHours, copyTextToClipboard, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, isPlainObject, renderCloseButton, renderDlRow, renderEmptyTableRow, renderIconSpan, renderIdentityLink, renderLabeledControl, renderLegendList, renderLegendSwatch, renderListWithFallback, renderSectionHeading, renderTableHeadRow, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -251,5 +251,26 @@ describe('ui primitives', () => {
     expect(rendered.firstChild).toBe(prefix);
     expect(rendered.querySelector('span')?.textContent).toBe('Window');
     expect(rendered.querySelector('select')).toBe(select);
+  });
+
+  it('copies text to the clipboard and resolves true on success', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+
+    await expect(copyTextToClipboard('hello world')).resolves.toBe(true);
+    expect(writeText).toHaveBeenCalledWith('hello world');
+  });
+
+  it('resolves false when the clipboard write rejects', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+
+    await expect(copyTextToClipboard('hello world')).resolves.toBe(false);
+  });
+
+  it('resolves false when the Clipboard API is unavailable', async () => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+
+    await expect(copyTextToClipboard('hello world')).resolves.toBe(false);
   });
 });

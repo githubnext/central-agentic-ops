@@ -12,7 +12,7 @@ import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderO
 import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.js';
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
-import { renderCloseButton, isPlainObject } from './ui-primitives.js';
+import { renderCloseButton, isPlainObject, copyTextToClipboard } from './ui-primitives.js';
 import { processScatterPoints } from '../data-processor.js';
 import { MAX_RENDERED_SCATTER_POINTS } from '../scatter-clustering.js';
 
@@ -501,7 +501,7 @@ export function renderIntentAction(action, row) {
       onClick: async () => {
         copyButton.disabled = true;
         status.textContent = '';
-        const copied = await copyIntent(content);
+        const copied = await copyTextToClipboard(content);
         copyButton.disabled = false;
         copyButton.setAttribute('data-copy-state', copied ? 'success' : 'error');
         status.textContent = copied ? 'Prompt copied.' : 'Could not copy prompt.';
@@ -567,15 +567,4 @@ function intentValue(value) {
   return ['string', 'number', 'boolean'].includes(typeof value)
     ? /** @type {string | number | boolean} */ (value)
     : undefined;
-}
-
-/** @param {string} content @returns {Promise<boolean>} */
-async function copyIntent(content) {
-  if (typeof navigator?.clipboard?.writeText !== 'function') return false;
-  try {
-    await navigator.clipboard.writeText(content);
-    return true;
-  } catch {
-    return false;
-  }
 }
