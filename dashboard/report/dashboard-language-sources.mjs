@@ -918,13 +918,12 @@ const DETECTION_FAILURE_CONCLUSIONS = new Set([
 export function deriveDetectionState({ verdictAvailable, threatsDetected, warningCount, jobConclusion, telemetryAvailable = true }) {
   // Precedence preserves security outcomes independently from job mechanics:
   // threat > tooling failure > degraded > clean > skipped > unknown.
-  const normalizedConclusion = jobConclusion;
   if (verdictAvailable && threatsDetected) return "threat";
-  if (!verdictAvailable && DETECTION_FAILURE_CONCLUSIONS.has(normalizedConclusion)) return "tooling-failure";
+  if (!verdictAvailable && DETECTION_FAILURE_CONCLUSIONS.has(jobConclusion)) return "tooling-failure";
   if (verdictAvailable && warningCount > 0) return "degraded";
   if (verdictAvailable) return "clean";
-  if (normalizedConclusion === "skipped") return "skipped";
-  if (telemetryAvailable && normalizedConclusion === "success") return "tooling-failure";
+  if (jobConclusion === "skipped") return "skipped";
+  if (telemetryAvailable && jobConclusion === "success") return "tooling-failure";
   return "unknown";
 }
 
