@@ -6,6 +6,17 @@ import { h } from '../dom.js';
 import { stringOrFallback } from '../view-formatters.js';
 
 /**
+ * Renders the shared `status <statusClass>` badge markup used by every
+ * status-flavored badge in this module.
+ * @param {string} statusClass one of the `status-*` class suffixes
+ * @param {string} text visible badge label
+ * @returns {HTMLElement}
+ */
+function renderStatusSpan(statusClass, text) {
+  return h('span', { className: `status ${statusClass}` }, text);
+}
+
+/**
  * @param {unknown} status
  * @returns {HTMLElement}
  */
@@ -22,7 +33,7 @@ export function renderStatusBadge(status) {
     statusClass = 'status-danger';
   }
 
-  return h('span', { className: `status ${statusClass}` }, text);
+  return renderStatusSpan(statusClass, text);
 }
 
 /**
@@ -35,7 +46,7 @@ export function renderGraderStatusBadge(status) {
   const statusClass = normalized === 'pass'
     ? 'status-success'
     : ['fail', 'error'].includes(normalized) ? 'status-danger' : 'status-attention';
-  return h('span', { className: `status ${statusClass}` }, text);
+  return renderStatusSpan(statusClass, text);
 }
 
 /**
@@ -69,5 +80,5 @@ export function renderActiveStateBadge(active) {
   const isActive = text === 'true' || text === 'active';
   const statusClass = isActive ? 'status-success' : 'status-muted';
 
-  return h('span', { className: `status ${statusClass}` }, text);
+  return renderStatusSpan(statusClass, text);
 }

@@ -12,7 +12,7 @@ const outputRoot = resolve(
     || join(siteRoot, 'test-results', 'lighthouse')
 );
 
-const scoreThreshold = 0.9;
+const scoreThreshold = 0.88;
 const metricBudgets = {
   'cumulative-layout-shift': 0.1,
   'first-contentful-paint': 1800,

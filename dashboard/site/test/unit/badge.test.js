@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { modeBadgeClassName, renderModeBadge } from '../../src/components/badge.js';
+import {
+  modeBadgeClassName,
+  renderActiveStateBadge,
+  renderGraderStatusBadge,
+  renderModeBadge,
+  renderStatusBadge,
+} from '../../src/components/badge.js';
 
 describe('badge', () => {
   it('maps normalized mode labels to the shared mode-badge class suffix', () => {
@@ -20,5 +26,25 @@ describe('badge', () => {
     const fallback = renderModeBadge(null);
     expect(fallback.className).toBe('mode-badge');
     expect(fallback.textContent).toBe('unknown');
+  });
+
+  it('shares the same "status <class>" span markup across status-flavored badges', () => {
+    const status = renderStatusBadge('success');
+    expect(status.tagName).toBe('SPAN');
+    expect(status.className).toBe('status status-success');
+    expect(status.textContent).toBe('success');
+
+    const grader = renderGraderStatusBadge('fail');
+    expect(grader.tagName).toBe('SPAN');
+    expect(grader.className).toBe('status status-danger');
+    expect(grader.textContent).toBe('fail');
+
+    const active = renderActiveStateBadge(true);
+    expect(active.tagName).toBe('SPAN');
+    expect(active.className).toBe('status status-success');
+    expect(active.textContent).toBe('true');
+
+    const inactive = renderActiveStateBadge(false);
+    expect(inactive.className).toBe('status status-muted');
   });
 });

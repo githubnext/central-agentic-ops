@@ -1095,7 +1095,8 @@
         "filter-bar": {
           "filters": [
             "mode:review",
-            "mode:live"
+            "mode:live",
+            "mode:unknown"
           ],
           "time-range": "30d"
         },
