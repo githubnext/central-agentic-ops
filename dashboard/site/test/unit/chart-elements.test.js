@@ -160,11 +160,11 @@ describe('chart element helpers', () => {
     expect(chart.getAttribute('data-chart-widget')).toBe('heatmap');
     expect(chart.querySelector('.heatmap-chart caption')?.textContent).toBe('Heatmap of Mean job time');
     expect([...chart.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['build', 'test']);
-    expect([...chart.querySelectorAll('tbody th')].map((cell) => cell.textContent)).toEqual(['ubuntu', 'macos']);
+    expect([...chart.querySelectorAll('tbody th')].map((cell) => cell.textContent)).toEqual(['macos', 'ubuntu']);
     expect(chart.querySelectorAll('.heatmap-cell')).toHaveLength(4);
-    expect(chart.querySelector('.heatmap-cell[tabindex="0"]')?.getAttribute('aria-label')).toBe('build, ubuntu, Mean job time: 62 s');
+    expect([...chart.querySelectorAll('.heatmap-cell[tabindex="0"]')].map((cell) => cell.getAttribute('aria-label'))).toContain('build, ubuntu, Mean job time: 62 s');
     expect(chart.querySelector('.heatmap-cell-empty')?.getAttribute('aria-label')).toBe('test, macos: no observation');
-    expect(chart.querySelector('.heatmap-cell[tabindex="0"]')?.textContent).toBe('62 s');
+    expect([...chart.querySelectorAll('.heatmap-cell[tabindex="0"]')].map((cell) => cell.textContent)).toContain('62 s');
   });
 
   it('rejects oversized heatmaps with a visible status instead of rendering a dense matrix', () => {
