@@ -1105,9 +1105,6 @@
             "description": "Allowed and blocked request totals provide an at-a-glance check for unexpected firewall behavior.",
             "data": {
               "source": "security-observations",
-              "time": {
-                "range": "30d"
-              },
               "filters": {
                 "security-feature": [
                   "firewall"
@@ -1142,6 +1139,9 @@
             "description": "Daily allowed and blocked request volume reveals sudden changes that may indicate policy drift or unexpected network behavior.",
             "data": {
               "source": "security-observations",
+              "time": {
+                "range": "30d"
+              },
               "filters": {
                 "security-feature": [
                   "firewall"
@@ -3840,7 +3840,7 @@
             "disclosure": "essential",
             "encoding": {
               "x": { "field": "detection-state-label", "type": "ordinal", "title": "Detection state" },
-              "y": { "field": "detection-count", "type": "quantitative", "aggregate": "sum", "title": "Runs" },
+              "y": { "field": "run", "type": "quantitative", "aggregate": "count", "title": "Runs" },
               "color": { "field": "detection-state", "type": "nominal", "title": "State" }
             }
           },
@@ -3868,7 +3868,7 @@
             "disclosure": "supplemental",
             "encoding": {
               "x": { "field": "observed-at", "type": "temporal", "time-unit": "day", "title": "Observed" },
-              "y": { "field": "detection-count", "type": "quantitative", "aggregate": "sum", "title": "Runs" },
+              "y": { "field": "run", "type": "quantitative", "aggregate": "count", "title": "Runs" },
               "color": { "field": "detection-state", "type": "nominal", "title": "State" }
             }
           },
@@ -3913,6 +3913,7 @@
             "disclosure": "essential",
             "encoding": {
               "columns": [
+                { "field": "attention-priority", "type": "quantitative", "title": "Priority" },
                 { "field": "detection-state", "type": "nominal", "title": "State", "display": "status" },
                 { "field": "repository", "type": "nominal", "title": "Repository" },
                 { "field": "workflow", "type": "nominal", "title": "Workflow" },
