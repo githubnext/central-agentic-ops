@@ -855,7 +855,19 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
             sessionId,
             error: redactedLogValue(event.data),
           });
-          context.onEvent({ type: "error", message: event.data.message });
+          context.onEvent({
+            type: "status",
+            message: "Copilot reported a session issue; checking the saved dashboard…",
+          });
+          context.onEvent({
+            type: "debug",
+            message: "Copilot SDK session reported an error.",
+            details: {
+              name: event.data.name,
+              code: event.data.code,
+              message: truncatedLogText(event.data.message),
+            },
+          });
         } else if (event.type === "session.idle" && event.data.aborted) {
           context.aborted = true;
         }
@@ -1383,17 +1395,23 @@ export async function startDashboardServer({
         details: { view: payload.view },
       });
       onEvent({ type: "started" });
-      const result = await copilotRuntime.prompt({
-        sessionKey,
-        traceId,
-        view: payload.view,
-        request: payload.request.trim(),
-        bundledDashboardPath,
-        editableDashboardPaths,
-        viewDashboardPath,
-        onEvent,
-        signal: controller.signal,
-      });
+      let result;
+      let promptError;
+      try {
+        result = await copilotRuntime.prompt({
+          sessionKey,
+          traceId,
+          view: payload.view,
+          request: payload.request.trim(),
+          bundledDashboardPath,
+          editableDashboardPaths,
+          viewDashboardPath,
+          onEvent,
+          signal: controller.signal,
+        });
+      } catch (error) {
+        promptError = error;
+      }
       if (result?.aborted) {
         onEvent({
           type: "debug",
@@ -1402,6 +1420,34 @@ export async function startDashboardServer({
         });
         onEvent({ type: "stopped" });
         return;
+      }
+      if (promptError) {
+        const candidateSource = await readFile(viewDashboardPath, "utf8");
+        let candidateValid = false;
+        try {
+          validateDashboardSource(normalizeDashboardJson(candidateSource));
+          candidateValid = true;
+        } catch {
+          candidateValid = false;
+        }
+        if (candidateSource === previousDashboardSource || !candidateValid) throw promptError;
+        console.log("Copilot session failed after saving a valid dashboard; continuing.", {
+          view: payload.view,
+          viewDashboardPath,
+          ...errorMetadata(promptError),
+        });
+        trace.record("server", "copilot.request.recovered", {
+          traceId,
+          details: {
+            view: payload.view,
+            reason: "valid dashboard source was saved before the SDK failure",
+            ...errorMetadata(promptError),
+          },
+        });
+        onEvent({
+          type: "status",
+          message: "The dashboard change was saved; finishing the preview update…",
+        });
       }
       onEvent({
         type: "debug",

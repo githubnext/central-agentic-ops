@@ -310,6 +310,12 @@ test("local dashboard server optionally prompts Copilot to update the active vie
           const invalidDashboard = JSON.parse(source);
           invalidDashboard.dashboard.pages[0].views[0].mark = "invalid-mark";
           source = JSON.stringify(invalidDashboard);
+        } else if (payload.request === "Fail after valid write") {
+          const updatedDashboard = JSON.parse(source);
+          updatedDashboard.dashboard.pages[0].title = "Updated despite SDK failure";
+          source = JSON.stringify(updatedDashboard);
+          await writeFile(payload.viewDashboardPath, source);
+          throw new Error("late SDK failure");
         }
         await writeFile(payload.viewDashboardPath, source);
         return { aborted: false };
@@ -391,6 +397,29 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       request: "Produce invalid dashboard",
     }));
     assert.equal((await invalidDashboardError).type, "error");
+    await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
+
+    const recoveredUpdate = nextSocketMessage(socket, (message) =>
+      message.type === "dashboard-update");
+    const recoveredDone = nextSocketMessage(socket, (message) => message.type === "done");
+    socket.send(JSON.stringify({
+      type: "copilot.start",
+      view: "package-one",
+      request: "Fail after valid write",
+    }));
+    const recoveredDashboard = await recoveredUpdate;
+    socket.send(JSON.stringify({
+      type: "browser.trace",
+      traceId: recoveredDashboard.traceId,
+      event: "preview.rendered",
+      details: {},
+    }));
+    assert.equal((await recoveredDone).type, "done");
+    assert.equal(
+      JSON.parse(await readFile(path.join(packageDirectory, "dashboard.json"), "utf8"))
+        .dashboard.pages[0].title,
+      "Updated despite SDK failure",
+    );
     await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
 
     const dashboardUpdate = nextSocketMessage(socket, (message) =>
