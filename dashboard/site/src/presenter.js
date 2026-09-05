@@ -2302,26 +2302,20 @@ function toText(value) {
  * @param {HTMLElement} root
  */
 export function enableDashboardKeyboardNavigation(root) {
-  const sections = [...root.querySelectorAll('.dashboard-page .page-section')]
-    .filter((section) => section instanceof HTMLElement);
-
-  for (const [index, section] of sections.entries()) {
-    section.addEventListener('keydown', (event) => {
-      if (!(event instanceof KeyboardEvent)) {
-        return;
-      }
-      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
-        return;
-      }
-      const delta = event.key === 'ArrowDown' ? 1 : -1;
-      const nextSection = sections[index + delta];
-      if (!nextSection) {
-        return;
-      }
-      event.preventDefault();
-      nextSection.focus();
-    });
-  }
+  root.addEventListener('keydown', (event) => {
+    if (!(event instanceof KeyboardEvent) || !(event.target instanceof Element)) return;
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    const section = event.target.closest('.dashboard-page .page-section');
+    const page = section?.closest('.dashboard-page');
+    if (!(section instanceof HTMLElement) || !(page instanceof HTMLElement)) return;
+    const sections = [...page.querySelectorAll('.page-section')]
+      .filter((candidate) => candidate instanceof HTMLElement);
+    const delta = event.key === 'ArrowDown' ? 1 : -1;
+    const nextSection = sections[sections.indexOf(section) + delta];
+    if (!nextSection) return;
+    event.preventDefault();
+    nextSection.focus();
+  });
 }
 
 /**

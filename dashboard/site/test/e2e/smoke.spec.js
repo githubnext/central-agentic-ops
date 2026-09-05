@@ -250,7 +250,7 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   const readinessPage = page.locator('[data-page-id="readiness"]');
   await expect(readinessPage).toBeVisible();
   const horizonFilter = page.getByLabel('Dashboard filters');
-  await horizonFilter.getByRole('button', { name: /Horizon/ }).click();
+  await horizonFilter.locator('.horizon-toggle').click();
   await expect(horizonFilter.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('');
   await expect(horizonFilter.locator('.count-badge')).toHaveText('3');
   const readinessNavigation = page.locator('[data-nav-page-id="readiness"]');
@@ -279,10 +279,8 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await expect(readinessPage).toContainText('Output warning');
   await expect(readinessPage).toContainText('Smoke regression');
 
-  await expect(readinessPage.locator('.time-window-control')).toBeHidden();
-  await readinessPage.getByRole('button', { name: /Filter/ }).click();
-  const windowStart = readinessPage.locator('[aria-label="Window start time"]');
-  const windowStop = readinessPage.locator('[aria-label="Window stop time"]');
+  const windowStart = horizonFilter.locator('[aria-label="Window start time"]');
+  const windowStop = horizonFilter.locator('[aria-label="Window stop time"]');
   const [localStart, localStop] = await page.evaluate((values) => values.map((value) => {
     const instant = new Date(value);
     return new Date(instant.getTime() - instant.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -291,8 +289,8 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await windowStop.fill(localStop);
   await expect(windowStart).toHaveValue(localStart);
   await expect(windowStop).toHaveValue(localStop);
-  await readinessPage.getByRole('button', { name: 'Apply' }).click();
-  await expect(readinessPage.locator('[aria-label="Time window"]')).toHaveValue('custom');
+  await horizonFilter.getByRole('button', { name: 'Apply' }).click();
+  await expect(horizonFilter.locator('[aria-label="Time window"]')).toHaveValue('custom');
   await expect.poll(() => page.evaluate(() => JSON.parse(
     localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings') ?? '{}'
   ).range)).toBe('custom');
@@ -302,14 +300,14 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await expect(readinessPage).not.toContainText('No failures observed');
   await expect(readinessPage).not.toContainText('No warnings observed');
   await expect(readinessPage).not.toContainText('No no-op reports observed');
-  await readinessPage.getByRole('button', { name: /Filter/ }).click();
+  await horizonFilter.locator('.horizon-toggle').click();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(readinessPage.locator('.time-window-control')).toBeHidden();
-  await readinessPage.getByRole('button', { name: /Filter/ }).click();
-  await expect(readinessPage.locator('.time-window-control')).toBeVisible();
-  await expect(readinessPage.locator('[aria-label="Window start time"]')).toBeVisible();
-  await expect(readinessPage.locator('[aria-label="Window stop time"]')).toBeVisible();
+  await expect(horizonFilter.locator('.time-window-control')).toBeHidden();
+  await horizonFilter.locator('.horizon-toggle').click();
+  await expect(horizonFilter.locator('.time-window-control')).toBeVisible();
+  await expect(horizonFilter.locator('[aria-label="Window start time"]')).toBeVisible();
+  await expect(horizonFilter.locator('[aria-label="Window stop time"]')).toBeVisible();
   expect(await readinessPage.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
 
@@ -1579,10 +1577,10 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect(filterBar).toBeVisible();
   await expect(filterBar.locator(':scope > .dashboard-horizon')).toHaveCount(1);
   await expect(page.locator('.report-actions > .dashboard-horizon')).toHaveCount(0);
+  await expect(filterBar.locator('.filter-tuning-controls')).toBeHidden();
+  await filterBar.locator('.horizon-toggle').click();
   const filterInput = filterBar.getByRole('searchbox', { name: 'Current filters' });
   await expect(filterInput).toHaveValue('');
-  await expect(filterBar.locator('.filter-tuning-controls')).toBeHidden();
-  await filterBar.getByRole('button', { name: /Horizon/ }).click();
   await expect(filterBar.getByRole('combobox', { name: 'Time window' })).toHaveValue('1w');
   await expect(filterBar.getByRole('checkbox')).toHaveCount(3);
   expect(await filterBar.getByRole('checkbox').evaluateAll(
@@ -1597,13 +1595,13 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect.poll(() => page.evaluate(() => JSON.parse(
     localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings') ?? '{}'
   ).modes)).toEqual(['live', 'unknown']);
-  await filterBar.getByRole('button', { name: /Horizon/ }).click();
+  await filterBar.locator('.horizon-toggle').click();
 
   await page.setViewportSize({ width: 400, height: 900 });
   const horizonBox = await filterBar.locator('.dashboard-horizon').boundingBox();
   expect(horizonBox).not.toBeNull();
   await expect(filterBar.locator('.filter-tuning-controls')).toBeHidden();
-  await filterBar.getByRole('button', { name: /Horizon/ }).click();
+  await filterBar.locator('.horizon-toggle').click();
   const timeRangeBox = await filterBar.locator('.time-window-control').boundingBox();
   expect(timeRangeBox?.y).toBeGreaterThan(horizonBox?.y ?? 0);
 });
@@ -2827,6 +2825,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
   await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
   await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
+  await page.locator('.horizon-toggle').click();
   await expect(page.getByRole('searchbox', { name: 'Current filters' })).toHaveValue('');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');

@@ -17,9 +17,10 @@ export const HORIZON_FILTER_STORAGE_KEY = 'central-agentic-ops.dashboard.horizon
  * @returns {HTMLElement}
  */
 export function renderFilterBar(onChange, options = {}) {
+  const persisted = readHorizonSettings();
   const filters = /** @type {HTMLInputElement} */ (h('input', {
     type: 'search',
-    value: '',
+    value: typeof persisted.filters === 'string' ? persisted.filters : '',
     'aria-label': 'Current filters',
     spellcheck: 'false'
   }));
@@ -71,6 +72,7 @@ export function renderFilterBar(onChange, options = {}) {
   });
   filters.addEventListener('input', () => {
     stripModeTokens();
+    persistFilterText(filters.value);
     const parsed = parseFilters(filters.value);
     parsed.set('mode', horizonControl.modes());
     updateCount(parsed);
@@ -105,7 +107,17 @@ export function renderFilterBar(onChange, options = {}) {
   const initialFilters = parseFilters(filters.value);
   initialFilters.set('mode', horizonControl.modes());
   updateCount(initialFilters);
-  queueMicrotask(emit);
+  const persistedModes = Array.isArray(persisted.modes)
+    ? [...new Set(persisted.modes.filter((mode) => MODE_OPTIONS.includes(mode)))]
+    : MODE_OPTIONS;
+  const hasModeOverride = Array.isArray(persisted.modes)
+    && (persistedModes.length > 0 || persisted.modes.length === 0)
+    && (persistedModes.length !== MODE_OPTIONS.length
+      || persistedModes.some((mode, index) => mode !== MODE_OPTIONS[index]));
+  const hasCustomizedSettings = filters.value.length > 0
+    || (typeof persisted.range === 'string' && persisted.range !== (options.defaultRange ?? '1w'))
+    || hasModeOverride;
+  if (hasCustomizedSettings) queueMicrotask(emit);
   return root;
 }
 
@@ -170,8 +182,13 @@ function renderHorizonControl(defaultRange, referenceEnd, onChange) {
   };
   const modes = () => modeInputs.filter((input) => input.checked).map((input) => input.value);
   const persist = () => {
-    /** @type {{ range: string, modes: string[], start?: string, end?: string }} */
-    const settings = { range: select.value, modes: modes() };
+    const savedFilters = readHorizonSettings().filters;
+    /** @type {{ range: string, modes: string[], filters?: string, start?: string, end?: string }} */
+    const settings = {
+      range: select.value,
+      modes: modes(),
+      ...(typeof savedFilters === 'string' && savedFilters ? { filters: savedFilters } : {})
+    };
     if (select.value === 'custom') {
       const selected = value();
       if (selected) {
@@ -240,7 +257,19 @@ function renderHorizonControl(defaultRange, referenceEnd, onChange) {
   };
 }
 
-/** @returns {{ range?: unknown, modes?: unknown, start?: unknown, end?: unknown }} */
+/** @param {string} filters */
+function persistFilterText(filters) {
+  try {
+    const settings = readHorizonSettings();
+    if (filters) settings.filters = filters;
+    else delete settings.filters;
+    globalThis.localStorage?.setItem(HORIZON_FILTER_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // The filters still work for the current page when storage is unavailable.
+  }
+}
+
+/** @returns {{ range?: unknown, modes?: unknown, start?: unknown, end?: unknown, filters?: unknown }} */
 function readHorizonSettings() {
   try {
     const value = JSON.parse(globalThis.localStorage?.getItem(HORIZON_FILTER_STORAGE_KEY) ?? 'null');

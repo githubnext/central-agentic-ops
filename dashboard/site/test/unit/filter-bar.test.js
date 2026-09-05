@@ -30,11 +30,7 @@ describe('time-window filter bar', () => {
     document.body.append(filterBar);
     await Promise.resolve();
 
-    expect(onChange).toHaveBeenLastCalledWith(new Map([['mode', ['review', 'live', 'unknown']]]), {
-      range: '24h',
-      start: '2026-09-03T12:00:00.000Z',
-      end: '2026-09-04T12:00:00.000Z'
-    });
+    expect(onChange).not.toHaveBeenCalled();
 
     const select = /** @type {HTMLSelectElement} */ (filterBar.querySelector('[aria-label="Time window"]'));
     select.value = '6h';
@@ -99,6 +95,9 @@ describe('time-window filter bar', () => {
     const select = /** @type {HTMLSelectElement} */ (first.querySelector('[aria-label="Time window"]'));
     select.value = '6h';
     select.dispatchEvent(new Event('change'));
+    const filterInput = /** @type {HTMLInputElement} */ (first.querySelector('[aria-label="Current filters"]'));
+    filterInput.value = 'repository:gh-aw-cao';
+    filterInput.dispatchEvent(new Event('input'));
 
     const secondChange = vi.fn();
     const second = renderFilterBar(secondChange, {
@@ -111,11 +110,17 @@ describe('time-window filter bar', () => {
     expect(/** @type {HTMLSelectElement | null} */ (
       second.querySelector('[aria-label="Time window"]')
     )?.value).toBe('6h');
+    expect(/** @type {HTMLInputElement | null} */ (
+      second.querySelector('[aria-label="Current filters"]')
+    )?.value).toBe('repository:gh-aw-cao');
     expect([...second.querySelectorAll('.mode-filter-control input')].map(
       (input) => /** @type {HTMLInputElement} */ (input).checked
     )).toEqual([true, false, true]);
     expect(secondChange).toHaveBeenLastCalledWith(
-      new Map([['mode', ['review', 'unknown']]]),
+      new Map([
+        ['repository', ['gh-aw-cao']],
+        ['mode', ['review', 'unknown']]
+      ]),
       {
         range: '6h',
         start: '2026-09-04T06:00:00.000Z',
@@ -127,7 +132,10 @@ describe('time-window filter bar', () => {
       const checkbox = /** @type {HTMLInputElement} */ (input);
       if (checkbox.checked) checkbox.click();
     }
-    expect(secondChange.mock.calls.at(-1)?.[0]).toEqual(new Map([['mode', []]]));
+    expect(secondChange.mock.calls.at(-1)?.[0]).toEqual(new Map([
+      ['repository', ['gh-aw-cao']],
+      ['mode', []]
+    ]));
     expect(JSON.parse(localStorage.getItem(HORIZON_FILTER_STORAGE_KEY) ?? '{}').modes).toEqual([]);
   });
 
@@ -144,9 +152,6 @@ describe('time-window filter bar', () => {
     document.body.append(filterBar);
     await Promise.resolve();
 
-    expect(onChange).toHaveBeenLastCalledWith(
-      new Map([['mode', ['review', 'live', 'unknown']]]),
-      expect.anything()
-    );
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
