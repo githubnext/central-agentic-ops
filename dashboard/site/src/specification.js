@@ -55,6 +55,7 @@ export const VIEW_ELEMENT_VALUES = [
   'outcome-detail',
   'outcome-detail-section',
   'configuration-policy',
+  'configuration-actions',
   'experiments-evaluation'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'dot', 'histogram', 'line', 'pie', 'scatter', 'swimlane'];
