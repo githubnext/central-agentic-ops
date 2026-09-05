@@ -948,6 +948,11 @@ function rawFirewallObservationRows(usage) {
             ...(positiveCount(counts?.blocked) > 0 ? [{ ...parsed, decision: "denied", requestCount: positiveCount(counts.blocked), observedAt: base["observed-at"] }] : []),
           ];
         });
+      const reviewState = base["firewall-enabled"] === "disabled"
+        ? "enforcement-disabled"
+        : ["partial", "unavailable", "malformed", "unknown"].includes(base["evidence-state"])
+          ? "evidence-missing"
+          : null;
       const grouped = new Map();
       for (const observation of observations) {
         const destination = parseDestination(observation.host || observation.domain);
@@ -967,11 +972,8 @@ function rawFirewallObservationRows(usage) {
           "request-count": 0,
           "first-seen-at": observation.observedAt || base["observed-at"],
           "last-seen-at": observation.observedAt || base["observed-at"],
+          "review-state": reviewState,
         };
-        if (base["firewall-enabled"] === "disabled") row["review-state"] = "enforcement-disabled";
-        else if (["partial", "unavailable", "malformed", "unknown"].includes(base["evidence-state"])) {
-          row["review-state"] = "evidence-missing";
-        }
         row["request-count"] += positiveCount(observation.requestCount ?? 1);
         if (Date.parse(observation.observedAt) < Date.parse(row["first-seen-at"])) row["first-seen-at"] = observation.observedAt;
         if (Date.parse(observation.observedAt) > Date.parse(row["last-seen-at"])) row["last-seen-at"] = observation.observedAt;
