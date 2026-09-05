@@ -108,6 +108,56 @@ jobs:
           </details>
           EOF
 
+      - name: Ensure CAO admission record
+        if: ${{ always() }}
+        env:
+          CAO_ADMISSION_AUTHORIZED: ${{ steps.cao_admission.outputs.authorized }}
+          CAO_ADMISSION_REASON: ${{ steps.cao_admission.outputs.reason }}
+          CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
+          CAO_ROLE: ${{ github.aw.import-inputs.role }}
+          CAO_WORKER: ${{ github.aw.import-inputs.worker }}
+        run: |
+          set -euo pipefail
+          record="${RUNNER_TEMP}/cao/admission.json"
+          if [[ -f "$record" ]]; then
+           exit 0
+          fi
+          mkdir -p "$(dirname "$record")"
+          node - "$record" <<'EOF'
+          const fs = require("node:fs");
+          const checks = [
+           "Runtime revision", "Policy document", "Control plane", "Workflow identity",
+           "Package", "Worker", "Target input", "Mode input", "Run limits",
+           "GitHub API capacity", "Runner disk capacity",
+          ].map((check, index) => ({ check, status: index === 0 ? "failed" : "not-evaluated" }));
+          fs.writeFileSync(process.argv[2], `${JSON.stringify({
+           schema_version: 1,
+           observed_at: new Date().toISOString(),
+           repository: process.env.GITHUB_REPOSITORY || "",
+           workflow: process.env.GITHUB_WORKFLOW || "",
+           workflow_sha: process.env.GITHUB_WORKFLOW_SHA || "",
+           run_id: process.env.GITHUB_RUN_ID || "",
+           run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT || 1),
+           package: process.env.CAO_PACKAGE || "",
+           role: process.env.CAO_ROLE || "",
+           worker: process.env.CAO_ROLE === "orchestrator" ? "" : process.env.CAO_WORKER || "",
+           target_repository: "",
+           authorized: process.env.CAO_ADMISSION_AUTHORIZED === "true",
+           reason: process.env.CAO_ADMISSION_REASON || "cannot read or execute the CAO control modules at github.workflow_sha",
+           failed_check: "Runtime revision",
+           checks,
+          }, null, 2)}\n`);
+          EOF
+
+      - name: Upload CAO admission artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: cao-admission
+          path: ${{ runner.temp }}/cao/admission.json
+          if-no-files-found: error
+          retention-days: 8
+
       - name: Generate CAO admission gate writer token
         id: cao_admission_gate_writer_token
         if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-insufficient' && steps.cao_admission.outputs.github_api_gate_active != 'true' }}
