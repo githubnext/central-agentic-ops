@@ -171,6 +171,91 @@ test("dashboard source bridge declares work-oriented sources unavailable without
   }
 });
 
+test("dashboard source bridge derives work-oriented sources from run, admission, and outcome telemetry", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-05T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/gh-aw-cao",
+        path: ".github/workflows/dependabot.lock.yml",
+        name: "Dependabot",
+        role: "orchestrator",
+        state: "active",
+        runHealth: { runRecords: [{
+          runId: 100,
+          status: "completed",
+          conclusion: "failure",
+          startedAt: "2026-09-05T09:00:00Z",
+          admissionStatus: "denied",
+          admissionReason: "package-disabled",
+          engine: "copilot",
+          resolvedModel: "gpt-5",
+        }] },
+      }, {
+        repository: "githubnext/gh-aw-cao",
+        path: ".github/workflows/worker.lock.yml",
+        name: "Worker",
+        role: "worker",
+        state: "active",
+        runHealth: { runRecords: [{
+          runId: 200,
+          status: "completed",
+          conclusion: "success",
+          startedAt: "2026-09-05T08:00:00Z",
+          engine: "copilot",
+          resolvedModel: "gpt-5",
+        }] },
+      }],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: {
+      generatedAt: "2026-09-05T12:00:00Z",
+      records: [{
+        id: "worker-outcome",
+        repository: "githubnext/gh-aw-cao",
+        runtimeRepository: "githubnext/gh-aw-cao",
+        workflowPath: ".github/workflows/worker.lock.yml",
+        runUrl: "https://github.com/githubnext/gh-aw-cao/actions/runs/200",
+        conclusion: "success",
+        mode: "review",
+        state: "closed",
+        kind: "issue",
+        title: "Do the thing",
+      }],
+    },
+  });
+
+  assert.equal(sources["work-items"].metadata.availability, "available");
+  assert.equal(sources["work-items"].metadata.completeness, "complete");
+  const workItems = new Map(sources["work-items"].rows.map((row) => [row["work-item-id"], row]));
+  const dependabot = workItems.get("githubnext/gh-aw-cao:.github/workflows/dependabot.md");
+  const worker = workItems.get("githubnext/gh-aw-cao:.github/workflows/worker.md");
+  assert.equal(dependabot["lifecycle-state"], "blocked");
+  assert.equal(dependabot.reason, "package-disabled");
+  assert.equal(dependabot["consequence-tier"], "high");
+  assert.equal(worker["lifecycle-state"], "completed");
+  assert.equal(worker["verification-state"], "accepted");
+
+  assert.equal(sources["attention-signals"].metadata.availability, "available");
+  assert.deepEqual(sources["attention-signals"].rows.map((row) => row["work-item-id"]), [dependabot["work-item-id"]]);
+  assert.equal(sources["attention-signals"].rows[0]["signal-type"], "blocked");
+
+  assert.equal(sources["agent-assignments"].metadata.availability, "available");
+  const assignments = new Map(sources["agent-assignments"].rows.map((row) => [row["work-item-id"], row]));
+  assert.equal(assignments.get(dependabot["work-item-id"])["agent-state"], "blocked");
+  assert.equal(assignments.get(worker["work-item-id"])["agent-state"], "completed");
+
+  assert.equal(sources["evidence-records"].metadata.availability, "available");
+  assert.equal(sources["evidence-records"].rows.length, 2);
+  assert.deepEqual(sources["evidence-records"].rows.map((row) => row["work-item-id"]), [worker["work-item-id"], worker["work-item-id"]]);
+  assert.deepEqual(new Set(sources["evidence-records"].rows.map((row) => row["evidence-class"])), new Set(["outcome", "finding"]));
+  assert.ok(sources["evidence-records"].rows.every((row) => row["verification-state"] === "accepted" || row["verification-state"] === "pending"));
+});
+
 test("dashboard source bridge classifies safe-output performance and diagnostics", () => {
   const sources = buildDashboardLanguageSources({
     deployed: { discovery: { complete: true }, runHealth: {}, workflows: [], bundles: [] },
