@@ -1232,12 +1232,9 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     sources.usage.metadata["coverage-start"] = new Date(
       Date.parse(generatedAt) - usage.windowHours * 3_600_000,
     ).toISOString();
-  }
-  if (Number.isFinite(usage.securityWindowHours) && usage.securityWindowHours > 0) {
+    // Usage and security telemetry come from the same gh aw logs collection window.
     sources["safe-output-performance"].metadata["coverage-end"] = generatedAt;
-    sources["safe-output-performance"].metadata["coverage-start"] = new Date(
-      Date.parse(generatedAt) - usage.securityWindowHours * 3_600_000,
-    ).toISOString();
+    sources["safe-output-performance"].metadata["coverage-start"] = sources.usage.metadata["coverage-start"];
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",

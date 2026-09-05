@@ -11,7 +11,7 @@ test("dashboard source bridge classifies safe-output performance and diagnostics
       securityAvailable: true,
       securityComplete: true,
       generatedAt: "2026-09-05T12:00:00Z",
-      securityWindowHours: 24,
+      windowHours: 24,
       securityRuns: [{
         repository: "githubnext/gh-aw-cao",
         runId: 42,
