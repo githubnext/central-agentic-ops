@@ -160,7 +160,7 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('defines firewall activity in a dedicated Explore page', () => {
+  it('defines an evidence-aware firewall operations page', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const firewall = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'firewall');
     const security = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'security');
@@ -173,60 +173,91 @@ describe('dashboard document validation', () => {
     expect(document.dashboard.navigation.find(
       (/** @type {{ label: string }} */ section) => section.label === 'Explore'
     ).pages).toContain('firewall');
-    const decisions = firewall.views.find(
-      (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-decisions'
-    );
-    const trend = firewall.views.find(
-      (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-trend'
-    );
-    const domains = firewall.views.find(
-      (/** @type {{ id: string }} */ view) => view.id === 'security-firewall-domains'
-    );
-
-    expect(decisions).toMatchObject({
+    expect(firewall.description).toBe('Network enforcement, policy decisions, destination drift, and evidence for agent egress.');
+    expect(firewall.sections.map((/** @type {{ title: string, views: string[] }} */ section) => ({
+      title: section.title,
+      views: section.views
+    }))).toEqual([
+      { title: 'Enforcement posture', views: ['security-firewall-decisions'] },
+      { title: 'Requires review', views: ['firewall-requires-review'] },
+      { title: 'Network drift', views: ['firewall-network-drift'] },
+      { title: 'Policy effectiveness', views: ['firewall-policy-rules'] },
+      { title: 'Domain activity', views: ['security-firewall-domains'] },
+      { title: 'Traffic diagnostics', views: ['security-firewall-trend'] },
+      { title: 'Evidence and coverage', views: ['firewall-evidence-coverage'] }
+    ]);
+    const [posture, review, drift, policy, domains, trend, evidence] = firewall.views;
+    expect(posture).toMatchObject({
+      id: 'security-firewall-decisions',
       mark: 'chart',
       chart: 'pie',
       disclosure: 'essential',
-      data: {
-        source: 'security-observations',
-        filters: {
-          'security-feature': ['firewall'],
-          'security-analysis': ['summary']
-        }
-      }
+      data: { source: 'firewall-observations', time: { range: '30d' } }
     });
-    expect(trend).toMatchObject({
-      mark: 'chart',
-      chart: 'line',
-      disclosure: 'essential',
-      data: {
-        source: 'security-observations',
-        time: { range: '30d' },
-        filters: {
-          'security-feature': ['firewall'],
-          'security-analysis': ['summary']
-        }
-      }
-    });
-    expect(domains).toMatchObject({
+    expect(review).toMatchObject({
+      id: 'firewall-requires-review',
       mark: 'table',
       controls: 'interactive',
       disclosure: 'essential',
       data: {
-        source: 'security-observations',
+        source: 'firewall-observations',
+        time: { range: '30d' },
         filters: {
-          'security-feature': ['firewall'],
-          'security-analysis': ['detail']
+          'review-state': expect.arrayContaining(['enforcement-disabled', 'evidence-missing', 'newly-allowed', 'decision-changed'])
         }
       }
     });
+    expect(review.encoding.actions[0]).toMatchObject({
+      presentation: 'copy-prompt',
+      label: 'Investigate',
+      context: expect.arrayContaining(['repository', 'workflow', 'run', 'domain', 'port', 'current-decision', 'policy-rule-id', 'request-count', 'drift-state', 'evidence-link'])
+    });
+    expect(drift).toMatchObject({
+      id: 'firewall-network-drift',
+      mark: 'chart',
+      chart: 'pie',
+      data: { source: 'firewall-observations' }
+    });
+    expect(policy).toMatchObject({
+      id: 'firewall-policy-rules',
+      mark: 'table',
+      disclosure: 'supplemental',
+      data: { source: 'firewall-policy-rules' }
+    });
+    expect(domains).toMatchObject({
+      id: 'security-firewall-domains',
+      mark: 'table',
+      controls: 'interactive',
+      disclosure: 'essential',
+      data: { source: 'firewall-observations', time: { range: '30d' } }
+    });
     expect(domains.encoding.columns).toEqual(expect.arrayContaining([
-      expect.objectContaining({ field: 'security-subject', title: 'Domain' }),
-      expect.objectContaining({ field: 'security-status', title: 'Decision' }),
-      expect.objectContaining({ field: 'security-count', title: 'Requests' }),
+      expect.objectContaining({ field: 'domain' }),
+      expect.objectContaining({ field: 'decision-label' }),
+      expect.objectContaining({ field: 'request-count', title: 'Requests' }),
+      expect.objectContaining({ field: 'policy-rule-id', title: 'Policy rule' }),
+      expect.objectContaining({ field: 'drift-label', title: 'Change' }),
       expect.objectContaining({ field: 'run' })
     ]));
-    expect(domains.encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
+    expect(domains.encoding.href).toEqual({ field: 'evidence-link', type: 'nominal' });
+    expect(trend).toMatchObject({
+      id: 'security-firewall-trend',
+      mark: 'chart',
+      chart: 'line',
+      disclosure: 'supplemental',
+      data: { source: 'firewall-observations', time: { range: '30d' } }
+    });
+    expect(evidence).toMatchObject({
+      id: 'firewall-evidence-coverage',
+      mark: 'table',
+      disclosure: 'supplemental',
+      data: { source: 'firewall-observations', time: { range: '30d' } }
+    });
+    const serialized = JSON.stringify(firewall).toLowerCase();
+    expect(serialized).not.toContain('blocked = failure');
+    expect(serialized).not.toContain('allowed = safe');
+    expect(serialized).not.toContain('risk score');
+    expect(serialized).not.toContain('allow domain');
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 

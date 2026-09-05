@@ -14,6 +14,7 @@ test("AI Credit usage collection preserves workflow data payloads", async () => 
   const inventoryPath = path.join(root, "deployed-workflows.json");
   const outputPath = path.join(root, "aic-usage.json");
   const cachePath = path.join(root, "cache");
+  const argumentsPath = path.join(root, "gh-arguments.json");
   await mkdir(bin);
   await writeFile(inventoryPath, JSON.stringify({
     runHealth: { windowHours: 24 },
@@ -29,6 +30,7 @@ test("AI Credit usage collection preserves workflow data payloads", async () => 
   }));
   const ghPath = path.join(bin, "gh");
   await writeFile(ghPath, `#!/usr/bin/env node
+require("node:fs").writeFileSync(process.env.GH_ARGS_PATH, JSON.stringify(process.argv.slice(2)));
 process.stdout.write(JSON.stringify({
   runs: [{
     database_id: 42,
@@ -55,10 +57,24 @@ process.stdout.write(JSON.stringify({
         REPORT_DEPLOYED_WORKFLOWS: inventoryPath,
         REPORT_AIC_USAGE: outputPath,
         REPORT_AIC_CACHE: cachePath,
+        GH_ARGS_PATH: argumentsPath,
       },
     });
     const usage = JSON.parse(await readFile(outputPath, "utf8"));
-    assert.equal(usage.schemaVersion, 3);
+    assert.equal(usage.schemaVersion, 4);
+    const argumentsList = JSON.parse(await readFile(argumentsPath, "utf8"));
+    assert.deepEqual(argumentsList.slice(argumentsList.indexOf("--artifacts"), argumentsList.indexOf("--artifacts") + 2), [
+      "--artifacts",
+      "usage,agent,detection,firewall",
+    ]);
+    assert.deepEqual(argumentsList.slice(argumentsList.indexOf("--start-date"), argumentsList.indexOf("--start-date") + 2), [
+      "--start-date",
+      "-30d",
+    ]);
+    assert.equal(
+      Date.parse(usage.firewallRequestedHorizonEnd) - Date.parse(usage.firewallRequestedHorizonStart),
+      30 * 24 * 60 * 60 * 1000,
+    );
     assert.deepEqual(usage.runs[0].data, {
       findings: [{ severity: "high", total: 3 }],
     });
