@@ -941,6 +941,7 @@ thead th { background: var(--canvas-subtle); color: var(--muted); font-size: .75
 .table-summary-histogram { width: 100%; height: 32px; overflow: visible; }
 .table-summary-histogram rect { fill: var(--accent); opacity: .75; }
 .table-output-evidence { display: block; max-width: 80ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-table-cell { display: block; padding-inline-start: calc(var(--tree-depth) * 1.25rem); }
 :is(.table-summary-quantitative dl, .table-summary-temporal) { display: grid; gap: 2px; margin: 0; }
 :is(.table-summary-quantitative dl, .table-summary-temporal) div { display: flex; justify-content: space-between; gap: 8px; }
 :is(.table-summary-quantitative dl, .table-summary-temporal) dt { font-weight: 400; }

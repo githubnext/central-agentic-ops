@@ -38,6 +38,29 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('accepts static tree tables and rejects hierarchy-breaking controls', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const apiPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'github-api');
+    const stackView = apiPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'github-api-call-stacks');
+
+    expect(stackView).toMatchObject({
+      mark: 'table',
+      controls: 'static',
+      tree: {
+        'id-field': 'stack-frame-id',
+        'parent-field': 'stack-parent-id'
+      }
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    stackView.controls = 'interactive';
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    expect(rejected.errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ message: 'tree tables must use static controls to preserve hierarchy.' })
+    ]));
+  });
+
   it('defines the Preview issue attribution views', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const preview = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'preview');

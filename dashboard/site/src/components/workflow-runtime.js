@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLinkOrFallback } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatUtcDateTime, renderPanelHeader, renderVitalStat } from './ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderPanelHeader, renderTableHeadRow, renderVitalStat } from './ui-primitives.js';
 import { text } from './count-formatters.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowRouteView } from './workflow-route-view.js';
@@ -507,7 +507,7 @@ function renderObservationTable(observations) {
     h(
       'table',
       null,
-      h('thead', null, h('tr', null, ...['Observed', 'Opportunity', 'Value', 'Evidence'].map((label) => h('th', { scope: 'col' }, label)))),
+      h('thead', null, renderTableHeadRow(['Observed', 'Opportunity', 'Value', 'Evidence'])),
       h(
         'tbody',
         null,
