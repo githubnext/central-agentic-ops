@@ -2750,7 +2750,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.chart-view-pie .pie-chart-layout')).not.toBeNull();
   });
 
-  it('shows one hash-addressable page at a time and updates active navigation without scrolling', () => {
+  it('shows one hash-addressable page at a time and updates active navigation without scrolling', async () => {
     const rendered = renderDashboard({
       document: {
         languageVersion: '0.1.0',
@@ -2836,10 +2836,11 @@ describe('presenter built-in and custom pages', () => {
     expect(first.hidden).toBe(true);
     expect(first.hasAttribute('data-page-pending')).toBe(true);
     expect(first.childElementCount).toBe(0);
-    const renderedSecond = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
-    expect(renderedSecond).not.toBe(second);
-    expect(renderedSecond.hidden).toBe(false);
-    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(false);
+    expect(rendered.querySelector('#page-second')).toBe(second);
+    expect(second.hidden).toBe(false);
+    expect(second.hasAttribute('data-page-pending')).toBe(true);
+    expect(second.getAttribute('aria-busy')).toBe('true');
+    expect(second.querySelector('.dashboard-view-skeleton')).not.toBeNull();
     expect(secondLink.getAttribute('aria-current')).toBe('page');
     expect(rendered.ownerDocument.defaultView?.location.hash).toBe('#page-second');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('Second');
@@ -2849,13 +2850,24 @@ describe('presenter built-in and custom pages', () => {
     expect(titleLink.hidden).toBe(true);
     expect(titleLink.hasAttribute('href')).toBe(false);
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
+    await vi.waitFor(() => {
+      expect(rendered.querySelector('#page-second')).not.toBe(second);
+    });
+    const renderedSecond = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
+    expect(renderedSecond.hidden).toBe(false);
+    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(false);
+    expect(renderedSecond.hasAttribute('aria-busy')).toBe(false);
 
     rendered.ownerDocument.documentElement.scrollTop = 80;
     firstLink.click();
 
-    const rehydratedFirst = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
     expect(renderedSecond.hasAttribute('data-page-pending')).toBe(true);
     expect(renderedSecond.childElementCount).toBe(0);
+    expect(rendered.querySelector('#page-first .dashboard-view-skeleton')).not.toBeNull();
+    await vi.waitFor(() => {
+      expect(rendered.querySelector('#page-first .dashboard-view-skeleton')).toBeNull();
+    });
+    const rehydratedFirst = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
     expect(/** @type {HTMLDetailsElement | null} */ (rehydratedFirst.querySelector('details'))?.open).toBe(true);
     expect(rendered.ownerDocument.documentElement.scrollTop).toBe(320);
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
