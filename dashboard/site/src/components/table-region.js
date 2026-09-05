@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { processRows, processTableSummaries } from '../data-processor.js';
 import { renderReactiveTableSummaryRow, renderTableSummaryRow } from './table-summary.js';
-import { renderLabeledControl } from './ui-primitives.js';
+import { renderEmptyTableRow, renderLabeledControl } from './ui-primitives.js';
 
 /**
  * @typedef {{ key: string, label: string, allLabel?: string, columnIndex: number, always?: boolean }} TableFilterField
@@ -131,7 +131,7 @@ export function renderTableRegion(options) {
           null,
           hasRows
             ? bodyRows
-            : h('tr', null, h('td', { colSpan }, emptyMessage))
+            : renderEmptyTableRow(colSpan, emptyMessage)
         )
       )
     ),

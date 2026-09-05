@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { pluralSuffix, titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
-import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage, renderIdentityLink, renderLegendSwatch, renderPanelHeader, renderTableHeadRow } from './ui-primitives.js';
+import { completenessCaveat, coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage, renderEmptyTableRow, renderIdentityLink, renderLegendSwatch, renderPanelHeader, renderTableHeadRow } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 import { rowsFor } from './source-rows.js';
 
@@ -105,7 +105,7 @@ export function renderPackageSummary(sources, mode = 'all') {
           null,
           ...(packages.length > 0
             ? packages.map((entry) => renderPackageSummaryRow(entry, summaries.get(entry.key)))
-            : [h('tr', null, h('td', { colSpan: 8 }, 'No packages discovered.'))])
+            : [renderEmptyTableRow(8, 'No packages discovered.')])
         )
       )
     )

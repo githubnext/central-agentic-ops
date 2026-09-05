@@ -217,6 +217,18 @@ export function renderEmptyMessage(message, extraAttrs) {
 }
 
 /**
+ * Renders the shared "single `<td>` spanning the full table width" empty-body
+ * row used by table regions and package summary tables when there is no data
+ * to display.
+ * @param {number} colSpan
+ * @param {string} message
+ * @returns {HTMLElement}
+ */
+export function renderEmptyTableRow(colSpan, message) {
+  return h('tr', null, h('td', { colSpan }, message));
+}
+
+/**
  * Renders the shared "`<ul>` of items, or a single fallback `<li>`" pattern
  * used by summary and provenance lists when there is no data to display.
  * @template T
