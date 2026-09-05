@@ -2110,6 +2110,7 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
 
 test("SelfCare dashboard reviewer checks deployments through stakeholder personas", () => {
   const source = workflow("self-care-dashboard-review.md");
+  const compiled = workflow("self-care-dashboard-review.lock.yml");
 
   assert.match(source, /name: "SelfCare \/ Dashboard"/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: dashboard-review/);
@@ -2120,7 +2121,10 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /version: "0\.1\.18"/);
   assert.match(source, /browsers: \[chromium\]/);
   assert.match(source, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
-  assert.doesNotMatch(source, /npx --yes playwright@.* install --with-deps chromium/);
+  assert.match(compiled, /npm install -g @playwright\/cli@0\.1\.18/);
+  assert.match(compiled, /install_playwright_browsers\.sh" chromium/);
+  assert.match(compiled, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
+  assert.doesNotMatch(compiled, /npx --yes playwright@.* install --with-deps chromium/);
   assert.match(source, /playwright-cli -s=preflight-chrome open about:blank[\s\S]*--browser=chromium/);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
