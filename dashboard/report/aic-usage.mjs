@@ -496,7 +496,15 @@ async function main() {
             ...common,
             aic,
           });
-          const security = await readRunSecurityTelemetry(temporaryRoot, runId);
+          let security;
+          try {
+            security = await readRunSecurityTelemetry(temporaryRoot, runId);
+          } catch (error) {
+            security = emptySecurityTelemetry();
+            security.firewall.firewallEvidenceState = "unavailable";
+            security.firewall.firewallEvidenceError = "Firewall artifact parsing failed.";
+            log.warning`Firewall evidence unavailable for ${repository} run ${runId}: ${error.message}`;
+          }
           if (
             common.createdAt
             && ["available", "partial", "disabled", "no-traffic"].includes(security.firewall.firewallEvidenceState)
@@ -515,10 +523,6 @@ async function main() {
         }
       } catch (error) {
         collectionAvailable = false;
-        for (const run of securityRuns.values()) {
-          run.security.firewall.firewallEvidenceState = "unavailable";
-          run.security.firewall.firewallEvidenceError = "Firewall artifact collection failed.";
-        }
         log.warning`AI Credit usage unavailable: ${error.message}`;
       }
     }
