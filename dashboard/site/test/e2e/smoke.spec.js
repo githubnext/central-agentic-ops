@@ -2791,13 +2791,12 @@ test('desktop navigation collapses to an icon rail and expands back to text', as
   await expect(page.locator('.org-sidebar')).toHaveCSS('width', '64px');
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('.nav-label').first()).toBeHidden();
-  const brandMarkRight = await page.locator('.sidebar-brand-mark').evaluate((mark) => mark.getBoundingClientRect().right);
-  const expandButtonLeft = await page.getByRole('button', { name: 'Expand navigation' }).evaluate((button) => button.getBoundingClientRect().left);
-  expect(brandMarkRight).toBeLessThanOrEqual(expandButtonLeft);
+  await expect(page.locator('.sidebar-brand')).toBeHidden();
 
   await page.getByRole('button', { name: 'Expand navigation' }).click();
   await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-collapsed/);
   await expect(page.locator('.nav-label').first()).toBeVisible();
+  await expect(page.locator('.sidebar-brand')).toBeVisible();
 });
 
 test('phone navigation uses icon shortcuts and a full-label view menu without horizontal scrolling', async ({ page }) => {
