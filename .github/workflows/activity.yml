@@ -60,7 +60,7 @@ jobs:
         with:
           path: ${{ runner.temp }}/cao-activity
           # A unique miss makes restore-keys select the newest immutable snapshot.
-          key: cao-activity-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          key: cao-activity-logs-lookup-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             cao-activity-logs-
 
