@@ -1,7 +1,7 @@
 ---
 private: true
 name: PR Sous Chef
-description: Nudges open pull requests toward a focused pr-finisher pass without mutating branches or broadening repository authority.
+description: Fixes actionable blockers on open pull requests and pushes validated changes to their branches.
 on:
   schedule: every 30m
   workflow_dispatch:
@@ -16,6 +16,9 @@ permissions:
   issues: read
   pull-requests: read
   copilot-requests: write
+checkout:
+  fetch-depth: 0
+  fetch: ["*"]
 strict: true
 max-ai-credits: 300
 timeout-minutes: 15
@@ -27,15 +30,39 @@ tools:
     mode: gh-proxy
     min-integrity: approved
     toolsets: [pull_requests, repos, actions]
-  bash: true
+  bash:
+    - "*"
+  edit:
+  playwright:
+    version: "0.1.18"
+network:
+  allowed:
+    - defaults
+    - node
+    - chrome
+    - playwright
 safe-outputs:
   add-comment:
     max: 4
     target: "*"
-  mentions:
-    allowed: ["@copilot"]
+  push-to-pull-request-branch:
+    target: "*"
+    max: 4
+    allowed-files:
+      - "**"
+    protected-files: allowed
+    if-no-changes: ignore
   noop:
 steps:
+  - name: Setup Node.js
+    uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+    with:
+      node-version: 24
+      cache: npm
+  - name: Install development dependencies
+    run: npm ci
+  - name: Install Playwright Chromium
+    run: npm exec playwright install --with-deps chromium
   - name: Build bounded pull request queue
     env:
       GH_TOKEN: ${{ github.token }}
@@ -56,27 +83,28 @@ steps:
 
 # PR Sous Chef
 
-Move open pull requests toward a focused maintainer investigation by posting at most four targeted nudges. This workflow is advisory: do not edit files, push branches, update pull requests, approve runs, dismiss reviews, or resolve review threads.
+Move open pull requests toward merge by fixing actionable code blockers and pushing validated commits to at most four pull request branches.
 
 ## Required process
 
 1. Read `/tmp/gh-aw/agent/pr-sous-chef-queue.json`.
-2. For a `/souschef` invocation, inspect only the pull request that received the command. Before applying any skip rule, acknowledge the invocation exactly once with the marker and a concise triage message, even when no further nudge is needed.
+2. For a `/souschef` invocation, inspect only the pull request that received the command.
 3. Otherwise, inspect the oldest updated candidates first and select at most four that have an actionable blocker:
    - merge conflicts;
    - completed failed checks;
    - unresolved review feedback;
    - an out-of-date branch when current policy requires it.
 4. Skip pull requests with a queued or in-progress check less than one hour old.
-5. Skip a pull request when a comment containing `<!-- cao-pr-sous-chef-nudge -->` was posted in the last 30 minutes, unless its branch is conflicting. Older comments do not make a pull request permanently ineligible.
-6. Use bounded, paginated reads. Fetch detailed checks or review threads only for a candidate likely to receive a nudge.
-7. Post one combined comment per selected pull request. It must:
-   - begin with `<!-- cao-pr-sous-chef-nudge -->`;
-   - mention `@copilot`;
-   - identify the concrete blocker with links when available;
-   - ask Copilot to invoke the repository's `pr-finisher` skill;
-   - avoid generic encouragement and duplicate comments.
+5. Use bounded, paginated reads. Fetch detailed checks or review threads only for a candidate likely to receive a fix.
+6. For each selected pull request:
+   - check out its head branch and invoke the repository's `pr-finisher` skill;
+   - diagnose the blocker from repository evidence, implement the smallest complete fix, and update tests when needed;
+   - use the preinstalled development tools and run the narrowest relevant validation;
+   - use `playwright-cli open --browser=chromium` when browser investigation is needed; this selects Chrome for Testing, while the repository Playwright installation provides Chromium for test execution;
+   - review the final diff, commit the validated changes, and call `push_to_pull_request_branch` with the pull request number;
+   - if and only if the pushed commit modifies one or more `.lock.yml` files, call `add_comment` on that pull request with `<!-- cao-pr-sous-chef-lock-change -->` followed by an agentic description of why each generated lock file changed and which editable workflow source produced it.
+7. Never edit a `.lock.yml` file directly. Change the corresponding workflow Markdown source and regenerate locks with the repository's compile command.
 8. Break ties by lower pull request number so repeated runs are deterministic.
-9. If no candidate needs action, call `noop` with concise counts for evaluated, pending, recently nudged, and ready pull requests.
+9. If no candidate needs a code change, call `noop` with concise counts for evaluated, pending, blocked-but-not-fixable, and ready pull requests.
 
-Never target another repository. Never use raw GitHub writes; all comments must use the `add-comment` safe output.
+Never target another repository. Never use raw GitHub writes; all branch pushes and comments must use their declared safe outputs.

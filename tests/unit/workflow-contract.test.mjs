@@ -743,9 +743,13 @@ test("repository PR automation remains bounded and adapted to CAO", () => {
   assert.match(finisher, /npm run compile:locks/);
   assert.doesNotMatch(finisher, /\bmake (?:fmt|lint|test|recompile)\b/);
 
-  assert.match(sousChef, /advisory: do not edit files, push branches/);
-  assert.doesNotMatch(sousChef, /push-to-pull-request-branch:|update-pull-request:|approve-workflow-run:/);
-  assert.match(sousChef, /last 30 minutes/);
+  assert.match(sousChef, /push-to-pull-request-branch:/);
+  assert.match(sousChef, /bash:\n\s+- "\*"/);
+  assert.match(sousChef, /npm ci/);
+  assert.match(sousChef, /playwright install --with-deps chromium/);
+  assert.match(sousChef, /Chrome for Testing/);
+  assert.match(sousChef, /if and only if the pushed commit modifies one or more `\.lock\.yml` files/);
+  assert.doesNotMatch(sousChef, /mention `@copilot`/);
   assert.match(sousChef, /fromJSON\(github\.event\.inputs\.aw_context \|\| '\{\}'\)\.item_number/);
 
   assert.equal([...mattReviewer.matchAll(/mattpocock\/skills\/[\w-]+@[0-9a-f]{40}/g)].length, 5);
