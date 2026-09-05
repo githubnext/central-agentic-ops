@@ -3,36 +3,11 @@
  */
 
 import { h } from '../dom.js';
-import { octicon } from '../octicons.js';
-import { renderModeBadge, renderStatusBadge } from './badge.js';
-import { findLink, renderExternalLinkOrFallback, resolveTitleLink } from './link-content.js';
-import { formatUtcDateTime } from './ui-primitives.js';
-import { text, titleCase } from './count-formatters.js';
-import { renderMetadataSection } from './view-chrome.js';
+import { resolveTitleLink } from './link-content.js';
+import { renderOutcomeDetailSection } from './outcome-detail-sections.js';
 import { createRouteView } from './route-empty-state.js';
 import { rowsFor } from './source-rows.js';
-
-const ALLOWED_MARKDOWN_TAGS = new Set([
-  'A', 'BLOCKQUOTE', 'BR', 'CODE', 'DEL', 'DETAILS', 'DIV', 'EM',
-  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR', 'IMG', 'INPUT', 'LI',
-  'OL', 'P', 'PRE', 'S', 'SPAN', 'STRONG', 'SUMMARY', 'TABLE', 'TBODY',
-  'TD', 'TH', 'THEAD', 'TR', 'UL'
-]);
-const DROPPED_MARKDOWN_TAGS = new Set([
-  'BUTTON', 'EMBED', 'FORM', 'IFRAME', 'MATH', 'OBJECT', 'OPTION',
-  'SCRIPT', 'SELECT', 'STYLE', 'SVG', 'TEXTAREA'
-]);
-const ALLOWED_MARKDOWN_CLASSES = new Set([
-  'contains-task-list',
-  'markdown-alert',
-  'markdown-alert-caution',
-  'markdown-alert-important',
-  'markdown-alert-note',
-  'markdown-alert-tip',
-  'markdown-alert-title',
-  'markdown-alert-warning',
-  'task-list-item'
-]);
+import { text, titleCase } from './count-formatters.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -71,164 +46,13 @@ export function renderOutcomeDetail(context) {
  * @returns {HTMLElement}
  */
 function renderOutcome(outcome) {
-  const sourceLink = findLink(outcome, 'external-link')
-    ?? findLink(outcome, 'issue-link')
-    ?? findLink(outcome, 'pull-request-link');
-  const runLink = findLink(outcome, 'run-link');
-  const workflowLink = findLink(outcome, 'workflow-link');
-  const workflowName = text(outcome['workflow-name']) || text(outcome.workflow) || 'Unknown workflow';
-  const body = sanitizedMarkdownNodes(text(outcome['outcome-body-html']));
-
   return h(
     'div',
     { className: 'outcome-view' },
-    h(
-      'article',
-      { className: 'discussion-post' },
-      h(
-        'header',
-        null,
-        h('div', { className: 'post-avatar', 'aria-hidden': 'true' }, octicon('mark-github')),
-        h(
-          'div',
-          null,
-          h('strong', null, 'github-actions[bot]'),
-          h(
-            'p',
-            null,
-            'published ',
-            formatUtcDateTime(outcome['published-at']),
-            ' · updated ',
-            formatUtcDateTime(outcome['observed-at'])
-          )
-        )
-      ),
-      h(
-        'div',
-        { className: 'markdown-body' },
-        ...(body.length > 0 ? body : [h('p', null, text(outcome['outcome-summary']) || 'No report content was provided.')])
-      )
-    ),
-    h(
-      'aside',
-      { className: 'outcome-meta', 'aria-label': 'Outcome metadata' },
-      renderMetadataSection('Status', renderStatusBadge(titleCase(text(outcome['outcome-status']) || text(outcome['outcome-state'])))),
-      renderMetadataSection('Disposition', renderStatusBadge(titleCase(text(outcome['outcome-state'])))),
-      ...(text(outcome['outcome-warning']) === 'Warning'
-        ? [renderMetadataSection('Warning', renderStatusBadge('Warning'))]
-        : []),
-      renderMetadataSection('Mode', renderModeBadge(titleCase(text(outcome['rollout-mode'])))),
-      renderMetadataSection('Category', h('p', null, titleCase(text(outcome['outcome-category'])))),
-      renderMetadataSection(
-        'Workflow',
-        h(
-          'p',
-          null,
-          renderExternalLinkOrFallback(workflowLink, workflowName, workflowName)
-        )
-      ),
-      renderMetadataSection(
-        'Provenance',
-        h(
-          'p',
-          null,
-          renderExternalLinkOrFallback(sourceLink, 'View source'),
-          sourceLink && runLink ? h('br') : null,
-          renderExternalLinkOrFallback(runLink, 'View workflow run'),
-          !sourceLink && !runLink ? 'Unavailable' : null
-        )
-      )
-    )
+    ...['discussion', 'metadata']
+      .map((body) => renderOutcomeDetailSection(outcome, body))
+      .filter((section) => section !== null)
   );
-}
-
-/**
- * Rebuilds GitHub-rendered Markdown through a strict element and attribute allowlist.
- * @param {string} html
- * @returns {Node[]}
- */
-function sanitizedMarkdownNodes(html) {
-  if (!html) return [];
-  const parsed = new DOMParser().parseFromString(html, 'text/html');
-  return [...parsed.body.childNodes]
-    .map(cloneSafeMarkdownNode)
-    .filter((node) => node !== null);
-}
-
-/**
- * @param {Node} node
- * @returns {Node | null}
- */
-function cloneSafeMarkdownNode(node) {
-  if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent ?? '');
-  if (!(node instanceof HTMLElement) || DROPPED_MARKDOWN_TAGS.has(node.tagName)) return null;
-
-  if (!ALLOWED_MARKDOWN_TAGS.has(node.tagName)) {
-    const fragment = document.createDocumentFragment();
-    for (const child of node.childNodes) {
-      const safeChild = cloneSafeMarkdownNode(child);
-      if (safeChild) fragment.append(safeChild);
-    }
-    return fragment;
-  }
-
-  const clone = document.createElement(node.tagName.toLowerCase());
-  copySafeAttributes(node, clone);
-  for (const child of node.childNodes) {
-    const safeChild = cloneSafeMarkdownNode(child);
-    if (safeChild) clone.append(safeChild);
-  }
-  return clone;
-}
-
-/**
- * @param {HTMLElement} source
- * @param {HTMLElement} target
- */
-function copySafeAttributes(source, target) {
-  const safeClasses = [...source.classList].filter((name) => ALLOWED_MARKDOWN_CLASSES.has(name));
-  if (safeClasses.length > 0) target.className = safeClasses.join(' ');
-
-  if (source.tagName === 'A') {
-    const href = safeHttpsUrl(source.getAttribute('href'));
-    if (href) {
-      target.setAttribute('href', href);
-      target.setAttribute('target', '_blank');
-      target.setAttribute('rel', 'noopener noreferrer');
-    }
-  } else if (source.tagName === 'IMG') {
-    const src = safeHttpsUrl(source.getAttribute('src'));
-    if (src) target.setAttribute('src', src);
-    target.setAttribute('alt', source.getAttribute('alt') ?? '');
-    target.setAttribute('loading', 'lazy');
-  } else if (source.tagName === 'INPUT' && source.getAttribute('type') === 'checkbox') {
-    target.setAttribute('type', 'checkbox');
-    target.setAttribute('disabled', '');
-    if (source.hasAttribute('checked')) target.setAttribute('checked', '');
-  } else if (source.tagName === 'DETAILS' && source.hasAttribute('open')) {
-    target.setAttribute('open', '');
-  } else if (source.tagName === 'TH') {
-    const scope = source.getAttribute('scope');
-    if (['row', 'col', 'rowgroup', 'colgroup'].includes(scope ?? '')) target.setAttribute('scope', scope ?? '');
-  }
-
-  if (source.tagName === 'TD' || source.tagName === 'TH') {
-    for (const attribute of ['colspan', 'rowspan']) {
-      const value = source.getAttribute(attribute);
-      if (value && /^[1-9]\d{0,2}$/.test(value)) target.setAttribute(attribute, value);
-    }
-  }
-}
-
-/** @param {string | null} value */
-function safeHttpsUrl(value) {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
-  } catch {
-    return null;
-  }
 }
 
 /** @param {Record<string, unknown>} outcome */
@@ -239,4 +63,3 @@ function outcomeDescription(outcome) {
     titleCase(text(outcome['outcome-status']) || text(outcome['outcome-state']))
   ].filter(Boolean).join(' · ');
 }
-

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderOutcomeDetail } from '../../src/components/outcome-detail.js';
+import { renderOutcomeDetailSection } from '../../src/components/outcome-detail-sections.js';
 
 const metadata = {
   'source-id': 'outcomes-fixture',
@@ -99,5 +100,18 @@ describe('outcome detail', () => {
     }));
 
     expect(rendered.textContent).toBe('Outcome not found.');
+  });
+
+  it('renders reusable outcome detail sections independently', () => {
+    const outcome = context().sources.outcomes.rows[0];
+
+    const discussion = renderOutcomeDetailSection(outcome, 'discussion');
+    const metadataSection = renderOutcomeDetailSection(outcome, 'metadata');
+
+    expect(discussion?.className).toBe('discussion-post');
+    expect(discussion?.querySelector('.markdown-body')?.textContent).toContain('SummaryPassedChecksunsafe');
+    expect(metadataSection?.className).toBe('outcome-meta');
+    expect(metadataSection?.textContent).toContain('DispositionLifecycle Close');
+    expect(metadataSection?.querySelectorAll('a')).toHaveLength(3);
   });
 });
