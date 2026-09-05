@@ -3158,63 +3158,6 @@
                 "title": "Runner"
               }
             }
-          },
-          {
-            "id": "job-duration-by-runtime-engine",
-            "title": "Job time by sandbox runtime and agent engine",
-            "description": "Mean elapsed job time grouped by the gh-aw sandbox runtime profile and agent engine.",
-            "data": {
-              "source": "job-performance"
-            },
-            "mark": "chart",
-            "chart": "bar",
-            "table": false,
-            "layout": "half",
-            "encoding": {
-              "x": {
-                "field": "sandbox-runtime",
-                "type": "nominal",
-                "title": "Sandbox runtime"
-              },
-              "y": {
-                "field": "job-duration-seconds",
-                "type": "quantitative",
-                "aggregate": "mean",
-                "title": "Mean job time",
-                "unit": "seconds"
-              },
-              "color": {
-                "field": "engine",
-                "type": "nominal",
-                "title": "Agent engine"
-              }
-            }
-          },
-          {
-            "id": "job-duration-by-model",
-            "title": "Job time by model",
-            "description": "Mean elapsed job time grouped by resolved model, falling back to the requested model.",
-            "data": {
-              "source": "job-performance"
-            },
-            "mark": "chart",
-            "chart": "bar",
-            "table": false,
-            "layout": "half",
-            "encoding": {
-              "x": {
-                "field": "model",
-                "type": "nominal",
-                "title": "Model"
-              },
-              "y": {
-                "field": "job-duration-seconds",
-                "type": "quantitative",
-                "aggregate": "mean",
-                "title": "Mean job time",
-                "unit": "seconds"
-              }
-            }
           }
         ]
       },

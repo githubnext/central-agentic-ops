@@ -9,6 +9,7 @@ public/cao/
 /.cao-dashboard-preview-*/
 /.cao-dashboard-e2e-*/
 /.cao-dashboard-traces/
+/.cao-dashboard-dev-server.json
 
 # CAO control modules checked out during pre-activation
 /.cao/

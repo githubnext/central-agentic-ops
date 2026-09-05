@@ -73,10 +73,16 @@ test("Copilot prompt saves a dashboard change, renders it, and correlates browse
     });
     await page.goto(`${preview.url}/?local-preview=copilot&fixtures#page-copilot-loop`);
     await expect(page.locator('[data-nav-page-id="copilot-loop"][aria-current="page"]')).toBeVisible();
+    await page.locator(".dashboard-copilot-open").click();
+    await expect(page.locator("#dashboard-copilot-dialog-title"))
+      .toHaveText("How would you want to modify this view?");
     await page.locator("#dashboard-copilot-request").fill("Rename this active view");
     await page.locator("#dashboard-copilot-prompt").evaluate((form) => form.requestSubmit());
+    await expect(page.locator("#dashboard-copilot-request")).toHaveValue("");
 
     await expect(page.locator("#dashboard-copilot-status")).toHaveText("Updated.");
+    await expect(page.locator(".dashboard-copilot-message-assistant"))
+      .toContainText("Updated the active view title.");
     await expect(page.getByText("Updated by Copilot", { exact: true }).first()).toBeVisible();
     expect(JSON.parse(await readFile(dashboardPath, "utf8")).dashboard.pages[0].title)
       .toBe("Updated by Copilot");

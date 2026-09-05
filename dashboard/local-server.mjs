@@ -39,6 +39,7 @@ const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".
   : resolve(scriptDirectory, "..");
 const socketEndpoint = "/__dashboard_socket";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
+const devServerPidFileName = ".cao-dashboard-dev-server.json";
 const trustedDashboardWorkflowPaths = new Set([
   ".github/workflows/dashboard-build.yml",
   ".github/workflows/dashboard.yml",
@@ -68,6 +69,13 @@ async function existingDirectories(paths) {
     if (entry?.isDirectory()) directories.push(path);
   }
   return directories;
+}
+
+export async function repositorySkillDirectories(workingDirectory) {
+  return existingDirectories([
+    join(workingDirectory, ".github", "skills"),
+    join(workingDirectory, ".agents", "skills"),
+  ]);
 }
 
 async function canonicalPath(path) {
@@ -196,6 +204,11 @@ function normalizeDashboardJson(source) {
   return JSON.stringify(JSON.parse(source), null, 2);
 }
 
+function dashboardPageIndex(document, view) {
+  return document?.dashboard?.pages?.findIndex((page) =>
+    [page?.id, page?.title, page?.["navigation-label"]].includes(view)) ?? -1;
+}
+
 const secretKeyPattern = /(?:^|[-_])(api[-_]?key|authorization|client[-_]?secret|password|private[-_]?key|secret|token)(?:$|[-_])/i;
 const secretValuePatterns = [
   /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g,
@@ -240,6 +253,119 @@ function errorMetadata(error) {
       ? String(error.code)
       : undefined,
   };
+}
+
+async function processIsRunning(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === "ESRCH") return false;
+    throw error;
+  }
+}
+
+async function isWorkspaceDashboardServer(pid, workingDirectory) {
+  try {
+    const [commandLine, processDirectory] = await Promise.all([
+      readFile(`/proc/${pid}/cmdline`, "utf8"),
+      realpath(`/proc/${pid}/cwd`),
+    ]);
+    const arguments_ = commandLine.split("\0").filter(Boolean);
+    return processDirectory === workingDirectory
+      && arguments_.some((argument) =>
+        argument === "dashboard/local-server.mjs"
+        || argument.endsWith("/dashboard/local-server.mjs")
+        || argument.endsWith("/.github/aw/dashboard/local-server.mjs"));
+  } catch (error) {
+    if (error?.code === "ENOENT" || error?.code === "ESRCH") return false;
+    throw error;
+  }
+}
+
+async function listeningProcessIds(port) {
+  try {
+    const result = await executeFile("lsof", [
+      "-nP",
+      `-iTCP:${port}`,
+      "-sTCP:LISTEN",
+      "-t",
+    ]);
+    return result.stdout
+      .trim()
+      .split(/\s+/)
+      .filter((value) => /^[1-9][0-9]*$/.test(value))
+      .map(Number);
+  } catch (error) {
+    if (error?.code === 1 || error?.code === "ENOENT") return [];
+    throw error;
+  }
+}
+
+async function waitForProcessExit(pid, timeout = 5000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if (!await processIsRunning(pid)) return true;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  return !await processIsRunning(pid);
+}
+
+async function readDevServerPid(pidFile) {
+  try {
+    const record = JSON.parse(await readFile(pidFile, "utf8"));
+    return Number.isInteger(record?.pid) && record.pid > 0
+      ? { pid: record.pid, port: record.port }
+      : null;
+  } catch (error) {
+    if (error?.code === "ENOENT" || error instanceof SyntaxError) return null;
+    throw error;
+  }
+}
+
+export async function replaceExistingDashboardDevServer({
+  workingDirectory,
+  port,
+  output = console.log,
+}) {
+  const resolvedWorkingDirectory = await realpath(workingDirectory);
+  const pidFile = join(resolvedWorkingDirectory, devServerPidFileName);
+  const recorded = await readDevServerPid(pidFile);
+  const candidates = new Set(await listeningProcessIds(port));
+  if (recorded?.port === port) candidates.add(recorded.pid);
+  candidates.delete(process.pid);
+
+  for (const pid of candidates) {
+    if (!await processIsRunning(pid)) continue;
+    if (!await isWorkspaceDashboardServer(pid, resolvedWorkingDirectory)) {
+      if ((await listeningProcessIds(port)).includes(pid)) {
+        throw new Error(`Port ${port} is used by another process; refusing to stop it.`);
+      }
+      continue;
+    }
+    output(`Stopping previous dashboard dev server (PID ${pid}).`);
+    process.kill(pid, "SIGTERM");
+    if (!await waitForProcessExit(pid)) {
+      output(`Previous dashboard dev server did not stop gracefully; terminating PID ${pid}.`);
+      process.kill(pid, "SIGKILL");
+      if (!await waitForProcessExit(pid, 2000)) {
+        throw new Error(`Unable to stop previous dashboard dev server PID ${pid}.`);
+      }
+    }
+  }
+
+  await writeFile(pidFile, `${JSON.stringify({
+    pid: process.pid,
+    port,
+    workingDirectory: resolvedWorkingDirectory,
+  }, null, 2)}\n`, "utf8");
+  return pidFile;
+}
+
+async function releaseDashboardDevServerPid(pidFile) {
+  if (!pidFile) return;
+  const recorded = await readDevServerPid(pidFile);
+  if (recorded?.pid === process.pid) await rm(pidFile, { force: true });
 }
 
 function createTraceRecorder({ traceFile, output = console.log }) {
@@ -309,6 +435,8 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
     throw error;
   }
   console.log("Copilot headless server started.");
+  const skillDirectories = await repositorySkillDirectories(workingDirectory);
+  console.log("Configured Copilot repository skills.", { skillDirectories });
 
   let activeSession = null;
   return {
@@ -327,40 +455,61 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         viewDashboardPath,
         editableDashboardPaths,
       });
-      const allowedPaths = new Set(editableDashboardPaths);
       const stringParameter = (description) => ({
         type: "string",
         description,
       });
+      const readViewDocument = async () => {
+        const document = JSON.parse(await readFile(viewDashboardPath, "utf8"));
+        const pageIndex = dashboardPageIndex(document, view);
+        if (pageIndex < 0) throw new Error("The selected dashboard view no longer exists.");
+        return { document, pageIndex };
+      };
       const tools = [
-        defineTool("read_dashboard_source", {
-          description: "Read one of the editable original dashboard source files.",
+        defineTool("read_dashboard_language_reference", {
+          description: "Read the canonical Dashboard Language vocabulary used by the local renderer.",
           parameters: {
             type: "object",
-            properties: { path: stringParameter("Exact dashboard source path from the request.") },
-            required: ["path"],
+            properties: {},
             additionalProperties: false,
           },
           skipPermission: true,
           defer: "never",
-          handler: async ({ path }) => {
-            if (!allowedPaths.has(path)) {
-              console.log("Denied dashboard source read outside the allowlist.", { path });
-              throw new Error("That path is not an editable dashboard source.");
-            }
-            const source = normalizeDashboardJson(await readFile(path, "utf8"));
-            console.log("Read normalized dashboard JSON for Copilot.", {
-              path,
+          handler: async () => {
+            const referencePath = join(scriptDirectory, "site", "src", "specification.js");
+            const source = await readFile(referencePath, "utf8");
+            console.log("Read Dashboard Language reference for Copilot.", {
+              path: referencePath,
               bytes: Buffer.byteLength(source),
             });
             return source;
           },
         }),
-        defineTool("validate_dashboard_source", {
-          description: "Validate candidate Dashboard Language JSON before saving it.",
+        defineTool("read_current_dashboard_view", {
+          description: "Read only the current dashboard page that the user asked to modify.",
           parameters: {
             type: "object",
-            properties: { source: stringParameter("Complete candidate dashboard source.") },
+            properties: {},
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async () => {
+            const { document, pageIndex } = await readViewDocument();
+            const source = JSON.stringify(document.dashboard.pages[pageIndex], null, 2);
+            console.log("Read current dashboard view for Copilot.", {
+              path: viewDashboardPath,
+              view,
+              bytes: Buffer.byteLength(source),
+            });
+            return source;
+          },
+        }),
+        defineTool("validate_current_dashboard_view", {
+          description: "Validate the complete candidate JSON object for the current dashboard page.",
+          parameters: {
+            type: "object",
+            properties: { source: stringParameter("Complete candidate dashboard page JSON object.") },
             required: ["source"],
             additionalProperties: false,
           },
@@ -368,70 +517,140 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           defer: "never",
           handler: async ({ source }) => {
             try {
-              normalizeDashboardJson(source);
-              console.log("Validated Copilot dashboard JSON candidate.", {
+              const candidate = JSON.parse(source);
+              const { document, pageIndex } = await readViewDocument();
+              const currentPage = document.dashboard.pages[pageIndex];
+              if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+                throw new Error("Dashboard page must be a JSON object.");
+              }
+              if (candidate.id !== currentPage.id) {
+                throw new Error("Dashboard page id cannot change.");
+              }
+              console.log("Validated Copilot dashboard view candidate.", {
+                view,
                 bytes: Buffer.byteLength(source),
               });
               return { ok: true };
             } catch (error) {
-              console.log("Rejected invalid Copilot dashboard JSON candidate.", errorMetadata(error));
-              return { ok: false, error: "Dashboard source must be valid JSON." };
+              console.log("Rejected invalid Copilot dashboard view candidate.", errorMetadata(error));
+              return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Dashboard page must be valid JSON.",
+              };
             }
           },
         }),
-        defineTool("save_dashboard_source", {
-          description: "Parse, normalize, and save the complete JSON for the current view's original dashboard file.",
+        defineTool("save_current_dashboard_view", {
+          description: "Save the complete validated JSON object for the current dashboard page.",
           parameters: {
             type: "object",
-            properties: { source: stringParameter("Complete validated dashboard source.") },
+            properties: { source: stringParameter("Complete validated dashboard page JSON object.") },
             required: ["source"],
             additionalProperties: false,
           },
           skipPermission: true,
           defer: "never",
           handler: async ({ source }) => {
-            let normalized;
             try {
-              normalized = normalizeDashboardJson(source);
+              const candidate = JSON.parse(source);
+              const { document, pageIndex } = await readViewDocument();
+              if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+                throw new Error("Dashboard page must be a JSON object.");
+              }
+              if (candidate.id !== document.dashboard.pages[pageIndex].id) {
+                throw new Error("Dashboard page id cannot change.");
+              }
+              document.dashboard.pages[pageIndex] = candidate;
+              const normalized = JSON.stringify(document, null, 2);
+              await writeFile(viewDashboardPath, normalized);
+              console.log("Saved normalized Copilot dashboard view.", {
+                path: viewDashboardPath,
+                view,
+                bytes: Buffer.byteLength(normalized),
+              });
+              return { ok: true };
             } catch (error) {
-              console.log("Rejected invalid Copilot dashboard JSON save.", {
+              console.log("Rejected invalid Copilot dashboard view save.", {
                 path: viewDashboardPath,
                 ...errorMetadata(error),
               });
-              return { ok: false, error: "Dashboard source must be valid JSON." };
+              return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Dashboard page must be valid JSON.",
+              };
             }
-            await writeFile(viewDashboardPath, normalized);
-            console.log("Saved normalized Copilot dashboard JSON source.", {
-              path: viewDashboardPath,
-              bytes: Buffer.byteLength(normalized),
-            });
-            return { ok: true };
           },
         }),
       ];
       let session;
+      let aborted = false;
+      const handleSessionEvent = (event) => {
+        console.log("Copilot dashboard session event.", {
+          ...(session?.sessionId ? { sessionId: session.sessionId } : {}),
+          type: event.type,
+        });
+        if (event.type === "session.skills_loaded") {
+          const skills = event.data.skills
+            .filter((skill) => skill.enabled)
+            .map((skill) => skill.commandName || skill.name);
+          console.log("Copilot dashboard skills loaded.", { skills });
+          onEvent({
+            type: "status",
+            message: skills.includes("generate-dashboard-ir")
+              ? "Dashboard authoring skill loaded."
+              : "Repository skills loaded.",
+          });
+        } else if (event.type === "skill.invoked") {
+          console.log("Copilot dashboard skill invoked.", {
+            name: event.data.name,
+            path: event.data.path,
+            source: event.data.source,
+          });
+          onEvent({ type: "status", message: `Using /${event.data.name}…` });
+        } else if (event.type === "assistant.message_delta") {
+          onEvent({ type: "assistant-delta", content: event.data.deltaContent });
+        } else if (event.type === "assistant.message") {
+          onEvent({ type: "assistant-message", content: event.data.content });
+        } else if (event.type === "tool.execution_start") {
+          onEvent({ type: "status", message: `Running ${event.data.toolName}…` });
+        } else if (event.type === "tool.execution_complete") {
+          onEvent({
+            type: "status",
+            message: event.data.success
+              ? "Applying dashboard update…"
+              : "Copilot is retrying after a tool error…",
+          });
+        } else if (event.type === "session.error") {
+          onEvent({ type: "error", message: event.data.message });
+        } else if (event.type === "session.idle" && event.data.aborted) {
+          aborted = true;
+        }
+      };
       try {
         session = await client.createSession({
           workingDirectory,
+          enableSkills: true,
+          skillDirectories,
           availableTools: [
             "builtin:skill",
             "builtin:task_complete",
-            "custom:read_dashboard_source",
-            "custom:validate_dashboard_source",
-            "custom:save_dashboard_source",
+            "custom:read_dashboard_language_reference",
+            "custom:read_current_dashboard_view",
+            "custom:validate_current_dashboard_view",
+            "custom:save_current_dashboard_view",
           ],
           tools,
           onPermissionRequest: async (permission) => {
             console.log("Denied unexpected Copilot permission request.", { kind: permission.kind });
             return { kind: "reject", feedback: "This session only permits the dashboard editing tools." };
           },
+          onEvent: handleSessionEvent,
         });
       } catch (error) {
         console.log("Copilot dashboard session creation failed.", errorMetadata(error));
         throw error;
       }
       console.log("Copilot dashboard session created.", { sessionId: session.sessionId, view });
-      let aborted = false;
       let disconnected = false;
       const disconnect = async () => {
         if (disconnected) return;
@@ -463,25 +682,6 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         void sessionHandle.stop();
       };
       signal?.addEventListener("abort", stopOnAbort, { once: true });
-      const unsubscribe = session.on((event) => {
-        console.log("Copilot dashboard session event.", { sessionId: session.sessionId, type: event.type });
-        if (event.type === "assistant.message_delta") {
-          onEvent({ type: "assistant-delta", content: event.data.deltaContent });
-        } else if (event.type === "assistant.message") {
-          onEvent({ type: "assistant-message", content: event.data.content });
-        } else if (event.type === "tool.execution_start") {
-          onEvent({ type: "status", message: `Running ${event.data.toolName}…` });
-        } else if (event.type === "tool.execution_complete") {
-          onEvent({
-            type: "status",
-            message: event.data.success ? "Applying dashboard update…" : "A dashboard tool failed.",
-          });
-        } else if (event.type === "session.error") {
-          onEvent({ type: "error", message: event.data.message });
-        } else if (event.type === "session.idle" && event.data.aborted) {
-          aborted = true;
-        }
-      });
       try {
         if (signal?.aborted) {
           await sessionHandle.stop();
@@ -503,7 +703,7 @@ The original dashboard source most likely defining this view is ${JSON.stringify
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Use only read_dashboard_source, validate_dashboard_source, and save_dashboard_source to inspect, validate, and save the original source that defines the named view. Run validate_dashboard_source repeatedly until it passes, then use save_dashboard_source so the JSON is normalized with two-space indentation and the local preview reloads. Complete the edit rather than only describing it.`,
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Do not use grep, shell, filesystem, or generic file tools. Use read_dashboard_language_reference when language vocabulary is needed, then use only read_current_dashboard_view, validate_current_dashboard_view, and save_current_dashboard_view to inspect, validate, and save the selected page. Run validate_current_dashboard_view until it passes, then use save_current_dashboard_view. Complete the edit rather than only describing it.`,
           });
         } catch (error) {
           if (aborted) return { aborted: true };
@@ -518,7 +718,6 @@ Built-in views come from the site's dashboard.json. Package views come from thei
         return { aborted };
       } finally {
         signal?.removeEventListener("abort", stopOnAbort);
-        unsubscribe();
         if (activeSession === sessionHandle) activeSession = null;
         await disconnect();
       }
@@ -620,6 +819,7 @@ function readWebsocketFrames(buffer) {
  *   createCopilotRuntime?: typeof startCopilotRuntime,
  *   traceFile?: string,
  *   traceOutput?: (message: string) => void,
+ *   requestOutput?: (message: string) => void,
  *   workingDirectory?: string,
  *   host?: string,
  *   port?: number,
@@ -638,6 +838,7 @@ export async function startDashboardServer({
   createCopilotRuntime = startCopilotRuntime,
   traceFile,
   traceOutput = console.log,
+  requestOutput = console.log,
   workingDirectory = process.cwd(),
   host = "127.0.0.1",
   port = 4173,
@@ -693,6 +894,7 @@ export async function startDashboardServer({
   let signature = "";
   let refreshTimer;
   let refreshPromise = Promise.resolve();
+  let refreshRetryCount = 0;
   let closed = false;
   let copilotRuntime;
   let copilotRequestActive = false;
@@ -863,7 +1065,11 @@ export async function startDashboardServer({
         },
       });
       try {
-        const packagePaths = await rebuild(true, traceId, true);
+        refreshPromise = refreshPromise.then(
+          () => rebuild(true, traceId, true),
+          () => rebuild(true, traceId, true),
+        );
+        const packagePaths = await refreshPromise;
         await refreshWatchers(packagePaths);
         await rendered.promise;
       } finally {
@@ -985,8 +1191,14 @@ export async function startDashboardServer({
     try {
       const packagePaths = await rebuild();
       await refreshWatchers(packagePaths);
+      refreshRetryCount = 0;
     } catch (error) {
       console.log(`Dashboard update failed: ${error instanceof Error ? error.message : String(error)}`);
+      if (refreshRetryCount < 4) {
+        refreshRetryCount += 1;
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(scheduleRefresh, refreshRetryCount * 100);
+      }
     }
   };
 
@@ -1030,6 +1242,12 @@ export async function startDashboardServer({
     }
   };
   const server = createServer(async (request, response) => {
+    const requestStarted = performance.now();
+    let requestPath = "<outside-preview>";
+    response.once("finish", () => {
+      const duration = Math.max(0, Math.round(performance.now() - requestStarted));
+      requestOutput(`${request.method || "GET"} ${requestPath} ${response.statusCode} ${duration}ms`);
+    });
     try {
       if (!expectedAuthority || !request.headers.host || !isAllowedHost(request.headers.host)
           || /^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(request.url || "")) {
@@ -1041,6 +1259,7 @@ export async function startDashboardServer({
         response.writeHead(404).end("Not found\n");
         return;
       }
+      requestPath = `${url.pathname.slice(routePrefix.length) || "/"}${url.search}`;
       let pathname;
       try {
         pathname = decodeURIComponent(url.pathname.slice(routePrefix.length) || "/");
@@ -1246,6 +1465,7 @@ function parseArguments(arguments_) {
     const argument = arguments_[index];
     if (argument === "--help") return { help: true };
     if (argument === "--copilot") options.copilot = true;
+    else if (argument === "--replace-existing") options.replaceExisting = true;
     else if (argument === "--trace-file") {
       options.traceFile = arguments_[index += 1];
       if (!options.traceFile) throw new Error("--trace-file requires a value");
@@ -1273,15 +1493,34 @@ function parseArguments(arguments_) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   if (options.help) {
-    console.log("usage: local-server.mjs [--copilot] [--trace-file PATH] [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]");
+    console.log("usage: local-server.mjs [--copilot] [--replace-existing] [--trace-file PATH] [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]");
     return;
   }
-  const preview = await startDashboardServer(options);
+  const workingDirectory = await realpath(process.cwd());
+  const port = options.port ?? 4173;
+  let pidFile;
+  if (options.replaceExisting) {
+    pidFile = await replaceExistingDashboardDevServer({ workingDirectory, port });
+  }
+  let preview;
+  try {
+    preview = await startDashboardServer(options);
+  } catch (error) {
+    await releaseDashboardDevServerPid(pidFile);
+    throw error;
+  }
   console.log(`Dashboard preview: ${preview.url}/`);
   if (preview.codespaceUrl) {
     console.log(`Dashboard preview (Codespace): ${preview.codespaceUrl}/`);
   }
-  const shutdown = () => void preview.close().then(() => process.exit());
+  let shuttingDown = false;
+  const shutdown = () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    void preview.close()
+      .then(() => releaseDashboardDevServerPid(pidFile))
+      .then(() => process.exit());
+  };
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
 }

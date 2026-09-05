@@ -113,6 +113,7 @@ test("local dashboard server composes package dashboards and reloads after updat
       },
     }));
   };
+  const requestLogs = [];
 
   const preview = await startDashboardServer({
     siteRoot,
@@ -121,6 +122,7 @@ test("local dashboard server composes package dashboards and reloads after updat
     downloadData,
     allowMissingOrigin: true,
     workingDirectory: root,
+    requestOutput: (message) => requestLogs.push(message),
     port: 0,
   });
   try {
@@ -142,10 +144,12 @@ test("local dashboard server composes package dashboards and reloads after updat
     assert.deepEqual(Buffer.from(await imageResponse.arrayBuffer()), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
     assert.equal((await fetch(`${preview.url}/private.txt`)).status, 404);
     assert.equal((await fetch(`${preview.url}/private`)).status, 404);
+    assert.ok(requestLogs.some((message) => /^GET \/ 302 \d+ms$/.test(message)));
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");
     const browserDashboard = await dashboardResponse.json();
+    assert.ok(requestLogs.some((message) => /^GET \/dashboard\.json 200 \d+ms$/.test(message)));
     assert.deepEqual(
       browserDashboard.dashboard.pages.map(({ id }) => id),
       ["built-in", "package-one"],
@@ -156,6 +160,21 @@ test("local dashboard server composes package dashboards and reloads after updat
       repositories: {
         rows: [{ token: "[REDACTED]", note: "[REDACTED]" }],
       },
+    });
+
+    test("repository skill discovery includes supported workspace skill directories", async () => {
+      const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-skills-"));
+      await mkdir(path.join(root, ".github", "skills"), { recursive: true });
+      await mkdir(path.join(root, ".agents", "skills"), { recursive: true });
+      try {
+        const { repositorySkillDirectories } = await import("../../dashboard/local-server.mjs");
+        assert.deepEqual(await repositorySkillDirectories(root), [
+          path.join(root, ".github", "skills"),
+          path.join(root, ".agents", "skills"),
+        ]);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
     });
 
     const traversalResponse = await fetch(`${preview.url}/..%2Foutside.txt`);
@@ -369,6 +388,7 @@ test("local dashboard CLI runs directly without a permission sandbox relaunch", 
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /usage: local-server\.mjs/);
+  assert.match(result.stdout, /--replace-existing/);
 });
 
 test("local dashboard server downloads dashboard-build data with GitHub CLI", async () => {

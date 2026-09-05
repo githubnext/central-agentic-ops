@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "setup:github-apps": "node .github/cao/setup-github-apps.mjs",
-    "dev": "node dashboard/local-server.mjs --copilot --trace-file .cao-dashboard-traces/latest.jsonl",
+    "dev": "node dashboard/local-server.mjs --copilot --replace-existing --trace-file .cao-dashboard-traces/latest.jsonl",
     "docs:dev": "astro dev",
     "docs:build": "astro build",
     "docs:preview": "astro preview",

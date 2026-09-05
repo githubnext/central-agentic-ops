@@ -61,9 +61,18 @@ export function renderCopilotPrompt(socket) {
     type: 'text',
     required: true,
     maxLength: 10000,
-    placeholder: 'Describe the change'
+    placeholder: 'Describe the change to this view'
   }));
-  const button = /** @type {HTMLButtonElement} */ (h('button', { type: 'submit' }, 'Send'));
+  const sendButton = /** @type {HTMLButtonElement} */ (h(
+    'button',
+    { type: 'submit', className: 'dashboard-copilot-send' },
+    'Send'
+  ));
+  const openButton = /** @type {HTMLButtonElement} */ (h(
+    'button',
+    { type: 'button', className: 'dashboard-copilot-open' },
+    'Open Copilot'
+  ));
   const toolbarStatus = h('output', {
     id: 'dashboard-copilot-status',
     'aria-live': 'polite'
@@ -84,10 +93,31 @@ export function renderCopilotPrompt(socket) {
   let sessionActive = false;
   let activeViewName = '';
   let assistantResponse = '';
-  let assistantMessageLogged = false;
   let activeTraceId = '';
   /** @type {HTMLElement | null} */
   let assistantContent = null;
+  const appendAssistantMessage = (content = '') => {
+    const message = h(
+      'div',
+      { className: 'dashboard-copilot-message dashboard-copilot-message-assistant' },
+      h('strong', null, 'Copilot'),
+      h('div', { className: 'dashboard-copilot-message-content' }, content)
+    );
+    conversation.append(message);
+    assistantContent = message.querySelector('.dashboard-copilot-message-content');
+    scrollConversation();
+  };
+  const scrollConversation = () => {
+    conversation.scrollTop = conversation.scrollHeight;
+  };
+  const openDialog = () => {
+    if (typeof dialog.showModal === 'function') {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      dialog.setAttribute('open', '');
+    }
+    input.focus();
+  };
 
   const stopSession = () => {
     if (!sessionActive) return;
@@ -110,7 +140,7 @@ export function renderCopilotPrompt(socket) {
     h(
       'header',
       { className: 'dashboard-copilot-dialog-header' },
-      h('h2', { id: 'dashboard-copilot-dialog-title' }, 'Copilot'),
+      h('h2', { id: 'dashboard-copilot-dialog-title' }, 'How would you want to modify this view?'),
       renderCloseButton({
         className: 'dashboard-copilot-dialog-close',
         label: 'Close Copilot chat',
@@ -118,8 +148,20 @@ export function renderCopilotPrompt(socket) {
       })
     ),
     conversation,
-    h('footer', { className: 'dashboard-copilot-dialog-footer' }, dialogStatus)
+    h(
+      'footer',
+      { className: 'dashboard-copilot-dialog-footer' },
+      h('label', { htmlFor: input.id }, 'Message Copilot'),
+      h(
+        'div',
+        { className: 'dashboard-copilot-composer' },
+        input,
+        sendButton
+      ),
+      dialogStatus
+    )
   );
+  openButton.addEventListener('click', openDialog);
   dialog.addEventListener('cancel', (event) => {
     event.preventDefault();
     closeDialog();
@@ -131,20 +173,22 @@ export function renderCopilotPrompt(socket) {
   const form = /** @type {HTMLFormElement} */ (h(
     'form',
     { id: 'dashboard-copilot-prompt', className: 'dashboard-copilot-prompt' },
-    h('label', { htmlFor: input.id }, 'Ask Copilot to update this view'),
-    input,
-    button,
+    h('strong', null, 'Copilot dashboard editor'),
+    openButton,
     toolbarStatus,
     dialog
   ));
 
-  button.disabled = socket.readyState !== 1;
+  sendButton.disabled = socket.readyState !== 1;
+  openButton.disabled = socket.readyState !== 1;
   socket.addEventListener('open', () => {
-    if (!sessionActive) button.disabled = false;
+    openButton.disabled = false;
+    if (!sessionActive) sendButton.disabled = false;
   });
   socket.addEventListener('close', () => {
     sessionActive = false;
-    button.disabled = true;
+    sendButton.disabled = true;
+    openButton.disabled = true;
     toolbarStatus.textContent = 'Copilot connection closed.';
     dialogStatus.textContent = 'Copilot connection closed.';
     if (activeTraceId) browserTrace(socket, 'copilot.socket.closed', activeTraceId);
@@ -156,20 +200,24 @@ export function renderCopilotPrompt(socket) {
     if (streamEvent.type === 'stopped') {
       dialogStatus.textContent = 'Session stopped.';
       sessionActive = false;
-      button.disabled = false;
+      sendButton.disabled = false;
       return;
     }
     if (!sessionActive) return;
     if (streamEvent.type === 'debug' && typeof streamEvent.message === 'string') {
       debugCopilotUpdate(streamEvent.message, streamEvent.details, activeTraceId);
     } else if (streamEvent.type === 'assistant-delta' && typeof streamEvent.content === 'string') {
+      if (!assistantContent) appendAssistantMessage();
       assistantResponse += streamEvent.content;
       if (assistantContent) assistantContent.textContent += streamEvent.content;
+      scrollConversation();
     } else if (streamEvent.type === 'assistant-message' && typeof streamEvent.content === 'string') {
+      if (!assistantContent) appendAssistantMessage(streamEvent.content);
+      else assistantContent.textContent = streamEvent.content;
       assistantResponse = streamEvent.content;
-      if (assistantContent) assistantContent.textContent = streamEvent.content;
+      scrollConversation();
       debugCopilotMessage('assistant', assistantResponse, activeTraceId);
-      assistantMessageLogged = true;
+      assistantContent = null;
     } else if (streamEvent.type === 'status' && typeof streamEvent.message === 'string') {
       dialogStatus.textContent = streamEvent.message;
     } else if (streamEvent.type === 'reloaded') {
@@ -177,21 +225,18 @@ export function renderCopilotPrompt(socket) {
       toolbarStatus.textContent = 'Updated.';
       browserTrace(socket, 'copilot.preview.confirmed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'done') {
-      if (!assistantMessageLogged && assistantResponse) {
-        debugCopilotMessage('assistant', assistantResponse, activeTraceId);
-      }
       dialogStatus.textContent = 'Saved and preview updated.';
       toolbarStatus.textContent = 'Updated.';
-      input.value = '';
       sessionActive = false;
-      button.disabled = false;
+      sendButton.disabled = false;
+      input.focus();
       debugCopilotUpdate('Dashboard view update stream completed.', {}, activeTraceId);
       browserTrace(socket, 'copilot.request.completed', activeTraceId, { view: activeViewName });
     } else if (streamEvent.type === 'error' && typeof streamEvent.message === 'string') {
       toolbarStatus.textContent = streamEvent.message;
       dialogStatus.textContent = streamEvent.message;
       sessionActive = false;
-      button.disabled = false;
+      sendButton.disabled = false;
       console.error('Copilot dashboard update failed.', {
         traceId: activeTraceId,
         view: activeViewName,
@@ -214,32 +259,22 @@ export function renderCopilotPrompt(socket) {
       || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     debugCopilotMessage('user', request, activeTraceId);
     assistantResponse = '';
-    assistantMessageLogged = false;
-    const assistantMessage = h(
-      'div',
-      { className: 'dashboard-copilot-message dashboard-copilot-message-assistant' },
-      h('strong', null, 'Copilot'),
-      h('div', { className: 'dashboard-copilot-message-content' })
-    );
-    assistantContent = assistantMessage.querySelector('.dashboard-copilot-message-content');
-    conversation.replaceChildren(
+    assistantContent = null;
+    conversation.append(
       h(
         'div',
         { className: 'dashboard-copilot-message dashboard-copilot-message-user' },
         h('strong', null, 'You'),
         h('div', { className: 'dashboard-copilot-message-content' }, request)
-      ),
-      assistantMessage
+      )
     );
+    input.value = '';
+    scrollConversation();
     dialogStatus.textContent = 'Copilot is working…';
     toolbarStatus.textContent = 'Working…';
-    if (typeof dialog.showModal === 'function') {
-      dialog.showModal();
-    } else {
-      dialog.setAttribute('open', '');
-    }
+    openDialog();
 
-    button.disabled = true;
+    sendButton.disabled = true;
     sessionActive = true;
     debugCopilotUpdate('Sending dashboard view update request.', {
       view,

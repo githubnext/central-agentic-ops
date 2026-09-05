@@ -65,12 +65,14 @@ export function primerStylesheet() {
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; letter-spacing: 0; }
-.dashboard-copilot-prompt { --copilot-accent: var(--purple); --copilot-accent-muted: color-mix(in srgb, var(--purple) 16%, transparent); display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 2px solid var(--copilot-accent); background: linear-gradient(90deg, var(--copilot-accent-muted), var(--canvas-subtle) 38%); color: var(--fg); }
-.dashboard-copilot-prompt label { font-weight: 600; }
+.dashboard-copilot-prompt { --copilot-accent: var(--purple); --copilot-accent-muted: color-mix(in srgb, var(--purple) 16%, transparent); --copilot-button-bg: #6e40c9; --copilot-button-fg: #fff; display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 2px solid var(--copilot-accent); background: linear-gradient(90deg, var(--copilot-accent-muted), var(--canvas-subtle) 38%); color: var(--fg); }
+@media (prefers-color-scheme: light) { .dashboard-copilot-prompt { --copilot-button-bg: #6639ba; } }
+.dashboard-copilot-prompt > strong { margin-right: auto; }
 .dashboard-copilot-prompt input { min-width: 12rem; flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
 .dashboard-copilot-prompt input:focus { border-color: var(--copilot-accent); outline: 2px solid color-mix(in srgb, var(--copilot-accent) 35%, transparent); outline-offset: 0; }
-.dashboard-copilot-prompt > button { padding: 6px 12px; border: 1px solid var(--copilot-accent); border-radius: 6px; background: var(--copilot-accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
-.dashboard-copilot-prompt button:disabled { color: var(--muted); cursor: wait; }
+.dashboard-copilot-open, .dashboard-copilot-send { padding: 6px 12px; border: 1px solid var(--copilot-button-bg); border-radius: 6px; background: var(--copilot-button-bg); color: var(--copilot-button-fg); font: inherit; font-weight: 600; cursor: pointer; }
+.dashboard-copilot-open:hover, .dashboard-copilot-send:hover { filter: brightness(1.16); }
+.dashboard-copilot-prompt button:disabled { border-color: var(--border); background: var(--canvas-inset); color: var(--muted); cursor: wait; filter: none; }
 .dashboard-copilot-prompt output { color: var(--muted); }
 .dashboard-copilot-dialog { --copilot-accent: var(--purple); --copilot-accent-muted: color-mix(in srgb, var(--purple) 16%, transparent); width: min(720px, calc(100vw - 32px)); height: min(680px, calc(100vh - 32px)); max-width: none; max-height: none; margin: auto; padding: 0; overflow: hidden; border: 1px solid var(--copilot-accent); border-top: 3px solid var(--copilot-accent); border-radius: 12px; background: var(--canvas); box-shadow: 0 16px 48px color-mix(in srgb, var(--purple) 28%, transparent); color: var(--fg); }
 .dashboard-copilot-dialog[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
@@ -84,7 +86,9 @@ body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5
 .dashboard-copilot-message-user { align-self: flex-end; background: var(--copilot-accent-muted); border-color: color-mix(in srgb, var(--copilot-accent) 55%, var(--border)); }
 .dashboard-copilot-message-assistant { align-self: flex-start; background: var(--canvas-subtle); }
 .dashboard-copilot-message-content { white-space: pre-wrap; overflow-wrap: anywhere; }
-.dashboard-copilot-dialog-footer { min-height: 48px; display: flex; align-items: center; padding: 10px 16px; border-top: 1px solid color-mix(in srgb, var(--copilot-accent) 35%, var(--border)); background: var(--canvas-subtle); }
+.dashboard-copilot-dialog-footer { min-height: 48px; display: grid; gap: 6px; padding: 10px 16px; border-top: 1px solid color-mix(in srgb, var(--copilot-accent) 35%, var(--border)); background: var(--canvas-subtle); }
+.dashboard-copilot-dialog-footer label { font-weight: 600; }
+.dashboard-copilot-composer { display: flex; gap: 8px; align-items: center; }
 .dashboard-copilot-dialog-status { color: var(--muted); }
 .dashboard-root { min-height: 100vh; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; }
 .octicon-sprite { width: 0; height: 0; position: absolute; overflow: hidden; }
