@@ -33,6 +33,11 @@ process.stdout.write(JSON.stringify({
   runs: [{
     database_id: 42,
     aic: 2.5,
+    safe_items_count: 4,
+    noop_count: 1,
+    missing_data_count: 2,
+    missing_tool_count: 3,
+    report_incomplete_count: 1,
     data: { findings: [{ severity: "high", total: 3 }] }
   }]
 }));
@@ -56,6 +61,19 @@ process.stdout.write(JSON.stringify({
     assert.equal(usage.schemaVersion, 3);
     assert.deepEqual(usage.runs[0].data, {
       findings: [{ severity: "high", total: 3 }],
+    });
+    assert.deepEqual({
+      safeItemsCount: usage.runs[0].safeItemsCount,
+      noopCount: usage.runs[0].noopCount,
+      missingDataCount: usage.runs[0].missingDataCount,
+      missingToolCount: usage.runs[0].missingToolCount,
+      reportIncompleteCount: usage.runs[0].reportIncompleteCount,
+    }, {
+      safeItemsCount: 4,
+      noopCount: 1,
+      missingDataCount: 2,
+      missingToolCount: 3,
+      reportIncompleteCount: 1,
     });
   } finally {
     await rm(root, { recursive: true, force: true });

@@ -279,6 +279,37 @@ describe('dashboard document validation', () => {
       expect.objectContaining({ field: 'run' })
     ]));
     expect(detection.views[3].encoding.href).toEqual({ field: 'run-link', type: 'nominal' });
+  });
+
+  it('defines safe-output diagnostics and performance in Explore', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const safeOutputs = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'safe-outputs');
+
+    expect(document.dashboard.navigation.find(
+      (/** @type {{ label: string }} */ section) => section.label === 'Explore'
+    ).pages).toContain('safe-outputs');
+    expect(safeOutputs.views.map((/** @type {{ id: string }} */ view) => view.id)).toEqual([
+      'safe-output-distribution',
+      'safe-output-trend',
+      'safe-output-workflow-performance',
+      'safe-output-diagnostics'
+    ]);
+    expect(safeOutputs.views[0]).toMatchObject({
+      mark: 'chart',
+      chart: 'pie',
+      data: { source: 'safe-output-performance' },
+      encoding: {
+        x: { field: 'safe-output-label' },
+        y: { field: 'safe-output-count', aggregate: 'sum' },
+        color: { field: 'safe-output-status' }
+      }
+    });
+    expect(safeOutputs.views[3].encoding.columns).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'safe-output-kind', title: 'Signal' }),
+      expect.objectContaining({ field: 'safe-output-status', display: 'status' }),
+      expect.objectContaining({ field: 'safe-output-count', title: 'Items' }),
+      expect.objectContaining({ field: 'run-conclusion', display: 'status' })
+    ]));
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
