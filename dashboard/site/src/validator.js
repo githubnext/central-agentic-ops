@@ -1744,6 +1744,16 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
   validateDatasetMetadata(getValueNodeByKey(viewNode, 'data'), view.data, `${path}.data`, errors);
+  if (
+    view.chart === 'heatmap'
+    && (!isPlainObject(view.data) || !Number.isInteger(view.data.limit) || Number(view.data.limit) > 100)
+  ) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'heatmap charts must declare data.limit no greater than 100.',
+      `${path}.data.limit`
+    ));
+  }
   validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, view.chart, sourceName, view.data, path, errors);
   validateTableActions(
     view.encoding,
@@ -2500,6 +2510,43 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
       }
     }
   }
+  if (chart === 'heatmap') {
+    for (const channel of ['x', 'y']) {
+      if (
+        isPlainObject(encoding[channel])
+        && encoding[channel].type !== undefined
+        && !['nominal', 'ordinal'].includes(String(encoding[channel].type))
+      ) {
+        errors.push(createError(
+          ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+          `heatmap chart ${channel} encoding must be nominal or ordinal when explicitly typed.`,
+          `${viewPath}.encoding.${channel}.type`
+        ));
+      }
+    }
+    if (!isPlainObject(encoding.color)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'heatmap charts must encode quantitative color.',
+        `${viewPath}.encoding.color`
+      ));
+    } else {
+      if (encoding.color.type !== undefined && encoding.color.type !== 'quantitative') {
+        errors.push(createError(
+          ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+          'heatmap chart color encoding must be quantitative when explicitly typed.',
+          `${viewPath}.encoding.color.type`
+        ));
+      }
+      if (encoding.color.aggregate === undefined || encoding.color.aggregate === 'none') {
+        errors.push(createError(
+          ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+          'heatmap chart color encoding must aggregate each discrete cell.',
+          `${viewPath}.encoding.color.aggregate`
+        ));
+      }
+    }
+  }
   if (chart === 'swimlane') {
     if (isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'temporal') {
       errors.push(createError(
@@ -2698,14 +2745,14 @@ function validateChartEncoding(encodingNode, encoding, chart, sourceName, path, 
   if (
     isPlainObject(encoding.y)
     && encoding.y.type !== undefined
-    && (chart === 'swimlane'
+    && (['heatmap', 'swimlane'].includes(String(chart))
       ? !['nominal', 'ordinal'].includes(String(encoding.y.type))
       : encoding.y.type !== 'quantitative')
   ) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
-      chart === 'swimlane'
-        ? 'swimlane chart y encoding must be nominal or ordinal when explicitly typed.'
+      ['heatmap', 'swimlane'].includes(String(chart))
+        ? `${chart} chart y encoding must be nominal or ordinal when explicitly typed.`
         : 'chart y encoding must be quantitative when explicitly typed.',
       `${path}.y.type`
     ));

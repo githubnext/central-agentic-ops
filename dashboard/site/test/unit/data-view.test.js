@@ -72,7 +72,7 @@ describe('data view renderer', () => {
     expect(rendered?.querySelector('.view-description')).toBeNull();
   });
 
-  it('defaults pie, line, histogram, and swimlane data tables to hidden while honoring explicit table visibility', () => {
+  it('defaults pie, line, heatmap, histogram, and swimlane data tables to hidden while honoring explicit table visibility', () => {
     const context = /** @type {Parameters<typeof renderDataView>[1]} */ ({
       pageId: 'repositories',
       title: 'AI Credit usage by AW repository',
@@ -125,6 +125,42 @@ describe('data view renderer', () => {
     });
     expect(histogram?.querySelector('.histogram-chart-widget')).not.toBeNull();
     expect(histogram?.querySelector('.custom-chart-table')).toBeNull();
+
+    const heatmapBuild = vi.fn(() => [{
+      key: 'build-ubuntu',
+      x: 'build',
+      y: 62,
+      color: 'ubuntu',
+      link: null
+    }]);
+    const heatmap = renderDataView('chart', {
+      ...context,
+      view: {
+        ...context.view,
+        chart: 'heatmap',
+        data: { source: 'job-performance', limit: 100 },
+        encoding: {
+          x: { field: 'job', type: 'nominal' },
+          y: { field: 'runner', type: 'nominal' },
+          color: { field: 'duration', type: 'quantitative', aggregate: 'mean', unit: 'seconds' }
+        }
+      },
+      buildChartPoints: heatmapBuild,
+      units: {
+        seconds: { name: 'Seconds', symbol: 's', significant: 1 }
+      }
+    });
+    expect(heatmapBuild).toHaveBeenCalledWith(
+      'repositories',
+      'AI Credit usage by AW repository',
+      context.rows,
+      expect.objectContaining({ field: 'job' }),
+      expect.objectContaining({ field: 'duration' }),
+      expect.objectContaining({ field: 'runner' }),
+      null
+    );
+    expect(heatmap?.querySelector('.heatmap-chart-widget')).not.toBeNull();
+    expect(heatmap?.querySelector('.custom-chart-table')).toBeNull();
 
     const swimlane = renderDataView('chart', {
       ...context,

@@ -691,6 +691,7 @@ dashboard:
         y: { field: 'aic', type: 'quantitative', aggregate: 'sum' }
       }
     });
+
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
 
     histogram.encoding.color = { field: 'repository', type: 'nominal' };
@@ -701,6 +702,40 @@ dashboard:
         code: 'DLS-E010',
         path: '$.dashboard.pages[3].views[1].encoding.color'
       }));
+    }
+  });
+
+  it('DLS-VIEW-005 accepts bounded heatmaps and rejects invalid axes, values, and limits', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const performance = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'performance');
+    const heatmap = performance.views.find((/** @type {{ id: string }} */ view) => view.id === 'job-duration-by-job-runner');
+
+    expect(heatmap).toMatchObject({
+      chart: 'heatmap',
+      data: { source: 'job-performance', limit: 100 },
+      encoding: {
+        x: { field: 'job', type: 'nominal' },
+        y: { field: 'runner', type: 'nominal' },
+        color: { field: 'job-duration-seconds', type: 'quantitative', aggregate: 'mean' }
+      }
+    });
+    expect(performance.sections.map((/** @type {{ id: string }} */ section) => section.id)).toEqual([
+      'workflow-duration',
+      'job-duration'
+    ]);
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    heatmap.data.limit = 101;
+    heatmap.encoding.y.type = 'quantitative';
+    heatmap.encoding.color.aggregate = 'none';
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ path: expect.stringContaining('.data.limit') }),
+        expect.objectContaining({ path: expect.stringContaining('.encoding.y.type') }),
+        expect.objectContaining({ path: expect.stringContaining('.encoding.color.aggregate') })
+      ]));
     }
   });
 

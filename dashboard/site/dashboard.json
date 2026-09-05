@@ -3984,12 +3984,13 @@
             "title": "Job time by job and runner",
             "description": "Mean elapsed job time, split by the runner labels reported by GitHub Actions.",
             "data": {
-              "source": "job-performance"
+              "source": "job-performance",
+              "limit": 100
             },
             "mark": "chart",
-            "chart": "bar",
+            "chart": "heatmap",
             "table": false,
-            "layout": "half",
+            "layout": "full",
             "encoding": {
               "x": {
                 "field": "job",
@@ -3997,16 +3998,16 @@
                 "title": "Job"
               },
               "y": {
+                "field": "runner",
+                "type": "nominal",
+                "title": "Runner"
+              },
+              "color": {
                 "field": "job-duration-seconds",
                 "type": "quantitative",
                 "aggregate": "mean",
                 "title": "Mean job time",
                 "unit": "human-duration"
-              },
-              "color": {
-                "field": "runner",
-                "type": "nominal",
-                "title": "Runner"
               }
             }
           },
@@ -4066,6 +4067,27 @@
                 "unit": "human-duration"
               }
             }
+          }
+        ],
+        "sections": [
+          {
+            "id": "workflow-duration",
+            "title": "Workflow duration",
+            "layout": "full",
+            "views": [
+              "workflow-run-duration-histogram"
+            ]
+          },
+          {
+            "id": "job-duration",
+            "title": "Job duration",
+            "description": "Compare elapsed job time across discrete execution environments.",
+            "layout": "full",
+            "views": [
+              "job-duration-by-job-runner",
+              "job-duration-by-runtime-engine",
+              "job-duration-by-model"
+            ]
           }
         ]
       },

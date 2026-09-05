@@ -146,6 +146,40 @@ describe('chart element helpers', () => {
     expect(singleCategoryPie.querySelector('.pie-chart-total-value')?.textContent).toBe('3');
   });
 
+  it('renders compact heatmaps as accessible labeled tables without relying on color', () => {
+    const chart = renderChartWidget('heatmap', [
+      { x: 'build', y: 62, color: 'ubuntu', source: {} },
+      { x: 'test', y: 125, color: 'ubuntu', source: {} },
+      { x: 'build', y: 80, color: 'macos', source: {} }
+    ], [], null, 'Mean job time', {
+      name: 'Seconds',
+      symbol: 's',
+      significant: 1
+    });
+
+    expect(chart.getAttribute('data-chart-widget')).toBe('heatmap');
+    expect(chart.querySelector('.heatmap-chart caption')?.textContent).toBe('Heatmap of Mean job time');
+    expect([...chart.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['build', 'test']);
+    expect([...chart.querySelectorAll('tbody th')].map((cell) => cell.textContent)).toEqual(['macos', 'ubuntu']);
+    expect(chart.querySelectorAll('.heatmap-cell')).toHaveLength(4);
+    expect([...chart.querySelectorAll('.heatmap-cell[tabindex="0"]')].map((cell) => cell.getAttribute('aria-label'))).toContain('build, ubuntu, Mean job time: 62 s');
+    expect(chart.querySelector('.heatmap-cell-empty')?.getAttribute('aria-label')).toBe('test, macos: no observation');
+    expect(chart.querySelector('.heatmap-cell-empty')?.getAttribute('tabindex')).toBe('0');
+    expect([...chart.querySelectorAll('.heatmap-cell[tabindex="0"]')].map((cell) => cell.textContent)).toContain('62 s');
+  });
+
+  it('rejects oversized heatmaps with a visible status instead of rendering a dense matrix', () => {
+    const points = Array.from({ length: 13 }, (_, index) => ({
+      x: `job-${index}`,
+      y: index,
+      color: 'ubuntu'
+    }));
+    const chart = renderChartWidget('heatmap', points, []);
+
+    expect(chart.querySelector('.heatmap-chart')).toBeNull();
+    expect(chart.querySelector('[role="status"]')?.textContent).toContain('12 categories per axis');
+  });
+
   it('renders categorical workflow runs as accessible swimlanes without connecting marks', () => {
     const points = [
       {

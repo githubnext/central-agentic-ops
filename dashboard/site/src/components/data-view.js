@@ -298,11 +298,13 @@ function renderChartView(context) {
   const reference = isPlainObject(encoding?.reference) && typeof encoding.reference.field === 'string' ? encoding.reference : null;
   const href = isPlainObject(encoding?.href) && typeof encoding.href.field === 'string' ? encoding.href : null;
   const chartType = typeof view.chart === 'string' ? view.chart : x?.type === 'temporal' ? 'line' : 'bar';
+  const value = chartType === 'heatmap' ? color : y;
+  const series = chartType === 'heatmap' ? y : color;
   const points = prepareChartPoints(
-    buildChartPoints(pageId, title, rows, x, y, color, href?.field ?? null),
+    buildChartPoints(pageId, title, rows, x, value, series, href?.field ?? null),
     x,
-    y,
-    color,
+    value,
+    series,
     view.data
   );
   const description = typeof view.description === 'string' && view.description.length > 0
@@ -318,8 +320,8 @@ function renderChartView(context) {
       renderedPoints,
       chartSeries,
       pieSummary,
-      y ? fieldTitle(y) : 'Total',
-      y ? fieldUnit(y, context.units ?? {}) : null,
+      value ? fieldTitle(value) : 'Total',
+      value ? fieldUnit(value, context.units ?? {}) : null,
       isPlainObject(view.data) && isPlainObject(view.data.time) ? view.data.time : null,
       reference?.field ?? null
     );
@@ -327,18 +329,27 @@ function renderChartView(context) {
       tableClassName: 'custom-chart-table',
       emptyMessage: 'No points available.',
       colSpan: color ? 3 : 2,
-      headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
+      headCells: chartType === 'heatmap'
+        ? [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', color ? fieldTitle(color) : 'Value']
+        : [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
       bodyRows: renderedPoints.map((point) => h(
         'tr',
         { 'data-custom-point-key': point.key },
         h('td', null, renderLinkedText(point.x, point.link)),
-        h('td', null, y ? formatNumber(point.y, fieldUnit(y, context.units ?? {})) : point.y),
-        color ? h('td', null, point.color ?? 'unknown') : null
+        ...(chartType === 'heatmap'
+          ? [
+              h('td', null, point.color ?? 'unknown'),
+              h('td', null, color ? formatNumber(point.y, fieldUnit(color, context.units ?? {})) : point.y)
+            ]
+          : [
+              h('td', null, y ? formatNumber(point.y, fieldUnit(y, context.units ?? {})) : point.y),
+              ...(color ? [h('td', null, point.color ?? 'unknown')] : [])
+            ])
       ))
     }) : null;
     return {
       chartContent: [
-        ...(color && !['pie', 'swimlane'].includes(chartType) ? [renderChartLegend(chartSeries, chartType)] : []),
+        ...(color && !['heatmap', 'pie', 'swimlane'].includes(chartType) ? [renderChartLegend(chartSeries, chartType)] : []),
         ...(pieSummary
           ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(
               pieSummary.entries,

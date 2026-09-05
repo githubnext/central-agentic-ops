@@ -567,7 +567,7 @@ test('Dashboard Next preserves the Home decision hierarchy across desktop and mo
   }
 });
 
-test('performance page lays out runtime charts side by side', async ({ page }) => {
+test('performance page renders a full heatmap and lays out supporting charts side by side', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
   await page.setViewportSize({ width: 1200, height: 844 });
@@ -610,9 +610,10 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
   const pageRegion = page.locator('[data-page-id="performance"]');
   await expect(pageRegion).toBeVisible();
   await expect(pageRegion.locator('.custom-view').first().locator('[data-chart-widget="histogram"]')).toBeVisible();
-  await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(3);
-  const runtimeCharts = pageRegion.locator('.custom-view-grid > [data-view-layout="half"]');
-  await expect(runtimeCharts).toHaveCount(4);
+  await expect(pageRegion.locator('[data-chart-widget="heatmap"]')).toBeVisible();
+  await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(2);
+  const runtimeCharts = pageRegion.locator('[data-section-id="job-duration"] .custom-view-grid > [data-view-layout="half"]');
+  await expect(runtimeCharts).toHaveCount(2);
   const chartLayout = await runtimeCharts.evaluateAll((charts) => {
     const bounds = charts.map((chart) => chart.getBoundingClientRect());
     return {
@@ -621,18 +622,11 @@ test('performance page lays out runtime charts side by side', async ({ page }) =
         leftX: bounds[0].x,
         rightX: bounds[1].x,
         verticalOffset: Math.abs(bounds[0].y - bounds[1].y)
-      },
-      secondRow: {
-        leftX: bounds[2].x,
-        rightX: bounds[3].x,
-        verticalOffset: Math.abs(bounds[2].y - bounds[3].y)
       }
     };
   });
   expect(chartLayout.firstRow.leftX).toBeLessThan(chartLayout.firstRow.rightX);
   expect(chartLayout.firstRow.verticalOffset).toBeLessThan(1);
-  expect(chartLayout.secondRow.leftX).toBeLessThan(chartLayout.secondRow.rightX);
-  expect(chartLayout.secondRow.verticalOffset).toBeLessThan(1);
   expect(Math.max(...chartLayout.widgetHeights) - Math.min(...chartLayout.widgetHeights)).toBeLessThan(1);
 });
 
