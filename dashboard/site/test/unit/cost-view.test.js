@@ -64,7 +64,8 @@ describe('Cost and efficiency dashboard view', () => {
     );
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');
-    expect(filterBar).toBeNull();
+    expect(filterBar).not.toBeNull();
+    expect(filterBar?.querySelectorAll('.mode-filter-control input')).toHaveLength(3);
     expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Horizon 1 week');
 
     const summary = page?.querySelector('.summary-grid');

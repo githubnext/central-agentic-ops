@@ -292,7 +292,7 @@ test('control-plane readiness surfaces blocking regressions', async ({ page }) =
   await readinessPage.getByRole('button', { name: 'Apply' }).click();
   await expect(readinessPage.locator('[aria-label="Time window"]')).toHaveValue('custom');
   await expect.poll(() => page.evaluate(() => JSON.parse(
-    localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings')
+    localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings') ?? '{}'
   ).range)).toBe('custom');
   await expect(readinessPage).toContainText('Ready to ship');
   await expect(readinessPage).toContainText('1 completed runs observed');
@@ -1590,7 +1590,7 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect(filterBar.getByRole('combobox', { name: 'Time window' })).toHaveValue('1w');
   await expect(filterBar.getByRole('checkbox')).toHaveCount(3);
   expect(await filterBar.getByRole('checkbox').evaluateAll(
-    (inputs) => inputs.every((input) => input.checked)
+    (inputs) => inputs.every((input) => /** @type {HTMLInputElement} */ (input).checked)
   )).toBe(true);
   await expect(filterBar.getByRole('link', { name: 'Export JSON' })).toHaveCount(0);
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
@@ -1599,7 +1599,7 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect(filterBar.locator('.count-badge')).toHaveText('2');
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('1');
   await expect.poll(() => page.evaluate(() => JSON.parse(
-    localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings')
+    localStorage.getItem('central-agentic-ops.dashboard.horizon-filter-settings') ?? '{}'
   ).modes)).toEqual(['live', 'unknown']);
   await filterBar.getByRole('button', { name: /Filter/ }).click();
 

@@ -39,7 +39,7 @@ describe('time-window filter bar', () => {
     const select = /** @type {HTMLSelectElement} */ (filterBar.querySelector('[aria-label="Time window"]'));
     select.value = '6h';
     select.dispatchEvent(new Event('change'));
-    expect(onChange).toHaveBeenLastCalledWith(new Map(), {
+    expect(onChange).toHaveBeenLastCalledWith(new Map([['mode', ['review', 'live', 'unknown']]]), {
       range: '6h',
       start: '2026-09-04T06:00:00.000Z',
       end: '2026-09-04T12:00:00.000Z'
