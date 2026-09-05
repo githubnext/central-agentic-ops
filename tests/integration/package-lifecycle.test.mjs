@@ -89,6 +89,7 @@ const selfCareExpectedFiles = [
   ".github/graders/self-care-docs-build-time-investigator-operational-value.sh",
   ".github/workflows/self-care-accessibility-checker.md",
   ".github/workflows/self-care-code-improvement.md",
+  ".github/workflows/self-care-dashboard-performance.md",
   ".github/workflows/self-care-data-acquisition-audit.md",
   ".github/workflows/self-care-dashboard-language-refactor.md",
   ".github/workflows/self-care-dashboard-review.md",

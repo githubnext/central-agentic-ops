@@ -59,6 +59,7 @@ Run these commands from the `dashboard/site/` directory:
 |---------|---------|
 | `npm test` | Unit tests via Vitest with jsdom |
 | `npm run test:e2e` | Playwright end-to-end tests (use `--shard=N/M` for CI parallelism) |
+| `npm run test:performance` | CFO, CTO, and CSO Lighthouse scenarios with retained performance traces |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript strict-mode check |
 | `npm run validate:corpus` | Dashboard authoring corpus validation |
@@ -75,7 +76,7 @@ Run these commands from the `dashboard/site/` directory:
 ### Choosing which tests to run
 
 - Editing control-plane sources under `.github/cao/src/` → `npm run typecheck:cao && npm test`
-- Editing dashboard site under `dashboard/site/` → from that directory: `npm test && npm run test:e2e && npm run lint && npm run typecheck`
+- Editing dashboard site under `dashboard/site/` → from that directory: `npm test && npm run test:e2e && npm run test:performance && npm run lint && npm run typecheck`
 - Editing workflow `.md` files → `npm run compile` (add `compile:locks` if lock files should update)
 - Editing SVGs → `npm run check:svg`
 - Editing documentation under `docs/` → `npm run docs:build`

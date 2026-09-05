@@ -124,6 +124,9 @@
           "code-improvement": {
             "workflow": "self-care-code-improvement"
           },
+          "dashboard-performance": {
+            "workflow": "self-care-dashboard-performance"
+          },
           "data-acquisition-audit": {
             "workflow": "self-care-data-acquisition-audit"
           },
