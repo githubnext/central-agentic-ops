@@ -975,6 +975,7 @@ function operationalValueGraderRows(values) {
       ...repositoryParts(target),
       workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflowId || "",
       run: record.runId == null ? "Unavailable" : String(record.runId),
+      experiment: record.observation?.experiment || "",
       grader: record.workflowId || "Unknown workflow",
       status: record.status || "unavailable",
       value: record.value,

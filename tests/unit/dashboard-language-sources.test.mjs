@@ -1132,6 +1132,7 @@ test("dashboard source bridge retains unavailable grader records separately from
           observation: {
             evidenceAt: "2026-08-31T10:00:00Z",
             opportunityKey: "githubnext/gh-aw-cao#42",
+            experiment: "daily-review-v2",
             mature: false,
             case: { targetRepo: "githubnext/gh-aw-cao" },
           },
@@ -1153,6 +1154,7 @@ test("dashboard source bridge retains unavailable grader records separately from
   assert.deepEqual(
     sources["grader-observations"].rows.map((row) => ({
       grader: row.grader,
+      experiment: row.experiment,
       status: row.status,
       maturity: row["maturity-status"],
       baseline: row["baseline-value"],
@@ -1162,6 +1164,7 @@ test("dashboard source bridge retains unavailable grader records separately from
     [
       {
         grader: "daily-value",
+        experiment: "daily-review-v2",
         status: "pass",
         maturity: "interim",
         baseline: 0.5,
@@ -1170,6 +1173,7 @@ test("dashboard source bridge retains unavailable grader records separately from
       },
       {
         grader: "missing-value",
+        experiment: "",
         status: "unavailable",
         maturity: "unavailable",
         baseline: undefined,

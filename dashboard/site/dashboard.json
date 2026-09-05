@@ -3792,8 +3792,8 @@
         "kind": "built-in",
         "page": "experiments",
         "title": "Experiments",
-        "icon": "server",
-        "description": "Observed associations are presented without implying causation.",
+        "icon": "beaker",
+        "description": "Ongoing experiment progress, grader and eval results, and actions for values whose evidence has matured. Observed associations do not imply causation.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -3802,31 +3802,217 @@
           },
           "views": [
             {
-              "id": "experiment-outcomes",
-              "title": "Experiment outcomes",
-              "description": "Outcome disposition is the leading signal of whether experiments produce accepted effects.",
+              "id": "experiment-state-distribution",
+              "title": "Experiment states",
+              "description": "Current evidence maturity across observed experiment grader results.",
               "data": {
-                "source": "outcomes"
+                "source": "grader-observations"
               },
               "mark": "chart",
               "chart": "pie",
+              "table": false,
               "layout": "full",
               "encoding": {
                 "x": {
-                  "field": "outcome-state",
+                  "field": "maturity-status",
                   "type": "nominal",
-                  "title": "Disposition"
+                  "title": "Experiment state"
                 },
                 "y": {
-                  "field": "safe-output",
+                  "field": "run",
                   "type": "quantitative",
                   "aggregate": "count",
-                  "title": "Outcomes"
+                  "title": "Experiments"
+                }
+              }
+            },
+            {
+              "id": "experiment-progress",
+              "title": "Experiment progress",
+              "description": "Grader observations show the latest measured value and whether its evidence is still interim or ready for a decision.",
+              "data": {
+                "source": "grader-observations",
+                "order-by": [
+                  {
+                    "field": "observed-at",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "mark": "table",
+              "controls": "interactive",
+              "empty-message": "No experiment grader observations are available.",
+              "encoding": {
+                "columns": [
+                  {
+                    "field": "experiment",
+                    "type": "nominal",
+                    "title": "Experiment"
+                  },
+                  {
+                    "field": "grader",
+                    "type": "nominal",
+                    "title": "Grader"
+                  },
+                  {
+                    "field": "value",
+                    "type": "quantitative",
+                    "unit": "grade",
+                    "title": "Value"
+                  },
+                  {
+                    "field": "status",
+                    "type": "nominal",
+                    "display": "grader-status",
+                    "title": "Result"
+                  },
+                  {
+                    "field": "maturity-status",
+                    "type": "nominal",
+                    "display": "status",
+                    "title": "State"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal",
+                    "title": "Observed"
+                  }
+                ],
+                "actions": [
+                  {
+                    "intent": "Review this matured experiment value and recommend whether to accept it, reject it, or gather more evidence. Verify the grader result and linked run before proposing the next action.",
+                    "presentation": "copy-prompt",
+                    "icon": "check-circle",
+                    "label": "Review ready value",
+                    "context": [
+                      "experiment",
+                      "grader",
+                      "value",
+                      "status",
+                      "maturity-status",
+                      "evaluator-digest",
+                      "observed-at",
+                      "run",
+                      "run-link"
+                    ],
+                    "when": {
+                      "field": "maturity-status",
+                      "equals": "matured"
+                    }
+                  }
+                ],
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                }
+              }
+            },
+            {
+              "id": "experiment-eval-results",
+              "title": "Eval results",
+              "description": "YES, NO, and UNKNOWN eval observations provide a separate qualitative result for experiment runs.",
+              "data": {
+                "source": "eval-observations",
+                "order-by": [
+                  {
+                    "field": "observed-at",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "mark": "table",
+              "controls": "interactive",
+              "empty-message": "No experiment eval observations are available.",
+              "encoding": {
+                "columns": [
+                  {
+                    "field": "experiment",
+                    "type": "nominal",
+                    "title": "Experiment"
+                  },
+                  {
+                    "field": "eval",
+                    "type": "nominal",
+                    "title": "Eval"
+                  },
+                  {
+                    "field": "eval-result",
+                    "type": "nominal",
+                    "display": "status",
+                    "title": "Result"
+                  },
+                  {
+                    "field": "resolved-model",
+                    "type": "nominal",
+                    "title": "Model"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal",
+                    "title": "Observed"
+                  }
+                ],
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                }
+              }
+            },
+            {
+              "id": "experiment-operational-values",
+              "title": "Operational value",
+              "description": "Absolute attainment remains separate from grader and eval results and does not establish causal impact.",
+              "data": {
+                "source": "operational-values",
+                "order-by": [
+                  {
+                    "field": "observed-at",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "mark": "table",
+              "controls": "interactive",
+              "empty-message": "No operational-value observations are available for experiments.",
+              "encoding": {
+                "columns": [
+                  {
+                    "field": "experiment",
+                    "type": "nominal",
+                    "title": "Experiment"
+                  },
+                  {
+                    "field": "operational-case",
+                    "type": "nominal",
+                    "title": "Opportunity"
+                  },
+                  {
+                    "field": "operational-value",
+                    "type": "quantitative",
+                    "unit": "grade",
+                    "title": "Value"
+                  },
+                  {
+                    "field": "maturity-status",
+                    "type": "nominal",
+                    "display": "status",
+                    "title": "State"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal",
+                    "title": "Observed"
+                  }
+                ],
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
                 }
               }
             },
             {
               "id": "experiments-experiments-source",
+              "title": "Experiment definitions",
               "disclosure": "supplemental",
               "data": {
                 "source": "experiments"
@@ -3836,13 +4022,26 @@
                 "columns": [
                   {
                     "field": "experiment",
-                    "type": "nominal"
+                    "type": "nominal",
+                    "title": "Experiment"
+                  },
+                  {
+                    "field": "experiment-name",
+                    "type": "nominal",
+                    "title": "Name"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal",
+                    "title": "Observed"
                   }
                 ]
               }
             },
             {
               "id": "experiments-assignments-source",
+              "title": "Run assignments",
+              "disclosure": "supplemental",
               "data": {
                 "source": "experiment-assignments"
               },
@@ -3850,88 +4049,26 @@
               "encoding": {
                 "columns": [
                   {
+                    "field": "experiment",
+                    "type": "nominal",
+                    "title": "Experiment"
+                  },
+                  {
                     "field": "run",
-                    "type": "nominal"
+                    "type": "nominal",
+                    "title": "Run"
                   },
                   {
                     "field": "variant",
-                    "type": "nominal"
+                    "type": "nominal",
+                    "title": "Variant"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal",
+                    "title": "Observed"
                   }
                 ]
-              }
-            },
-            {
-              "id": "experiments-grader-observations-source",
-              "disclosure": "supplemental",
-              "data": {
-                "source": "grader-observations"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "grader",
-                  "type": "nominal",
-                  "aggregate": "count"
-                }
-              }
-            },
-            {
-              "id": "experiments-eval-observations-source",
-              "disclosure": "supplemental",
-              "data": {
-                "source": "eval-observations"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "eval",
-                  "type": "nominal",
-                  "aggregate": "count"
-                }
-              }
-            },
-            {
-              "id": "experiments-outcomes-source",
-              "data": {
-                "source": "outcomes"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "outcome-state",
-                  "type": "nominal",
-                  "aggregate": "count"
-                }
-              }
-            },
-            {
-              "id": "experiments-usage-source",
-              "disclosure": "supplemental",
-              "data": {
-                "source": "usage"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "aic",
-                  "type": "quantitative",
-                  "aggregate": "sum",
-                  "unit": "aic"
-                }
-              }
-            },
-            {
-              "id": "experiments-operational-values-source",
-              "data": {
-                "source": "operational-values"
-              },
-              "mark": "metric",
-              "encoding": {
-                "value": {
-                  "field": "operational-value",
-                  "type": "quantitative",
-                  "aggregate": "count"
-                }
               }
             }
           ]
@@ -5509,6 +5646,7 @@
           "workflows",
           "repositories",
           "packages",
+          "experiments",
           "engines-models"
         ]
       }
