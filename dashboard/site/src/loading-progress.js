@@ -32,7 +32,7 @@ function installStyles(document) {
   position: absolute;
   inset: 0;
   content: "";
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 65%), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--on-emphasis, #ffffff) 65%, transparent), transparent);
   transform: translateX(-100%);
   animation: loading-progress-shimmer 1.2s ease-in-out infinite;
 }

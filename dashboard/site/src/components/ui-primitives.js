@@ -63,6 +63,18 @@ export function renderPanelHeader(headingId, heading, description, options = {})
 }
 
 /**
+ * Renders a `<tr>` of `<th scope="col">` header cells from plain label
+ * strings. Shared by the package summary table and the workflow
+ * operational-value observation table, which both build a single header
+ * row from a flat list of column labels.
+ * @param {string[]} labels
+ * @returns {HTMLElement}
+ */
+export function renderTableHeadRow(labels) {
+  return h('tr', null, ...labels.map((label) => h('th', { scope: 'col' }, label)));
+}
+
+/**
  * Renders a single `<div><dt>{term}</dt><dd>{description}</dd></div>` row for
  * use inside a `<dl>`, optionally followed by a trailing detail paragraph.
  * Shared by vital-stat metrics, metadata summary rows, and definition-list
@@ -231,6 +243,16 @@ export function renderListWithFallback(className, items, renderItem, fallbackMes
  */
 export function renderIdentityLink({ href, icon, label, className, labelTag = 'span' }) {
   return h('a', className ? { href, className } : { href }, octicon(icon), h(labelTag, null, label));
+}
+
+/**
+ * Renders the shared decorative legend swatch (`<i>` with a series-specific
+ * class and `aria-hidden`) used to color-key chart and trend legend entries.
+ * @param {string} className
+ * @returns {HTMLElement}
+ */
+export function renderLegendSwatch(className) {
+  return h('i', { className, 'aria-hidden': 'true' });
 }
 
 /**

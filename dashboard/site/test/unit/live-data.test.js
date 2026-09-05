@@ -24,12 +24,15 @@ describe("live Dashboard Language sources", () => {
     expect(preview).toContain("throw new Error(`Unable to load sources.json:");
     expect(preview).toContain("Unable to load live dashboard data:");
     expect(preview).toContain('window.addEventListener("dashboard-preview-update"');
-    expect(preview).toContain("renderSources(renderedSources)");
+    expect(preview).toContain("updateWithViewTransition(document, () => renderSources(renderedSources))");
+    expect(preview).toContain('event: "preview.rendered"');
     expect(preview).toContain('get("local-preview")');
     expect(preview).toContain('new URL("./__dashboard_socket", window.location.href)');
     expect(preview).toContain('previewMode === "copilot"');
     expect(preview).toContain('await import("./src/copilot-prompt.js")');
-    expect(preview).toContain('document.body.prepend(renderCopilotPrompt(endpoint.href))');
+    expect(preview).toContain('copilotPrompt = renderCopilotPrompt(dashboardSocket)');
+    expect(preview).toContain('dashboard.classList.add("dashboard-copilot-enabled")');
+    expect(preview).toContain('dashboard.querySelector(".org-sidebar")?.append(copilotPrompt)');
     expect(preview).not.toContain("Retain the illustrative fixture data");
   });
 

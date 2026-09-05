@@ -7,7 +7,7 @@ import { formatNumber, toNumber } from '../view-formatters.js';
 import { pluralSuffix } from './count-formatters.js';
 import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
-import { renderEmptyMessage } from './ui-primitives.js';
+import { renderEmptyMessage, renderLegendSwatch } from './ui-primitives.js';
 
 const MAX_LINE_POINT_SIZE = 6;
 const MIN_LINE_POINT_SIZE = 2;
@@ -146,7 +146,7 @@ export function renderChartLegend(series, chartType) {
     series.map((item) => h(
       'li',
       null,
-      h('i', { className: item.className, 'aria-hidden': 'true' }),
+      renderLegendSwatch(item.className),
       h('span', null, item.name)
     ))
   );
@@ -208,7 +208,7 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
       return h(
         'li',
         null,
-        h('i', { className: chartSeriesClassName(label, index), 'aria-hidden': 'true' }),
+        renderLegendSwatch(chartSeriesClassName(label, index)),
         h('span', null, renderSafeLink(label, link)),
         h('strong', null, formatNumber(value, unit)),
         h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')

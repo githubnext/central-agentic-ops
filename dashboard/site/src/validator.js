@@ -55,6 +55,7 @@ import {
   TABLE_ACTION_KEYS,
   TABLE_ACTION_PRESENTATION_VALUES,
   TABLE_ACTION_WHEN_KEYS,
+  TREE_TABLE_KEYS,
   TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
   TOOLTIP_KEYS,
@@ -1492,6 +1493,57 @@ function validateView(view, viewNode, path, viewIds, errors) {
         ERROR_CODES.missingOrInvalidRequiredField,
         'table is allowed only when mark is "chart".',
         `${path}.table`
+      ));
+    }
+  }
+
+  if (view.tree !== undefined) {
+    const treePath = `${path}.tree`;
+    if (!isPlainObject(view.tree)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'tree must be a mapping.',
+        treePath
+      ));
+    } else {
+      validateObjectKeys(getValueNodeByKey(viewNode, 'tree'), TREE_TABLE_KEYS, treePath, errors);
+      validateRequiredIdentifier(view.tree['id-field'], `${treePath}.id-field`, 'tree id field', errors);
+      validateRequiredIdentifier(view.tree['parent-field'], `${treePath}.parent-field`, 'tree parent field', errors);
+      const treeSource = isPlainObject(view.data) && typeof view.data.source === 'string'
+        ? view.data.source
+        : null;
+      const sourceFields = treeSource
+        ? SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (treeSource)]
+        : null;
+      for (const field of [view.tree['id-field'], view.tree['parent-field']]) {
+        if (typeof field === 'string' && sourceFields && !sourceFields.includes(field)) {
+          errors.push(createError(
+            ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+            'tree fields must be declared by data.source.',
+            treePath
+          ));
+        }
+      }
+      if (view.tree['id-field'] === view.tree['parent-field']) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'tree id-field and parent-field must be different.',
+          treePath
+        ));
+      }
+    }
+    if (view.mark !== 'table') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'tree is allowed only when mark is "table".',
+        treePath
+      ));
+    }
+    if (view.controls !== 'static') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'tree tables must use static controls to preserve hierarchy.',
+        `${path}.controls`
       ));
     }
   }

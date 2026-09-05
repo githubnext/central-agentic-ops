@@ -222,7 +222,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Page `filter-bar` | `filters`, `time-range` |
 | Page section | `id`, `title`, `description`, `layout`, `views`, `count-source`, `count-label` |
 | Custom page `route` | `hash-query-parameter`, `navigation-page` |
-| View | `id`, `title`, `description`, `intent`, `locked`, `data`, `mark`, `element`, `config`, `callout`, `chart`, `table`, `layout`, `disclosure`, `controls`, `column-summaries`, `empty-message`, `title-link`, `encoding` |
+| View | `id`, `title`, `description`, `intent`, `locked`, `data`, `mark`, `element`, `config`, `callout`, `chart`, `table`, `tree`, `layout`, `disclosure`, `controls`, `column-summaries`, `empty-message`, `title-link`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | View `config` | `body` |
 | View `title-link` | `href-field`, `identifier-field` |
@@ -277,6 +277,7 @@ The `source` vocabulary is closed in version 0.1.0.
 | `operational-values` | value observation | scope IDs, `observation-id`, `run`, `run-attempt`, `experiment`, `operational-case`, `evaluator-digest`, `rollout-mode`, `operational-value`, `operational-value-definition`, `requested-evidence-at`, `evidence-cutoff`, `maturity-at`, `maturity-status`, `baseline-value`, `delta-from-baseline`, `accepted-evidence-provenance`, `diagnostics`, `diagnostic-definitions`, `observed-at`, `evidence-link`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 | `github-api-rate-limits` | one observation of one GitHub API quota resource at one checkpoint for one credential | `observation-id`, `operation-execution-id`, `observed-at`, `credential`, `credential-type`, `resource`, `bucket`, `history-series`, `remaining`, `limit`, `used`, `remaining-percent`, `reset-at`, `minutes-to-reset`, `consumed-since-previous`, `burn-rate-per-minute`, `projected-remaining-at-reset`, `projected-exhaustion-at`, `runway-ratio`, `risk-status`, `risk-order`, `is-current`, `operation`, `phase`, `outcome`, `attribution-status`, `operation-consumed` |
 | `github-api-collector-health` | one GitHub API telemetry collection checkpoint | `operation-execution-id`, `observed-at`, `credential`, `operation`, `phase`, `outcome`, `cache-hydrated`, `cache-bytes`, `cache-entries`, `cache-folders`, `rate-limit-error` |
+| `github-api-call-stacks` | one JavaScript stack frame from one GitHub API telemetry collection checkpoint | `operation-execution-id`, `observed-at`, `credential`, `operation`, `phase`, `outcome`, `stack-frame-id`, `stack-parent-id`, `stack-depth`, `stack-frame` |
 
 “Scope IDs” means the applicable `organization`, `repository`, and `workflow` fields. Fields that do not apply to an observation are absent rather than fabricated. Link-bearing source fields are relation-specific optional fields whose intrinsic type is one Section 9.1 link object. `organization-link`, `repository-link`, `workflow-link`, `issue-link`, `pull-request-link`, `run-link`, `evidence-link`, and `external-link` correspond to the `organization`, `repository`, `workflow`, `issue`, `pull-request`, `run`, `evidence`, and `external` link relations, respectively; a source row MUST NOT encode multiple link relations inside one field.
 
@@ -303,6 +304,7 @@ A package groups one orchestrator and one or more workers that execute centrally
 - **DLS-SEM-025:** Rate-limit burn and forecast fields **MUST** be materialized before dashboard evaluation. Calculations **MUST** partition observations by `credential`, `resource`, and `reset-at`; they **MUST NOT** cross reset boundaries. `risk-status` **MUST** be `critical`, `warning`, `healthy`, or `unknown`, with centralized and testable thresholds. Stale, partial, unavailable, or insufficient observations **MUST NOT** be presented with a fabricated healthy forecast.
 - **DLS-SEM-026:** Operation consumption attribution **MUST** use paired `before` and `after` observations with the same stable `operation-execution-id`, credential, resource, and reset window. When this evidence is absent or inconsistent, `attribution-status` **MUST** be `unavailable` and `operation-consumed` **MUST** be null.
 - **DLS-SEM-027:** `github-api-collector-health` **MUST** remain distinct from GitHub quota health. A credential identifier **MUST** be a non-secret operational alias or role and **MUST NOT** contain a token or credential value.
+- **DLS-SEM-028:** A `github-api-call-stacks` row **MUST** preserve one captured JavaScript frame as text, identify its checkpoint, and use `stack-frame-id` and `stack-parent-id` to preserve call order without fabricating unavailable frames.
 
 ---
 
@@ -646,6 +648,8 @@ A view may set the structural `layout` hint to `full`, `half`, or `third`. The v
 
 A table view may set `controls` to `interactive` or `static`; an omitted value defaults to `interactive`. Interactive tables may expose filtering, sorting, summaries, and progressive row disclosure. Static tables expose all rows in source order without those controls. A table may set `empty-message` to a non-empty textual description shown inside its zero-row table body.
 
+A table view may set `tree` to a mapping containing `id-field` and `parent-field`. Both values name distinct canonical source fields. The presenter orders each parent before its children, indents the first encoded column by hierarchy depth, and exposes the result as an accessible tree grid. The caller frame in a stack is the parent of the callee frame, so outermost frames appear before deeper nested frames. Rows with an empty or unavailable parent are roots. Tree tables must use `controls: static` so filtering, sorting, summaries, and progressive row disclosure cannot separate a child from its ancestors.
+
 ### 11.2 Data Narrowing
 
 View `data` contains `source` for `metric`, `table`, and `chart`, or a non-empty unique `sources` sequence for `element`. Callout views do not contain `data`. Every data-bearing view may also contain:
@@ -708,6 +712,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-033:** A swimlane presenter **MUST** expose persistent text labels for every lane and readable time labels on its primary axis. Each isolated observation or contiguous observation range **MUST** be focusable and have an accessible name containing its category, observation count, and exact timestamp or timestamp range. It **MUST NOT** rely on color alone.
 - **DLS-VIEW-034:** An `element` view **MAY** declare a non-empty `intent` describing the operator outcome it is designed to support. Other marks **MUST NOT** declare `intent`. A presenter **MUST** treat `intent` as inert authoring metadata and **MUST NOT** render it as visible or accessible content.
 - **DLS-VIEW-035:** `locked`, when present, **MUST** be Boolean. When `true`, an agent evolving the dashboard **SHOULD NOT** modify the view except to correct bugs. A presenter **MUST** treat `locked` as inert authoring metadata and **MUST NOT** let it alter presentation, accessibility, data processing, or other view semantics.
+- **DLS-VIEW-036:** A `table` view **MAY** declare `tree` with distinct canonical `id-field` and `parent-field` values declared by its selected source. A tree table **MUST** use `controls: static`. Its presenter **MUST** order every available parent before its children, expose hierarchy depth in an accessible tree grid, and indent the first encoded column by depth. A row with an empty or unavailable parent **MUST** be treated as a root; a cycle **MUST NOT** prevent any row from rendering.
 
 ---
 
@@ -798,7 +803,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–004 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units and compact duration formatting, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
-| DLS-VIEW-022–024, DLS-VIEW-026–035 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, title links, optional chart data tables, swimlane accessibility, and inert element intent and view-lock hints. |
+| DLS-VIEW-022–024, DLS-VIEW-026–036 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, title links, optional chart data tables, tree-table hierarchy, swimlane accessibility, and inert element intent and view-lock hints. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
 | DLS-SAFE-001–006, DLS-SAFE-012, DLS-SAFE-015 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, outcome-HTML allowlisting, prompt-context serialization, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |
@@ -970,7 +975,7 @@ dashboard:
 - Added essential and supplemental view disclosure, a four-essential-view authoring bound, accessible presentation requirements, and SEQ and NASA-TLX user-research guidance.
 - Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
 - Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
-- Added the `github-api-rate-limits` and `github-api-collector-health` logical sources, reset-safe derived measures, correlated operation attribution, risk semantics, and strict separation of GitHub quota state from collector/cache health.
+- Added the `github-api-rate-limits`, `github-api-collector-health`, and `github-api-call-stacks` logical sources, reset-safe derived measures, correlated operation attribution, call-site evidence, risk semantics, and strict separation of GitHub quota state from collector/cache health.
 - Added constrained custom-page hash-query routing and route-bound templating through **DLS-VIEW-026** and **DLS-VIEW-027**.
 - Added route-aware human-readable title allocation and allowlisted `outcome-body-html` presentation through **DLS-SAFE-012**.
 - Added dashboard-level site-wide callouts, optional source-row visibility conditions, and volatile accessible dismissal through **DLS-DOC-015** and **DLS-SAFE-014**.

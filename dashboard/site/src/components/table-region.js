@@ -33,7 +33,8 @@ const DEFAULT_PAGE_SIZE = 25;
  *   pageSize?: number,
  *   resultNoun?: string,
  *   resultNounPlural?: string,
- *   sortable?: boolean
+ *   sortable?: boolean,
+ *   tableRole?: string
  * }} options
  * @returns {HTMLElement}
  */
@@ -97,6 +98,7 @@ export function renderTableRegion(options) {
         'table',
         {
           className: tableClassName,
+          ...(options.tableRole ? { role: options.tableRole } : {}),
           ...(tableClassName === 'custom-table' ? { 'data-custom-view-mark': 'table' } : {}),
           ...(tableClassName === 'custom-chart-table' ? { 'data-custom-view-mark': 'chart' } : {})
         },
