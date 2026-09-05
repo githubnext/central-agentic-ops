@@ -86,7 +86,7 @@ const SIDEBAR_COLLAPSED_STORAGE_KEY = 'central-agentic-ops.dashboard.sidebar-col
  */
 export function updateWithViewTransition(document, update) {
   const transitionDocument = /** @type {Document & { startViewTransition?: (update: () => void) => unknown }} */ (document);
-  const prefersReducedMotion = document.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  const prefersReducedMotion = document.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
   if (typeof transitionDocument.startViewTransition !== 'function' || prefersReducedMotion) {
     update();
     return;
