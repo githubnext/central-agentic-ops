@@ -312,7 +312,7 @@ function renderRunEvidenceSection(model, experiment) {
 /**
  * @param {string} section
  * @param {{ metrics?: Array<Record<string, any>>, experiment?: Record<string, any>, model?: { runById: Map<string, Record<string, any>> } }} context
- * @returns {HTMLElement | null}
+ * @returns {HTMLElement}
  */
 export function renderExperimentDetailSection(section, context) {
   if (section === 'metric-comparison') return renderMetricComparisonSection(context.metrics ?? [], context.experiment ?? {});
@@ -320,7 +320,7 @@ export function renderExperimentDetailSection(section, context) {
   if (section === 'grader-diagnostics') return renderGraderDiagnosticsSection(context.metrics ?? []);
   if (section === 'observation-quality') return renderObservationQualitySection(context.experiment ?? {});
   if (section === 'run-evidence') return renderRunEvidenceSection(context.model ?? { runById: new Map() }, context.experiment ?? {});
-  return null;
+  throw new Error(`Unknown experiment detail section: "${section}". Expected one of: metric-comparison, eval-outcomes, grader-diagnostics, observation-quality, run-evidence`);
 }
 
 /** @param {Array<Record<string, any>>} rows @param {(row: Record<string, any>) => string} key @returns {Map<string, number>} */

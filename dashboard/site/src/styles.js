@@ -1051,6 +1051,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 .dashboard-loading .dashboard-pages { display: none; }
 .dashboard-loading-skeleton { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .dashboard-loading-skeleton > div { border: 1px solid var(--border-muted); border-radius: 6px; background: linear-gradient(90deg, var(--canvas-subtle) 25%, var(--neutral-muted) 50%, var(--canvas-subtle) 75%); background-size: 200% 100%; animation: dashboard-skeleton-pulse 1.5s ease-in-out infinite; }
+.dashboard-view-skeleton { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.dashboard-view-skeleton > div { border: 1px solid var(--border-muted); border-radius: 6px; background: linear-gradient(90deg, var(--canvas-subtle) 25%, var(--neutral-muted) 50%, var(--canvas-subtle) 75%); background-size: 200% 100%; animation: dashboard-skeleton-pulse 1.5s ease-in-out infinite; }
 .skeleton-card { min-height: 104px; }
 .skeleton-panel { min-height: 280px; grid-column: 1 / -1; }
 .experiments-evaluation { display: grid; gap: 24px; }
@@ -1234,7 +1236,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .overview-observability > .section-heading { align-items: flex-start; flex-direction: column; }
   .attention-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .package-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dashboard-loading-skeleton { grid-template-columns: 1fr; }
+  .dashboard-loading-skeleton, .dashboard-view-skeleton { grid-template-columns: 1fr; }
   .skeleton-panel { grid-column: auto; }
   .workflow-attention > .section-heading, .anomaly-readiness { align-items: flex-start; flex-direction: column; }
   .anomaly-readiness { gap: 4px; }
@@ -1298,7 +1300,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-  .dashboard-loading-skeleton > div, .dashboard-horizon-skeleton > span, .freshness-skeleton > span:last-child, .table-summary-skeleton span { animation: none; }
+  .dashboard-loading-skeleton > div, .dashboard-view-skeleton > div, .dashboard-horizon-skeleton > span, .freshness-skeleton > span:last-child, .table-summary-skeleton span { animation: none; }
 }
 @media (prefers-contrast: more) {
   :root {

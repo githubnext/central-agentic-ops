@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -18,15 +18,19 @@ const authoritativeDashboardDocument = composeDashboardDocuments(
 );
 
 /** @param {HTMLElement} rendered @param {string} pageId */
-function activatePage(rendered, pageId) {
+async function activatePage(rendered, pageId) {
   const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector(`[data-nav-page-id="${pageId}"]`));
+  expect(link).not.toBeNull();
   link?.click();
+  await vi.waitFor(() => {
+    expect(rendered.querySelector(`[data-page-id="${pageId}"]`)?.hasAttribute('data-page-pending')).toBe(false);
+  });
   rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   return rendered.querySelector(`[data-page-id="${pageId}"]`);
 }
 
 describe('presenter built-in and custom pages', () => {
-  it('renders distinct firewall enforcement, evidence, traffic, and drift scenarios', () => {
+  it('renders distinct firewall enforcement, evidence, traffic, and drift scenarios', async () => {
     const metadata = /** @type {const} */ ({
       'source-id': 'firewall-fixture',
       'source-kind': 'fixture',
@@ -67,7 +71,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = activatePage(rendered, 'firewall');
+    const page = await activatePage(rendered, 'firewall');
     expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
     const text = page?.textContent ?? '';
     expect(text).toContain('Enforcement disabled');
@@ -80,7 +84,7 @@ describe('presenter built-in and custom pages', () => {
     rendered.remove();
   });
 
-  it('renders cached source health without mixing in presentation-only sources', () => {
+  it('renders cached source health without mixing in presentation-only sources', async () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
@@ -113,7 +117,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = activatePage(rendered, 'data-health');
+    const page = await activatePage(rendered, 'data-health');
     const sourceView = [...(page?.querySelectorAll('.custom-view') ?? [])]
       .find((view) => view.querySelector('h4')?.textContent === 'Cached source shape');
     expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
@@ -125,7 +129,7 @@ describe('presenter built-in and custom pages', () => {
     rendered.remove();
   });
 
-  it('renders data-health diagnostics when a cached source is unavailable', () => {
+  it('renders data-health diagnostics when a cached source is unavailable', async () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
@@ -158,7 +162,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = activatePage(rendered, 'data-health');
+    const page = await activatePage(rendered, 'data-health');
     expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
     expect(page?.querySelector('[data-view-availability="unavailable"]')).toBeNull();
     expect(page?.textContent).toContain('Sources needing attention');
@@ -552,7 +556,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('agentic-operations');
   });
 
-  it('routes repository entity links to the repository detail view while retaining GitHub Actions links', () => {
+  it('routes repository entity links to the repository detail view while retaining GitHub Actions links', async () => {
     window.history.replaceState(null, '', '/#page-repositories');
     const rendered = renderDashboard({
       document: {
@@ -637,6 +641,9 @@ describe('presenter built-in and custom pages', () => {
     window.dispatchEvent(new Event('hashchange'));
 
     expect(rendered.querySelector('[data-page-id="repository-detail"]')?.hasAttribute('hidden')).toBe(false);
+    await vi.waitFor(() => {
+      expect(rendered.querySelector('[data-page-id="repository-detail"]')?.hasAttribute('data-page-pending')).toBe(false);
+    });
     expect(rendered.querySelector('[data-page-id="repository-detail"] [data-route-view] .metric-value')?.textContent).toBe('1');
     expect(rendered.querySelector('[data-page-id="repository-detail"] [data-route-view] .metric-link a')?.getAttribute('href')).toBe('https://github.com/octo-org/platform/actions');
     expect(rendered.querySelector('[data-nav-page-id="repositories"]')?.getAttribute('aria-current')).toBe('page');
@@ -733,7 +740,7 @@ describe('presenter built-in and custom pages', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('shows only known-worker issues in Preview and filters them by open or closed state', () => {
+  it('shows only known-worker issues in Preview and filters them by open or closed state', async () => {
     const metadata = {
       'source-id': 'outcomes-fixture',
       'source-kind': 'fixture',
@@ -758,7 +765,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = activatePage(rendered, 'preview');
+    const page = await activatePage(rendered, 'preview');
     const rows = [...(page?.querySelectorAll('.custom-table tbody tr') ?? [])];
     const status = /** @type {HTMLSelectElement | null} */ (
       page?.querySelector('[data-table-facet="outcome-status"]') ?? null
@@ -936,7 +943,7 @@ describe('presenter built-in and custom pages', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('renders filter bars for the Runtime, Security, and Value pages', () => {
+  it('renders filter bars for the Runtime, Security, and Value pages', async () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {}
@@ -957,18 +964,23 @@ describe('presenter built-in and custom pages', () => {
     expect(horizonTooltip).toBeNull();
 
     for (const pageId of ['runtime', 'security', 'firewall', 'operational-value']) {
-      const filterBar = activatePage(rendered, pageId)?.querySelector('.filter-bar');
+      const filterBar = (await activatePage(rendered, pageId))?.querySelector('.filter-bar');
       expect(filterBar?.querySelector('input')?.value).toBe('');
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('3');
       expect([...filterBar?.querySelectorAll('.mode-filter-control input') ?? []].every(
         (input) => /** @type {HTMLInputElement} */ (input).checked
       )).toBe(true);
+      const filterControl = filterBar?.querySelector('.filter-control');
+      const horizon = rendered.querySelector('.dashboard-horizon');
+      expect(filterControl).not.toBeNull();
+      expect(horizon).not.toBeNull();
+      expect(filterControl?.contains(horizon)).toBe(true);
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
       expect(filterBar?.querySelector('.export-control')).toBeNull();
     }
   });
 
-  it('renders workflow and job performance charts from declarative sources', () => {
+  it('renders workflow and job performance charts from declarative sources', async () => {
     const metadata = {
       'source-id': 'performance-fixture',
       'source-kind': 'fixture',
@@ -1000,7 +1012,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = activatePage(rendered, 'performance');
+    const page = await activatePage(rendered, 'performance');
     expect(page?.querySelectorAll('.custom-view-grid > [data-view-layout="half"]')).toHaveLength(4);
     expect(page?.querySelector('[data-chart-widget="histogram"]')).not.toBeNull();
     expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(2);
@@ -1077,7 +1089,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelectorAll('.dashboard-horizon .tooltip-content time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00.000Z');
   });
 
-  it('renders the Security assurance view without a findings summary table', () => {
+  it('renders the Security assurance view without a findings summary table', async () => {
     const metadata = {
       'source-id': 'security-fixture',
       'source-kind': 'fixture',
@@ -1142,7 +1154,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = activatePage(rendered, 'security');
+    const page = await activatePage(rendered, 'security');
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
@@ -1166,7 +1178,7 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.querySelector('img')).toBeNull();
   });
 
-  it('renders the custom JSON-composed Value page from shared summary, signal, and table elements', () => {
+  it('renders the custom JSON-composed Value page from shared summary, signal, and table elements', async () => {
     const metadata = {
       'source-id': 'value-fixture',
       'source-kind': 'fixture',
@@ -1338,7 +1350,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = activatePage(rendered, 'operational-value');
+    const page = await activatePage(rendered, 'operational-value');
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'operational-value');
     expect(dashboardPage).toMatchObject({ kind: 'custom', title: 'Value & outcomes' });
     expect(dashboardPage).not.toHaveProperty('page');
@@ -2753,7 +2765,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.chart-view-pie .pie-chart-layout')).not.toBeNull();
   });
 
-  it('shows one hash-addressable page at a time and updates active navigation without scrolling', () => {
+  it('shows one hash-addressable page at a time and updates active navigation without scrolling', async () => {
     const rendered = renderDashboard({
       document: {
         languageVersion: '0.1.0',
@@ -2839,10 +2851,11 @@ describe('presenter built-in and custom pages', () => {
     expect(first.hidden).toBe(true);
     expect(first.hasAttribute('data-page-pending')).toBe(true);
     expect(first.childElementCount).toBe(0);
-    const renderedSecond = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
-    expect(renderedSecond).not.toBe(second);
-    expect(renderedSecond.hidden).toBe(false);
-    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(false);
+    expect(rendered.querySelector('#page-second')).toBe(second);
+    expect(second.hidden).toBe(false);
+    expect(second.hasAttribute('data-page-pending')).toBe(true);
+    expect(second.getAttribute('aria-busy')).toBe('true');
+    expect(second.querySelector('.dashboard-view-skeleton')).not.toBeNull();
     expect(secondLink.getAttribute('aria-current')).toBe('page');
     expect(rendered.ownerDocument.defaultView?.location.hash).toBe('#page-second');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('Second');
@@ -2852,19 +2865,30 @@ describe('presenter built-in and custom pages', () => {
     expect(titleLink.hidden).toBe(true);
     expect(titleLink.hasAttribute('href')).toBe(false);
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
+    await vi.waitFor(() => {
+      expect(rendered.querySelector('#page-second')).not.toBe(second);
+    });
+    const renderedSecond = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
+    expect(renderedSecond.hidden).toBe(false);
+    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(false);
+    expect(renderedSecond.hasAttribute('aria-busy')).toBe(false);
 
     rendered.ownerDocument.documentElement.scrollTop = 80;
     firstLink.click();
 
-    const rehydratedFirst = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
     expect(renderedSecond.hasAttribute('data-page-pending')).toBe(true);
     expect(renderedSecond.childElementCount).toBe(0);
+    expect(rendered.querySelector('#page-first .dashboard-view-skeleton')).not.toBeNull();
+    await vi.waitFor(() => {
+      expect(rendered.querySelector('#page-first .dashboard-view-skeleton')).toBeNull();
+    });
+    const rehydratedFirst = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
     expect(/** @type {HTMLDetailsElement | null} */ (rehydratedFirst.querySelector('details'))?.open).toBe(true);
     expect(rendered.ownerDocument.documentElement.scrollTop).toBe(320);
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });
 
-  it('opens coverage diagnostics as an Overview subpage with canonical breadcrumbs', () => {
+  it('opens coverage diagnostics as an Overview subpage with canonical breadcrumbs', async () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
@@ -2932,6 +2956,9 @@ describe('presenter built-in and custom pages', () => {
       controls: 'static',
       disclosure: 'supplemental',
       data: { source: 'coverage-diagnostics' }
+    });
+    await vi.waitFor(() => {
+      expect(rendered.querySelector('#page-coverage')?.hasAttribute('data-page-pending')).toBe(false);
     });
     const essentialRows = rendered.querySelectorAll('#page-coverage [data-disclosure="essential"] .custom-table tbody tr');
     expect(essentialRows).toHaveLength(2);

@@ -2,6 +2,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { rowsFor } from './source-rows.js';
 import { renderExperimentDetailSection } from './experiment-detail-sections.js';
+import { renderDlRow } from './ui-primitives.js';
 
 const UNKNOWN = '—';
 /** @typedef {Record<string, any>} Row */
@@ -423,7 +424,7 @@ function renderLegend(counts) {
 
 /** @param {string} label @param {unknown} value @returns {HTMLElement} */
 function summaryItem(label, value) {
-  return h('div', null, h('dt', null, label), h('dd', null, String(value)));
+  return renderDlRow(label, String(value));
 }
 
 /** @param {string} label @param {string} tone @returns {HTMLElement} */

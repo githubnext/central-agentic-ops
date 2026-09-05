@@ -707,6 +707,25 @@ function renderPagePlaceholder(page) {
 }
 
 /**
+ * @returns {HTMLElement}
+ */
+function renderPageSkeleton() {
+  return h(
+    'div',
+    {
+      className: 'dashboard-view-skeleton',
+      role: 'status',
+      'aria-label': 'Loading view'
+    },
+    h('span', { className: 'sr-only' }, 'Loading view'),
+    h('div', { className: 'skeleton-card', 'aria-hidden': 'true' }),
+    h('div', { className: 'skeleton-card', 'aria-hidden': 'true' }),
+    h('div', { className: 'skeleton-card', 'aria-hidden': 'true' }),
+    h('div', { className: 'skeleton-panel', 'aria-hidden': 'true' })
+  );
+}
+
+/**
  * @param {PresentableBuiltInPage | PresentableCustomPage} page
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
@@ -992,6 +1011,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
   /** @type {Map<string, { details: boolean[], scrollTop: number }>} */
   const pageState = new Map();
   let activePageId = '';
+  let activationRevision = 0;
   const overviewPage = pages.find((page) => page.dataset.pageId === 'overview');
   const links = [...root.querySelectorAll('[data-nav-page-id], [data-mobile-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
@@ -1071,11 +1091,56 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
   };
   /**
+   * Defers expensive rendering until the lightweight title and skeleton update
+   * has had an opportunity to paint.
+   * @param {() => void} populate
+   */
+  const schedulePopulation = (populate) => {
+    const view = root.ownerDocument.defaultView;
+    if (typeof view?.requestAnimationFrame === 'function') {
+      view.requestAnimationFrame(() => view.requestAnimationFrame(populate));
+      return;
+    }
+    if (view) {
+      view.setTimeout(populate, 0);
+    } else {
+      setTimeout(populate, 0);
+    }
+  };
+  /**
    * @param {string} pageId
    * @param {URLSearchParams} [parameters]
+   * @param {boolean} [deferPopulation]
    */
-  const activate = (pageId, parameters = new URLSearchParams()) => {
+  const activate = (pageId, parameters = new URLSearchParams(), deferPopulation = false) => {
+    const revision = ++activationRevision;
     const dashboardHorizon = root.querySelector('.dashboard-horizon');
+    /**
+     * @param {HTMLElement | undefined} page
+     */
+    const placeDashboardHorizon = (page) => {
+      const filterInput = page?.querySelector('.filter-control input');
+      if (dashboardHorizon && filterInput) {
+        filterInput.before(dashboardHorizon);
+      } else if (dashboardHorizon && reportActions) {
+        reportActions.prepend(dashboardHorizon);
+      }
+    };
+    /**
+     * @param {HTMLElement | undefined} page
+     */
+    const restoreScroll = (page) => {
+      const sectionId = parameters.get('section')?.trim();
+      const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
+      if (section && page?.contains(section)) {
+        section.scrollIntoView?.();
+      } else if (pageState.has(pageId)) {
+        const scrollTop = pageState.get(pageId)?.scrollTop ?? 0;
+        const scrollingElement = root.ownerDocument.scrollingElement ?? root.ownerDocument.documentElement;
+        scrollingElement.scrollTop = scrollTop;
+      }
+    };
+    let populationDeferred = false;
     if (activePageId && activePageId !== pageId) {
       const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
       if (activePage) {
@@ -1085,20 +1150,40 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
           scrollTop: root.ownerDocument.scrollingElement?.scrollTop ?? root.ownerDocument.documentElement.scrollTop
         });
         activePage.replaceChildren();
+        activePage.removeAttribute('aria-busy');
         activePage.setAttribute('data-page-pending', '');
       }
     }
+    activePageId = pageId;
     const pageIndex = pages.findIndex((candidate) => candidate.dataset.pageId === pageId);
     const pendingPage = pages[pageIndex];
     if (pendingPage?.hasAttribute('data-page-pending')) {
-      const renderedPage = renderPageById?.(pageId);
-      if (renderedPage) {
+      const populate = () => {
+        if (revision !== activationRevision || activePageId !== pageId) return;
+        const currentPage = pages[pageIndex];
+        if (!currentPage?.hasAttribute('data-page-pending')) return;
+        const renderedPage = renderPageById?.(pageId);
+        if (!renderedPage) return;
         const detailsState = pageState.get(pageId)?.details ?? [];
         [...renderedPage.querySelectorAll('details')].forEach((details, index) => {
           if (detailsState[index] !== undefined) details.open = detailsState[index];
         });
-        pendingPage.replaceWith(renderedPage);
+        renderedPage.dataset.routeValue = currentPage.dataset.routeValue ?? '';
+        currentPage.replaceWith(renderedPage);
         pages[pageIndex] = renderedPage;
+        placeDashboardHorizon(renderedPage);
+        if (deferPopulation) {
+          dispatchPageRoute(renderedPage, renderedPage.dataset.routeParameter ?? '', renderedPage.dataset.routeValue);
+          restoreScroll(renderedPage);
+        }
+      };
+      if (deferPopulation) {
+        populationDeferred = true;
+        pendingPage.replaceChildren(renderPageSkeleton());
+        pendingPage.setAttribute('aria-busy', 'true');
+        schedulePopulation(populate);
+      } else {
+        populate();
       }
     }
     for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
@@ -1120,12 +1205,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     updateNavigationLinks(links, pageId);
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
-    const filterInput = page?.querySelector('.filter-control input');
-    if (dashboardHorizon && filterInput) {
-      filterInput.before(dashboardHorizon);
-    } else if (dashboardHorizon && reportActions) {
-      reportActions.prepend(dashboardHorizon);
-    }
+    placeDashboardHorizon(page);
     const routeNavigationPage = page?.dataset.routeNavigationPage;
     if (routeNavigationPage && availableIds.has(routeNavigationPage)) {
       const navigationLink = links.find((link) => getNavigationPageId(link) === routeNavigationPage);
@@ -1154,18 +1234,9 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
       ? new URLSearchParams(root.ownerDocument.defaultView?.location.search ?? '').get('mode')
       : '';
     renderPageMode(pageMode, requestedMode === 'review' || requestedMode === 'live' ? requestedMode : '');
-    if (page) dispatchPageRoute(page, routeParameter ?? '', routeValue);
-    const sectionId = parameters.get('section')?.trim();
-    const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
-    if (section && page?.contains(section)) {
-      section.scrollIntoView?.();
-    } else if (pageState.has(pageId)) {
-      const scrollTop = pageState.get(pageId)?.scrollTop ?? 0;
-      const scrollingElement = root.ownerDocument.scrollingElement ?? root.ownerDocument.documentElement;
-      scrollingElement.scrollTop = scrollTop;
-    }
+    if (page && !populationDeferred) dispatchPageRoute(page, routeParameter ?? '', routeValue);
+    if (!populationDeferred) restoreScroll(page);
 
-    activePageId = pageId;
   };
 
   const initialRoute = routeFromHash();
@@ -1178,7 +1249,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     const pageId = getNavigationPageId(link);
     if (!pageId || !availableIds.has(pageId)) return;
     root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
-    updateWithViewTransition(root.ownerDocument, () => activate(pageId, routeFromHash()?.parameters));
+    updateWithViewTransition(root.ownerDocument, () => activate(pageId, routeFromHash()?.parameters, true));
     if (pageTitle instanceof HTMLElement) pageTitle.focus();
   });
 
@@ -1190,7 +1261,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     }
     const route = routeFromHash();
     if (route) {
-      updateWithViewTransition(root.ownerDocument, () => activate(route.pageId, route.parameters));
+      updateWithViewTransition(root.ownerDocument, () => activate(route.pageId, route.parameters, true));
       if (pageTitle instanceof HTMLElement) pageTitle.focus();
     }
   };

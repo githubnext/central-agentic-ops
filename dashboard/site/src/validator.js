@@ -76,12 +76,14 @@ import {
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
   VIEW_TITLE_LINK_KEYS,
-  OUTCOME_DETAIL_SECTION_BODY_VALUES,
-  PACKAGE_ROUTE_BODY_VALUES,
-  WORKFLOW_ROUTE_BODY_VALUES,
   WORKFLOW_ACTIVE_VALUES,
   WORKFLOW_ROLE_VALUES
 } from './specification.js';
+import {
+  OUTCOME_DETAIL_SECTION_BODY_VALUES,
+  PACKAGE_ROUTE_BODY_VALUES,
+  WORKFLOW_ROUTE_BODY_VALUES
+} from './components/route-body-specification.js';
 
 /**
  * @typedef {{ code: string, message: string, path: string }} ValidationError
