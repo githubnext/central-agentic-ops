@@ -12,6 +12,7 @@ const outputRoot = resolve(
     || join(siteRoot, 'test-results', 'lighthouse')
 );
 
+// Allows small run-to-run variance while retaining a high Lighthouse score.
 const scoreThreshold = 0.88;
 const metricBudgets = {
   'cumulative-layout-shift': 0.1,
