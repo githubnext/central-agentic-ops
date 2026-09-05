@@ -152,11 +152,11 @@ export async function readRunSecurityTelemetry(outputDirectory, runId) {
         }
       }
       if (Array.isArray(summary.mcp_failures)) {
-        telemetry.mcp.available = true;
         telemetry.mcp.failures = summary.mcp_failures.map((failure) => ({
           serverName: firstText(failure?.server_name),
           status: firstText(failure?.status),
         })).filter((failure) => failure.serverName);
+        if (telemetry.mcp.failures.length > 0) telemetry.mcp.available = true;
       }
     } catch {
       // Missing or malformed optional telemetry is represented as unavailable.

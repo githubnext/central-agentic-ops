@@ -104,3 +104,21 @@ test("dashboard telemetry extracts bounded security aggregates without retaining
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("dashboard telemetry keeps absent MCP usage unavailable when the failure list is empty", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "dashboard-security-"));
+  const runDirectory = path.join(root, "run-43");
+  await mkdir(runDirectory, { recursive: true });
+  try {
+    await writeFile(path.join(runDirectory, "run_summary.json"), JSON.stringify({
+      cli_version: "0.88.0",
+      mcp_failures: [],
+    }));
+
+    const telemetry = await readRunSecurityTelemetry(root, 43);
+    assert.equal(telemetry.mcp.available, false);
+    assert.deepEqual(telemetry.mcp.failures, []);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
