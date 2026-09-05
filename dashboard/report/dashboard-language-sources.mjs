@@ -918,11 +918,11 @@ const DETECTION_FAILURE_CONCLUSIONS = new Set([
 export function deriveDetectionState({ verdictAvailable, threatsDetected, warningCount, jobConclusion, telemetryAvailable = true }) {
   // Precedence preserves security outcomes independently from job mechanics:
   // threat > tooling failure > degraded > clean > skipped > unknown.
+  const normalizedConclusion = runConclusion(jobConclusion);
   if (verdictAvailable && threatsDetected) return "threat";
-  if (!verdictAvailable && DETECTION_FAILURE_CONCLUSIONS.has(runConclusion(jobConclusion))) return "tooling-failure";
+  if (!verdictAvailable && DETECTION_FAILURE_CONCLUSIONS.has(normalizedConclusion)) return "tooling-failure";
   if (verdictAvailable && warningCount > 0) return "degraded";
   if (verdictAvailable) return "clean";
-  const normalizedConclusion = runConclusion(jobConclusion);
   if (normalizedConclusion === "skipped") return "skipped";
   if (telemetryAvailable && normalizedConclusion === "success") return "tooling-failure";
   return "unknown";
@@ -965,7 +965,8 @@ export function detectionObservationRows(usage, jobs = []) {
     const threatsDetected = verdictAvailable && Boolean(
       verdict.promptInjection || verdict.secretLeak || verdict.maliciousPatch,
     );
-    const jobConclusion = runConclusion(job?.["job-conclusion"]);
+    const jobConclusion = job?.["job-conclusion"] || "unknown";
+    const normalizedJobConclusion = runConclusion(jobConclusion);
     const state = deriveDetectionState({
       verdictAvailable,
       threatsDetected,
@@ -987,8 +988,8 @@ export function detectionObservationRows(usage, jobs = []) {
       "run-link": job?.["run-link"] || link("run", workflowRunUrl(repository, runId), `View run ${runId}`),
       "rollout-mode": rolloutMode(run?.mode || job?.["rollout-mode"]),
       "detection-expected": job ? "true" : "unknown",
-      "detection-applicable": jobConclusion === "skipped" ? "false" : job ? "true" : "unknown",
-      "detection-executed": jobConclusion === "skipped" ? "false" : (job || verdictAvailable) ? "true" : "unknown",
+      "detection-applicable": normalizedJobConclusion === "skipped" ? "false" : job ? "true" : "unknown",
+      "detection-executed": normalizedJobConclusion === "skipped" ? "false" : (job || verdictAvailable) ? "true" : "unknown",
       "verdict-available": verdictAvailable ? "true" : "false",
       "usable-verdict-percent": verdictAvailable ? 100 : 0,
       "detection-state": state,
@@ -1009,7 +1010,7 @@ export function detectionObservationRows(usage, jobs = []) {
         clean: 6,
       }[state],
       "job-status": job?.["job-status"] || "unknown",
-      "job-conclusion": jobConclusion,
+      "job-conclusion": normalizedJobConclusion,
       "job-duration-seconds": job?.["job-duration-seconds"] ?? null,
       runner: job?.runner || "unknown",
       engine: run?.engine || job?.engine || "unknown",
