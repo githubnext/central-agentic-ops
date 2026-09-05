@@ -354,6 +354,7 @@ describe('UI elements', () => {
       contextDetails: [],
       headingTag: 'h3'
     });
+
     const trend = renderUiElement('package-run-trend', {
       pageId: 'packages',
       title: 'All runs over time',
@@ -377,6 +378,41 @@ describe('UI elements', () => {
     expect(trend?.querySelector('h3')?.textContent).toBe('All runs over time');
     expect(summary?.querySelector('.package-summary-table')).not.toBeNull();
     expect(summary?.textContent).toContain('Daily Ops');
+  });
+
+  it('renders package-detail through the reusable package-route variant without relying on page identity', () => {
+    const rendered = renderUiElement('package-detail', {
+      pageId: 'totally-custom-package-page',
+      title: 'Package workflows',
+      sourceNames: ['workflows'],
+      routeParameter: 'package',
+      headingTag: 'h3',
+      contextDetails: [],
+      sources: {
+        workflows: {
+          source: 'workflows',
+          metadata,
+          rows: [{
+            package: 'sample-package',
+            'package-name': 'Sample Package',
+            organization: 'githubnext',
+            repository: 'gh-aw-cao',
+            workflow: '.github/workflows/sample.md',
+            'workflow-name': 'Sample workflow',
+            'workflow-role': 'standalone',
+            'workflow-active': 'true',
+            'rollout-mode': 'review'
+          }]
+        }
+      }
+    });
+
+    rendered?.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'package', value: 'sample-package' }
+    }));
+
+    expect(rendered?.querySelector('.package-tabs [aria-current="page"]')?.textContent).toBe('Workflows');
+    expect(rendered?.querySelector('.package-tabs')?.textContent).toContain('Reports');
   });
 
   it('renders workflow-route with declarative body selection', () => {

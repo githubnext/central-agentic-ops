@@ -7,7 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatClockDuration } from '../view-formatters.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageSummary, renderPackageUtilization, renderRunTrend } from './packages-view.js';
-import { renderPackageRouteView } from './package-route-view.js';
+import { renderPackageRouteVariant, renderPackageRouteView } from './package-route-view.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { isOutcomeDetailSectionConfig, renderOutcomeDetailSection } from './outcome-detail-sections.js';
 import { renderSectionHeading, isPlainObject, renderIdentityLink, renderDlRow, renderIconSpan } from './ui-primitives.js';
@@ -50,10 +50,10 @@ const ELEMENT_RENDERERS = new Map([
   ['package-utilization', ({ sources }) => renderPackageUtilization(sources)],
   ['package-run-trend', ({ sources }) => renderRunTrend(sources)],
   ['package-summary-table', ({ sources }) => renderPackageSummary(sources)],
-  ['package-insights', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'insights' } })],
-  ['package-detail', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'workflows' } })],
-  ['package-dispatches', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'dispatches' } })],
-  ['package-reports', (context) => renderPackageRouteView({ ...context, elementConfig: context.elementConfig ?? { body: 'reports' } })],
+  ['package-insights', (context) => renderPackageRouteVariant(context, 'insights')],
+  ['package-detail', (context) => renderPackageRouteVariant(context, 'workflows')],
+  ['package-dispatches', (context) => renderPackageRouteVariant(context, 'dispatches')],
+  ['package-reports', (context) => renderPackageRouteVariant(context, 'reports')],
   ['package-route', renderPackageRouteView],
   ['workflow-route', renderWorkflowRouteView],
   ['outcome-detail', renderOutcomeDetail],
